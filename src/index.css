@@ -18,9 +18,10 @@
   --color-status-success: #2ECC71;  /* Green: Approved Bids, Completed Work */
   --color-status-info: #3498DB;     /* Blue: Trial Status, Budget Unlock Info */
 
-  /* ---------------------- 4. FONT/TYPOGRAPHY (Optional but Recommended) ---------------------- */
-  --font-family-primary: 'Inter', 'Segoe UI', Roboto, sans-serif; 
   --font-size-base: 16px;
+  --font-weight-sm: 300;
+  --font-weight-md: 500;
+  --font-weight-lg: 700;
 }
 
 *, *::before, *::after {
@@ -31,5 +32,5 @@
 }
 
 body {
-    
+
 }
