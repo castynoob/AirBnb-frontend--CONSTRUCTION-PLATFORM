@@ -1,0 +1,154 @@
+.submissions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.submission-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border-divider);
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 6px rgba(15, 34, 61, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.submission-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 10px rgba(15, 34, 61, 0.1);
+}
+
+/* Header */
+.submission-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.bidder-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.bidder-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-border-divider);
+}
+
+.license {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Company details */
+.company-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 0.75rem;
+}
+
+.company-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--color-text-dark);
+}
+
+.company-item.rating svg {
+  color: var(--color-status-warning);
+}
+
+/* Status badges */
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: var(--font-weight-md);
+}
+
+.status-badge.accepted {
+  background: rgba(46, 204, 113, 0.1);
+  color: var(--color-status-success);
+}
+
+.status-badge.declined {
+  background: rgba(231, 76, 60, 0.1);
+  color: var(--color-status-urgent);
+}
+
+.status-badge.pending {
+  background: rgba(243, 156, 18, 0.1);
+  color: var(--color-status-warning);
+}
+
+/* Details */
+.submission-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-text-dark);
+  font-size: 0.9rem;
+}
+
+.detail-item svg {
+  color: var(--color-secondary);
+}
+
+/* Actions */
+.submission-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.accept-btn,
+.decline-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-weight: var(--font-weight-md);
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.accept-btn {
+  background: var(--color-status-success);
+  color: var(--color-white);
+}
+
+.accept-btn:hover {
+  background: #27ae60;
+}
+
+.decline-btn {
+  background: var(--color-status-urgent);
+  color: var(--color-white);
+}
+
+.decline-btn:hover {
+  background: #c0392b;
+}
+
+.status-note {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
