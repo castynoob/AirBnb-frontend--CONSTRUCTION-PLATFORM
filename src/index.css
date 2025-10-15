@@ -1,0 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+:root {
+  /* ---------------------- 1. PRIMARY BRAND COLORS (Trust & Action) ---------------------- */
+  --color-primary: #0F223D;        /* BâtiPro Navy */
+  --color-secondary: #00A5A9;      /* Vibrant Teal (Action Button) */
+  
+  /* ---------------------- 2. NEUTRAL COLORS (Readability & Structure) ---------------------- */
+  --color-background-light: #F7F8FA; /* Soft page background */
+  --color-text-dark: #2C3E50;       /* Primary body text */
+  --color-text-muted: #7F8C8D;      /* Secondary/helper text */
+  --color-border-divider: #D9E1E7;  /* Form borders, subtle lines */
+  --color-white: #FFFFFF;
+  
+  /* ---------------------- 3. UTILITY & STATUS COLORS (Urgency Matrix) ---------------------- */
+  --color-status-urgent: #E74C3C;   /* Red: Urgent Work, Errors, Declined Bids */
+  --color-status-warning: #F39C12;  /* Yellow/Orange: Next Year Work, Pending Submissions */
+  --color-status-success: #2ECC71;  /* Green: Approved Bids, Completed Work */
+  --color-status-info: #3498DB;     /* Blue: Trial Status, Budget Unlock Info */
+
+  /* ---------------------- 4. FONT/TYPOGRAPHY (Optional but Recommended) ---------------------- */
+  --font-family-primary: 'Inter', 'Segoe UI', Roboto, sans-serif; 
+  --font-size-base: 16px;
+}
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
+}
+
+body {
+    
+}
