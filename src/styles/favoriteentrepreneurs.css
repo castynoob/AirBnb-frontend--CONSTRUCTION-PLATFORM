@@ -1,0 +1,208 @@
+/* Favorite Entrepreneurs Page Styles */
+
+.favorites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.5rem;
+}
+
+.entrep-card {
+  position: relative;
+  background-color: var(--color-white);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid var(--color-border-divider);
+  box-shadow: 0 2px 8px rgba(15, 34, 61, 0.08);
+  transition: all 0.3s ease;
+}
+
+.entrep-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(15, 34, 61, 0.12);
+}
+
+/* Remove Button */
+.remove-favorite-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: transparent;
+  border: none;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  transition: all 0.2s ease;
+  padding: 0;
+  border-radius: 4px;
+}
+
+.remove-favorite-btn:hover {
+  background-color: var(--color-status-urgent);
+  color: var(--color-white);
+}
+
+/* Card Header */
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--color-border-divider);
+}
+
+.card-header .logo {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: var(--color-status-info);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.card-header .logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.header-info {
+  flex: 1;
+  padding-right: 2rem;
+}
+
+.company-name {
+  font-size: 1.125rem;
+  font-weight: var(--font-weight-lg);
+  color: var(--color-text-dark);
+  margin: 0 0 0.5rem 0;
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.location svg {
+  flex-shrink: 0;
+}
+
+/* Stats Section */
+.stats-section {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.stat-box {
+  text-align: left;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin: 0 0 0.25rem 0;
+  font-weight: var(--font-weight-sm);
+}
+
+.stat-value {
+  font-size: 0.9375rem;
+  font-weight: var(--font-weight-lg);
+  color: var(--color-text-dark);
+  margin: 0;
+}
+
+/* Specialization Section */
+.specialization-section {
+  margin-bottom: 1.25rem;
+}
+
+.specialization-section p {
+  font-size: 0.875rem;
+  color: var(--color-text-dark);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Contact Section */
+.contact-section {
+  margin-top: 1.25rem;
+}
+
+.section-title {
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-lg);
+  color: var(--color-text-dark);
+  margin: 0 0 0.75rem 0;
+}
+
+.contact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.contact-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: var(--color-background-light);
+  border: 1px solid var(--color-border-divider);
+  border-radius: 20px;
+  text-decoration: none;
+  color: var(--color-text-dark);
+  font-size: 0.8125rem;
+  font-weight: var(--font-weight-md);
+  transition: all 0.2s ease;
+  width: fit-content;
+}
+
+.contact-link:hover {
+  background-color: var(--color-secondary);
+  border-color: var(--color-secondary);
+  color: var(--color-white);
+}
+
+.contact-link svg {
+  flex-shrink: 0;
+}
+
+/* Empty State */
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.empty-state p {
+  font-size: 1rem;
+  color: var(--color-text-muted);
+}
+
+.page-header {
+    margin-bottom: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .favorites-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-section {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .header-info {
+    padding-right: 2.5rem;
+  }
+}

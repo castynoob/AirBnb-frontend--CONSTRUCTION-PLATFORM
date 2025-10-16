@@ -1,0 +1,16 @@
+add a review to the done works
+add add resident to chat
+add message button to contractors
+message chat page
+add resident to chat form
+favorite
+add groupchat, personal and building tab in chat/messages
+add events on nav (Manager POV)
+ - contains:
+   - community announcements
+   - upcoming building events
+   ex.
+    ●"Annual fire inspection next week"
+    ●"Pool opening June 1st"
+    ●"Elevator maintenance Tuesday 9am-5pm"
+add filter on favorites

@@ -1,0 +1,7 @@
+Air BnB (Construction Platform)
+-Frontend (Property manager POV):
+  - Create add work/repair form
+  - Work details view page
+  - Submissions list page with searching and filtering
+  - Add Submissions status tab
+- Attended meeting
