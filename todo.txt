@@ -1,10 +1,4 @@
-add a review to the done works
-add add resident to chat
 add message button to contractors
-message chat page
-add resident to chat form
-favorite
-add groupchat, personal and building tab in chat/messages
 add events on nav (Manager POV)
  - contains:
    - community announcements
@@ -13,4 +7,23 @@ add events on nav (Manager POV)
     ●"Annual fire inspection next week"
     ●"Pool opening June 1st"
     ●"Elevator maintenance Tuesday 9am-5pm"
-add filter on favorites
+
+MANAGER:
+- fix property
+  id | manager_id | address | city | province | postal_code | num_units | building_type | created_at | updated_at
+- add notification UI
+- add hire on work/job details view
+
+ENTREP:
+- integrate location based
+- improve UI ng map, if walang naselect na property collaps yung card
+  if meron lalabas yung card
+  if wala, naka full screen si map
+- search in map, it will zoom to the map
+
+GENERAL:
+- fix Responsiveness
+- fix nav mobile view
+
+DONE:
+- add message on entrep POV

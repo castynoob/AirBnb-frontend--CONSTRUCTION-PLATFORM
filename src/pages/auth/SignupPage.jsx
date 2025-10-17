@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, User, AlertCircle, CheckCircle } from "lucide-react";
 import illustration from "../../assets/images/illustration.png";
 import logo from "../../assets/logo-light.png";
-import "../../styles/authpage.css";
+import "../../styles/auth/authpage.css"
 
 const SignUp = () => {
   const navigate = useNavigate();

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Home, MessageSquare, User, LogOut, Heart, FileText } from "lucide-react"; 
 import logo from '../assets/logo-light.png'
@@ -6,6 +6,7 @@ import '../styles/nav.css'
 
 function Nav() {
   const navigate = useNavigate();
+  const [role, setRule] = useState('entrepreneur')
 
   const handleLogout = () => {
     localStorage.removeItem("user");
@@ -20,7 +21,7 @@ function Nav() {
         </div>
         <div className="brand-text">
           <span className="brand-name">INVERTOS</span>
-          <span className="brand-subtitle">Management</span>
+          <span className="brand-subtitle">{role[0].toLocaleUpperCase() + role.substring(1, role.length)}</span>
         </div>
       </div>
 
@@ -29,7 +30,7 @@ function Nav() {
         <ul className="nav-links">
           <li>
             <NavLink
-              to="/homepage/manager"
+              to={'/homepage/'+role}
               className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
             >
               <div className="nav-icon">
@@ -41,7 +42,7 @@ function Nav() {
 
           <li>
             <NavLink
-              to="/messages"
+              to={'/messages/'+role}
               className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
             >
               <div className="nav-icon">
@@ -54,27 +55,30 @@ function Nav() {
 
           <li>
             <NavLink
-              to="/submissions"
+              to={'/submissions/'+role}
               className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
             >
               <div className="nav-icon">
                 <FileText size={20} />
               </div>
-              <span className="nav-text">Submissions</span>
+              <span className="nav-text">Biddings</span>
             </NavLink>
           </li>
 
-          <li>
-            <NavLink
-              to="/favorites/manager"
-              className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
-            >
-              <div className="nav-icon">
-                <Heart size={20} />
-              </div>
-              <span className="nav-text">Favorites</span>
-            </NavLink>
-          </li>
+          {
+            role == 'manager' &&
+            <li>
+              <NavLink
+                to={'/favorites/'+role}
+                className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+              >
+                <div className="nav-icon">
+                  <Heart size={20} />
+                </div>
+                <span className="nav-text">Favorites</span>
+              </NavLink>
+            </li>
+          }
         </ul>
       </div>
 
@@ -83,7 +87,7 @@ function Nav() {
         <ul className="nav-links">
           <li>
             <NavLink
-              to="/profile"
+              to={'/profile/' + role}
               className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
             >
               <div className="nav-icon">

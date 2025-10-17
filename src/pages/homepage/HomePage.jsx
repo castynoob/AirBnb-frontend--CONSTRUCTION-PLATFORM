@@ -1,7 +1,7 @@
 import React, { useCallback, useState, useEffect, useRef } from "react";
 import { Bell, Wrench, Search, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import "../../styles/homepage.css";
+import "../../styles/manager/homepage.css"
 import Nav from "../../components/Nav";
 import RepairList from "../../components/RepairList";
 import SummarySection from '../../components/SummarySection'
@@ -148,20 +148,8 @@ function HomePage() {
   const [isHome, setIsHome] = useState(true);
   const [repair, setRepair] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isSticky, setIsSticky] = useState(false);
-  const actionsBarRef = useRef(null);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (actionsBarRef.current) {
-        const offset = actionsBarRef.current.getBoundingClientRect().top;
-        setIsSticky(offset <= 0);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const [searchExpanded, setSearchExpanded] = useState(false);
+  const searchInputRef = useRef(null);
 
   const handleUrgentRequest = () => {
     alert("Urgent Request Triggered — This would notify all entrepreneurs.");
@@ -175,6 +163,22 @@ function HomePage() {
     setIsHome(value);
     setRepair(repair);
   }, []);
+
+  const handleSearchFocus = () => {
+    setSearchExpanded(true);
+  };
+
+  const handleSearchBlur = () => {
+    if (!searchTerm) {
+      setSearchExpanded(false);
+    }
+  };
+
+  useEffect(() => {
+    if (searchExpanded && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [searchExpanded]);
 
   const filteredRepairs = repairs.filter(
     (repair) =>
@@ -192,39 +196,46 @@ function HomePage() {
           <header className="page-header">
             <div>
               <h1>Repair Work Overview</h1>
-              <p>Manage and track all property maintenance and repairs</p>
             </div>
             <div className="header-actions">
-              <button onClick={handleAddWork} className="add-work-btn">
-                <Plus size={20} />
-                <span>Add New Work</span>
+              <div className={`search-box-header ${searchExpanded ? 'expanded' : ''}`}>
+                <button 
+                  className="search-trigger-btn"
+                  onClick={handleSearchFocus}
+                  aria-label="Search"
+                >
+                  <Search size={20} />
+                </button>
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search repairs, apartments, or categories..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onFocus={handleSearchFocus}
+                  onBlur={handleSearchBlur}
+                  className="search-input-header"
+                />
+              </div>
+              <button 
+                onClick={handleUrgentRequest} 
+                className="urgent-button-icon"
+                aria-label="Urgent Request"
+              >
+                <Wrench size={20} />
               </button>
-              <button className="notification-btn">
+              <button 
+                onClick={handleAddWork} 
+                className="add-work-btn-icon"
+                aria-label="Add New Work"
+              >
+                <Plus size={20} />
+              </button>
+              <button className="notification-btn" aria-label="Notifications">
                 <Bell size={20} />
               </button>
             </div>
           </header>
-
-          <div 
-            ref={actionsBarRef}
-            className={`actions-bar ${isSticky ? 'sticky' : ''}`}
-          >
-            <div className="search-box-home">
-              <Search size={18} className="search-icon" />
-              <input
-                type="text"
-                placeholder="Search repairs, apartments, or categories..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-input"
-              />
-            </div>
-
-            <button onClick={handleUrgentRequest} className="urgent-button">
-              <Wrench size={18} />
-              <span>Urgent Request</span>
-            </button>
-          </div>
 
           <SummarySection repairs={repairs} />
 

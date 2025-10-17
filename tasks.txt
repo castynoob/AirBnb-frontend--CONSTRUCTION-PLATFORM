@@ -1,7 +1,19 @@
-Air BnB (Construction Platform)
--Frontend (Property manager POV):
-  - Create add work/repair form
-  - Work details view page
-  - Submissions list page with searching and filtering
-  - Add Submissions status tab
-- Attended meeting
+Hello, Clocking out
+07:12:37
+
+Construction Bidding App
+- Frontend (Property manager POV):
+  * favorite entrepreneurs page
+  * add review completed jobs interface
+  * add resident, personal, community, and entrepreneurs to chats pages
+  * add resident feature in chat community
+  * filtering and chat on favorites entrepreneurs
+  * created property manager profile page
+- Frontend (Entrepreneurs POV):
+  * created homepage
+  * integrate leafletjs for map base job searching
+  * add pinned property/building for job searching
+  * add advanced filtering for job searching
+  * add job bidding form
+
+Thank you!

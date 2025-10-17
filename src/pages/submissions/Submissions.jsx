@@ -1,9 +1,23 @@
 import React, { useState } from "react";
-import { Building2, Calendar, DollarSign, FileText, MapPin, Search, Filter, Check, X, Clock } from "lucide-react";
-import "../../styles/submissions.css"
+import { Building2, Calendar, DollarSign, FileText, MapPin, Search, Filter, Check, X, Clock, Star, MessageCircle, Upload, Image as ImageIcon, Heart } from "lucide-react";
+import "../../styles/manager/submissions.css"
 import Nav from '../../components/Nav'
 
 export default function Submissions() {
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [selectedContractor, setSelectedContractor] = useState(null);
+  const [favorites, setFavorites] = useState([]);
+  const [reviewData, setReviewData] = useState({
+    rating: 0,
+    quality: 5,
+    timeliness: 5,
+    communication: 5,
+    professionalism: 5,
+    wouldRecommend: true,
+    comments: "",
+    images: []
+  });
+
   const [submissions, setSubmissions] = useState([
     { id: 1, bidder: "Skyline Roofing Co.", logo: "https://via.placeholder.com/60x60.png?text=SR", licenseNumber: "LIC-45821", yearsInBusiness: 12, address: "123 Elm St, Toronto, ON", averageRating: 4.7, property: "Maple Heights", apartment: "Unit 304", budget: 5200, projectDate: "2025-11-10", submissionDate: "2025-10-12", status: "pending" },
     { id: 2, bidder: "UrbanBuild Contractors", logo: "https://via.placeholder.com/60x60.png?text=UB", licenseNumber: "LIC-78213", yearsInBusiness: 8, address: "45 Wellington Ave, Toronto, ON", averageRating: 4.5, property: "Lakeside Towers", apartment: "Unit 112", budget: 3400, projectDate: "2025-11-22", submissionDate: "2025-10-14", status: "pending" },
@@ -35,6 +49,90 @@ export default function Submissions() {
     setSubmissions((prev) =>
       prev.map((sub) => (sub.id === id ? { ...sub, status: newStatus } : sub))
     );
+  };
+
+  const handleReview = (id) => {
+    const submission = submissions.find(sub => sub.id === id);
+    setSelectedContractor(submission);
+    setShowReviewForm(true);
+    // Reset review data
+    setReviewData({
+      rating: 0,
+      quality: 5,
+      timeliness: 5,
+      communication: 5,
+      professionalism: 5,
+      wouldRecommend: true,
+      comments: "",
+      images: []
+    });
+  };
+
+  const handleImageUpload = (e) => {
+    const files = Array.from(e.target.files);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+    
+    // Create preview URLs for images
+    const newImages = imageFiles.map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+      name: file.name
+    }));
+    
+    setReviewData({
+      ...reviewData,
+      images: [...reviewData.images, ...newImages]
+    });
+  };
+
+  const handleRemoveImage = (index) => {
+    const updatedImages = reviewData.images.filter((_, i) => i !== index);
+    // Revoke the object URL to free up memory
+    URL.revokeObjectURL(reviewData.images[index].preview);
+    setReviewData({
+      ...reviewData,
+      images: updatedImages
+    });
+  };
+
+  const handleChatContractor = (id) => {
+    const submission = submissions.find(sub => sub.id === id);
+    console.log(`Opening chat with ${submission.bidder}`);
+    // This would typically open the messages page or chat modal
+    alert(`Chat with ${submission.bidder} would open here`);
+  };
+
+  const toggleFavorite = (id) => {
+    setFavorites(prev => {
+      if (prev.includes(id)) {
+        return prev.filter(favId => favId !== id);
+      } else {
+        return [...prev, id];
+      }
+    });
+  };
+
+  const handleSubmitReview = (e) => {
+    e.preventDefault();
+    console.log("Review submitted:", {
+      contractor: selectedContractor.bidder,
+      ...reviewData,
+      imageCount: reviewData.images.length
+    });
+    
+    // Clean up object URLs
+    reviewData.images.forEach(img => URL.revokeObjectURL(img.preview));
+    
+    alert(`Review submitted for ${selectedContractor.bidder}!`);
+    setShowReviewForm(false);
+    setSelectedContractor(null);
+  };
+
+  const handleCloseReview = () => {
+    // Clean up object URLs
+    reviewData.images.forEach(img => URL.revokeObjectURL(img.preview));
+    setShowReviewForm(false);
+    setSelectedContractor(null);
   };
 
   const statusCounts = {
@@ -155,15 +253,15 @@ export default function Submissions() {
               <div className="contractor-stats">
                 <div className="stat-item">
                   <p className="stat-label">Rating</p>
-                  <p className="stat-value">{sub.averageRating}</p>
+                  <p className="stat-value submissions">{sub.averageRating}</p>
                 </div>
                 <div className="stat-item">
                   <p className="stat-label">Experience</p>
-                  <p className="stat-value">{sub.yearsInBusiness} Years</p>
+                  <p className="stat-value submissions">{sub.yearsInBusiness} Years</p>
                 </div>
                 <div className="stat-item">
                   <p className="stat-label">License</p>
-                  <p className="stat-value">{sub.licenseNumber}</p>
+                  <p className="stat-value submissions">{sub.licenseNumber}</p>
                 </div>
               </div>
 
@@ -190,26 +288,52 @@ export default function Submissions() {
               </div>
 
               <div className="card-actions">
-                {sub.status === "pending" ? (
-                  <>
+                <button
+                  className={`favorite-btn ${favorites.includes(sub.id) ? 'active' : ''}`}
+                  onClick={() => toggleFavorite(sub.id)}
+                  title={favorites.includes(sub.id) ? "Remove from favorites" : "Add to favorites"}
+                >
+                  <Heart size={18} fill={favorites.includes(sub.id) ? 'currentColor' : 'none'} />
+                </button>
+
+                <div className="action-buttons">
+                  {sub.status === "pending" ? (
+                    <>
+                      <button
+                        className="action-btn accept-btn"
+                        onClick={() => handleAction(sub.id, "accepted")}
+                      >
+                        Accept
+                      </button>
+                      <button
+                        className="action-btn decline-btn"
+                        onClick={() => handleAction(sub.id, "cancelled")}
+                      >
+                        Decline
+                      </button>
+                    </>
+                  ) : sub.status === "ongoing" ? (
                     <button
-                      className="action-btn accept-btn"
-                      onClick={() => handleAction(sub.id, "accepted")}
+                      className="action-btn chat-btn"
+                      onClick={() => handleChatContractor(sub.id)}
                     >
-                      Accept
+                      <MessageCircle size={16} />
+                      Chat to Contractor
                     </button>
+                  ) : sub.status === "done" ? (
                     <button
-                      className="action-btn decline-btn"
-                      onClick={() => handleAction(sub.id, "cancelled")}
+                      className="action-btn review-btn"
+                      onClick={() => handleReview(sub.id)}
                     >
-                      Decline
+                      <Star size={16} />
+                      Write Review
                     </button>
-                  </>
-                ) : (
-                  <p className="status-note">
-                    This bid has been {sub.status}.
-                  </p>
-                )}
+                  ) : sub.status === "cancelled" ? (
+                    <p className="status-note">
+                      This bid has been cancelled.
+                    </p>
+                  ) : null}
+                </div>
               </div>
             </div>
           ))}
@@ -218,6 +342,212 @@ export default function Submissions() {
         {filteredSubmissions.length === 0 && (
           <div className="no-results">
             <p>No submissions found matching your criteria.</p>
+          </div>
+        )}
+
+        {/* Review Form Modal */}
+        {showReviewForm && selectedContractor && (
+          <div className="review-overlay">
+            <div className="review-modal">
+              <div className="review-header">
+                <div>
+                  <h2>Write Review</h2>
+                  <p className="review-subtitle">Share your experience with {selectedContractor.bidder}</p>
+                </div>
+                <button className="close-btn" onClick={handleCloseReview}>
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="review-project-info">
+                <div className="review-contractor">
+                  <div className="review-logo">
+                    <img src={selectedContractor.logo} alt={selectedContractor.bidder} />
+                  </div>
+                  <div>
+                    <h3>{selectedContractor.bidder}</h3>
+                    <p>{selectedContractor.property} • {selectedContractor.apartment}</p>
+                  </div>
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmitReview} className="review-form">
+                <div className="form-section">
+                  <label className="form-label">Overall Rating *</label>
+                  <div className="star-rating">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        className={`star-btn ${reviewData.rating >= star ? 'active' : ''}`}
+                        onClick={() => setReviewData({...reviewData, rating: star})}
+                      >
+                        <Star size={32} fill={reviewData.rating >= star ? 'currentColor' : 'none'} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <label className="form-label">Detailed Ratings</label>
+                  <div className="rating-sliders">
+                    <div className="slider-group">
+                      <div className="slider-header">
+                        <span>Quality of Work</span>
+                        <span className="slider-value">{reviewData.quality}/5</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="5"
+                        value={reviewData.quality}
+                        onChange={(e) => setReviewData({...reviewData, quality: parseInt(e.target.value)})}
+                        className="rating-slider"
+                      />
+                    </div>
+
+                    <div className="slider-group">
+                      <div className="slider-header">
+                        <span>Timeliness</span>
+                        <span className="slider-value">{reviewData.timeliness}/5</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="5"
+                        value={reviewData.timeliness}
+                        onChange={(e) => setReviewData({...reviewData, timeliness: parseInt(e.target.value)})}
+                        className="rating-slider"
+                      />
+                    </div>
+
+                    <div className="slider-group">
+                      <div className="slider-header">
+                        <span>Communication</span>
+                        <span className="slider-value">{reviewData.communication}/5</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="5"
+                        value={reviewData.communication}
+                        onChange={(e) => setReviewData({...reviewData, communication: parseInt(e.target.value)})}
+                        className="rating-slider"
+                      />
+                    </div>
+
+                    <div className="slider-group">
+                      <div className="slider-header">
+                        <span>Professionalism</span>
+                        <span className="slider-value">{reviewData.professionalism}/5</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="5"
+                        value={reviewData.professionalism}
+                        onChange={(e) => setReviewData({...reviewData, professionalism: parseInt(e.target.value)})}
+                        className="rating-slider"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <label className="form-label">Would you recommend this contractor?</label>
+                  <div className="recommendation-toggle">
+                    <button
+                      type="button"
+                      className={`toggle-btn ${reviewData.wouldRecommend ? 'active' : ''}`}
+                      onClick={() => setReviewData({...reviewData, wouldRecommend: true})}
+                    >
+                      <Check size={18} />
+                      Yes
+                    </button>
+                    <button
+                      type="button"
+                      className={`toggle-btn ${!reviewData.wouldRecommend ? 'active' : ''}`}
+                      onClick={() => setReviewData({...reviewData, wouldRecommend: false})}
+                    >
+                      <X size={18} />
+                      No
+                    </button>
+                  </div>
+                </div>
+
+                <div className="form-section">
+                  <label className="form-label">Additional Comments</label>
+                  <textarea
+                    className="review-textarea"
+                    rows="5"
+                    placeholder="Share details about your experience with this contractor..."
+                    value={reviewData.comments}
+                    onChange={(e) => setReviewData({...reviewData, comments: e.target.value})}
+                  />
+                </div>
+
+                <div className="form-section">
+                  <label className="form-label">
+                    Attach Images (Optional)
+                    <span className="label-hint">Upload photos of the completed work</span>
+                  </label>
+                  
+                  <div className="image-upload-container">
+                    <input
+                      type="file"
+                      id="image-upload"
+                      multiple
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="image-upload-input"
+                    />
+                    <label htmlFor="image-upload" className="image-upload-label">
+                      <Upload size={24} />
+                      <span>Click to upload images</span>
+                      <span className="upload-hint">PNG, JPG, GIF up to 10MB each</span>
+                    </label>
+                  </div>
+
+                  {reviewData.images.length > 0 && (
+                    <div className="image-preview-grid">
+                      {reviewData.images.map((image, index) => (
+                        <div key={index} className="image-preview-item">
+                          <img src={image.preview} alt={`Preview ${index + 1}`} />
+                          <button
+                            type="button"
+                            className="remove-image-btn"
+                            onClick={() => handleRemoveImage(index)}
+                            title="Remove image"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {reviewData.images.length > 0 && (
+                    <p className="image-count">
+                      <ImageIcon size={16} />
+                      {reviewData.images.length} image{reviewData.images.length !== 1 ? 's' : ''} attached
+                    </p>
+                  )}
+                </div>
+
+                <div className="review-actions">
+                  <button type="button" className="cancel-review-btn" onClick={handleCloseReview}>
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="submit-review-btn"
+                    disabled={reviewData.rating === 0}
+                  >
+                    Submit Review
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
       </div>

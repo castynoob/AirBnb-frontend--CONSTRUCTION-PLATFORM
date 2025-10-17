@@ -13,7 +13,7 @@ import {
   AlertCircle,
   Tag,
 } from "lucide-react";
-import "../../styles/addworkform.css";
+import "../../styles/manager/addworkform.css"
 
 function AddWorkForm() {
   const navigate = useNavigate();

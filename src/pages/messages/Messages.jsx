@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import Nav from "../../components/Nav";
-import "../../styles/message.css";
-import { MessageSquare, Users, Briefcase, Send, PhoneCall, Lock, Search } from "lucide-react";
+import "../../styles/manager/message.css"
+import { MessageSquare, Users, User, Briefcase, Send, PhoneCall, Lock, Search, UserPlus, X } from "lucide-react";
 
 function Messages() {
   const [activeTab, setActiveTab] = useState("residents");
   const [selectedChat, setSelectedChat] = useState(null);
   const [message, setMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [newMemberEmail, setNewMemberEmail] = useState("");
 
   const residents = [
     { 
@@ -33,6 +35,71 @@ function Messages() {
       lastMessage: "Can I schedule an inspection?",
       time: "Yesterday",
       unread: 0
+    },
+    { 
+      id: 4, 
+      name: "Robert Williams", 
+      apt: "Unit 501", 
+      lastMessage: "Heating system working great now.",
+      time: "2 days ago",
+      unread: 0
+    },
+  ];
+
+  const personal = [
+    { 
+      id: 1,
+      name: "David Martinez", 
+      role: "Building Manager", 
+      lastMessage: "Meeting scheduled for tomorrow.",
+      time: "3:15 PM",
+      unread: 1
+    },
+    { 
+      id: 2, 
+      name: "Emily Chen", 
+      role: "Maintenance Staff", 
+      lastMessage: "All inspections complete.",
+      time: "1:45 PM",
+      unread: 0
+    },
+    { 
+      id: 3, 
+      name: "Michael Brown", 
+      role: "Security Manager", 
+      lastMessage: "Updated security protocols sent.",
+      time: "Yesterday",
+      unread: 0
+    },
+  ];
+
+  const communities = [
+    { 
+      id: 1,
+      name: "Building A Residents", 
+      members: "24 members", 
+      lastMessage: "Weekly maintenance scheduled for Friday.",
+      time: "3:20 PM",
+      unread: 3,
+      membersList: ["Sarah Johnson", "James Lee", "Maria Chen", "Robert Williams"]
+    },
+    { 
+      id: 2, 
+      name: "Emergency Response Team", 
+      members: "8 members", 
+      lastMessage: "All clear on the elevator inspection.",
+      time: "1:45 PM",
+      unread: 0,
+      membersList: ["David Martinez", "Emily Chen", "Michael Brown"]
+    },
+    { 
+      id: 3, 
+      name: "Rooftop Garden Committee", 
+      members: "12 members", 
+      lastMessage: "New plants arriving next week!",
+      time: "Yesterday",
+      unread: 1,
+      membersList: ["Sarah Johnson", "Maria Chen"]
     },
   ];
 
@@ -61,6 +128,14 @@ function Messages() {
       time: "Yesterday",
       unread: 0
     },
+    { 
+      id: 4, 
+      name: "Elite HVAC Services", 
+      status: "accepted", 
+      lastMessage: "Annual maintenance complete.",
+      time: "2 days ago",
+      unread: 0
+    },
   ];
 
   // Sample conversation
@@ -76,41 +151,74 @@ function Messages() {
     setMessage("");
   };
 
-  const filteredChats = (activeTab === "residents" ? residents : entrepreneurs).filter(
+  const handleAddMember = () => {
+    if (!newMemberEmail.trim()) return;
+    console.log(`Adding member to ${selectedChat.name}: ${newMemberEmail}`);
+    alert(`Invitation sent to ${newMemberEmail} to join ${selectedChat.name}!`);
+    setNewMemberEmail("");
+    setShowAddMember(false);
+  };
+
+  const getCurrentChats = () => {
+    if (activeTab === "residents") return residents;
+    if (activeTab === "personal") return personal;
+    if (activeTab === "community") return communities;
+    return entrepreneurs;
+  };
+
+  const filteredChats = getCurrentChats().filter(
     chat => chat.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="homepage">
+    <div className="messages-page-fullscreen">
       <Nav />
 
-      <div className="main-container">
-        <header className="page-header">
+      <div className="messages-container-fullscreen main-container ">
+        <div className="messages-header-bar">
           <h1>Messages</h1>
-          <p>Communicate with residents and contractors.</p>
-        </header>
-
-        <div className="tabs-section">
-          <button
-            className={activeTab === "residents" ? "tab-btn active" : "tab-btn"}
-            onClick={() => {
-              setActiveTab("residents");
-              setSelectedChat(null);
-            }}
-          >
-            <Users size={18} />
-            <span>Residents</span>
-          </button>
-          <button
-            className={activeTab === "entrepreneurs" ? "tab-btn active" : "tab-btn"}
-            onClick={() => {
-              setActiveTab("entrepreneurs");
-              setSelectedChat(null);
-            }}
-          >
-            <Briefcase size={18} />
-            <span>Entrepreneurs</span>
-          </button>
+          <div className="tabs-section">
+            <button
+              className={activeTab === "residents" ? "tab-btn active" : "tab-btn"}
+              onClick={() => {
+                setActiveTab("residents");
+                setSelectedChat(null);
+              }}
+            >
+              <Users size={18} />
+              <span>Residents</span>
+            </button>
+            <button
+              className={activeTab === "personal" ? "tab-btn active" : "tab-btn"}
+              onClick={() => {
+                setActiveTab("personal");
+                setSelectedChat(null);
+              }}
+            >
+              <User size={18} />
+              <span>Personal</span>
+            </button>
+            <button
+              className={activeTab === "community" ? "tab-btn active" : "tab-btn"}
+              onClick={() => {
+                setActiveTab("community");
+                setSelectedChat(null);
+              }}
+            >
+              <Users size={18} />
+              <span>Community</span>
+            </button>
+            <button
+              className={activeTab === "entrepreneurs" ? "tab-btn active" : "tab-btn"}
+              onClick={() => {
+                setActiveTab("entrepreneurs");
+                setSelectedChat(null);
+              }}
+            >
+              <Briefcase size={18} />
+              <span>Entrepreneurs</span>
+            </button>
+          </div>
         </div>
 
         <div className="messages-layout">
@@ -131,7 +239,7 @@ function Messages() {
               {filteredChats.map((chat) => (
                 <div
                   key={chat.id}
-                  className={`chat-item ${selectedChat?.id === chat.id ? "active" : ""} ${
+                  className={`chat-item ${selectedChat?.id === chat.id && selectedChat?.name === chat.name ? "active" : ""} ${
                     chat.status === "pending" ? "restricted" : ""
                   }`}
                   onClick={() => chat.status !== "pending" && setSelectedChat(chat)}
@@ -154,6 +262,9 @@ function Messages() {
                         <Lock size={14} className="lock-icon" />
                       )}
                     </div>
+                    {chat.members && (
+                      <p className="chat-members">{chat.members}</p>
+                    )}
                   </div>
                 </div>
               ))}
@@ -180,6 +291,12 @@ function Messages() {
                       {selectedChat.apt && (
                         <p className="header-subtitle">{selectedChat.apt}</p>
                       )}
+                      {selectedChat.role && (
+                        <p className="header-subtitle">{selectedChat.role}</p>
+                      )}
+                      {selectedChat.members && (
+                        <p className="header-subtitle">{selectedChat.members}</p>
+                      )}
                       {selectedChat.status && (
                         <span className={`header-status ${selectedChat.status}`}>
                           {selectedChat.status}
@@ -188,12 +305,23 @@ function Messages() {
                     </div>
                   </div>
 
-                  {activeTab === "entrepreneurs" && selectedChat.status === "accepted" && (
-                    <button className="contact-btn">
-                      <PhoneCall size={16} />
-                      <span>Contact</span>
-                    </button>
-                  )}
+                  <div className="header-actions">
+                    {activeTab === "community" && (
+                      <button 
+                        className="add-member-btn"
+                        onClick={() => setShowAddMember(true)}
+                      >
+                        <UserPlus size={16} />
+                        <span>Add Member</span>
+                      </button>
+                    )}
+                    {activeTab === "entrepreneurs" && selectedChat.status === "accepted" && (
+                      <button className="contact-btn">
+                        <PhoneCall size={16} />
+                        <span>Contact</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="chat-messages">
@@ -230,6 +358,69 @@ function Messages() {
             )}
           </section>
         </div>
+
+        {/* Add Member Modal */}
+        {showAddMember && (
+          <div className="modal-overlay" onClick={() => setShowAddMember(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Add Member to {selectedChat?.name}</h2>
+                <button 
+                  className="modal-close-btn"
+                  onClick={() => setShowAddMember(false)}
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="modal-body">
+                <p className="modal-description">
+                  Enter the email address of the member you want to add to this community.
+                </p>
+                
+                {selectedChat?.membersList && (
+                  <div className="current-members">
+                    <h4>Current Members:</h4>
+                    <ul>
+                      {selectedChat.membersList.map((member, index) => (
+                        <li key={index}>{member}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                <div className="form-group">
+                  <label htmlFor="member-email">Member Email</label>
+                  <input
+                    id="member-email"
+                    type="email"
+                    placeholder="Enter email address..."
+                    value={newMemberEmail}
+                    onChange={(e) => setNewMemberEmail(e.target.value)}
+                    className="modal-input"
+                  />
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button 
+                  className="modal-cancel-btn"
+                  onClick={() => setShowAddMember(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="modal-submit-btn"
+                  onClick={handleAddMember}
+                  disabled={!newMemberEmail.trim()}
+                >
+                  <UserPlus size={16} />
+                  Add Member
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

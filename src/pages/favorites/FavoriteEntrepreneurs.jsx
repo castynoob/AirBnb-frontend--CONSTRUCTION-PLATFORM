@@ -1,9 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Nav from "../../components/Nav";
-import { Star, MapPin, Phone, Mail, X, Award, BadgeCheck } from "lucide-react";
-import "../../styles/favoriteentrepreneurs.css";
+import { Heart, MapPin, Phone, Mail, MessageCircle, Search } from "lucide-react";
+import "../../styles/manager/favoriteentrepreneurs.css"
 
 function FavoriteEntrepreneurs() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState("all");
+  
   const [favorites, setFavorites] = useState([
     {
       id: 1,
@@ -155,56 +158,37 @@ function FavoriteEntrepreneurs() {
       },
       isFavorite: true,
     },
-    {
-      id: 11,
-      company: "HeatWave HVAC Solutions",
-      logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK7tD4SdaUsdPOAvaMIJFbZd5-qk2v26quSw&s",
-      licenseNumber: "LIC-55012",
-      yearsInBusiness: 9,
-      address: "111 Commerce Dr, Toronto, ON",
-      specialization: "Furnace & A/C repair and installation",
-      averageRating: 4.7,
-      contact: {
-        phone: "(416) 555-1011",
-        email: "service@heatwavehvac.ca",
-      },
-      isFavorite: true,
-    },
-    {
-      id: 12,
-      company: "The Deck Masters",
-      logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK7tD4SdaUsdPOAvaMIJFbZd5-qk2v26quSw&s",
-      licenseNumber: "LIC-40040",
-      yearsInBusiness: 11,
-      address: "88 Garden Ave, Toronto, ON",
-      specialization: "Custom deck and fence building",
-      averageRating: 4.8,
-      contact: {
-        phone: "(416) 555-1122",
-        email: "build@deckmasters.ca",
-      },
-      isFavorite: true,
-    },
-    {
-      id: 13,
-      company: "CleanSweep Chimney Services",
-      logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK7tD4SdaUsdPOAvaMIJFbZd5-qk2v26quSw&s",
-      licenseNumber: "LIC-01234",
-      yearsInBusiness: 6,
-      address: "22 Mill St, Toronto, ON",
-      specialization: "Chimney cleaning & inspection",
-      averageRating: 4.3,
-      contact: {
-        phone: "(416) 555-1234",
-        email: "contact@cleansweep.ca",
-      },
-      isFavorite: true,
-    },
   ]);
 
   const handleRemoveFavorite = (id) => {
     setFavorites((prev) => prev.filter((fav) => fav.id !== id));
   };
+
+  // Filter and search logic
+  const filteredFavorites = useMemo(() => {
+    let result = favorites;
+
+    // Apply search
+    if (searchQuery) {
+      result = result.filter(
+        (fav) =>
+          fav.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          fav.specialization.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          fav.address.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Apply filter
+    if (selectedFilter !== "all") {
+      if (selectedFilter === "high-rated") {
+        result = result.filter((fav) => fav.averageRating >= 4.7);
+      } else if (selectedFilter === "experienced") {
+        result = result.filter((fav) => fav.yearsInBusiness >= 15);
+      }
+    }
+
+    return result;
+  }, [favorites, searchQuery, selectedFilter]);
 
   return (
     <div className="homepage">
@@ -216,48 +200,95 @@ function FavoriteEntrepreneurs() {
           <p>View and manage your favorite construction partners.</p>
         </header>
 
-        <div className="favorites-grid">
-          {favorites.length > 0 ? (
-            favorites.map((fav) => (
-              <div key={fav.id} className="entrep-card">
-                <button
-                  onClick={() => handleRemoveFavorite(fav.id)}
-                  className="remove-favorite-btn"
-                  aria-label="Remove from favorites"
-                >
-                  <X size={18} />
-                </button>
+        {/* Search and Filter Section */}
+        <div className="search-filter-container">
+          <div className="search-wrapper">
+            <Search size={20} className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search by name, specialization, or location..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
+          </div>
+          
+          <div className="filter-section">
+            <span className="filter-label">Filter by:</span>
+            <div className="filter-buttons">
+              <button
+                onClick={() => setSelectedFilter("all")}
+                className={`filter-button ${selectedFilter === "all" ? "active" : ""}`}
+              >
+                All <span className="count">({favorites.length})</span>
+              </button>
+              <button
+                onClick={() => setSelectedFilter("high-rated")}
+                className={`filter-button ${selectedFilter === "high-rated" ? "active" : ""}`}
+              >
+                High Rated <span className="count">(4.7+)</span>
+              </button>
+              <button
+                onClick={() => setSelectedFilter("experienced")}
+                className={`filter-button ${selectedFilter === "experienced" ? "active" : ""}`}
+              >
+                Experienced <span className="count">(15+ years)</span>
+              </button>
+            </div>
+          </div>
+        </div>
 
+        <div className="favorites-grid">
+          {filteredFavorites.length > 0 ? (
+            filteredFavorites.map((fav) => (
+              <div key={fav.id} className="entrep-card">
                 <div className="card-header">
-                  <div className="logo">
-                    <img src={fav.logo} alt={fav.company} />
-                  </div>
-                  <div className="header-info">
-                    <h3 className="company-name">{fav.company}</h3>
-                    <div className="location">
-                      <MapPin size={14} />
-                      <span>{fav.address}</span>
+                  <div className="company-info">
+                    <div className="logo">
+                      <img src={fav.logo} alt={fav.company} />
                     </div>
+                    <div className="header-info">
+                      <h3 className="company-name">{fav.company}</h3>
+                      <div className="location">
+                        <MapPin size={14} />
+                        <span>{fav.address}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="header-actions">
+                    <button
+                      onClick={() => handleRemoveFavorite(fav.id)}
+                      className="remove-favorite-btn"
+                      aria-label="Remove from favorites"
+                    >
+                      <Heart size={20} fill="#E74C3C" color="#E74C3C" />
+                    </button>
+                    <button className="message-btn-header">
+                      <MessageCircle size={18} />
+                    </button>
                   </div>
                 </div>
 
                 <div className="stats-section">
                   <div className="stat-box">
+                    <p className="stat-value">⭐ {fav.averageRating}</p>
                     <p className="stat-label">Rating</p>
-                    <p className="stat-value">{fav.averageRating}</p>
                   </div>
                   <div className="stat-box">
+                    <p className="stat-value">{fav.yearsInBusiness} Yrs</p>
                     <p className="stat-label">Experience</p>
-                    <p className="stat-value">{fav.yearsInBusiness} Years</p>
                   </div>
                   <div className="stat-box">
-                    <p className="stat-label">License</p>
                     <p className="stat-value">{fav.licenseNumber}</p>
+                    <p className="stat-label">License</p>
                   </div>
                 </div>
 
+                <div className="specialization-section">
+                  <p>{fav.specialization}</p>
+                </div>
+
                 <div className="contact-section">
-                  <h4 className="section-title">Contact</h4>
                   <div className="contact-list">
                     <a href={`tel:${fav.contact.phone}`} className="contact-link">
                       <Phone size={14} />
@@ -273,7 +304,11 @@ function FavoriteEntrepreneurs() {
             ))
           ) : (
             <div className="empty-state">
-              <p>You haven't added any favorite entrepreneurs yet.</p>
+              <p>
+                {searchQuery || selectedFilter !== "all"
+                  ? "No entrepreneurs match your search criteria."
+                  : "You haven't added any favorite entrepreneurs yet."}
+              </p>
             </div>
           )}
         </div>

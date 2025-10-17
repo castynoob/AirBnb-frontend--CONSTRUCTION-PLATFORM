@@ -13,7 +13,7 @@ import {
   Filter,
   TrendingUp,
 } from "lucide-react";
-import "../../styles/repairdetails.css";
+import "../../styles/manager/repairdetails.css"
 
 function RepairDetails({ handleRepairClicked, repair }) {
   if (!repair) return null;
