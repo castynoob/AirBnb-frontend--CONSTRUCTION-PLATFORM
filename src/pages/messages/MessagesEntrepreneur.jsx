@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import Nav from "../../components/Nav";
 import "../../styles/entrepreneur/messagesentrepreneur.css"
-import { MessageSquare, Users, User, Send, PhoneCall, Search } from "lucide-react";
+import { MessageSquare, Users, User, Send, PhoneCall, Search, ArrowLeft } from "lucide-react";
 
 function MessagesEntrepreneur() {
   const [activeTab, setActiveTab] = useState("property-manager");
   const [selectedChat, setSelectedChat] = useState(null);
   const [message, setMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [showMobileChatWindow, setShowMobileChatWindow] = useState(false);
 
   const propertyManagers = [
     { 
@@ -84,6 +85,15 @@ function MessagesEntrepreneur() {
     setMessage("");
   };
 
+  const handleChatClick = (chat) => {
+    setSelectedChat(chat);
+    setShowMobileChatWindow(true);
+  };
+
+  const handleBackToList = () => {
+    setShowMobileChatWindow(false);
+  };
+
   const getCurrentChats = () => {
     if (activeTab === "property-manager") return propertyManagers;
     return personal;
@@ -106,6 +116,7 @@ function MessagesEntrepreneur() {
               onClick={() => {
                 setActiveTab("property-manager");
                 setSelectedChat(null);
+                setShowMobileChatWindow(false);
               }}
             >
               <Users size={18} />
@@ -116,6 +127,7 @@ function MessagesEntrepreneur() {
               onClick={() => {
                 setActiveTab("personal");
                 setSelectedChat(null);
+                setShowMobileChatWindow(false);
               }}
             >
               <User size={18} />
@@ -126,7 +138,7 @@ function MessagesEntrepreneur() {
 
         <div className="messages-entrepreneur-layout">
           {/* Sidebar Chat List */}
-          <aside className="chat-sidebar-entrepreneur">
+          <aside className={`chat-sidebar-entrepreneur ${showMobileChatWindow ? 'mobile-hidden' : ''}`}>
             <div className="sidebar-search-entrepreneur">
               <Search size={16} className="search-icon-entrepreneur" />
               <input
@@ -143,7 +155,7 @@ function MessagesEntrepreneur() {
                 <div
                   key={chat.id}
                   className={`chat-item-entrepreneur ${selectedChat?.id === chat.id && selectedChat?.name === chat.name ? "active" : ""}`}
-                  onClick={() => setSelectedChat(chat)}
+                  onClick={() => handleChatClick(chat)}
                 >
                   <div className="chat-avatar-entrepreneur">
                     <div className="avatar-circle-entrepreneur">
@@ -179,11 +191,17 @@ function MessagesEntrepreneur() {
           </aside>
 
           {/* Chat Window */}
-          <section className="chat-window-entrepreneur">
+          <section className={`chat-window-entrepreneur ${showMobileChatWindow ? 'mobile-show' : ''}`}>
             {selectedChat ? (
               <>
                 <div className="chat-header-entrepreneur">
                   <div className="header-info-entrepreneur">
+                    <button 
+                      className="mobile-back-btn-entrepreneur"
+                      onClick={handleBackToList}
+                    >
+                      <ArrowLeft size={20} />
+                    </button>
                     <div className="header-avatar-entrepreneur">
                       {selectedChat.name.charAt(0).toUpperCase()}
                     </div>

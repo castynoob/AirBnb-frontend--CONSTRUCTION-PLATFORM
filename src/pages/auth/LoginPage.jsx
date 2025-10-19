@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, AlertCircle } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, AlertCircle, Subscript } from "lucide-react";
 import illustration from "../../assets/images/illustration.png";
 import logo from "../../assets/logo-light.png";
 import "../../styles/auth/authpage.css"
@@ -49,7 +49,49 @@ const Login = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const userProfile = {
+      id: 101,
+      role: 'entrepreneur',
+      subscription: {
+        plan_type: 'premium',
+        status: 'trialing',
+        trial_end: '2025-11-01',
+        trial_days_remaining: 14,
+        current_period_end: '2025-11-01',
+        cancel_at_period_end: false,
+        bids: {
+          used: 0,
+          limit: 30,
+          remaining: 30
+        },
+        is_trial: true,
+        price: 250
+      }
+    };
+    // const userProfile = {
+    //   id: 101,
+    //   role: 'entrepreneur',
+    //   subscription: {
+    //     plan_type: 'none',
+    //     status: '',
+    //     trial_end: '',
+    //     trial_days_remaining: 0,
+    //     current_period_end: '0',
+    //     cancel_at_period_end: true,
+    //     bids: {
+    //       used: 0,
+    //       limit: 0,
+    //       remaining: 0
+    //     },
+    //     is_trial: false,
+    //     price: 250
+    //   }
+    // };
 
+    const profileString = JSON.stringify(userProfile);
+
+    localStorage.setItem('userProfile', profileString);
+    navigate("/homepage/entrepreneur");
     if (!validateForm()) {
       return;
     }

@@ -195,7 +195,7 @@ function FavoriteEntrepreneurs() {
       <Nav />
 
       <div className="main-container">
-        <header className="page-header">
+        <header className="page-header fav">
           <h1>Favorite Entrepreneurs</h1>
           <p>View and manage your favorite construction partners.</p>
         </header>
@@ -242,12 +242,12 @@ function FavoriteEntrepreneurs() {
           {filteredFavorites.length > 0 ? (
             filteredFavorites.map((fav) => (
               <div key={fav.id} className="entrep-card">
-                <div className="card-header">
+                <div className="card-header fav">
                   <div className="company-info">
                     <div className="logo">
                       <img src={fav.logo} alt={fav.company} />
                     </div>
-                    <div className="header-info">
+                    <div className="header-info fav">
                       <h3 className="company-name">{fav.company}</h3>
                       <div className="location">
                         <MapPin size={14} />
@@ -255,7 +255,7 @@ function FavoriteEntrepreneurs() {
                       </div>
                     </div>
                   </div>
-                  <div className="header-actions">
+                  <div className="header-actions fav">
                     <button
                       onClick={() => handleRemoveFavorite(fav.id)}
                       className="remove-favorite-btn"
@@ -271,15 +271,15 @@ function FavoriteEntrepreneurs() {
 
                 <div className="stats-section">
                   <div className="stat-box">
-                    <p className="stat-value">⭐ {fav.averageRating}</p>
+                    <p className="stat-value fav">⭐ {fav.averageRating}</p>
                     <p className="stat-label">Rating</p>
                   </div>
                   <div className="stat-box">
-                    <p className="stat-value">{fav.yearsInBusiness} Yrs</p>
+                    <p className="stat-value fav">{fav.yearsInBusiness} Yrs</p>
                     <p className="stat-label">Experience</p>
                   </div>
                   <div className="stat-box">
-                    <p className="stat-value">{fav.licenseNumber}</p>
+                    <p className="stat-value fav">{fav.licenseNumber}</p>
                     <p className="stat-label">License</p>
                   </div>
                 </div>

@@ -11,19 +11,21 @@ add events on nav (Manager POV)
 MANAGER:
 - fix property
   id | manager_id | address | city | province | postal_code | num_units | building_type | created_at | updated_at
-- add notification UI
 - add hire on work/job details view
+- work in progress
 
 ENTREP:
 - integrate location based
 - improve UI ng map, if walang naselect na property collaps yung card
   if meron lalabas yung card
   if wala, naka full screen si map
-- search in map, it will zoom to the map
+- add notification UI
+- add bedding submissions
+- notification settings
+- add supplier tab in chats/messages
+
 
 GENERAL:
 - fix Responsiveness
-- fix nav mobile view
 
 DONE:
-- add message on entrep POV

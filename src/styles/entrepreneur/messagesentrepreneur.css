@@ -75,6 +75,11 @@
   flex-shrink: 0;
 }
 
+/* Mobile Back Button - Hidden by default */
+.mobile-back-btn-entrepreneur {
+  display: none;
+}
+
 /* Messages Layout */
 .messages-entrepreneur-layout {
   display: grid;
@@ -521,6 +526,10 @@
     padding: 0.5rem 0.75rem;
     font-size: 0.8125rem;
   }
+
+  .message-bubble-entrepreneur {
+    max-width: 80%;
+  }
 }
 
 @media (max-width: 768px) {
@@ -533,12 +542,32 @@
     flex-direction: column;
     align-items: flex-start;
     padding: 1rem;
+    gap: 1rem;
+  }
+
+  .messages-entrepreneur-header-bar h1 {
+    font-size: 1.5rem;
   }
 
   .tabs-section-entrepreneur {
     width: 100%;
     overflow-x: auto;
     gap: 0.5rem;
+    padding-bottom: 0.25rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tabs-section-entrepreneur::-webkit-scrollbar {
+    height: 3px;
+  }
+
+  .tabs-section-entrepreneur::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .tabs-section-entrepreneur::-webkit-scrollbar-thumb {
+    background: var(--color-border-divider);
+    border-radius: 10px;
   }
 
   .tab-btn-entrepreneur span {
@@ -547,6 +576,7 @@
 
   .tab-btn-entrepreneur {
     padding: 0.625rem 0.75rem;
+    flex-shrink: 0;
   }
 
   .tab-btn-entrepreneur svg {
@@ -555,18 +585,105 @@
 
   .messages-entrepreneur-layout {
     grid-template-columns: 1fr;
+    position: relative;
+    flex: 1;
+    min-height: 0;
   }
 
   .chat-sidebar-entrepreneur {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    transition: transform 0.3s ease;
+  }
+
+  .chat-sidebar-entrepreneur.mobile-hidden {
     display: none;
   }
 
+  .chat-list-entrepreneur {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+
   .chat-window-entrepreneur {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10;
+    background-color: var(--color-white);
+  }
+
+  .chat-window-entrepreneur.mobile-show {
     display: flex;
+  }
+
+  /* Show back button in mobile */
+  .mobile-back-btn-entrepreneur {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    background-color: transparent;
+    border: none;
+    color: var(--color-text-dark);
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    margin-right: 0.5rem;
+  }
+
+  .mobile-back-btn-entrepreneur:hover {
+    background-color: var(--color-background-light);
+  }
+
+  .chat-header-entrepreneur {
+    padding: 1rem;
+  }
+
+  .header-name-entrepreneur {
+    font-size: 1rem;
+  }
+
+  .header-subtitle-entrepreneur {
+    font-size: 0.75rem;
+  }
+
+  .header-avatar-entrepreneur {
+    width: 40px;
+    height: 40px;
+    font-size: 1.125rem;
+  }
+
+  .chat-messages-entrepreneur {
+    padding: 1rem;
   }
 
   .message-bubble-entrepreneur {
     max-width: 85%;
+    padding: 0.625rem 0.875rem;
+  }
+
+  .message-text-entrepreneur {
+    font-size: 0.875rem;
+  }
+
+  .chat-input-area-entrepreneur {
+    padding: 0.75rem;
+  }
+
+  .message-input-entrepreneur {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+  }
+
+  .send-btn-entrepreneur {
+    padding: 0.625rem 0.875rem;
   }
 
   .contact-btn-entrepreneur span {
@@ -575,5 +692,124 @@
 
   .contact-btn-entrepreneur {
     padding: 0.625rem;
+  }
+
+  .header-actions-entrepreneur {
+    gap: 0.5rem;
+  }
+
+  .chat-item-entrepreneur {
+    padding: 0.75rem;
+  }
+
+  .avatar-circle-entrepreneur {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+
+  .chat-name-entrepreneur {
+    font-size: 0.875rem;
+  }
+
+  .chat-preview-entrepreneur {
+    font-size: 0.75rem;
+  }
+
+  .empty-chat-entrepreneur h3 {
+    font-size: 1.125rem;
+  }
+
+  .empty-chat-entrepreneur p {
+    font-size: 0.875rem;
+    padding: 0 1rem;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .messages-entrepreneur-header-bar {
+    padding: 0.75rem;
+  }
+
+  .messages-entrepreneur-header-bar h1 {
+    font-size: 1.375rem;
+  }
+
+  .tab-btn-entrepreneur {
+    padding: 0.5rem 0.625rem;
+  }
+
+  .chat-header-entrepreneur {
+    padding: 0.75rem;
+  }
+
+  .header-info-entrepreneur {
+    gap: 0.625rem;
+  }
+
+  .header-avatar-entrepreneur {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+
+  .header-name-entrepreneur {
+    font-size: 0.9375rem;
+  }
+
+  .chat-messages-entrepreneur {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+
+  .message-bubble-entrepreneur {
+    max-width: 90%;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .message-text-entrepreneur {
+    font-size: 0.8125rem;
+  }
+
+  .message-time-entrepreneur {
+    font-size: 0.625rem;
+  }
+
+  .chat-input-area-entrepreneur {
+    padding: 0.625rem;
+    gap: 0.5rem;
+  }
+
+  .message-input-entrepreneur {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .send-btn-entrepreneur {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .sidebar-search-entrepreneur {
+    padding: 0.75rem;
+  }
+
+  .chat-list-entrepreneur {
+    padding: 0.25rem;
+  }
+
+  .chat-item-entrepreneur {
+    padding: 0.625rem;
+    gap: 0.625rem;
+  }
+
+  .avatar-circle-entrepreneur {
+    width: 36px;
+    height: 36px;
+    font-size: 0.9375rem;
+  }
+
+  .mobile-back-btn-entrepreneur {
+    padding: 0.375rem;
   }
 }

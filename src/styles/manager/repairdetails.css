@@ -574,10 +574,6 @@
 }
 
 @media (max-width: 768px) {
-  .main-container {
-    margin-left: 0;
-    padding: 1rem;
-  }
   
   .details-header {
     flex-wrap: wrap;

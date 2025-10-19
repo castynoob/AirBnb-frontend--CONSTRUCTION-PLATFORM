@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import Nav from "../../components/Nav";
 import "../../styles/manager/message.css"
-import { MessageSquare, Users, User, Briefcase, Send, PhoneCall, Lock, Search, UserPlus, X } from "lucide-react";
+import { MessageSquare, Users, User, Briefcase, Send, PhoneCall, Lock, Search, UserPlus, X, ArrowLeft } from "lucide-react";
 
 function Messages() {
   const [activeTab, setActiveTab] = useState("residents");
@@ -10,6 +10,7 @@ function Messages() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState("");
+  const [showMobileChatWindow, setShowMobileChatWindow] = useState(false);
 
   const residents = [
     { 
@@ -159,6 +160,16 @@ function Messages() {
     setShowAddMember(false);
   };
 
+  const handleChatClick = (chat) => {
+    if (chat.status === "pending") return;
+    setSelectedChat(chat);
+    setShowMobileChatWindow(true);
+  };
+
+  const handleBackToList = () => {
+    setShowMobileChatWindow(false);
+  };
+
   const getCurrentChats = () => {
     if (activeTab === "residents") return residents;
     if (activeTab === "personal") return personal;
@@ -183,6 +194,7 @@ function Messages() {
               onClick={() => {
                 setActiveTab("residents");
                 setSelectedChat(null);
+                setShowMobileChatWindow(false);
               }}
             >
               <Users size={18} />
@@ -193,6 +205,7 @@ function Messages() {
               onClick={() => {
                 setActiveTab("personal");
                 setSelectedChat(null);
+                setShowMobileChatWindow(false);
               }}
             >
               <User size={18} />
@@ -203,6 +216,7 @@ function Messages() {
               onClick={() => {
                 setActiveTab("community");
                 setSelectedChat(null);
+                setShowMobileChatWindow(false);
               }}
             >
               <Users size={18} />
@@ -213,6 +227,7 @@ function Messages() {
               onClick={() => {
                 setActiveTab("entrepreneurs");
                 setSelectedChat(null);
+                setShowMobileChatWindow(false);
               }}
             >
               <Briefcase size={18} />
@@ -223,7 +238,7 @@ function Messages() {
 
         <div className="messages-layout">
           {/* Sidebar Chat List */}
-          <aside className="chat-sidebar">
+          <aside className={`chat-sidebar ${showMobileChatWindow ? 'mobile-hidden' : ''}`}>
             <div className="sidebar-search">
               <Search size={16} className="search-icon" />
               <input
@@ -242,7 +257,7 @@ function Messages() {
                   className={`chat-item ${selectedChat?.id === chat.id && selectedChat?.name === chat.name ? "active" : ""} ${
                     chat.status === "pending" ? "restricted" : ""
                   }`}
-                  onClick={() => chat.status !== "pending" && setSelectedChat(chat)}
+                  onClick={() => handleChatClick(chat)}
                 >
                   <div className="chat-avatar">
                     <div className="avatar-circle">
@@ -278,32 +293,38 @@ function Messages() {
           </aside>
 
           {/* Chat Window */}
-          <section className="chat-window">
+          <section className={`chat-window ${showMobileChatWindow ? 'mobile-show' : ''}`}>
             {selectedChat ? (
               <>
-                <div className="chat-header">
-                  <div className="header-info">
-                    <div className="header-avatar">
-                      {selectedChat.name.charAt(0).toUpperCase()}
+                <div className="chat-header manager">
+                    <button 
+                      className="mobile-back-btn"
+                      onClick={handleBackToList}
+                    >
+                      <ArrowLeft size={20} />
+                    </button>
+                    <div className="chat-name-info">
+                      <div className="header-avatar">
+                        {selectedChat.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <h3 className="header-name">{selectedChat.name}</h3>
+                        {selectedChat.apt && (
+                          <p className="header-subtitle">{selectedChat.apt}</p>
+                        )}
+                        {selectedChat.role && (
+                          <p className="header-subtitle">{selectedChat.role}</p>
+                        )}
+                        {selectedChat.members && (
+                          <p className="header-subtitle">{selectedChat.members}</p>
+                        )}
+                        {selectedChat.status && (
+                          <span className={`header-status ${selectedChat.status}`}>
+                            {selectedChat.status}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="header-name">{selectedChat.name}</h3>
-                      {selectedChat.apt && (
-                        <p className="header-subtitle">{selectedChat.apt}</p>
-                      )}
-                      {selectedChat.role && (
-                        <p className="header-subtitle">{selectedChat.role}</p>
-                      )}
-                      {selectedChat.members && (
-                        <p className="header-subtitle">{selectedChat.members}</p>
-                      )}
-                      {selectedChat.status && (
-                        <span className={`header-status ${selectedChat.status}`}>
-                          {selectedChat.status}
-                        </span>
-                      )}
-                    </div>
-                  </div>
 
                   <div className="header-actions">
                     {activeTab === "community" && (

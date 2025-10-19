@@ -1,19 +1,12 @@
 Hello, Clocking out
-07:12:37
+00:00:00
 
 Construction Bidding App
-- Frontend (Property manager POV):
-  * favorite entrepreneurs page
-  * add review completed jobs interface
-  * add resident, personal, community, and entrepreneurs to chats pages
-  * add resident feature in chat community
-  * filtering and chat on favorites entrepreneurs
-  * created property manager profile page
-- Frontend (Entrepreneurs POV):
-  * created homepage
-  * integrate leafletjs for map base job searching
-  * add pinned property/building for job searching
-  * add advanced filtering for job searching
-  * add job bidding form
+- Frontend (Entrepreneur POV):
+    * Create submitted bids page with advanced searching and filtering
+
+- Install postgreSQL for backend integration
+- Update API endpoint documentations
+- Fix Responsiveness Issues(ongoing)
 
 Thank you!

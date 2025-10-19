@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect, useRef } from "react";
-import { Bell, Wrench, Search, Plus } from "lucide-react";
+import { Bell, Wrench, Search, Plus, X, FileText, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import "../../styles/manager/homepage.css"
 import Nav from "../../components/Nav";
@@ -145,11 +145,87 @@ function HomePage() {
     },
   ]);
 
+  const [notifications] = useState([
+    { 
+      id: 1, 
+      type: "bid",
+      bidder: "Skyline Roofing Co.", 
+      logo: "https://via.placeholder.com/60x60.png?text=SR", 
+      licenseNumber: "LIC-45821", 
+      yearsInBusiness: 12, 
+      address: "123 Elm St, Toronto, ON", 
+      averageRating: 4.7, 
+      property: "Maple Heights", 
+      apartment: "Unit 304", 
+      budget: 5200, 
+      projectDate: "2025-11-10", 
+      submissionDate: "2025-10-12", 
+      status: "pending",
+      read: false
+    },
+    { 
+      id: 2, 
+      type: "bid",
+      bidder: "ProFix Solutions Inc.", 
+      logo: "https://via.placeholder.com/60x60.png?text=PF", 
+      licenseNumber: "LIC-39204", 
+      yearsInBusiness: 8, 
+      address: "456 Oak Ave, Toronto, ON", 
+      averageRating: 4.5, 
+      property: "Maple Heights", 
+      apartment: "Unit A2010", 
+      budget: 13500, 
+      projectDate: "2025-11-15", 
+      submissionDate: "2025-10-13", 
+      status: "pending",
+      read: false
+    },
+    { 
+      id: 3, 
+      type: "completed",
+      property: "Maple Heights", 
+      apartment: "Unit B2010", 
+      workTitle: "Elevator door alignment repair",
+      contractor: "Elevator Experts Ltd.",
+      completionDate: "2025-10-14",
+      read: false
+    },
+    { 
+      id: 4, 
+      type: "completed",
+      property: "Maple Heights", 
+      apartment: "Unit E2010", 
+      workTitle: "CCTV camera installation",
+      contractor: "SecureView Systems",
+      completionDate: "2025-10-15",
+      read: true
+    },
+    { 
+      id: 5, 
+      type: "bid",
+      bidder: "BuildRight Contractors", 
+      logo: "https://via.placeholder.com/60x60.png?text=BR", 
+      licenseNumber: "LIC-52981", 
+      yearsInBusiness: 15, 
+      address: "789 Pine St, Toronto, ON", 
+      averageRating: 4.9, 
+      property: "Maple Heights", 
+      apartment: "Unit D2010", 
+      budget: 19800, 
+      projectDate: "2025-11-20", 
+      submissionDate: "2025-10-16", 
+      status: "pending",
+      read: false
+    }
+  ]);
+
   const [isHome, setIsHome] = useState(true);
   const [repair, setRepair] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchExpanded, setSearchExpanded] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const searchInputRef = useRef(null);
+  const notificationRef = useRef(null);
 
   const handleUrgentRequest = () => {
     alert("Urgent Request Triggered — This would notify all entrepreneurs.");
@@ -174,11 +250,31 @@ function HomePage() {
     }
   };
 
+  const toggleNotifications = () => {
+    setShowNotifications(!showNotifications);
+  };
+
   useEffect(() => {
     if (searchExpanded && searchInputRef.current) {
       searchInputRef.current.focus();
     }
   }, [searchExpanded]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
+    };
+
+    if (showNotifications) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showNotifications]);
 
   const filteredRepairs = repairs.filter(
     (repair) =>
@@ -187,6 +283,8 @@ function HomePage() {
       repair.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       repair.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <div className="homepage">
@@ -231,9 +329,104 @@ function HomePage() {
               >
                 <Plus size={20} />
               </button>
-              <button className="notification-btn" aria-label="Notifications">
-                <Bell size={20} />
-              </button>
+              <div className="notification-wrapper" ref={notificationRef}>
+                <button 
+                  className="notification-btn" 
+                  aria-label="Notifications"
+                  onClick={toggleNotifications}
+                >
+                  <Bell size={20} />
+                  {unreadCount > 0 && (
+                    <span className="notification-badge">{unreadCount}</span>
+                  )}
+                </button>
+
+                {showNotifications && (
+                  <div className="notification-modal">
+                    <div className="notification-header">
+                      <h3>Notifications</h3>
+                      <button 
+                        className="close-notification-btn"
+                        onClick={toggleNotifications}
+                        aria-label="Close notifications"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                    <div className="notification-list">
+                      {notifications.length === 0 ? (
+                        <div className="no-notifications">
+                          <Bell size={32} />
+                          <p>No notifications yet</p>
+                        </div>
+                      ) : (
+                        notifications.map((notification) => (
+                          <div 
+                            key={notification.id} 
+                            className={`notification-item ${!notification.read ? 'unread' : ''}`}
+                          >
+                            {notification.type === "bid" ? (
+                              <>
+                                <div className="notification-icon bid-icon">
+                                  <FileText size={20} />
+                                </div>
+                                <div className="notification-content">
+                                  <div className="notification-title">
+                                    New Bid Submission
+                                    {!notification.read && <span className="unread-dot"></span>}
+                                  </div>
+                                  <div className="notification-body">
+                                    <strong>{notification.bidder}</strong> submitted a bid for <strong>{notification.property}</strong> - {notification.apartment}
+                                  </div>
+                                  <div className="notification-meta">
+                                    <span>Budget: ${notification.budget.toLocaleString()}</span>
+                                    <span className="notification-dot">•</span>
+                                    <span>License: {notification.licenseNumber}</span>
+                                  </div>
+                                  <div className="notification-time">
+                                    {new Date(notification.submissionDate).toLocaleDateString('en-US', { 
+                                      month: 'short', 
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </div>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="notification-icon completed-icon">
+                                  <CheckCircle size={20} />
+                                </div>
+                                <div className="notification-content">
+                                  <div className="notification-title">
+                                    Work Completed
+                                    {!notification.read && <span className="unread-dot"></span>}
+                                  </div>
+                                  <div className="notification-body">
+                                    <strong>{notification.workTitle}</strong> at <strong>{notification.property}</strong> - {notification.apartment}
+                                  </div>
+                                  <div className="notification-meta">
+                                    <span>Contractor: {notification.contractor}</span>
+                                  </div>
+                                  <div className="notification-time">
+                                    {new Date(notification.completionDate).toLocaleDateString('en-US', { 
+                                      month: 'short', 
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </header>
 

@@ -16,6 +16,7 @@
   --color-status-urgent: #E74C3C;   /* Red: Urgent Work, Errors, Declined Bids */
   --color-status-warning: #F39C12;  /* Yellow/Orange: Next Year Work, Pending Submissions */
   --color-status-success: #2ECC71;  /* Green: Approved Bids, Completed Work */
+  --color-premium: #d0f52e;     /* Blue: Trial Status, Budget Unlock Info */
   --color-status-info: #3498DB;     /* Blue: Trial Status, Budget Unlock Info */
 
   --font-size-base: 16px;

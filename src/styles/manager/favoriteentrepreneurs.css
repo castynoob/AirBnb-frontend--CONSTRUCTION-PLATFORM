@@ -8,18 +8,22 @@
   color: var(--color-text-dark);
 }
 /* Page Header */
-.page-header {
+.page-header.fav {
   margin-bottom: 1rem;
+
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
-.page-header h1 {
+.page-header.fav h1 {
   font-size: 2rem;
   font-weight: var(--font-weight-lg);
   color: var(--color-primary);
   margin: 0 0 0.5rem 0;
 }
 
-.page-header p {
+.page-header.fav p {
   font-size: 1rem;
   color: var(--color-text-muted);
   margin: 0;
@@ -146,7 +150,7 @@
 }
 
 /* Card Header */
-.card-header {
+.card-header.fav {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -157,8 +161,10 @@
 }
 
 .company-info {
+  width: 100%;
+  justify-content: center;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: .5rem;
   flex: 1;
   min-width: 0;
@@ -179,7 +185,7 @@
   object-fit: cover;
 }
 
-.header-info {
+.header-info.fav {
   flex: 1;
   display: flex;
   justify-content: start;align-items: start;
@@ -211,7 +217,7 @@
 }
 
 /* Header Actions */
-.header-actions {
+.header-actions.fav {
   display: flex;
   flex-direction: row;
   gap: 0.5rem;
@@ -266,7 +272,7 @@
   box-shadow: 0 1px 3px rgba(15, 34, 61, 0.06);
 }
 
-.stat-value {
+.stat-value.fav {
   font-size: 1rem;
   font-weight: var(--font-weight-lg);
   color: var(--color-primary);
@@ -350,13 +356,6 @@
   color: var(--color-text-muted);
 }
 
-/* Responsive Design */
-@media (max-width: 1024px) {
-  .main-container {
-    margin-left: 0;
-    padding: 1.5rem;
-  }
-}
 
 @media (max-width: 768px) {
   .favorites-grid {
@@ -394,7 +393,10 @@
     gap: 0.75rem;
   }
 
-  .header-actions {
+  .header-actions.fav {
+    margin-top: .5rem;
+    align-items: start;
+    justify-content: start;
     gap: 0.375rem;
   }
 

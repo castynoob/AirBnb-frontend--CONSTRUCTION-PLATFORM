@@ -1,10 +1,11 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Search, Building2, AlertCircle, Clock, DollarSign, Hammer, X, Send, Bell, SlidersHorizontal, MapPin, Wrench, Zap, Filter } from 'lucide-react';
 import Nav from '../../components/Nav';
 import '../../styles/entrepreneur/homepageentrepreneur.css';
+import SubscriptionModal from '../../components/SubcriptionModal';
 
 // Expanded sample data with 15+ properties
 const properties = [
@@ -57,6 +58,19 @@ const jobs = [
   { id: "job-19", property_id: "prop-16", unit_id: null, title: "Siding Repair", description: "Repair damaged vinyl siding and replace missing panels.", category: "General Maintenance", urgency: "This Year", daysUntilNeeded: 80, due_date: "2026-01-05T16:00:00.000Z", estimated_duration_days: 3, budget_min: "2500.00", budget_max: "4000.00", status: "Open", bidCount: 6 },
   { id: "job-20", property_id: "prop-3", unit_id: null, title: "Landscape Renovation", description: "Complete landscape overhaul with new plants and irrigation.", category: "General Maintenance", urgency: "Next Year", daysUntilNeeded: 160, due_date: "2026-03-25T16:00:00.000Z", estimated_duration_days: 8, budget_min: "6000.00", budget_max: "10000.00", status: "Open", bidCount: 3 }
 ];
+
+// Map Controller Component for programmatic map control
+function MapController({ center, zoom }) {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (center && zoom) {
+      map.setView(center, zoom, { animate: true, duration: 1 });
+    }
+  }, [center, zoom, map]);
+  
+  return null;
+}
 
 // Create custom building icon
 const createBuildingIcon = (jobCount) => {
@@ -125,11 +139,16 @@ function HomePageEntrepreneur() {
   const [bidModalOpen, setBidModalOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
   const [bidAmount, setBidAmount] = useState('');
-  const [bidDuration, setBidDuration] = useState('');
   const [bidMessage, setBidMessage] = useState('');
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [filtersPanelOpen, setFiltersPanelOpen] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [mapCenter, setMapCenter] = useState(null);
+  const [mapZoom, setMapZoom] = useState(null);
   const searchInputRef = useRef(null);
+  const searchContainerRef = useRef(null);
+  const [userProfile, setUserProfile] = useState()
+  const [isLoading, setIsLoading] = useState(true)
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -209,6 +228,17 @@ function HomePageEntrepreneur() {
     return filtered;
   }, [searchTerm, filters]);
 
+  // Get search results for dropdown (only based on search term, not other filters)
+  const searchResults = useMemo(() => {
+    if (!searchTerm.trim()) return [];
+    
+    return properties.filter(property => {
+      const matchesSearch = property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          property.address.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesSearch && getPropertyOpenJobsCount(property.id) > 0;
+    }).slice(0, 5); // Limit to 5 results
+  }, [searchTerm]);
+
   const getUrgencyColor = (urgency) => {
     if (urgency === 'Immediate') return 'var(--color-status-urgent)';
     if (urgency === 'This Month') return 'var(--color-status-warning)';
@@ -219,13 +249,12 @@ function HomePageEntrepreneur() {
   const handleBidClick = (job) => {
     setSelectedJob(job);
     setBidAmount('');
-    setBidDuration('');
     setBidMessage('');
     setBidModalOpen(true);
   };
 
   const handleSubmitBid = () => {
-    if (!bidAmount || !bidDuration || !bidMessage) {
+    if (!bidAmount || !bidMessage) {
       alert('Please fill in all required fields');
       return;
     }
@@ -233,7 +262,6 @@ function HomePageEntrepreneur() {
     console.log('Submitting bid:', {
       jobId: selectedJob.id,
       amount: bidAmount,
-      duration: bidDuration,
       message: bidMessage
     });
     
@@ -243,12 +271,31 @@ function HomePageEntrepreneur() {
 
   const handleSearchFocus = () => {
     setSearchExpanded(true);
+    setShowSearchResults(true);
   };
 
   const handleSearchBlur = () => {
-    if (!searchTerm) {
-      setSearchExpanded(false);
-    }
+    // Delay to allow click on results
+    setTimeout(() => {
+      if (!searchTerm) {
+        setSearchExpanded(false);
+      }
+      setShowSearchResults(false);
+    }, 200);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setShowSearchResults(true);
+  };
+
+  const handleResultClick = (property) => {
+    setSelectedProperty(property);
+    setMapCenter([property.latitude, property.longitude]);
+    setMapZoom(17);
+    setSearchTerm('');
+    setShowSearchResults(false);
+    setSearchExpanded(false);
   };
 
   const handleFilterChange = (filterType, value) => {
@@ -299,11 +346,45 @@ function HomePageEntrepreneur() {
     }
   }, [searchExpanded]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setShowSearchResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    const profileString = localStorage.getItem('userProfile');
+    console.log(profileString)
+
+    if (profileString) {
+      const user = JSON.parse(profileString);
+      setUserProfile(user)
+    } else {
+      console.log("User profile not found.");
+    }
+    setIsLoading(false)
+  }, [])
+
   return (
     <div className="homepage-container">
       <Nav />
       
       <main className="main-content">
+        {
+          isLoading?
+          <div className="loading">
+            <h1>LOADING</h1>
+          </div> :
+          userProfile.subscription && userProfile.subscription.plan_type == 'none' &&
+          <SubscriptionModal />
+        }
         <header className="page-header">
           <div className="header-left">
             <h1 className="page-title">Available Construction Jobs</h1>
@@ -311,9 +392,9 @@ function HomePageEntrepreneur() {
           </div>
           
           <div className="header-actions">
-            <div className={`search-box entrep ${searchExpanded ? 'expanded' : ''}`}>
+            <div className={`search-box-entrep ${searchExpanded ? 'expanded' : ''}`} ref={searchContainerRef}>
               <button 
-                className="search-trigger-btn"
+                className="search-trigger-btn entrep"
                 onClick={handleSearchFocus}
                 aria-label="Search"
               >
@@ -324,11 +405,34 @@ function HomePageEntrepreneur() {
                 type="text"
                 placeholder="Search properties..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
                 onFocus={handleSearchFocus}
                 onBlur={handleSearchBlur}
-                className="search-input"
+                className="search-input entrep"
               />
+              
+              {showSearchResults && searchTerm && searchResults.length > 0 && (
+                <div className="search-results-dropdown">
+                  {searchResults.map((property) => (
+                    <div
+                      key={property.id}
+                      className="search-result-item"
+                      onClick={() => handleResultClick(property)}
+                    >
+                      <div className="search-result-icon">
+                        <Building2 size={20} />
+                      </div>
+                      <div className="search-result-content">
+                        <div className="search-result-name">{property.name}</div>
+                        <div className="search-result-address">{property.address}</div>
+                      </div>
+                      <div className="search-result-badge">
+                        {getPropertyOpenJobsCount(property.id)} jobs
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             
             <button 
@@ -489,7 +593,7 @@ function HomePageEntrepreneur() {
                     </div>
                     <div className="filter-inputs">
                       <div className="input-group">
-                        <label>Minimum Budget (₱)</label>
+                        <label>Minimum Budget ($)</label>
                         <input
                           type="number"
                           placeholder="e.g., 1000"
@@ -498,7 +602,7 @@ function HomePageEntrepreneur() {
                         />
                       </div>
                       <div className="input-group">
-                        <label>Maximum Budget (₱)</label>
+                        <label>Maximum Budget ($)</label>
                         <input
                           type="number"
                           placeholder="e.g., 10000"
@@ -582,11 +686,15 @@ function HomePageEntrepreneur() {
               center={[16.0418, 120.3335]}
               zoom={14}
               style={{ height: '100%', width: '100%', borderRadius: '12px' }}
+              zoomControl={false}
+              attributionControl={false}
             >
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
+              
+              <MapController center={mapCenter} zoom={mapZoom} />
               
               {filteredProperties.map((property) => {
                 const jobCount = getPropertyOpenJobsCount(property.id);
@@ -696,7 +804,7 @@ function HomePageEntrepreneur() {
                                 <DollarSign size={16} />
                                 <div>
                                   <span className="detail-label">Budget Range</span>
-                                  <span className="detail-value">₱{parseFloat(job.budget_min).toLocaleString()} - ₱{parseFloat(job.budget_max).toLocaleString()}</span>
+                                  <span className="detail-value">${parseFloat(job.budget_min).toLocaleString()} - ${parseFloat(job.budget_max).toLocaleString()}</span>
                                 </div>
                               </div>
                               <div className="detail-item">
@@ -748,9 +856,9 @@ function HomePageEntrepreneur() {
 
       {/* Bid Modal */}
       {bidModalOpen && selectedJob && (
-        <div className="modal-overlay" onClick={() => setBidModalOpen(false)}>
+        <div className="modal-overlay submit-bid" onClick={() => setBidModalOpen(false)}>
           <div className="modal-content bid-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+            <div className="modal-header submit-bid">
               <h2>Submit Your Bid</h2>
               <button className="modal-close" onClick={() => setBidModalOpen(false)}>
                 <X size={24} />
@@ -762,13 +870,13 @@ function HomePageEntrepreneur() {
                 <h3>{selectedJob.title}</h3>
                 <p className="job-summary-category">{selectedJob.category}</p>
                 <p className="job-summary-budget">
-                  Budget Range: ₱{parseFloat(selectedJob.budget_min).toLocaleString()} - ₱{parseFloat(selectedJob.budget_max).toLocaleString()}
+                  Budget Range: ${parseFloat(selectedJob.budget_min).toLocaleString()} - ${parseFloat(selectedJob.budget_max).toLocaleString()}
                 </p>
               </div>
 
               <div className="bid-form">
                 <div className="form-group">
-                  <label htmlFor="bidAmount">Your Bid Amount (₱) *</label>
+                  <label htmlFor="bidAmount">Your Bid Amount ($) *</label>
                   <input
                     type="number"
                     id="bidAmount"
@@ -779,18 +887,6 @@ function HomePageEntrepreneur() {
                     max={selectedJob.budget_max}
                   />
                   <span className="form-hint">Must be between budget range</span>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="bidDuration">Estimated Duration (days) *</label>
-                  <input
-                    type="number"
-                    id="bidDuration"
-                    value={bidDuration}
-                    onChange={(e) => setBidDuration(e.target.value)}
-                    placeholder="Enter estimated days"
-                    min="1"
-                  />
                 </div>
 
                 <div className="form-group">
