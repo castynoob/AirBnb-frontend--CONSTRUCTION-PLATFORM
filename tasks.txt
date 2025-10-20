@@ -1,11 +1,13 @@
 Hello, Clocking out
-00:00:00
+05:25:32
 
 Construction Bidding App
 - Define and update API endpoints
-- Create form with interactive map for adding property
-- Test and integrate API endpoints
 - Update Database Schema
-- Implement adding of property for property manager
+
+- Backend testing and integration:
+    * Create form with interactive map and location based for adding property
+    * Implement adding of property for property manager
+    * Implement adding new Job/Work
 
 Thank you!

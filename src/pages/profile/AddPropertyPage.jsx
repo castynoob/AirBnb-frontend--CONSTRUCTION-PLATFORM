@@ -160,7 +160,10 @@ function AddPropertyPage() {
       if(userProfile) {
         const user = JSON.parse(userProfile);
         const token = user.token
-        const response = await fetch('http://localhost:5000/api/properties', {
+
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+        const response = await fetch(`${API_BASE_URL}/api/properties`, {
             method: 'POST',
             headers: {
                 "Content-Type": "application/json",

@@ -149,6 +149,7 @@ function HomePageEntrepreneur() {
   const searchContainerRef = useRef(null);
   const [userProfile, setUserProfile] = useState()
   const [isLoading, setIsLoading] = useState(true)
+
   
   // data variables
   // const [properties, setProperties] = useState([])
@@ -365,16 +366,21 @@ function HomePageEntrepreneur() {
   }, []);
 
   useEffect(() => {
-    const profileString = localStorage.getItem('userProfile');
-    console.log(profileString)
+    const fetchProperties = async () => {
+      const profileString = localStorage.getItem('userProfile');
+      console.log(profileString)
 
-    if (profileString) {
-      const user = JSON.parse(profileString);
-      setUserProfile(user)
-    } else {
-      console.log("User profile not found.");
+      if (profileString) {
+        const user = JSON.parse(profileString);
+        setUserProfile(user)
+
+      } else {
+        console.log("User profile not found.");
+      }
+      setIsLoading(false)
     }
-    setIsLoading(false)
+
+    fetchProperties()
   }, [])
 
   return (

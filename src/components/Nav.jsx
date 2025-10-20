@@ -6,13 +6,12 @@ import '../styles/nav.css'
 
 function Nav() {
   const navigate = useNavigate();
-  const [role, setRole] = useState('manager')
+  const [role, setRole] = useState('entrepreneur')
   const [userProfile, setUserProfile] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const profileString = localStorage.getItem('userProfile');
-    console.log(profileString)
 
     if (profileString) {
       const user = JSON.parse(profileString);

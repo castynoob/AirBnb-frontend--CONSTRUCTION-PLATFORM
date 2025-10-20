@@ -1,10 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Nav from "../../components/Nav";
 import {
   ArrowLeft,
   Building2,
-  Home,
   MapPin,
   DollarSign,
   FileText,
@@ -12,34 +11,70 @@ import {
   X,
   AlertCircle,
   Tag,
+  Calendar,
+  Clock
 } from "lucide-react";
-import "../../styles/manager/addworkform.css"
+import "../../styles/manager/addworkform.css";
 
 function AddWorkForm() {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
-    property: "",
-    address: "",
-    apartment: "",
-    category: "Urgent (Current Year)",
+    property_id: "",
+    title: "",
     description: "",
-    budgetMin: "",
-    budgetMax: "",
+    category: "Roofing",
+    urgency: "Urgent (Current Year)",
+    due_date: "",
+    estimated_duration_days: "",
+    budget_min: "",
+    budget_max: "",
+    is_budget_hidden: false,
+    is_emergency: false,
+    status: "Open",
   });
 
   const [images, setImages] = useState([]);
   const [errors, setErrors] = useState({});
+  const [properties, setProperties] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        const userProfile = localStorage.getItem("userProfile");
+        const user = JSON.parse(userProfile);
+        const token = user.token;
+
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+        const res = await fetch(`${API_BASE_URL}/api/properties`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+
+        const data = await res.json();
+        setProperties(data.properties);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, []);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
+
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleImageUpload = (e) => {
@@ -50,10 +85,7 @@ function AddWorkForm() {
       name: file.name,
     }));
     setImages((prev) => [...prev, ...newImages]);
-    // Clear image error if images are uploaded
-    if (errors.images) {
-      setErrors((prev) => ({ ...prev, images: "" }));
-    }
+    if (errors.images) setErrors((prev) => ({ ...prev, images: "" }));
   };
 
   const removeImage = (index) => {
@@ -62,57 +94,110 @@ function AddWorkForm() {
 
   const validateForm = () => {
     const newErrors = {};
-
-    if (!formData.property.trim()) newErrors.property = "Property name is required";
-    if (!formData.address.trim()) newErrors.address = "Address is required";
-    if (!formData.apartment.trim()) newErrors.apartment = "Apartment/Unit is required";
-    if (!formData.description.trim()) newErrors.description = "Description is required";
-    if (!formData.budgetMin) newErrors.budgetMin = "Minimum budget is required";
-    if (!formData.budgetMax) newErrors.budgetMax = "Maximum budget is required";
-    
-    if (formData.budgetMin && formData.budgetMax) {
-      if (parseFloat(formData.budgetMin) > parseFloat(formData.budgetMax)) {
-        newErrors.budgetMax = "Maximum budget must be greater than minimum";
-      }
-    }
-
-    if (images.length === 0) {
-      newErrors.images = "At least one image is required";
-    }
+    if (!formData.property_id) newErrors.property_id = "Property is required";
+    if (!formData.title.trim()) newErrors.title = "Title is required";
+    if (!formData.description.trim())
+      newErrors.description = "Description is required";
+    if (!formData.budget_min) newErrors.budget_min = "Minimum budget required";
+    if (!formData.budget_max) newErrors.budget_max = "Maximum budget required";
+    if (
+      formData.budget_min &&
+      formData.budget_max &&
+      parseFloat(formData.budget_min) > parseFloat(formData.budget_max)
+    )
+      newErrors.budget_max =
+        "Maximum budget must be greater than minimum budget";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      // Scroll to first error
-      const firstErrorElement = document.querySelector('.error');
-      if (firstErrorElement) {
-        firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    if (!validateForm()) return;
+
+    try {
+      const userProfile = localStorage.getItem("userProfile");
+      if (!userProfile) {
+        alert("User not logged in!");
+        return;
       }
-      return;
+
+      const user = JSON.parse(userProfile);
+      const token = user?.token;
+
+      if (!token) {
+        alert("No authentication token found!");
+        return;
+      }
+
+      const jobData = {
+        property_id: formData.property_id || null,
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        urgency: formData.urgency,
+        due_date: formData.due_date,
+        estimated_duration_days: parseInt(formData.estimated_duration_days) || null,
+        budget_min: parseFloat(formData.budget_min),
+        budget_max: parseFloat(formData.budget_max),
+        is_budget_hidden: formData.is_budget_hidden || false,
+        is_emergency: formData.is_emergency || false,
+        status: "Open",
+      };
+
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+      const res = await fetch(`${API_BASE_URL}/api/jobs`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(jobData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("Error response:", data);
+        alert(data.message || "Failed to create job.");
+        return;
+      }
+
+      alert("Job created successfully!");
+      console.log("Created Job:", data);
+
+      // Optionally reset form after success
+      setFormData({
+        property_id: "",
+        title: "",
+        description: "",
+        category: "Roofing",
+        urgency: "Urgent (Current Year)",
+        due_date: "",
+        estimated_duration_days: "",
+        budget_min: "",
+        budget_max: "",
+        is_budget_hidden: false,
+        is_emergency: false,
+        status: "Open",
+      });
+    } catch (error) {
+      console.error("Error creating job:", error);
+      alert("Something went wrong while creating the job.");
     }
-
-    // Create the repair object
-    const newRepair = {
-      id: Date.now(),
-      property: formData.property,
-      address: formData.address,
-      apartment: formData.apartment,
-      category: formData.category,
-      description: formData.description,
-      bids: 0,
-      budget: `$${formData.budgetMin} - $${formData.budgetMax}`,
-      images: images.map((img) => img.preview),
-    };
-
-    console.log("New Repair Work:", newRepair);
-    alert("Work/Repair added successfully!");
-    navigate("/homepage/manager");
   };
+
+
+  if (isLoading) {
+    return (
+      <div className="loading">
+        <h1>Loading Properties...</h1>
+      </div>
+    );
+  }
 
   return (
     <div className="add-work-page">
@@ -125,99 +210,110 @@ function AddWorkForm() {
             <span>Back</span>
           </button>
           <div>
-            <h1>Add New Work/Repair</h1>
+            <h1>Add New Work | Repair | Job</h1>
             <p>Submit a new repair request for your property</p>
           </div>
         </header>
 
         <form className="add-work-form" onSubmit={handleSubmit}>
-          {/* Property Information Section */}
+          {/* Property Selection */}
           <section className="form-section">
-            <h2 className="section-title">Property Information</h2>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="property">
-                  <Building2 size={16} />
-                  Property Name <span className="required">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="property"
-                  name="property"
-                  value={formData.property}
+            <h2 className="section-title">Select Property</h2>
+            <div className="form-group property-select">
+              <label htmlFor="property_id">
+                <Building2 size={16} /> Property <span className="required">*</span>
+              </label>
+              <div className="select-wrapper styled-select">
+                <select
+                  id="property_id"
+                  name="property_id"
+                  value={formData.property_id}
                   onChange={handleChange}
-                  placeholder="e.g., Maple Heights"
-                  className={errors.property ? "error" : ""}
-                />
-                {errors.property && (
-                  <span className="error-message">
-                    <AlertCircle size={14} />
-                    {errors.property}
-                  </span>
-                )}
+                >
+                  <option value="">-- Choose Property --</option>
+                  {properties.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.building_name}
+                    </option>
+                  ))}
+                </select>
+                <span className="dropdown-icon">▾</span>
               </div>
-
-              <div className="form-group">
-                <label htmlFor="apartment">
-                  <Home size={16} />
-                  Apartment/Unit <span className="required">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="apartment"
-                  name="apartment"
-                  value={formData.apartment}
-                  onChange={handleChange}
-                  placeholder="e.g., A2010"
-                  className={errors.apartment ? "error" : ""}
-                />
-                {errors.apartment && (
-                  <span className="error-message">
-                    <AlertCircle size={14} />
-                    {errors.apartment}
-                  </span>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="address">
-                  <MapPin size={16} />
-                  Full Address <span className="required">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  placeholder="e.g., 123 Main St, Toronto"
-                  className={errors.address ? "error" : ""}
-                />
-                {errors.address && (
-                  <span className="error-message">
-                    <AlertCircle size={14} />
-                    {errors.address}
-                  </span>
-                )}
-              </div>
+              {errors.property_id && (
+                <span className="error-message">
+                  <AlertCircle size={14} /> {errors.property_id}
+                </span>
+              )}
             </div>
           </section>
 
-          {/* Work Details Section */}
+          {/* Work Details */}
           <section className="form-section">
             <h2 className="section-title">Work Details</h2>
 
+            <div className="form-group">
+              <label htmlFor="title">
+                <Tag size={16} /> Title <span className="required">*</span>
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                placeholder="e.g., Roof Repair Needed"
+                className={errors.title ? "error" : ""}
+              />
+              {errors.title && (
+                <span className="error-message">
+                  <AlertCircle size={14} /> {errors.title}
+                </span>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="description">
+                <FileText size={16} /> Description <span className="required">*</span>
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                placeholder="Describe the work to be done..."
+                rows="5"
+                className={errors.description ? "error" : ""}
+              />
+              {errors.description && (
+                <span className="error-message">
+                  <AlertCircle size={14} /> {errors.description}
+                </span>
+              )}
+            </div>
+
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="category">
-                  <Tag size={16} />
-                  Category <span className="required">*</span>
-                </label>
+                <label htmlFor="category">Category</label>
                 <select
                   id="category"
                   name="category"
                   value={formData.category}
+                  onChange={handleChange}
+                >
+                  <option value="Roofing">Roofing</option>
+                  <option value="Plumbing">Plumbing</option>
+                  <option value="Electrical">Electrical</option>
+                  <option value="Painting">Painting</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="urgency">Urgency</label>
+                <select
+                  id="urgency"
+                  name="urgency"
+                  value={formData.urgency}
                   onChange={handleChange}
                 >
                   <option value="Urgent (Current Year)">Urgent (Current Year)</option>
@@ -225,83 +321,98 @@ function AddWorkForm() {
                   <option value="Year After">Year After</option>
                 </select>
               </div>
+            </div>
 
+            <div className="form-row">
               <div className="form-group">
-                <label htmlFor="budgetMin">
-                  <DollarSign size={16} />
-                  Minimum Budget <span className="required">*</span>
+                <label htmlFor="due_date">
+                  <Calendar size={16} /> Due Date
                 </label>
                 <input
-                  type="number"
-                  id="budgetMin"
-                  name="budgetMin"
-                  value={formData.budgetMin}
+                  type="date"
+                  id="due_date"
+                  name="due_date"
+                  value={formData.due_date}
                   onChange={handleChange}
-                  placeholder="e.g., 12000"
-                  min="0"
-                  step="100"
-                  className={errors.budgetMin ? "error" : ""}
                 />
-                {errors.budgetMin && (
-                  <span className="error-message">
-                    <AlertCircle size={14} />
-                    {errors.budgetMin}
-                  </span>
-                )}
               </div>
 
               <div className="form-group">
-                <label htmlFor="budgetMax">
-                  <DollarSign size={16} />
-                  Maximum Budget <span className="required">*</span>
+                <label htmlFor="estimated_duration_days">
+                  <Clock size={16} /> Duration (Days)
                 </label>
                 <input
                   type="number"
-                  id="budgetMax"
-                  name="budgetMax"
-                  value={formData.budgetMax}
+                  id="estimated_duration_days"
+                  name="estimated_duration_days"
+                  value={formData.estimated_duration_days}
                   onChange={handleChange}
-                  placeholder="e.g., 15000"
-                  min="0"
-                  step="100"
-                  className={errors.budgetMax ? "error" : ""}
+                  placeholder="e.g., 5"
+                  min="1"
                 />
-                {errors.budgetMax && (
-                  <span className="error-message">
-                    <AlertCircle size={14} />
-                    {errors.budgetMax}
-                  </span>
-                )}
               </div>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="description">
-                <FileText size={16} />
-                Description <span className="required">*</span>
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder="Describe the repair work needed in detail..."
-                rows="6"
-                className={errors.description ? "error" : ""}
-              />
-              {errors.description && (
-                <span className="error-message">
-                  <AlertCircle size={14} />
-                  {errors.description}
-                </span>
-              )}
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="budget_min">
+                  <DollarSign size={16} /> Minimum Budget
+                </label>
+                <input
+                  type="number"
+                  id="budget_min"
+                  name="budget_min"
+                  value={formData.budget_min}
+                  onChange={handleChange}
+                  placeholder="e.g., 5000"
+                  min="0"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="budget_max">
+                  <DollarSign size={16} /> Maximum Budget
+                </label>
+                <input
+                  type="number"
+                  id="budget_max"
+                  name="budget_max"
+                  value={formData.budget_max}
+                  onChange={handleChange}
+                  placeholder="e.g., 8000"
+                  min="0"
+                />
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="checkbox-group">
+                <input
+                  type="checkbox"
+                  id="is_budget_hidden"
+                  name="is_budget_hidden"
+                  checked={formData.is_budget_hidden}
+                  onChange={handleChange}
+                />
+                <label htmlFor="is_budget_hidden">Hide Budget from Entrepreneurs</label>
+              </div>
+
+              <div className="checkbox-group">
+                <input
+                  type="checkbox"
+                  id="is_emergency"
+                  name="is_emergency"
+                  checked={formData.is_emergency}
+                  onChange={handleChange}
+                />
+                <label htmlFor="is_emergency">Mark as Emergency</label>
+              </div>
             </div>
           </section>
 
           {/* Image Upload Section */}
           <section className="form-section">
             <h2 className="section-title">Upload Images</h2>
-
             <div className="upload-area">
               <input
                 type="file"
@@ -320,8 +431,7 @@ function AddWorkForm() {
 
             {errors.images && images.length === 0 && (
               <span className="error-message">
-                <AlertCircle size={14} />
-                {errors.images}
+                <AlertCircle size={14} /> {errors.images}
               </span>
             )}
 
@@ -334,7 +444,6 @@ function AddWorkForm() {
                       type="button"
                       className="remove-image-btn"
                       onClick={() => removeImage(index)}
-                      aria-label="Remove image"
                     >
                       <X size={16} />
                     </button>
@@ -344,17 +453,12 @@ function AddWorkForm() {
             )}
           </section>
 
-          {/* Form Actions */}
           <div className="form-actions">
-            <button
-              type="button"
-              className="cancel-btn"
-              onClick={() => navigate(-1)}
-            >
+            <button type="button" className="cancel-btn" onClick={() => navigate(-1)}>
               Cancel
             </button>
             <button type="submit" className="submit-btn">
-              Add Work/Repair
+              Add Job
             </button>
           </div>
         </form>

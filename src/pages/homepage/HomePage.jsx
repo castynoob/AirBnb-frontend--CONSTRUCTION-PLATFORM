@@ -231,7 +231,7 @@ function HomePage() {
   //         const user = JSON.parse(userProfile);
   //         const token = user.token;
 
-  //         const response = await fetch("http://localhost:5000/api/jobs", {
+  //         const response = await fetch("http://192.168.0.184:5000/api/jobs", {
   //           headers: {
   //             "Content-Type": "application/json",
   //             "Authorization": `Bearer ${token}`

@@ -391,3 +391,55 @@
     gap: 1rem;
   }
 }
+
+/* Property Select Custom Styling */
+.property-select {
+  position: relative;
+}
+
+.select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.select-wrapper select {
+  width: 100%;
+  padding: 0.875rem 1.125rem;
+  padding-right: 2.5rem; /* space for arrow */
+  border: 1px solid var(--color-border-divider);
+  border-radius: 8px;
+  background-color: var(--color-white);
+  color: var(--color-text-dark);
+  font-size: 0.9375rem;
+  font-family: "Inter", sans-serif;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  transition: all 0.2s ease;
+}
+
+.select-wrapper select:hover {
+  border-color: var(--color-secondary);
+}
+
+.select-wrapper select:focus {
+  outline: none;
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 3px rgba(0, 165, 169, 0.15);
+}
+
+/* Dropdown icon styling */
+.select-wrapper .dropdown-icon {
+  position: absolute;
+  right: 1rem;
+  font-size: 1rem;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  transition: color 0.2s ease;
+}
+
+.select-wrapper select:focus + .dropdown-icon {
+  color: var(--color-secondary);
+}
