@@ -149,6 +149,11 @@ function HomePageEntrepreneur() {
   const searchContainerRef = useRef(null);
   const [userProfile, setUserProfile] = useState()
   const [isLoading, setIsLoading] = useState(true)
+  
+  // data variables
+  // const [properties, setProperties] = useState([])
+  // const [units, setUnits] = useState([])
+  // const [jobs, setJobs] = useState([])
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -750,12 +755,6 @@ function HomePageEntrepreneur() {
                   <div className="stat-card">
                     <span className="stat-label">Total Units</span>
                     <span className="stat-value">{getPropertyUnits(selectedProperty.id).length}</span>
-                  </div>
-                  <div className="stat-card">
-                    <span className="stat-label">Occupied</span>
-                    <span className="stat-value">
-                      {getPropertyUnits(selectedProperty.id).filter(u => u.is_occupied).length}
-                    </span>
                   </div>
                   <div className="stat-card highlight">
                     <span className="stat-label">Open Jobs</span>

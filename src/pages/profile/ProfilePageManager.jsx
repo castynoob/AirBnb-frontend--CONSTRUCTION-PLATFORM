@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { MapPin, Building2, Home, Calendar, Edit2, Mail, Phone, User, Briefcase, Plus } from "lucide-react";
 import Nav from "../../components/Nav";
 import "../../styles/manager/profilepagemanager.css"
 
 function ProfilePageManager() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('properties');
   const [isEditing, setIsEditing] = useState(false);
 
@@ -65,6 +67,11 @@ function ProfilePageManager() {
 
   const totalUnits = properties.reduce((sum, prop) => sum + prop.num_units, 0);
   const totalCities = new Set(properties.map(p => p.city)).size;
+
+  // Handler for navigating to add property page
+  const handleAddProperty = () => {
+    navigate('/profile/add-property');
+  };
 
   return (
     <div className="profile-page">
@@ -225,7 +232,8 @@ function ProfilePageManager() {
                     </div>
                   ))}
 
-                  <div className="add-property-card">
+                  {/* Add Property Card with onClick handler */}
+                  <div className="add-property-card" onClick={handleAddProperty}>
                     <div className="add-property-content">
                       <Plus size={40} />
                       <p>Add New Property</p>

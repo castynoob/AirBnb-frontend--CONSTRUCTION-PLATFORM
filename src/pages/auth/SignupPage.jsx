@@ -88,12 +88,12 @@ const SignUp = () => {
         <div className="auth-content">
           <div className="brand-section">
             <img src={logo} alt="Logo" className="brand-logo" />
-            <h1 className="brand-name">INVERTOS</h1>
+            <h1 className="brand-name">INTERVOS</h1>
           </div>
 
           <div className="form-section">
             <h2 className="form-title">Create Account</h2>
-            <p className="form-subtitle">Sign up to get started with INVERTOS</p>
+            <p className="form-subtitle">Sign up to get started with INTERVOS</p>
 
             <form onSubmit={handleSubmit} className="auth-form">
               {/* Email */}
@@ -262,7 +262,7 @@ const SignUp = () => {
 
       <div className="auth-illustration">
         <div className="illustration-overlay">
-          <h2>Welcome to INVERTOS</h2>
+          <h2>Welcome to INTERVOS</h2>
           <p>Manage your construction projects with ease</p>
         </div>
         <img src={illustration} alt="Construction Management" />

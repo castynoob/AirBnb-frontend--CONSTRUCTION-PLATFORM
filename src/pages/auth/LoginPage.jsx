@@ -47,59 +47,80 @@ const Login = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const userProfile = {
-      id: 101,
-      role: 'entrepreneur',
-      subscription: {
-        plan_type: 'premium',
-        status: 'trialing',
-        trial_end: '2025-11-01',
-        trial_days_remaining: 14,
-        current_period_end: '2025-11-01',
-        cancel_at_period_end: false,
-        bids: {
-          used: 0,
-          limit: 30,
-          remaining: 30
-        },
-        is_trial: true,
-        price: 250
-      }
-    };
-    // const userProfile = {
-    //   id: 101,
-    //   role: 'entrepreneur',
-    //   subscription: {
-    //     plan_type: 'none',
-    //     status: '',
-    //     trial_end: '',
-    //     trial_days_remaining: 0,
-    //     current_period_end: '0',
-    //     cancel_at_period_end: true,
-    //     bids: {
-    //       used: 0,
-    //       limit: 0,
-    //       remaining: 0
-    //     },
-    //     is_trial: false,
-    //     price: 250
-    //   }
-    // };
 
-    const profileString = JSON.stringify(userProfile);
+    // navigate("/homepage/entrepreneur");
 
-    localStorage.setItem('userProfile', profileString);
-    navigate("/homepage/entrepreneur");
+
     if (!validateForm()) {
       return;
     }
 
-    console.log("Login data:", formData);
-    alert("Login successful! This is just a UI demo.");
-    navigate("/homepage/manager");
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log("DATA:", data);
+
+      // --- Construct userProfile (using backend response if available) ---
+      const userProfile = {
+        id: data.user.id || 101,
+        name: data.user.name || `${data.user.first_name || ""} ${data.user.last_name || ""}`.trim(),
+        email: data.user.email || formData.email,
+        role: data.user.role,
+        token: data.accessToken || null,
+        subscription: data.subscription || {
+          plan_type: "premium",
+          status: "trialing",
+          trial_end: "2025-11-01",
+          trial_days_remaining: 14,
+          current_period_end: "2025-11-01",
+          cancel_at_period_end: false,
+          bids: {
+            used: 0,
+            limit: 30,
+            remaining: 30,
+          },
+          is_trial: true,
+          price: 250,
+        },
+      };
+
+      // Save to localStorage
+      localStorage.setItem("userProfile", JSON.stringify(userProfile));
+      console.log("User Profile saved:", userProfile);
+
+      // alert("Login successful!");
+      console.log(userProfile)
+      // Redirect based on role
+      if (userProfile.role === "entrepreneur") {
+        navigate("/homepage/entrepreneur");
+      } else {
+        navigate("/homepage/manager");
+      }
+
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("Login failed. Please check your credentials and try again.");
+    }
+
+
   };
+
 
   return (
     <div className="auth-container">
@@ -107,7 +128,7 @@ const Login = () => {
         <div className="auth-content">
           <div className="brand-section">
             <img src={logo} alt="Logo" className="brand-logo" />
-            <h1 className="brand-name">INVERTOS</h1>
+            <h1 className="brand-name">INTERVOS</h1>
           </div>
 
           <div className="form-section">
@@ -202,7 +223,7 @@ const Login = () => {
 
       <div className="auth-illustration">
         <div className="illustration-overlay">
-          <h2>Welcome to INVERTOS</h2>
+          <h2>Welcome to INTERVOS</h2>
           <p>Manage your construction projects with ease</p>
         </div>
         <img src={illustration} alt="Construction Management" />

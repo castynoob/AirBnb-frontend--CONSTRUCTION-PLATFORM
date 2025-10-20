@@ -6,7 +6,7 @@ import '../styles/nav.css'
 
 function Nav() {
   const navigate = useNavigate();
-  const [role, setRole] = useState('entrepreneur')
+  const [role, setRole] = useState('manager')
   const [userProfile, setUserProfile] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -39,7 +39,7 @@ function Nav() {
               <img src={logo} alt="Logo" className="logo-light" />
             </div>
             <div className="brand-text">
-              <span className="brand-name nav">INVERTOS</span>
+              <span className="brand-name nav">INTERVOS</span>
               <span className="brand-subtitle">{role[0].toLocaleUpperCase() + role.substring(1, role.length)}</span>
             </div>
           </div>

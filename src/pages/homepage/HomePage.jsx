@@ -1,6 +1,6 @@
-import React, { useCallback, useState, useEffect, useRef } from "react";
+import React, { useCallback, useState, useEffect, useRef, use } from "react";
 import { Bell, Wrench, Search, Plus, X, FileText, CheckCircle } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { data, useNavigate } from "react-router-dom";
 import "../../styles/manager/homepage.css"
 import Nav from "../../components/Nav";
 import RepairList from "../../components/RepairList";
@@ -145,6 +145,10 @@ function HomePage() {
     },
   ]);
 
+  // const [repairs, setRepairs] = useState([])
+  const [properties, setProperties] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+
   const [notifications] = useState([
     { 
       id: 1, 
@@ -218,6 +222,44 @@ function HomePage() {
       read: false
     }
   ]);
+
+  // useEffect(() => {
+  //   const fetchProperties = async () => {
+  //     try {
+  //       const userProfile = localStorage.getItem('userProfile')
+  //       if(userProfile) {
+  //         const user = JSON.parse(userProfile);
+  //         const token = user.token;
+
+  //         const response = await fetch("http://localhost:5000/api/jobs", {
+  //           headers: {
+  //             "Content-Type": "application/json",
+  //             "Authorization": `Bearer ${token}`
+  //           }
+  //         });
+
+  //         if(!response.ok) {
+  //           throw new Error("Failed to fetch properties");
+  //         }
+
+  //         const data = await response.json()
+  //         console.log("DATA: ", data)
+  //         setProperties(data)
+
+          
+  //       }
+  //       console.log('')
+
+  //     } catch (err) {
+  //       setIsLoading(false)
+  //       console.log(err)
+  //     } finally {
+  //       setIsLoading(false)
+  //     }
+  //   }
+
+  //   fetchProperties()
+  // }, [])
 
   const [isHome, setIsHome] = useState(true);
   const [repair, setRepair] = useState(null);

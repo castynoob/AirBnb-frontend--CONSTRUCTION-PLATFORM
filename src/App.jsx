@@ -11,7 +11,8 @@ import ProfilePageManager from "./pages/profile/ProfilePageManager";
 import HomePageEntrepreneur from "./pages/homepage/HomePageEntrepreneur";
 import MessagesEntrepreneur from './pages/messages/MessagesEntrepreneur';
 import SubscriptionPage from './pages/subscription/SubscriptionPage';
-import SubmittedBids from './pages/submissions/SubmittedBids'
+import SubmittedBids from './pages/submissions/SubmittedBids';
+import AddPropertyPage from "./pages/profile/AddPropertyPage";
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
           <Route path="/messages/entrepreneur" element={<MessagesEntrepreneur/>} />
           <Route path="/subscription/entrepreneur" element={<SubscriptionPage/>} />
           <Route path="/submissions/entrepreneur" element={<SubmittedBids/>} />
+          <Route path="/profile/add-property" element={<AddPropertyPage/>} />
         </Routes>
       </div>
     </Router>

@@ -1,3 +1,27 @@
 in the reviews, it has images list
 resident must have unit id
 create location based job searching
+
+- Need ng api to get all jobs
+- Get jobs by manager id
+- Check image entities for tables (users, property_manager, jobs, entrepreneurs)
+
+get jobs with (property, units, jobs) entities:
+    all units entities
+    all jobs entities
+    property:
+    - building_name
+    - address
+    - city, province, postal_code
+    - building_type
+
+Create a endpoint where the entrepreneurs can view all properties:
+Needed table(property, units, jobs, property_manager) return response must all of the entites of these tables
+
+
+Create and update Endpoint documentations
+- Authentication
+- Subscriptions endpoint
+
+Problems:
+- Hindi nag aadd yung building name sa DB when adding appartment

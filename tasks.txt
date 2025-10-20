@@ -2,11 +2,10 @@ Hello, Clocking out
 00:00:00
 
 Construction Bidding App
-- Frontend (Entrepreneur POV):
-    * Create submitted bids page with advanced searching and filtering
-
-- Install postgreSQL for backend integration
-- Update API endpoint documentations
-- Fix Responsiveness Issues(ongoing)
+- Define and update API endpoints
+- Create form with interactive map for adding property
+- Test and integrate API endpoints
+- Update Database Schema
+- Implement adding of property for property manager
 
 Thank you!
