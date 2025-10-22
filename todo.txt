@@ -13,6 +13,7 @@ MANAGER:
   id | manager_id | address | city | province | postal_code | num_units | building_type | created_at | updated_at
 - add hire on work/job details view
 - work in progress
+- in jobs, return how many bids in the job
 
 ENTREP:
 - integrate location based
@@ -27,5 +28,7 @@ ENTREP:
 
 GENERAL:
 - fix Responsiveness
+- Registration
+- Add skeleton loading and lazy loading
 
 DONE:

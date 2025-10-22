@@ -1,13 +1,19 @@
 Hello, Clocking out
-05:25:32
+Oct 22, 2025
+00:00:00
 
-Construction Bidding App
-- Define and update API endpoints
-- Update Database Schema
+Intervos App
 
-- Backend testing and integration:
-    * Create form with interactive map and location based for adding property
-    * Implement adding of property for property manager
-    * Implement adding new Job/Work
+- Backend testing and integration to frontend:
+    * Implement job searching
+    * Displaying jobs on interactive map
+    * Implement job bidding submission
+    * Integrates bidding submissions to entrepreneurs POV
+    * Integrate jobs list backend to frontend
+    * Integrate job details with bidders list
+
+- Update database Schema
+- Modifying and testing API endpoints (ongoing)
+- Created and update documentations for API endpoints
 
 Thank you!

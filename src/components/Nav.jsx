@@ -6,7 +6,7 @@ import '../styles/nav.css'
 
 function Nav() {
   const navigate = useNavigate();
-  const [role, setRole] = useState('entrepreneur')
+  const [role, setRole] = useState('property_manager')
   const [userProfile, setUserProfile] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -16,6 +16,7 @@ function Nav() {
     if (profileString) {
       const user = JSON.parse(profileString);
       setUserProfile(user)
+      setRole(user.role)
     } else {
       console.log("User profile not found.");
     }

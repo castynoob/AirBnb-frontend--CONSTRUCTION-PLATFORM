@@ -13,20 +13,22 @@ import MessagesEntrepreneur from './pages/messages/MessagesEntrepreneur';
 import SubscriptionPage from './pages/subscription/SubscriptionPage';
 import SubmittedBids from './pages/submissions/SubmittedBids';
 import AddPropertyPage from "./pages/profile/AddPropertyPage";
+import LandingPage from "./pages/landingpage/LandingPage";
 
 function App() {
   return (
     <Router>
       <div className="main-app">
         <Routes>
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<SignUp />} />
-          <Route path="/homepage/manager" element={<HomePage/>} />
-          <Route path="/messages/manager" element={<Messages/>} />
-          <Route path="/submissions/manager" element={<Submissions/>} />
-          <Route path="/favorites/manager" element={<FavoriteEntrepreneurs/>} />
-          <Route path="/add-work/manager" element={<AddWorkForm/>} />
-          <Route path="/profile/manager" element={<ProfilePageManager/>} />
+          <Route path="/homepage/property_manager" element={<HomePage/>} />
+          <Route path="/messages/property_manager" element={<Messages/>} />
+          <Route path="/submissions/property_manager" element={<Submissions/>} />
+          <Route path="/favorites/property_manager" element={<FavoriteEntrepreneurs/>} />
+          <Route path="/add-work/property_manager" element={<AddWorkForm/>} />
+          <Route path="/profile/property_manager" element={<ProfilePageManager/>} />
           <Route path="/homepage/entrepreneur" element={<HomePageEntrepreneur/>} />
           <Route path="/messages/entrepreneur" element={<MessagesEntrepreneur/>} />
           <Route path="/subscription/entrepreneur" element={<SubscriptionPage/>} />

@@ -11,6 +11,7 @@ function AddPropertyPage() {
   const [map, setMap] = useState(null);
   
   const [formData, setFormData] = useState({
+    building_name: "",
     address: "",
     city: "",
     province: "",
@@ -19,7 +20,6 @@ function AddPropertyPage() {
     building_type: "Apartment",
     latitude: 14.5995, // Default to Philippines coordinates
     longitude: 120.9842,
-    name: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -69,7 +69,6 @@ function AddPropertyPage() {
 
         marker.on('dragend', function(e) {
           const position = marker.getLatLng();
-          console.log(position)
           setFormData(prev => ({
             ...prev,
             latitude: position.lat,
@@ -79,7 +78,6 @@ function AddPropertyPage() {
 
         mapInstance.on('click', function(e) {
           marker.setLatLng(e.latlng);
-          console.log(e.latlng)
           setFormData(prev => ({
             ...prev,
             latitude: e.latlng.lat,
@@ -187,7 +185,7 @@ function AddPropertyPage() {
       console.log("Property submitted:", formData);
       
       // Navigate back to profile page
-      navigate('/profile/manager');
+      navigate('/profile/property_manager');
       
     } catch (error) {
       console.error("Error submitting form:", error);
@@ -199,7 +197,7 @@ function AddPropertyPage() {
 
   const handleCancel = () => {
     if (window.confirm("Are you sure you want to cancel? All unsaved changes will be lost.")) {
-      navigate('/profile/manager');
+      navigate('/profile/property_manager');
     }
   };
 
@@ -211,7 +209,7 @@ function AddPropertyPage() {
         {/* Header */}
         <div className="page-header-ap">
           <div className="header-title-ap">
-            <button className="back-button" onClick={() => navigate('/profile/manager')}>
+            <button className="back-button" onClick={() => navigate('/profile/property_manager')}>
                 <ArrowLeft size={20} />
                 <span>Back to Profile</span>
             </button>
@@ -244,7 +242,7 @@ function AddPropertyPage() {
                     </label>
                     <input
                       type="text"
-                      name="name"
+                      name="building_name"
                       className={`form-input ${errors.name ? 'error' : ''}`}
                       value={formData.name}
                       onChange={handleInputChange}

@@ -18,6 +18,7 @@
   --color-status-success: #2ECC71;  /* Green: Approved Bids, Completed Work */
   --color-premium: #d0f52e;     /* Blue: Trial Status, Budget Unlock Info */
   --color-status-info: #3498DB;     /* Blue: Trial Status, Budget Unlock Info */
+  --color-disabled: #aa3434;
 
   --font-size-base: 16px;
   --font-weight-sm: 300;

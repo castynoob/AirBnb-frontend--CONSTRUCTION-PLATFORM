@@ -1,421 +1,447 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Filter, X, MapPin, DollarSign, Calendar, FileText, ChevronDown, Clock, CheckCircle, PlayCircle, MessageCircle, Star, Building2, User } from 'lucide-react';
-import Nav from '../../components/Nav'
-import '../../styles/manager/submissions.css'
+"use client"
+
+import { useState, useEffect } from "react"
+import {
+  Search,
+  Filter,
+  X,
+  DollarSign,
+  Calendar,
+  FileText,
+  ChevronDown,
+  Clock,
+  CheckCircle,
+  PlayCircle,
+  MessageCircle,
+  Star,
+  Building2,
+  User,
+} from "lucide-react"
+import Nav from "../../components/Nav"
+import "../../styles/manager/submissions.css"
 
 function SubmissionsPage() {
-  const [submissions, setSubmissions] = useState([]);
-  const [filteredSubmissions, setFilteredSubmissions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('all');
+  const [submissions, setSubmissions] = useState([])
+  const [filteredSubmissions, setFilteredSubmissions] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [activeTab, setActiveTab] = useState("all")
+  const [expandedCards, setExpandedCards] = useState({})
 
   // Filter states
-  const [searchTerm, setSearchTerm] = useState('');
-  const [locationFilter, setLocationFilter] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [amountRange, setAmountRange] = useState({ min: '', max: '' });
-  const [dateRange, setDateRange] = useState({ start: '', end: '' });
-  const [showFilters, setShowFilters] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("")
+  const [locationFilter, setLocationFilter] = useState("")
+  const [categoryFilter, setCategoryFilter] = useState("")
+  const [amountRange, setAmountRange] = useState({ min: "", max: "" })
+  const [dateRange, setDateRange] = useState({ start: "", end: "" })
+  const [showFilters, setShowFilters] = useState(false)
 
-  // Mock data generator
   useEffect(() => {
-    const mockSubmissions = [
-      {
-        bid: {
-          id: "bid-1",
-          job_id: "job-1",
-          entrepreneur_id: "ent-1",
-          amount: 6500.00,
-          message: "I have 10 years of roofing experience and can start immediately.",
-          status: "pending",
-          created_at: "2025-01-16T10:30:00.000Z",
-        },
-        job: {
-          id: "job-1",
-          title: "Roof Repair Needed",
-          description: "Replace damaged shingles on building roof",
-          category: "Roofing",
-          urgency: "Urgent (Current Year)",
-          budget_min: 5000.00,
-          budget_max: 8000.00,
-        },
-        property: {
-          id: "prop-1",
-          address: "123 Maple Street",
-          city: "Montreal",
-          province: "Quebec",
-          building_type: "Apartment",
-        },
-        entrepreneur: {
-          name: "Skyline Roofing Co.",
-          rating: 4.7,
-          yearsExperience: 10,
+    const fetchSubmissions = async () => {
+      try {
+        setLoading(true)
+        const userProfile = localStorage.getItem("userProfile")
+
+        if (!userProfile) {
+          setError("User profile not found")
+          setLoading(false)
+          return
         }
-      },
-      {
-        bid: {
-          id: "bid-2",
-          job_id: "job-2",
-          entrepreneur_id: "ent-2",
-          amount: 3200.00,
-          message: "Experienced plumber ready to start immediately with all necessary equipment.",
-          status: "accepted",
-          created_at: "2025-01-15T14:20:00.000Z",
-        },
-        job: {
-          id: "job-2",
-          title: "Plumbing System Upgrade",
-          description: "Update old pipes in basement",
-          category: "Plumbing",
-          urgency: "Next Year",
-          budget_min: 3000.00,
-          budget_max: 5000.00,
-        },
-        property: {
-          id: "prop-2",
-          address: "456 Oak Avenue",
-          city: "Toronto",
-          province: "Ontario",
-          building_type: "Condo",
-        },
-        entrepreneur: {
-          name: "UrbanBuild Contractors",
-          rating: 4.5,
-          yearsExperience: 8,
+
+        const user = JSON.parse(userProfile)
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+        // Fetch jobs for the manager
+        const jobsResponse = await fetch(`${API_BASE_URL}/api/jobs/manager/${user.id}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        })
+
+        if (!jobsResponse.ok) {
+          throw new Error(`Failed to fetch jobs: ${jobsResponse.status}`)
         }
-      },
-      {
-        bid: {
-          id: "bid-3",
-          job_id: "job-3",
-          entrepreneur_id: "ent-3",
-          amount: 8900.00,
-          message: "Full electrical rewiring with 5-year warranty included.",
-          status: "ongoing",
-          created_at: "2025-01-14T09:15:00.000Z",
-        },
-        job: {
-          id: "job-3",
-          title: "Electrical Rewiring",
-          description: "Complete electrical system overhaul",
-          category: "Electrical",
-          urgency: "Urgent (Current Year)",
-          budget_min: 7000.00,
-          budget_max: 10000.00,
-        },
-        property: {
-          id: "prop-3",
-          address: "789 Pine Road",
-          city: "Vancouver",
-          province: "British Columbia",
-          building_type: "Apartment",
-        },
-        entrepreneur: {
-          name: "Apex Electrical Services",
-          rating: 4.9,
-          yearsExperience: 15,
+
+        const jobsData = await jobsResponse.json()
+        const jobs = jobsData.jobs || []
+
+        // Fetch bids and property details for each job
+        const submissionsData = []
+
+        for (const job of jobs) {
+          try {
+            // Fetch bids for this job (includes entrepreneur info)
+            const bidsResponse = await fetch(`${API_BASE_URL}/api/bids/job/${job.id}`, {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${user.token}`,
+              },
+            })
+
+            if (!bidsResponse.ok) {
+              console.warn(`Failed to fetch bids for job ${job.id}`)
+              continue
+            }
+
+            const bidsData = await bidsResponse.json()
+            const bids = bidsData.bids || []
+
+            // Fetch property details
+            let propertyAddress = "Unknown Location"
+            if (job.property_id) {
+              try {
+                const propertyResponse = await fetch(`${API_BASE_URL}/api/properties/${job.property_id}`, {
+                  method: "GET",
+                  headers: {
+                    Authorization: `Bearer ${user.token}`,
+                  },
+                })
+
+                if (propertyResponse.ok) {
+                  const propertyData = await propertyResponse.json()
+                  const property = propertyData.property
+                  propertyAddress = `${property.address}, ${property.city}, ${property.province}`
+                }
+              } catch (err) {
+                console.warn(`Failed to fetch property ${job.property_id}:`, err)
+              }
+            }
+
+            // Transform bids into submissions format
+            bids.forEach((bid) => {
+              submissionsData.push({
+                bid: {
+                  id: bid.id,
+                  job_id: bid.job_id,
+                  entrepreneur_id: bid.entrepreneur_id,
+                  amount: bid.amount,
+                  message: bid.message,
+                  status: bid.status,
+                  created_at: bid.created_at,
+                  updated_at: bid.updated_at,
+                },
+                job: {
+                  id: job.id,
+                  title: job.title,
+                  description: job.description,
+                  category: job.category,
+                  urgency: job.urgency,
+                  budget_min: job.budget_min,
+                  budget_max: job.budget_max,
+                  is_budget_hidden: job.is_budget_hidden,
+                  is_emergency: job.is_emergency,
+                  status: job.status,
+                  due_date: job.due_date,
+                  estimated_duration_days: job.estimated_duration_days,
+                  property_id: job.property_id,
+                  manager_id: job.manager_id,
+                  unit_id: job.unit_id,
+                  created_at: job.created_at,
+                  updated_at: job.updated_at,
+                },
+                entrepreneur_profile: {
+                  id: bid.entrepreneur_id,
+                  company_name: bid.company_name,
+                  license_number: bid.license_number,
+                  years_in_business: bid.years_in_business,
+                  specializations: bid.specializations || [],
+                  average_rating: bid.average_rating,
+                  total_reviews: bid.total_reviews,
+                },
+                user: {
+                  first_name: bid.first_name,
+                  last_name: bid.last_name,
+                  email: bid.email,
+                },
+                property_address: propertyAddress,
+              })
+            })
+          } catch (err) {
+            console.warn(`Error processing job ${job.id}:`, err)
+          }
         }
-      },
-      {
-        bid: {
-          id: "bid-4",
-          job_id: "job-4",
-          entrepreneur_id: "ent-4",
-          amount: 4500.00,
-          message: "Professional painting with eco-friendly materials and cleanup.",
-          status: "completed",
-          created_at: "2025-01-12T11:45:00.000Z",
-        },
-        job: {
-          id: "job-4",
-          title: "Interior Painting",
-          description: "Paint all common areas and hallways",
-          category: "Painting",
-          urgency: "Next Year",
-          budget_min: 4000.00,
-          budget_max: 6000.00,
-        },
-        property: {
-          id: "prop-4",
-          address: "321 Birch Lane",
-          city: "Montreal",
-          province: "Quebec",
-          building_type: "Apartment",
-        },
-        entrepreneur: {
-          name: "ColorCraft Painters",
-          rating: 4.6,
-          yearsExperience: 12,
-        }
-      },
-      {
-        bid: {
-          id: "bid-5",
-          job_id: "job-5",
-          entrepreneur_id: "ent-5",
-          amount: 12500.00,
-          message: "Complete HVAC installation with modern energy-efficient systems.",
-          status: "completed",
-          created_at: "2025-01-10T08:30:00.000Z",
-        },
-        job: {
-          id: "job-5",
-          title: "HVAC System Installation",
-          description: "Install new heating and cooling system",
-          category: "HVAC",
-          urgency: "Urgent (Current Year)",
-          budget_min: 10000.00,
-          budget_max: 15000.00,
-        },
-        property: {
-          id: "prop-5",
-          address: "555 Cedar Drive",
-          city: "Calgary",
-          province: "Alberta",
-          building_type: "Commercial",
-        },
-        entrepreneur: {
-          name: "ClimateControl Solutions",
-          rating: 4.8,
-          yearsExperience: 18,
-        }
-      },
-      {
-        bid: {
-          id: "bid-6",
-          job_id: "job-6",
-          entrepreneur_id: "ent-6",
-          amount: 2800.00,
-          message: "Window replacement with energy-efficient double-pane glass.",
-          status: "pending",
-          created_at: "2025-01-11T13:20:00.000Z",
-        },
-        job: {
-          id: "job-6",
-          title: "Window Replacement",
-          description: "Replace 6 windows in common area",
-          category: "Windows",
-          urgency: "Next Year",
-          budget_min: 2500.00,
-          budget_max: 4000.00,
-        },
-        property: {
-          id: "prop-6",
-          address: "888 Elm Street",
-          city: "Ottawa",
-          province: "Ontario",
-          building_type: "Condo",
-        },
-        entrepreneur: {
-          name: "ClearView Windows",
-          rating: 4.4,
-          yearsExperience: 9,
-        }
-      },
-      {
-        bid: {
-          id: "bid-7",
-          job_id: "job-7",
-          entrepreneur_id: "ent-7",
-          amount: 5600.00,
-          message: "Flooring installation with premium materials and quick turnaround.",
-          status: "accepted",
-          created_at: "2025-01-09T16:45:00.000Z",
-        },
-        job: {
-          id: "job-7",
-          title: "Flooring Replacement",
-          description: "Replace damaged flooring in lobby",
-          category: "Flooring",
-          urgency: "Urgent (Current Year)",
-          budget_min: 5000.00,
-          budget_max: 7000.00,
-        },
-        property: {
-          id: "prop-7",
-          address: "222 Willow Way",
-          city: "Edmonton",
-          province: "Alberta",
-          building_type: "Apartment",
-        },
-        entrepreneur: {
-          name: "FloorMasters Inc.",
-          rating: 4.7,
-          yearsExperience: 11,
-        }
-      },
-    ];
 
-    setTimeout(() => {
-      setSubmissions(mockSubmissions);
-      setFilteredSubmissions(mockSubmissions);
-      setLoading(false);
-    }, 500);
-  }, []);
-
-  // Apply filters and tabs
-  useEffect(() => {
-    let filtered = [...submissions];
-
-    // Tab filter
-    if (activeTab !== 'all') {
-      filtered = filtered.filter(sub => sub.bid.status === activeTab);
+        setSubmissions(submissionsData)
+        setFilteredSubmissions(submissionsData)
+        setError(null)
+      } catch (err) {
+        console.error("Error fetching submissions:", err)
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
     }
 
-    // Search term filter (job title or entrepreneur name)
-    if (searchTerm) {
-      filtered = filtered.filter(sub =>
-        sub.job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        sub.entrepreneur.name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
+    fetchSubmissions()
+  }, [])
 
-    // Location filter
-    if (locationFilter) {
-      filtered = filtered.filter(sub =>
-        sub.property.city.toLowerCase().includes(locationFilter.toLowerCase()) ||
-        sub.property.province.toLowerCase().includes(locationFilter.toLowerCase())
-      );
-    }
-
-    // Category filter
-    if (categoryFilter) {
-      filtered = filtered.filter(sub => sub.job.category === categoryFilter);
-    }
-
-    // Amount range filter
-    if (amountRange.min) {
-      filtered = filtered.filter(sub => sub.bid.amount >= parseFloat(amountRange.min));
-    }
-    if (amountRange.max) {
-      filtered = filtered.filter(sub => sub.bid.amount <= parseFloat(amountRange.max));
-    }
-
-    // Date range filter
-    if (dateRange.start) {
-      filtered = filtered.filter(sub => new Date(sub.bid.created_at) >= new Date(dateRange.start));
-    }
-    if (dateRange.end) {
-      filtered = filtered.filter(sub => new Date(sub.bid.created_at) <= new Date(dateRange.end));
-    }
-
-    setFilteredSubmissions(filtered);
-  }, [searchTerm, locationFilter, categoryFilter, amountRange, dateRange, submissions, activeTab]);
+  const toggleCardExpanded = (bidId) => {
+    setExpandedCards((prev) => ({
+      ...prev,
+      [bidId]: !prev[bidId],
+    }))
+  }
 
   const clearFilters = () => {
-    setSearchTerm('');
-    setLocationFilter('');
-    setCategoryFilter('');
-    setAmountRange({ min: '', max: '' });
-    setDateRange({ start: '', end: '' });
-  };
+    setSearchTerm("")
+    setLocationFilter("")
+    setCategoryFilter("")
+    setAmountRange({ min: "", max: "" })
+    setDateRange({ start: "", end: "" })
+  }
 
   const handleAccept = (bidId) => {
-    setSubmissions(prev =>
-      prev.map(sub =>
-        sub.bid.id === bidId
-          ? { ...sub, bid: { ...sub.bid, status: 'accepted' } }
-          : sub
-      )
-    );
-  };
+    setSubmissions((prev) =>
+      prev.map((sub) => (sub.bid.id === bidId ? { ...sub, bid: { ...sub.bid, status: "accepted" } } : sub)),
+    )
+  }
 
   const handleDecline = (bidId) => {
-    // Remove from list or mark as declined
-    setSubmissions(prev => prev.filter(sub => sub.bid.id !== bidId));
-  };
+    setSubmissions((prev) => prev.filter((sub) => sub.bid.id !== bidId))
+  }
 
   const handleChat = (submission) => {
-    console.log(`Opening chat with ${submission.entrepreneur.name}`);
-    alert(`Chat with ${submission.entrepreneur.name} would open here`);
-  };
+    console.log(`Opening chat with ${submission.entrepreneur_profile.company_name}`)
+    alert(`Chat with ${submission.entrepreneur_profile.company_name} would open here`)
+  }
 
   const handleReview = (submission) => {
-    console.log(`Opening review form for ${submission.entrepreneur.name}`);
-    alert(`Review form for ${submission.entrepreneur.name} would open here`);
-  };
+    console.log(`Opening review form for ${submission.entrepreneur_profile.company_name}`)
+    alert(`Review form for ${submission.entrepreneur_profile.company_name} would open here`)
+  }
 
   const getStatusInfo = (status) => {
     const statusMap = {
-      pending: { class: 'status-pending', icon: Clock, label: 'Pending' },
-      accepted: { class: 'status-accepted', icon: CheckCircle, label: 'Accepted' },
-      ongoing: { class: 'status-ongoing', icon: PlayCircle, label: 'Ongoing' },
-      completed: { class: 'status-completed', icon: CheckCircle, label: 'Completed' },
-    };
-    return statusMap[status] || statusMap.pending;
-  };
+      pending: { class: "status-pending", icon: Clock, label: "Pending" },
+      accepted: { class: "status-accepted", icon: CheckCircle, label: "Accepted" },
+      ongoing: { class: "status-ongoing", icon: PlayCircle, label: "Ongoing" },
+      completed: { class: "status-completed", icon: CheckCircle, label: "Completed" },
+    }
+    return statusMap[status] || statusMap.pending
+  }
 
   const getStatusCount = (status) => {
-    if (status === 'all') return submissions.length;
-    return submissions.filter(sub => sub.bid.status === status).length;
-  };
+    if (status === "all") return submissions.length
+    return submissions.filter((sub) => sub.bid.status === status).length
+  }
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
+  }
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
+      maximumFractionDigits: 0,
+    }).format(amount)
+  }
 
-  // Get unique categories for filter
-  const categories = [...new Set(submissions.map(sub => sub.job.category))];
+  const renderCardDetails = (submission) => {
+    const { bid, job, entrepreneur_profile } = submission
+
+    const DetailField = ({ label, value, icon: Icon }) => (
+      <div className="subs-detail-field">
+        <div className="subs-detail-label">
+          {Icon && <Icon size={14} />}
+          <span>{label}</span>
+        </div>
+        <div className="subs-detail-value">{value}</div>
+      </div>
+    )
+
+    switch (bid.status) {
+      case "pending":
+        return (
+          <div className="subs-card-details-wrapper">
+            {/* Job Details Section */}
+            <div className="subs-details-section">
+              <h4 className="subs-section-title">Job Details</h4>
+              <DetailField label="Category" value={job.category} icon={FileText} />
+              <DetailField label="Urgency" value={job.urgency} icon={Clock} />
+              <DetailField label="Due Date" value={formatDate(job.due_date)} icon={Calendar} />
+              <DetailField label="Duration" value={`${job.estimated_duration_days} days`} icon={Clock} />
+              <DetailField
+                label="Budget Range"
+                value={`${formatCurrency(job.budget_min)} - ${formatCurrency(job.budget_max)}`}
+                icon={DollarSign}
+              />
+            </div>
+
+            {/* Entrepreneur Profile Section */}
+            <div className="subs-details-section">
+              <h4 className="subs-section-title">Contractor Profile</h4>
+              <DetailField label="License Number" value={entrepreneur_profile.license_number} icon={Building2} />
+              <DetailField
+                label="Years in Business"
+                value={`${entrepreneur_profile.years_in_business} years`}
+                icon={Clock}
+              />
+              <DetailField
+                label="Specializations"
+                value={entrepreneur_profile.specializations.join(", ") || "N/A"}
+                icon={FileText}
+              />
+              <DetailField
+                label="Rating"
+                value={`${entrepreneur_profile.average_rating} ★ (${entrepreneur_profile.total_reviews} reviews)`}
+                icon={Star}
+              />
+            </div>
+          </div>
+        )
+
+      case "accepted":
+      case "ongoing":
+        return (
+          <div className="subs-card-details-wrapper">
+            <div className="subs-details-section">
+              <h4 className="subs-section-title">Job Details</h4>
+              <DetailField label="Category" value={job.category} icon={FileText} />
+              <DetailField label="Urgency" value={job.urgency} icon={Clock} />
+              <DetailField label="Due Date" value={formatDate(job.due_date)} icon={Calendar} />
+              <DetailField
+                label="Budget Range"
+                value={`${formatCurrency(job.budget_min)} - ${formatCurrency(job.budget_max)}`}
+                icon={DollarSign}
+              />
+              <DetailField label="Status" value={job.status} icon={CheckCircle} />
+            </div>
+          </div>
+        )
+
+      case "completed":
+        return (
+          <div className="subs-card-details-wrapper">
+            {/* Job Details Section */}
+            <div className="subs-details-section">
+              <h4 className="subs-section-title">Job Details</h4>
+              <DetailField label="Category" value={job.category} icon={FileText} />
+              <DetailField label="Due Date" value={formatDate(job.due_date)} icon={Calendar} />
+              <DetailField
+                label="Budget Range"
+                value={`${formatCurrency(job.budget_min)} - ${formatCurrency(job.budget_max)}`}
+                icon={DollarSign}
+              />
+              <DetailField label="Completed Date" value={formatDate(job.updated_at)} icon={Calendar} />
+            </div>
+
+            {/* Entrepreneur Profile Section */}
+            <div className="subs-details-section">
+              <h4 className="subs-section-title">Contractor Profile</h4>
+              <DetailField label="Company Name" value={entrepreneur_profile.company_name} icon={Building2} />
+              <DetailField label="License Number" value={entrepreneur_profile.license_number} icon={Building2} />
+              <DetailField
+                label="Specializations"
+                value={entrepreneur_profile.specializations.join(", ") || "N/A"}
+                icon={FileText}
+              />
+              <DetailField
+                label="Rating"
+                value={`${entrepreneur_profile.average_rating} ★ (${entrepreneur_profile.total_reviews} reviews)`}
+                icon={Star}
+              />
+            </div>
+          </div>
+        )
+
+      default:
+        return null
+    }
+  }
+
+  const categories = [...new Set(submissions.map((sub) => sub.job.category))]
 
   const tabs = [
-    { id: 'all', label: 'All Submissions' },
-    { id: 'pending', label: 'Pending' },
-    { id: 'accepted', label: 'Accepted' },
-    { id: 'ongoing', label: 'Ongoing' },
-    { id: 'completed', label: 'Completed' },
-  ];
+    { id: "all", label: "All Submissions" },
+    { id: "pending", label: "Pending" },
+    { id: "accepted", label: "Accepted" },
+    { id: "ongoing", label: "Ongoing" },
+    { id: "completed", label: "Completed" },
+  ]
+
+  useEffect(() => {
+    let filtered = [...submissions]
+
+    if (activeTab !== "all") {
+      filtered = filtered.filter((sub) => sub.bid.status === activeTab)
+    }
+
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (sub) =>
+          sub.job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          sub.entrepreneur_profile.company_name.toLowerCase().includes(searchTerm.toLowerCase()),
+      )
+    }
+
+    if (locationFilter) {
+      filtered = filtered.filter((sub) => sub.property_address.toLowerCase().includes(locationFilter.toLowerCase()))
+    }
+
+    if (categoryFilter) {
+      filtered = filtered.filter((sub) => sub.job.category === categoryFilter)
+    }
+
+    if (amountRange.min) {
+      filtered = filtered.filter((sub) => sub.bid.amount >= Number.parseFloat(amountRange.min))
+    }
+    if (amountRange.max) {
+      filtered = filtered.filter((sub) => sub.bid.amount <= Number.parseFloat(amountRange.max))
+    }
+
+    if (dateRange.start) {
+      filtered = filtered.filter((sub) => new Date(sub.bid.created_at) >= new Date(dateRange.start))
+    }
+    if (dateRange.end) {
+      filtered = filtered.filter((sub) => new Date(sub.bid.created_at) <= new Date(dateRange.end))
+    }
+
+    setFilteredSubmissions(filtered)
+  }, [searchTerm, locationFilter, categoryFilter, amountRange, dateRange, submissions, activeTab])
 
   return (
-    <div className="submissions-container">
+    <div className="subs-submissions-container">
       <Nav />
-      <div className="submissions-content">
-        <div className="page-header">
+      <div className="subs-submissions-content">
+        <div className="subs-page-header">
           <div>
-            <h1 className="page-title">Bid Submissions</h1>
-            <p className="page-subtitle">Review and manage contractor bids</p>
+            <h1 className="subs-page-title">Bid Submissions</h1>
+            <p className="subs-page-subtitle">Review and manage contractor bids</p>
           </div>
-          <div className="header-stats">
-            <div className="stat-chip">
-              <span className="stat-label">Total</span>
-              <span className="stat-value">{submissions.length}</span>
+          <div className="subs-header-stats">
+            <div className="subs-stat-chip">
+              <span className="subs-stat-label">Total</span>
+              <span className="subs-stat-value">{submissions.length}</span>
             </div>
-            <div className="stat-chip stat-pending">
-              <span className="stat-label">Pending</span>
-              <span className="stat-value">
-                {submissions.filter(s => s.bid.status === 'pending').length}
-              </span>
+            <div className="subs-stat-chip subs-stat-pending">
+              <span className="subs-stat-label">Pending</span>
+              <span className="subs-stat-value">{submissions.filter((s) => s.bid.status === "pending").length}</span>
             </div>
           </div>
         </div>
 
-        <div className="tabs-container">
-          {tabs.map(tab => (
+        <div className="subs-tabs-container">
+          {tabs.map((tab) => (
             <button
               key={tab.id}
-              className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+              className={`subs-tab-btn ${activeTab === tab.id ? "active" : ""}`}
               onClick={() => setActiveTab(tab.id)}
             >
               {tab.label}
-              <span className="tab-count">{getStatusCount(tab.id)}</span>
+              <span className="subs-tab-count">{getStatusCount(tab.id)}</span>
             </button>
           ))}
         </div>
 
-        <div className="controls-bar">
-          <div className="search-box">
+        <div className="subs-controls-bar">
+          <div className="subs-search-box">
             <Search size={18} />
             <input
               type="text"
@@ -424,47 +450,46 @@ function SubmissionsPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             {searchTerm && (
-              <button className="clear-btn" onClick={() => setSearchTerm('')}>
+              <button className="subs-clear-btn" onClick={() => setSearchTerm("")}>
                 <X size={16} />
               </button>
             )}
           </div>
 
           <button
-            className={`filter-btn ${showFilters ? 'active' : ''}`}
+            className={`subs-filter-btn ${showFilters ? "active" : ""}`}
             onClick={() => setShowFilters(!showFilters)}
           >
             <Filter size={18} />
             Filters
-            <ChevronDown size={16} className={showFilters ? 'rotated' : ''} />
+            <ChevronDown size={16} className={showFilters ? "rotated" : ""} />
           </button>
         </div>
 
         {showFilters && (
-          <div className="filters-panel">
-            <div className="filters-grid">
-              <div className="filter-item">
+          <div className="subs-filters-panel">
+            <div className="subs-filters-grid">
+              <div className="subs-filter-item">
                 <label>Location</label>
                 <input
                   type="text"
-                  placeholder="City or Province"
+                  placeholder="City or Address"
                   value={locationFilter}
                   onChange={(e) => setLocationFilter(e.target.value)}
                 />
               </div>
-              <div className="filter-item">
+              <div className="subs-filter-item">
                 <label>Category</label>
-                <select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                >
+                <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
                   <option value="">All Categories</option>
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
                   ))}
                 </select>
               </div>
-              <div className="filter-item">
+              <div className="subs-filter-item">
                 <label>Min Amount</label>
                 <input
                   type="number"
@@ -473,7 +498,7 @@ function SubmissionsPage() {
                   onChange={(e) => setAmountRange({ ...amountRange, min: e.target.value })}
                 />
               </div>
-              <div className="filter-item">
+              <div className="subs-filter-item">
                 <label>Max Amount</label>
                 <input
                   type="number"
@@ -482,7 +507,7 @@ function SubmissionsPage() {
                   onChange={(e) => setAmountRange({ ...amountRange, max: e.target.value })}
                 />
               </div>
-              <div className="filter-item">
+              <div className="subs-filter-item">
                 <label>From Date</label>
                 <input
                   type="date"
@@ -490,7 +515,7 @@ function SubmissionsPage() {
                   onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
                 />
               </div>
-              <div className="filter-item">
+              <div className="subs-filter-item">
                 <label>To Date</label>
                 <input
                   type="date"
@@ -499,7 +524,7 @@ function SubmissionsPage() {
                 />
               </div>
             </div>
-            <button className="clear-all-btn" onClick={clearFilters}>
+            <button className="subs-clear-all-btn" onClick={clearFilters}>
               <X size={16} />
               Clear All Filters
             </button>
@@ -507,118 +532,98 @@ function SubmissionsPage() {
         )}
 
         {loading ? (
-          <div className="loading-state">
-            <div className="spinner"></div>
+          <div className="subs-loading-state">
+            <div className="subs-spinner"></div>
             <p>Loading submissions...</p>
           </div>
+        ) : error ? (
+          <div className="subs-empty-state">
+            <FileText size={48} />
+            <h3>Error loading submissions</h3>
+            <p>{error}</p>
+          </div>
         ) : filteredSubmissions.length === 0 ? (
-          <div className="empty-state">
+          <div className="subs-empty-state">
             <FileText size={48} />
             <h3>No submissions found</h3>
             <p>Try adjusting your filters</p>
           </div>
         ) : (
-          <div className="bids-grid">
+          <div className="subs-bids-grid">
             {filteredSubmissions.map((submission) => {
-              const statusInfo = getStatusInfo(submission.bid.status);
-              const StatusIcon = statusInfo.icon;
-              
+              const statusInfo = getStatusInfo(submission.bid.status)
+              const StatusIcon = statusInfo.icon
+              const isExpanded = expandedCards[submission.bid.id]
+
               return (
-                <div key={submission.bid.id} className="bid-card">
-                  <div className="card-header">
-                    <div className={`status-badge-subs ${statusInfo.class}`}>
+                <div key={submission.bid.id} className="subs-bid-card">
+                  <div className="subs-card-header">
+                    <div className={`subs-status-badge-subs ${statusInfo.class}`}>
                       <StatusIcon size={14} />
                       {statusInfo.label}
                     </div>
-                    <span className="bid-amount">{formatCurrency(submission.bid.amount)}</span>
+                    <span className="subs-bid-amount">{formatCurrency(submission.bid.amount)}</span>
                   </div>
 
-                  <h3 className="job-title">{submission.job.title}</h3>
-                  
-                  <div className="contractor-info">
+                  <h3 className="subs-job-title">{submission.job.title}</h3>
+
+                  <div className="subs-contractor-info">
                     <User size={14} />
-                    <span className="contractor-name">{submission.entrepreneur.name}</span>
-                    <span className="contractor-rating">★ {submission.entrepreneur.rating}</span>
+                    <span className="subs-contractor-name">{submission.entrepreneur_profile.company_name}</span>
+                    <span className="subs-contractor-rating">★ {submission.entrepreneur_profile.average_rating}</span>
                   </div>
 
-                  <div className="card-details">
-                    <div className="detail-row">
-                      <Building2 size={14} />
-                      <span>{submission.property.address}</span>
-                    </div>
-                    <div className="detail-row">
-                      <MapPin size={14} />
-                      <span>{submission.property.city}, {submission.property.province}</span>
-                    </div>
-                    <div className="detail-row">
-                      <FileText size={14} />
-                      <span>{submission.job.category}</span>
-                    </div>
-                    <div className="detail-row">
-                      <Calendar size={14} />
-                      <span>{formatDate(submission.bid.created_at)}</span>
-                    </div>
-                    <div className="detail-row">
-                      <DollarSign size={14} />
-                      <span>Budget: {formatCurrency(submission.job.budget_min)} - {formatCurrency(submission.job.budget_max)}</span>
-                    </div>
-                  </div>
+                  <button className="subs-expand-btn" onClick={() => toggleCardExpanded(submission.bid.id)}>
+                    <ChevronDown size={16} className={isExpanded ? "subs-expanded" : ""} />
+                    {isExpanded ? "Hide Details" : "Show Details"}
+                  </button>
 
-                  <div className="bid-message">
-                    <strong>Bid Message:</strong>
-                    <p>{submission.bid.message}</p>
-                  </div>
+                  {isExpanded && <div className="subs-card-details">{renderCardDetails(submission)}</div>}
 
-                  <div className="card-footer">
-                    <span className={`urgency ${submission.job.urgency.includes('Urgent') ? 'urgent' : 'normal'}`}>
-                      {submission.job.urgency.includes('Urgent') ? 'Urgent' : 'Standard'}
+                  {submission.bid.status === "pending" && (
+                    <div className="subs-bid-message">
+                      <strong>Bid Message:</strong>
+                      <p>{submission.bid.message}</p>
+                    </div>
+                  )}
+
+                  <div className="subs-card-footer">
+                    <span className={`subs-urgency ${submission.job.is_emergency ? "urgent" : "normal"}`}>
+                      {submission.job.is_emergency ? "Urgent" : "Standard"}
                     </span>
-                    <div className="action-buttons">
-                      {submission.bid.status === 'pending' && (
+                    <div className="subs-action-buttons">
+                      {submission.bid.status === "pending" && (
                         <>
-                          <button 
-                            className="accept-btn"
-                            onClick={() => handleAccept(submission.bid.id)}
-                          >
+                          <button className="subs-accept-btn" onClick={() => handleAccept(submission.bid.id)}>
                             Accept
                           </button>
-                          <button 
-                            className="decline-btn"
-                            onClick={() => handleDecline(submission.bid.id)}
-                          >
+                          <button className="subs-decline-btn" onClick={() => handleDecline(submission.bid.id)}>
                             Decline
                           </button>
                         </>
                       )}
-                      {(submission.bid.status === 'accepted' || submission.bid.status === 'ongoing') && (
-                        <button 
-                          className="chat-btn"
-                          onClick={() => handleChat(submission)}
-                        >
+                      {(submission.bid.status === "accepted" || submission.bid.status === "ongoing") && (
+                        <button className="subs-chat-btn" onClick={() => handleChat(submission)}>
                           <MessageCircle size={14} />
                           Chat
                         </button>
                       )}
-                      {submission.bid.status === 'completed' && (
-                        <button 
-                          className="review-btn"
-                          onClick={() => handleReview(submission)}
-                        >
+                      {submission.bid.status === "completed" && (
+                        <button className="subs-review-btn" onClick={() => handleReview(submission)}>
                           <Star size={14} />
                           Review
                         </button>
                       )}
-                      <button className="details-btn">View</button>
                     </div>
                   </div>
                 </div>
-              );
+              )
             })}
           </div>
         )}
       </div>
     </div>
-  );
+  )
 }
 
-export default SubmissionsPage;
+export default SubmissionsPage

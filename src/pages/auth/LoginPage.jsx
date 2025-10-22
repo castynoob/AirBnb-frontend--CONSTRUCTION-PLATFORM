@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, AlertCircle, Subscript } from "lucide-react";
 import illustration from "../../assets/images/illustration.png";
-import logo from "../../assets/logo-light.png";
+import logo from "../../assets/logo.png";
 import "../../styles/auth/authpage.css"
 
 const Login = () => {
@@ -51,10 +51,11 @@ const Login = () => {
     e.preventDefault();
 
     // navigate("/homepage/entrepreneur");
-
+    
     if (!validateForm()) {
       return;
     }
+    
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
@@ -73,7 +74,6 @@ const Login = () => {
       }
 
       const data = await response.json();
-      console.log("DATA:", data);
 
       // --- Construct userProfile (using backend response if available) ---
       const userProfile = {
@@ -101,23 +101,14 @@ const Login = () => {
 
       // Save to localStorage
       localStorage.setItem("userProfile", JSON.stringify(userProfile));
-      console.log("User Profile saved:", userProfile);
-
-      // alert("Login successful!");
       console.log(userProfile)
       // Redirect based on role
-      if (userProfile.role === "entrepreneur") {
-        navigate("/homepage/entrepreneur");
-      } else {
-        navigate("/homepage/manager");
-      }
+      navigate(`/homepage/${userProfile.role}`);
 
     } catch (error) {
       console.error("Login error:", error);
       alert("Login failed. Please check your credentials and try again.");
     }
-
-
   };
 
 

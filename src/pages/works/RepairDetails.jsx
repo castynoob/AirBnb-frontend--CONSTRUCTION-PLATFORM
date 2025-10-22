@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Nav from "../../components/Nav";
 import {
   ArrowLeft,
@@ -20,6 +20,7 @@ function RepairDetails({ handleRepairClicked, repair }) {
 
   const [favorites, setFavorites] = useState([]);
   const [sortBy, setSortBy] = useState("rating");
+  const [bidders, setBidders] = useState([])
 
   const toggleFavorite = (company_name) => {
     setFavorites((prev) =>
@@ -29,99 +30,75 @@ function RepairDetails({ handleRepairClicked, repair }) {
     );
   };
 
-  // Enhanced bidders data with additional information
-  const bidders = [
-    { 
-      company_name: "Skyline Roofing Co.", 
-      address: "22 King St W, Toronto", 
-      average_rating: 4.8, 
-      total_reviews: 132,
-      bid_amount: 3200,
-      completion_time: "5-7 days",
-      verified: true
-    },
-    { 
-      company_name: "UrbanBuild Contractors", 
-      address: "102 Queen St E, Toronto", 
-      average_rating: 4.5, 
-      total_reviews: 89,
-      bid_amount: 3450,
-      completion_time: "7-10 days",
-      verified: true
-    },
-    { 
-      company_name: "Maple Restoration Ltd.", 
-      address: "85 Front St, Toronto", 
-      average_rating: 4.9, 
-      total_reviews: 201,
-      bid_amount: 2950,
-      completion_time: "3-5 days",
-      verified: true
-    },
-    { 
-      company_name: "Precision Engineering Works", 
-      address: "33 Adelaide St E, Toronto", 
-      average_rating: 4.3, 
-      total_reviews: 77,
-      bid_amount: 3600,
-      completion_time: "10-14 days",
-      verified: false
-    },
-    { 
-      company_name: "Apex Maintenance Group", 
-      address: "17 Dundas Square, Toronto", 
-      average_rating: 4.6, 
-      total_reviews: 154,
-      bid_amount: 3100,
-      completion_time: "5-7 days",
-      verified: true
-    },
-    { 
-      company_name: "NorthPoint Constructions", 
-      address: "210 Bayview Ave, Toronto", 
-      average_rating: 4.4, 
-      total_reviews: 64,
-      bid_amount: 3750,
-      completion_time: "7-10 days",
-      verified: false
-    },
-    { 
-      company_name: "Everest Repair Solutions", 
-      address: "520 College St, Toronto", 
-      average_rating: 4.7, 
-      total_reviews: 92,
-      bid_amount: 3250,
-      completion_time: "6-8 days",
-      verified: true
-    },
-    { 
-      company_name: "Summit Infrastructure Inc.", 
-      address: "40 Spadina Ave, Toronto", 
-      average_rating: 4.2, 
-      total_reviews: 58,
-      bid_amount: 3800,
-      completion_time: "12-15 days",
-      verified: false
-    },
-    { 
-      company_name: "BlueRock Civil Works", 
-      address: "290 Bloor St W, Toronto", 
-      average_rating: 4.9, 
-      total_reviews: 174,
-      bid_amount: 2900,
-      completion_time: "4-6 days",
-      verified: true
-    },
-    { 
-      company_name: "RapidFix Contractors", 
-      address: "600 Richmond St W, Toronto", 
-      average_rating: 4.5, 
-      total_reviews: 121,
-      bid_amount: 3350,
-      completion_time: "5-7 days",
-      verified: true
-    },
-  ];
+  useEffect(() => {
+    setBidders([])
+    const userProfile = localStorage.getItem('userProfile')
+    const fetchBids = async () => {
+      if(userProfile) {
+        const user = JSON.parse(userProfile)
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+        const response = await fetch(`${API_BASE_URL}/api/bids/job/${repair.data.jobId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        })
+
+        if(!response.ok) {
+          throw new Error(`Failed to fetch jobs: ${response.status}`)
+        }
+
+        const data = await response.json()
+        console.log(data.bids)
+        data.bids.forEach(bid => {
+          getEntrepreneur(bid, user)
+        })
+      }
+    }
+
+    fetchBids()
+  }, [])
+
+  const getEntrepreneur = async (bid, user) => {
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+      const response = await fetch(`${API_BASE_URL}/api/users/entrepreneur/${bid.entrepreneur_id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`ERROR: ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log("CONTRACTOR:", data.profile)
+
+      setBidders(prevBidders => {
+        // ✅ Check if bid ID already exists
+        const exists = prevBidders.some(existing => existing.id === bid.id)
+        if (exists) return prevBidders
+
+        // ✅ Add only if not existing
+        return [
+          ...prevBidders,
+          {
+            id: bid.id,
+            company_name: data.profile.company_name,
+            address: data.profile.address,
+            average_rating: data.profile.average_rating,
+            total_reviews: data.profile.total_reviews,
+            bid_amount: Number(bid.amount),
+          }
+        ]
+      })
+    } catch (err) {
+      console.log(err)
+    }
+  }
+
 
   // Sort bidders based on selected criteria
   const sortedBidders = [...bidders].sort((a, b) => {
@@ -219,7 +196,7 @@ function RepairDetails({ handleRepairClicked, repair }) {
                 </div>
                 <div>
                   <label>Budget</label>
-                  <p className="budget">${repair.budget}</p>
+                  <p className="budget">{repair.budget}</p>
                 </div>
               </div>
             </div>
@@ -249,14 +226,6 @@ function RepairDetails({ handleRepairClicked, repair }) {
           <div className="bidders-list">
             {sortedBidders.map((bidder, index) => (
               <div key={index} className="bidder-card">
-                {/* Verified Badge */}
-                {bidder.verified && (
-                  <div className="verified-badge">
-                    <CheckCircle2 size={14} />
-                    Verified
-                  </div>
-                )}
-
                 <div className="bidder-header">
                   <div className="bidder-info">
                     <h4>{bidder.company_name}</h4>
@@ -306,13 +275,6 @@ function RepairDetails({ handleRepairClicked, repair }) {
                     </p>
                   </div>
                   
-                  <div className="bid-detail-item">
-                    <label>
-                      <TrendingUp size={12} />
-                      Timeline
-                    </label>
-                    <p>{bidder.completion_time}</p>
-                  </div>
                 </div>
               </div>
             ))}

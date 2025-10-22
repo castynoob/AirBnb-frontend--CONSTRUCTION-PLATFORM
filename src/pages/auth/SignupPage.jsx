@@ -77,7 +77,6 @@ const SignUp = () => {
       return;
     }
 
-    console.log("Sign up data:", formData);
     alert("Account created successfully! This is just a UI demo.");
     navigate("/login");
   };
