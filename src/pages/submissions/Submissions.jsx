@@ -16,6 +16,7 @@ import {
   Star,
   Building2,
   User,
+  FolderOpen,
 } from "lucide-react"
 import Nav from "../../components/Nav"
 import "../../styles/manager/submissions.css"
@@ -108,8 +109,13 @@ function SubmissionsPage() {
               }
             }
 
-            // Transform bids into submissions format
+            // Transform bids into submissions format (filter out declined bids)
             bids.forEach((bid) => {
+              // Skip declined bids
+              if (bid.status === "declined") {
+                return
+              }
+
               submissionsData.push({
                 bid: {
                   id: bid.id,
@@ -191,14 +197,39 @@ function SubmissionsPage() {
     setDateRange({ start: "", end: "" })
   }
 
-  const handleAccept = (bidId) => {
+  const handleAccept = async (bidId) => {
+    // TODO: Make API call to accept the bid
+    // This should:
+    // 1. Update the bid status to "accepted"
+    // 2. Update the job status to "accepted" (if not already)
+    // 3. Optionally decline other pending bids for this job
+    
+    // For now, update state locally
     setSubmissions((prev) =>
-      prev.map((sub) => (sub.bid.id === bidId ? { ...sub, bid: { ...sub.bid, status: "accepted" } } : sub)),
+      prev.map((sub) => 
+        sub.bid.id === bidId 
+          ? { 
+              ...sub, 
+              bid: { ...sub.bid, status: "accepted" },
+              job: { ...sub.job, status: "accepted" }
+            } 
+          : sub
+      ),
     )
+    
+    // Display success message
+    alert("Bid accepted! The contractor will be notified.")
   }
 
-  const handleDecline = (bidId) => {
+  const handleDecline = async (bidId) => {
+    // TODO: Make API call to decline the bid
+    // This should update the bid status to "declined"
+    
+    // Remove from UI (since we filter out declined bids)
     setSubmissions((prev) => prev.filter((sub) => sub.bid.id !== bidId))
+    
+    // Display confirmation message
+    alert("Bid declined. The contractor will be notified.")
   }
 
   const handleChat = (submission) => {
@@ -211,19 +242,21 @@ function SubmissionsPage() {
     alert(`Review form for ${submission.entrepreneur_profile.company_name} would open here`)
   }
 
+  // Updated to use job status instead of bid status
   const getStatusInfo = (status) => {
     const statusMap = {
-      pending: { class: "status-pending", icon: Clock, label: "Pending" },
+      open: { class: "status-open", icon: FolderOpen, label: "Open" },
       accepted: { class: "status-accepted", icon: CheckCircle, label: "Accepted" },
       ongoing: { class: "status-ongoing", icon: PlayCircle, label: "Ongoing" },
       completed: { class: "status-completed", icon: CheckCircle, label: "Completed" },
     }
-    return statusMap[status] || statusMap.pending
+    return statusMap[status] || statusMap.open
   }
 
+  // Updated to count by job status
   const getStatusCount = (status) => {
     if (status === "all") return submissions.length
-    return submissions.filter((sub) => sub.bid.status === status).length
+    return submissions.filter((sub) => sub.job.status === status).length
   }
 
   const formatDate = (dateString) => {
@@ -256,8 +289,9 @@ function SubmissionsPage() {
       </div>
     )
 
-    switch (bid.status) {
-      case "pending":
+    // Render details based on job status
+    switch (job.status) {
+      case "open":
         return (
           <div className="subs-card-details-wrapper">
             {/* Job Details Section */}
@@ -311,7 +345,7 @@ function SubmissionsPage() {
                 value={`${formatCurrency(job.budget_min)} - ${formatCurrency(job.budget_max)}`}
                 icon={DollarSign}
               />
-              <DetailField label="Status" value={job.status} icon={CheckCircle} />
+              <DetailField label="Status" value={job.status.charAt(0).toUpperCase() + job.status.slice(1)} icon={CheckCircle} />
             </div>
           </div>
         )
@@ -358,9 +392,10 @@ function SubmissionsPage() {
 
   const categories = [...new Set(submissions.map((sub) => sub.job.category))]
 
+  // Updated tabs to match job status values
   const tabs = [
     { id: "all", label: "All Submissions" },
-    { id: "pending", label: "Pending" },
+    { id: "open", label: "Open" },
     { id: "accepted", label: "Accepted" },
     { id: "ongoing", label: "Ongoing" },
     { id: "completed", label: "Completed" },
@@ -369,8 +404,9 @@ function SubmissionsPage() {
   useEffect(() => {
     let filtered = [...submissions]
 
+    // Updated to filter by job status
     if (activeTab !== "all") {
-      filtered = filtered.filter((sub) => sub.bid.status === activeTab)
+      filtered = filtered.filter((sub) => sub.job.status === activeTab)
     }
 
     if (searchTerm) {
@@ -421,8 +457,8 @@ function SubmissionsPage() {
               <span className="subs-stat-value">{submissions.length}</span>
             </div>
             <div className="subs-stat-chip subs-stat-pending">
-              <span className="subs-stat-label">Pending</span>
-              <span className="subs-stat-value">{submissions.filter((s) => s.bid.status === "pending").length}</span>
+              <span className="subs-stat-label">Open</span>
+              <span className="subs-stat-value">{submissions.filter((s) => s.job.status === "open").length}</span>
             </div>
           </div>
         </div>
@@ -551,7 +587,8 @@ function SubmissionsPage() {
         ) : (
           <div className="subs-bids-grid">
             {filteredSubmissions.map((submission) => {
-              const statusInfo = getStatusInfo(submission.bid.status)
+              // Updated to use job status
+              const statusInfo = getStatusInfo(submission.job.status)
               const StatusIcon = statusInfo.icon
               const isExpanded = expandedCards[submission.bid.id]
 
@@ -592,7 +629,8 @@ function SubmissionsPage() {
                       {submission.job.is_emergency ? "Urgent" : "Standard"}
                     </span>
                     <div className="subs-action-buttons">
-                      {submission.bid.status === "pending" && (
+                      {/* Accept/Decline buttons: Show only when job is open AND bid is pending */}
+                      {submission.job.status === "open" && submission.bid.status === "pending" && (
                         <>
                           <button className="subs-accept-btn" onClick={() => handleAccept(submission.bid.id)}>
                             Accept
@@ -602,13 +640,18 @@ function SubmissionsPage() {
                           </button>
                         </>
                       )}
-                      {(submission.bid.status === "accepted" || submission.bid.status === "ongoing") && (
+                      
+                      {/* Chat button: Show when job is accepted or ongoing AND bid is accepted */}
+                      {(submission.job.status === "accepted" || submission.job.status === "ongoing") && 
+                       submission.bid.status === "accepted" && (
                         <button className="subs-chat-btn" onClick={() => handleChat(submission)}>
                           <MessageCircle size={14} />
                           Chat
                         </button>
                       )}
-                      {submission.bid.status === "completed" && (
+                      
+                      {/* Review button: Show when job is completed AND bid is accepted */}
+                      {submission.job.status === "completed" && submission.bid.status === "accepted" && (
                         <button className="subs-review-btn" onClick={() => handleReview(submission)}>
                           <Star size={14} />
                           Review

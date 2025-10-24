@@ -9,6 +9,66 @@ import RepairList from "../../components/RepairList"
 import SummarySection from "../../components/SummarySection"
 import RepairDetails from "../works/RepairDetails"
 
+// Skeleton Loader Component
+function SkeletonCard() {
+  return (
+    <div className="pm-repair-card-modern pm-skeleton">
+      <div className="pm-repair-image-container pm-skeleton-image">
+        <div className="pm-shimmer"></div>
+      </div>
+      <div className="pm-repair-content">
+        <div className="pm-repair-header">
+          <div className="pm-skeleton-line pm-skeleton-title">
+            <div className="pm-shimmer"></div>
+          </div>
+          <div className="pm-skeleton-line pm-skeleton-subtitle">
+            <div className="pm-shimmer"></div>
+          </div>
+        </div>
+        <div className="pm-skeleton-line pm-skeleton-apartment">
+          <div className="pm-shimmer"></div>
+        </div>
+        <div className="pm-skeleton-line pm-skeleton-description">
+          <div className="pm-shimmer"></div>
+        </div>
+        <div className="pm-skeleton-line pm-skeleton-description">
+          <div className="pm-shimmer"></div>
+        </div>
+        <div className="pm-repair-footer">
+          <div className="pm-skeleton-line pm-skeleton-footer-item">
+            <div className="pm-shimmer"></div>
+          </div>
+          <div className="pm-skeleton-line pm-skeleton-footer-item">
+            <div className="pm-shimmer"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function SummarySkeleton() {
+  return (
+    <div className="pm-summary-section">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="pm-summary-card pm-skeleton">
+          <div className="pm-skeleton-icon">
+            <div className="pm-shimmer"></div>
+          </div>
+          <div className="pm-card-content">
+            <div className="pm-skeleton-line pm-skeleton-label">
+              <div className="pm-shimmer"></div>
+            </div>
+            <div className="pm-skeleton-line pm-skeleton-value">
+              <div className="pm-shimmer"></div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function HomePage() {
   const navigate = useNavigate()
 
@@ -48,24 +108,44 @@ function HomePage() {
         const jobsData = await jobsResponse.json()
         setJobs(jobsData.jobs || [])
 
-        // Fetch properties for each job
+        // Fetch properties and bids for each job
         const propertiesData = await Promise.all(
           (jobsData.jobs || []).map(async (job) => {
             try {
-              const response = await fetch(`${API_BASE_URL}/api/properties/${job.property_id}`, {
+              // Fetch property details
+              const propertyResponse = await fetch(`${API_BASE_URL}/api/properties/${job.property_id}`, {
                 method: "GET",
                 headers: {
                   Authorization: `Bearer ${user.token}`,
                 },
               })
 
-              if (!response.ok) {
-                throw new Error(`Failed to fetch property: ${response.status}`)
+              if (!propertyResponse.ok) {
+                throw new Error(`Failed to fetch property: ${propertyResponse.status}`)
               }
 
-              const data = await response.json()
-              const property = data.property
+              const propertyData = await propertyResponse.json()
+              const property = propertyData.property
 
+              // Fetch bids for this job
+              let bidCount = 0
+              try {
+                const bidsResponse = await fetch(`${API_BASE_URL}/api/bids/job/${job.id}`, {
+                  method: "GET",
+                  headers: {
+                    Authorization: `Bearer ${user.token}`,
+                  },
+                })
+
+                if (bidsResponse.ok) {
+                  const bidsData = await bidsResponse.json()
+                  bidCount = bidsData.total_bids || 0
+                }
+              } catch (bidError) {
+                console.error("Error fetching bids:", bidError)
+                // Continue with 0 bids if fetch fails
+              }
+              console.log(property)
               return {
                 id: job.id,
                 property: property.building_name || property.address || "Unknown Property",
@@ -73,14 +153,16 @@ function HomePage() {
                 apartment: job.title,
                 category: job.urgency,
                 description: job.description,
-                bids: 0,
+                bids: bidCount,
                 budget: `$${job.budget_min} - $${job.budget_max}`,
-                images: ["https://constrofacilitator.com/wp-content/uploads/2022/02/roof-repairing.jpg.webp"],
+                images: ["https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM="],
                 data: {
                   mangerId: property.manager_id,
                   propertyId: property.id,
                   jobId: job.id,
-                }
+                },
+                created_at: job.created_at,
+                building_type: property.building_type
               }
             } catch (err) {
               console.error("Error fetching property:", err)
@@ -174,7 +256,41 @@ function HomePage() {
       <div className="homepage">
         <Nav />
         <div className="main-container">
-          <p>Loading repairs...</p>
+          <header className="pm-page-header">
+            <div>
+              <h1>Repair Work Overview</h1>
+            </div>
+            <div className="pm-header-actions">
+              <div className="pm-search-box-header">
+                <button className="pm-search-trigger-btn" aria-label="Search">
+                  <Search size={20} />
+                </button>
+              </div>
+              <button className="pm-urgent-button-icon" aria-label="Urgent Request">
+                <Wrench size={20} />
+              </button>
+              <button className="pm-add-work-btn-icon" aria-label="Add New Work">
+                <Plus size={20} />
+              </button>
+              <button className="pm-notification-btn" aria-label="Notifications">
+                <Bell size={20} />
+              </button>
+            </div>
+          </header>
+
+          <SummarySkeleton />
+
+          <section className="pm-repairs-section">
+            <div className="pm-section-header">
+              <h2>Active Repairs</h2>
+              <p className="pm-section-subtitle">Manage and monitor all ongoing repair work</p>
+            </div>
+            <div className="pm-repair-cards-grid">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <SkeletonCard key={i} />
+              ))}
+            </div>
+          </section>
         </div>
       </div>
     )
@@ -196,13 +312,13 @@ function HomePage() {
       <Nav />
       {isHome ? (
         <div className="main-container">
-          <header className="page-header">
+          <header className="pm-page-header">
             <div>
               <h1>Repair Work Overview</h1>
             </div>
-            <div className="header-actions">
-              <div className={`search-box-header ${searchExpanded ? "expanded" : ""}`}>
-                <button className="search-trigger-btn" onClick={handleSearchFocus} aria-label="Search">
+            <div className="pm-header-actions">
+              <div className={`pm-search-box-header ${searchExpanded ? "expanded" : ""}`}>
+                <button className="pm-search-trigger-btn" onClick={handleSearchFocus} aria-label="Search">
                   <Search size={20} />
                 </button>
                 <input
@@ -213,36 +329,36 @@ function HomePage() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   onFocus={handleSearchFocus}
                   onBlur={handleSearchBlur}
-                  className="search-input-header"
+                  className="pm-search-input-header"
                 />
               </div>
-              <button onClick={handleUrgentRequest} className="urgent-button-icon" aria-label="Urgent Request">
+              <button onClick={handleUrgentRequest} className="pm-urgent-button-icon" aria-label="Urgent Request">
                 <Wrench size={20} />
               </button>
-              <button onClick={handleAddWork} className="add-work-btn-icon" aria-label="Add New Work">
+              <button onClick={handleAddWork} className="pm-add-work-btn-icon" aria-label="Add New Work">
                 <Plus size={20} />
               </button>
-              <div className="notification-wrapper" ref={notificationRef}>
-                <button className="notification-btn" aria-label="Notifications" onClick={toggleNotifications}>
+              <div className="pm-notification-wrapper" ref={notificationRef}>
+                <button className="pm-notification-btn" aria-label="Notifications" onClick={toggleNotifications}>
                   <Bell size={20} />
-                  {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+                  {unreadCount > 0 && <span className="pm-notification-badge">{unreadCount}</span>}
                 </button>
 
                 {showNotifications && (
-                  <div className="notification-modal">
-                    <div className="notification-header">
+                  <div className="pm-notification-modal">
+                    <div className="pm-notification-header">
                       <h3>Notifications</h3>
                       <button
-                        className="close-notification-btn"
+                        className="pm-close-notification-btn"
                         onClick={toggleNotifications}
                         aria-label="Close notifications"
                       >
                         <X size={18} />
                       </button>
                     </div>
-                    <div className="notification-list">
+                    <div className="pm-notification-list">
                       {notifications.length === 0 ? (
-                        <div className="no-notifications">
+                        <div className="pm-no-notifications">
                           <Bell size={32} />
                           <p>No notifications yet</p>
                         </div>
@@ -250,28 +366,28 @@ function HomePage() {
                         notifications.map((notification) => (
                           <div
                             key={notification.id}
-                            className={`notification-item ${!notification.read ? "unread" : ""}`}
+                            className={`pm-notification-item ${!notification.read ? "unread" : ""}`}
                           >
                             {notification.type === "bid" ? (
                               <>
-                                <div className="notification-icon bid-icon">
+                                <div className="pm-notification-icon pm-bid-icon">
                                   <FileText size={20} />
                                 </div>
-                                <div className="notification-content">
-                                  <div className="notification-title">
+                                <div className="pm-notification-content">
+                                  <div className="pm-notification-title">
                                     New Bid Submission
-                                    {!notification.read && <span className="unread-dot"></span>}
+                                    {!notification.read && <span className="pm-unread-dot"></span>}
                                   </div>
-                                  <div className="notification-body">
+                                  <div className="pm-notification-body">
                                     <strong>{notification.bidder}</strong> submitted a bid for{" "}
                                     <strong>{notification.property}</strong> - {notification.apartment}
                                   </div>
-                                  <div className="notification-meta">
+                                  <div className="pm-notification-meta">
                                     <span>Budget: ${notification.budget.toLocaleString()}</span>
-                                    <span className="notification-dot">•</span>
+                                    <span className="pm-notification-dot">•</span>
                                     <span>License: {notification.licenseNumber}</span>
                                   </div>
-                                  <div className="notification-time">
+                                  <div className="pm-notification-time">
                                     {new Date(notification.submissionDate).toLocaleDateString("en-US", {
                                       month: "short",
                                       day: "numeric",
@@ -283,22 +399,22 @@ function HomePage() {
                               </>
                             ) : (
                               <>
-                                <div className="notification-icon completed-icon">
+                                <div className="pm-notification-icon pm-completed-icon">
                                   <CheckCircle size={20} />
                                 </div>
-                                <div className="notification-content">
-                                  <div className="notification-title">
+                                <div className="pm-notification-content">
+                                  <div className="pm-notification-title">
                                     Work Completed
-                                    {!notification.read && <span className="unread-dot"></span>}
+                                    {!notification.read && <span className="pm-unread-dot"></span>}
                                   </div>
-                                  <div className="notification-body">
+                                  <div className="pm-notification-body">
                                     <strong>{notification.workTitle}</strong> at{" "}
                                     <strong>{notification.property}</strong> - {notification.apartment}
                                   </div>
-                                  <div className="notification-meta">
+                                  <div className="pm-notification-meta">
                                     <span>Contractor: {notification.contractor}</span>
                                   </div>
-                                  <div className="notification-time">
+                                  <div className="pm-notification-time">
                                     {new Date(notification.completionDate).toLocaleDateString("en-US", {
                                       month: "short",
                                       day: "numeric",
@@ -324,7 +440,7 @@ function HomePage() {
           <RepairList repairs={filteredRepairs} handleRepairClicked={handleRepairClicked} />
 
           {filteredRepairs.length === 0 && (
-            <div className="no-results-home">
+            <div className="pm-no-results-home">
               <p>No repairs found matching your search.</p>
             </div>
           )}

@@ -19,6 +19,8 @@ import {
   Wrench,
   Zap,
   Filter,
+  Map,
+  List,
 } from "lucide-react"
 import Nav from "../../components/Nav"
 import "../../styles/entrepreneur/homepageentrepreneur.css"
@@ -43,7 +45,7 @@ const createBuildingIcon = (jobCount) => {
   const color = jobCount > 0 ? "#E74C3C" : "#7F8C8D"
 
   return L.divIcon({
-    className: "custom-building-icon",
+    className: "eh-custom-building-icon",
     html: `
       <div style="position: relative;">
         <div style="
@@ -103,6 +105,39 @@ const createBuildingIcon = (jobCount) => {
   })
 }
 
+// Skeleton Loader Components
+const SkeletonPropertyCard = () => (
+  <div className="eh-skeleton-property-card">
+    <div className="eh-skeleton-header">
+      <div className="eh-skeleton-icon"></div>
+      <div className="eh-skeleton-text-block">
+        <div className="eh-skeleton-title"></div>
+        <div className="eh-skeleton-subtitle"></div>
+      </div>
+    </div>
+    <div className="eh-skeleton-stats">
+      <div className="eh-skeleton-stat"></div>
+    </div>
+  </div>
+)
+
+const SkeletonJobCard = () => (
+  <div className="eh-skeleton-job-card">
+    <div className="eh-skeleton-job-header">
+      <div className="eh-skeleton-job-title"></div>
+      <div className="eh-skeleton-badge"></div>
+    </div>
+    <div className="eh-skeleton-description"></div>
+    <div className="eh-skeleton-description eh-short"></div>
+    <div className="eh-skeleton-details">
+      <div className="eh-skeleton-detail"></div>
+      <div className="eh-skeleton-detail"></div>
+      <div className="eh-skeleton-detail"></div>
+    </div>
+    <div className="eh-skeleton-button"></div>
+  </div>
+)
+
 function HomePageEntrepreneur() {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedProperty, setSelectedProperty] = useState(null)
@@ -119,6 +154,10 @@ function HomePageEntrepreneur() {
   const searchContainerRef = useRef(null)
   const [userProfile, setUserProfile] = useState()
   const [isLoading, setIsLoading] = useState(true)
+  
+  // Mobile view states
+  const [mobileView, setMobileView] = useState("map") // "map" or "list"
+  const [propertyModalOpen, setPropertyModalOpen] = useState(false)
 
   // data variables
   const [properties, setProperties] = useState([])
@@ -210,7 +249,7 @@ function HomePageEntrepreneur() {
     })
 
     return filtered
-  }, [searchTerm, filters, jobs])
+  }, [properties, jobs, searchTerm, filters])
 
   // Get search results for dropdown (only based on search term, not other filters)
   const searchResults = useMemo(() => {
@@ -224,13 +263,72 @@ function HomePageEntrepreneur() {
         return matchesSearch && getPropertyOpenJobsCount(property.id) > 0
       })
       .slice(0, 5) // Limit to 5 results
-  }, [searchTerm, jobs])
+  }, [searchTerm, properties, jobs])
 
-  const getUrgencyColor = (urgency) => {
-    if (urgency === "Immediate") return "var(--color-status-urgent)"
-    if (urgency === "This Month") return "var(--color-status-warning)"
-    if (urgency === "This Year") return "var(--color-status-warning)"
-    return "var(--color-status-info)"
+  // Check if any filters are active
+  const hasActiveFilters = useMemo(() => {
+    return (
+      filters.regions.length > 0 ||
+      filters.cities.length > 0 ||
+      filters.neighborhoods.length > 0 ||
+      filters.workTypes.length > 0 ||
+      filters.urgency.length > 0 ||
+      filters.daysUntilNeeded !== "" ||
+      filters.duration !== "" ||
+      filters.budgetMin !== "" ||
+      filters.budgetMax !== "" ||
+      filters.bidCount !== "" ||
+      filters.propertyTypes.length > 0 ||
+      filters.propertySizes.length > 0
+    )
+  }, [filters])
+
+  // Count active filters
+  const activeFiltersCount = useMemo(() => {
+    let count = 0
+    if (filters.regions.length > 0) count++
+    if (filters.cities.length > 0) count++
+    if (filters.neighborhoods.length > 0) count++
+    if (filters.workTypes.length > 0) count++
+    if (filters.urgency.length > 0) count++
+    if (filters.daysUntilNeeded !== "") count++
+    if (filters.duration !== "") count++
+    if (filters.budgetMin !== "" || filters.budgetMax !== "") count++
+    if (filters.bidCount !== "") count++
+    if (filters.propertyTypes.length > 0) count++
+    if (filters.propertySizes.length > 0) count++
+    return count
+  }, [filters])
+
+  // Handle filter changes
+  const handleFilterChange = (filterType, value) => {
+    if (Array.isArray(filters[filterType])) {
+      const currentValues = filters[filterType]
+      const newValues = currentValues.includes(value)
+        ? currentValues.filter((v) => v !== value)
+        : [...currentValues, value]
+
+      setFilters({ ...filters, [filterType]: newValues })
+    } else {
+      setFilters({ ...filters, [filterType]: value })
+    }
+  }
+
+  const clearFilters = () => {
+    setFilters({
+      regions: [],
+      cities: [],
+      neighborhoods: [],
+      workTypes: [],
+      urgency: [],
+      daysUntilNeeded: "",
+      duration: "",
+      budgetMin: "",
+      budgetMax: "",
+      bidCount: "",
+      propertyTypes: [],
+      propertySizes: [],
+    })
   }
 
   const handleBidClick = (job) => {
@@ -245,6 +343,7 @@ function HomePageEntrepreneur() {
       alert("Please fill in all required fields")
       return
     }
+
     const userProfile = localStorage.getItem('userProfile')
 
     if(userProfile) {
@@ -270,118 +369,122 @@ function HomePageEntrepreneur() {
 
         const data = await response.json()
         fetchBids()
+        
+        alert("Bid submitted successfully!")
+        setBidModalOpen(false)
+        setBidAmount("")
+        setBidMessage("")
+        setSelectedJob(null)
       } catch(err) {
         console.log(err)
+        alert("Failed to submit bid. Please try again.")
       }
     }
-
-    console.log("Submitting bid:", {
-      jobId: selectedJob.id,
-      amount: bidAmount,
-      message: bidMessage,
-    })
-
-    alert("Bid submitted successfully!")
-    setBidModalOpen(false)
   }
 
-  const handleSearchFocus = () => {
-    setSearchExpanded(true)
-    setShowSearchResults(true)
-  }
+  const fetchBids = async () => {
+    const userProfile = localStorage.getItem('userProfile')
+    if (userProfile) {
+      try {
+        const user = JSON.parse(userProfile)
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+        const bidsResponse = await fetch(`${API_BASE_URL}/api/bids/mine`, {
+          headers: {
+            Authorization: `Bearer ${user.token}`
+          }
+        })
 
-  const handleSearchBlur = () => {
-    // Delay to allow click on results
-    setTimeout(() => {
-      if (!searchTerm) {
-        setSearchExpanded(false)
+        if (!bidsResponse.ok) {
+          throw new Error(`HTTP error! Status: ${bidsResponse.status}`)
+        }
+
+        const bids = await bidsResponse.json()
+
+        // Extract only bid IDs
+        const bidIds = bids.bids.all.map(bid => bid.job_id)
+        setSubmittedBids(bidIds)
+      } catch (error) {
+        console.error("Failed to fetch bids:", error)
       }
-      setShowSearchResults(false)
-    }, 200)
+    }
   }
 
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value)
-    setShowSearchResults(true)
+  const getUrgencyColor = (urgency) => {
+    if (urgency === "Immediate") return "var(--color-status-urgent)"
+    if (urgency === "This Month") return "var(--color-status-warning)"
+    if (urgency === "This Year") return "var(--color-status-warning)"
+    switch (urgency) {
+      case "Critical":
+        return "var(--color-status-urgent)"
+      case "High":
+        return "#FF8C42"
+      case "Medium":
+        return "#FFB84D"
+      case "Low":
+        return "#7F8C8D"
+      default:
+        return "#7F8C8D"
+    }
   }
 
-  const handleResultClick = (property) => {
+  const handleSearchResultClick = (property) => {
     setSelectedProperty(property)
+    setShowSearchResults(false)
+    setSearchTerm("")
+    setSearchExpanded(false)
+    // Center map on selected property with zoom
     setMapCenter([property.latitude, property.longitude])
     setMapZoom(17)
-    setSearchTerm("")
-    setShowSearchResults(false)
-    setSearchExpanded(false)
   }
 
-  const handleFilterChange = (filterType, value) => {
-    setFilters((prev) => {
-      if (Array.isArray(prev[filterType])) {
-        const newArray = prev[filterType].includes(value)
-          ? prev[filterType].filter((item) => item !== value)
-          : [...prev[filterType], value]
-        return { ...prev, [filterType]: newArray }
-      } else {
-        return { ...prev, [filterType]: value }
-      }
-    })
-  }
-
-  const clearFilters = () => {
-    setFilters({
-      regions: [],
-      cities: [],
-      neighborhoods: [],
-      workTypes: [],
-      urgency: [],
-      daysUntilNeeded: "",
-      duration: "",
-      budgetMin: "",
-      budgetMax: "",
-      bidCount: "",
-      propertyTypes: [],
-      propertySizes: [],
-    })
-  }
-
-  const activeFiltersCount = useMemo(() => {
-    let count = 0
-    Object.keys(filters).forEach((key) => {
-      if (Array.isArray(filters[key])) {
-        count += filters[key].length
-      } else if (filters[key]) {
-        count += 1
-      }
-    })
-    return count
-  }, [filters])
-
-  useEffect(() => {
-    if (searchExpanded && searchInputRef.current) {
-      searchInputRef.current.focus()
+  // Toggle search expansion
+  const toggleSearch = () => {
+    if (!searchExpanded) {
+      setSearchExpanded(true)
+      setTimeout(() => {
+        searchInputRef.current?.focus()
+      }, 100)
     }
-  }, [searchExpanded])
+  }
 
+  // Close search when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        if (searchExpanded && !searchTerm) {
+          setSearchExpanded(false)
+        }
         setShowSearchResults(false)
       }
     }
 
     document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [])
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [searchExpanded, searchTerm])
 
+  // Handle search input changes
+  const handleSearchChange = (e) => {
+    const value = e.target.value
+    setSearchTerm(value)
+    setShowSearchResults(value.length > 0)
+  }
+
+  // Handle property click for mobile modal
+  const handlePropertyClick = (property) => {
+    setSelectedProperty(property)
+    if (window.innerWidth <= 768) {
+      setPropertyModalOpen(true)
+    }
+  }
+
+  // Save selected property to localStorage
   useEffect(() => {
     if (selectedProperty) {
       localStorage.setItem("selectedPropertyId", selectedProperty.id)
     }
   }, [selectedProperty])
 
-  // fetch properties and userProfile
+  // Fetch properties from API
   useEffect(() => {
     const fetchProperties = async () => {
       const profileString = localStorage.getItem("userProfile")
@@ -443,6 +546,7 @@ function HomePageEntrepreneur() {
     fetchProperties()
   }, [])
 
+  // Fetch jobs from API
   useEffect(() => {
     const fetchJobs = async () => {
       const profileString = localStorage.getItem("userProfile")
@@ -493,351 +597,133 @@ function HomePageEntrepreneur() {
 
     fetchJobs()
   }, [])
-  
-  const fetchBids = async () => {
-    const userProfile = localStorage.getItem('userProfile')
-    if (userProfile) {
-      try {
-        const user = JSON.parse(userProfile)
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-        const bidsResponse = await fetch(`${API_BASE_URL}/api/bids/mine`, {
-          headers: {
-            Authorization: `Bearer ${user.token}`
-          }
-        })
-
-        if (!bidsResponse.ok) {
-          throw new Error(`HTTP error! Status: ${bidsResponse.status}`)
-        }
-
-        const bids = await bidsResponse.json()
-
-        // Extract only bid IDs
-        const bidIds = bids.bids.all.map(bid => bid.job_id)
-        setSubmittedBids(bidIds)
-      } catch (error) {
-        console.error("Failed to fetch bids:", error)
-      }
-    }
-  }
-
 
   if (isLoading) {
-    return <h1>LOADING</h1>
+    return (
+      <div className="eh-homepage-container">
+        <Nav user={userProfile} />
+        <main className="eh-main-content">
+          <div className="eh-loading-container">
+            <SkeletonPropertyCard />
+            <div className="eh-section-divider"></div>
+            <SkeletonJobCard />
+            <SkeletonJobCard />
+          </div>
+        </main>
+      </div>
+    )
   }
 
   return (
-    <div className="homepage-container">
-      <Nav />
-
-      <main className="main-content">
-        {isLoading ? (
-          <div className="loading">
-            <h1>LOADING</h1>
-          </div>
-        ) : (
-          userProfile.subscription && userProfile.subscription.plan_type == "none" && <SubscriptionModal />
-        )}
-        <header className="page-header">
-          <div className="header-left">
-            <h1 className="page-title">Available Construction Jobs</h1>
-            <p className="page-subtitle">Find and bid on construction projects in your area</p>
+    <div className="eh-homepage-container">
+      <Nav user={userProfile} />
+      <main className="eh-main-content">
+        {userProfile && userProfile.subscription && userProfile.subscription.plan_type === "none" && <SubscriptionModal />}
+        <div className="eh-page-header">
+          <div className="eh-header-left">
+            <h1 className="eh-page-title">Available Jobs</h1>
+            <p className="eh-page-subtitle">Find and bid on construction projects in your area</p>
           </div>
 
-          <div className="header-actions">
-            <div className={`search-box-entrep ${searchExpanded ? "expanded" : ""}`} ref={searchContainerRef}>
-              <button className="search-trigger-btn entrep" onClick={handleSearchFocus} aria-label="Search">
+          <div className="eh-header-actions">
+            <div
+              ref={searchContainerRef}
+              className={`eh-search-box-entrep ${searchExpanded ? "eh-expanded" : ""}`}
+            >
+              <button className="eh-search-trigger-btn eh-entrep" onClick={toggleSearch}>
                 <Search size={20} />
               </button>
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Search properties..."
-                value={searchTerm}
-                onChange={handleSearchChange}
-                onFocus={handleSearchFocus}
-                onBlur={handleSearchBlur}
-                className="search-input entrep"
-              />
+              {searchExpanded && (
+                <>
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    className="eh-search-input eh-entrep"
+                    placeholder="Search properties..."
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                  />
+                  {searchTerm && (
+                    <button
+                      className="eh-search-close-btn"
+                      onClick={() => {
+                        setSearchTerm("")
+                        setShowSearchResults(false)
+                        setSearchExpanded(false)
+                      }}
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </>
+              )}
 
-              {showSearchResults && searchTerm && searchResults.length > 0 && (
-                <div className="search-results-dropdown">
-                  {searchResults.map((property) => (
-                    <div key={property.id} className="search-result-item" onClick={() => handleResultClick(property)}>
-                      <div className="search-result-icon">
-                        <Building2 size={20} />
+              {showSearchResults && searchExpanded && (
+                <div className="eh-search-results-dropdown">
+                  {searchResults.length > 0 ? (
+                    searchResults.map((property) => (
+                      <div
+                        key={property.id}
+                        className="eh-search-result-item"
+                        onClick={() => handleSearchResultClick(property)}
+                      >
+                        <div className="eh-search-result-icon">
+                          <Building2 size={20} />
+                        </div>
+                        <div className="eh-search-result-content">
+                          <div className="eh-search-result-name">{property.name}</div>
+                          <div className="eh-search-result-address">{property.address}</div>
+                        </div>
+                        <div className="eh-search-result-badge">
+                          {getPropertyOpenJobsCount(property.id)} Jobs
+                        </div>
                       </div>
-                      <div className="search-result-content">
-                        <div className="search-result-name">{property.name}</div>
-                        <div className="search-result-address">{property.address}</div>
-                      </div>
-                      <div className="search-result-badge">{getPropertyOpenJobsCount(property.id)} jobs</div>
+                    ))
+                  ) : (
+                    <div className="eh-no-results">
+                      <p>No properties found</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
             </div>
 
             <button
-              className={`filters-btn ${activeFiltersCount > 0 ? "active" : ""}`}
-              onClick={() => setFiltersPanelOpen(!filtersPanelOpen)}
-              aria-label="Filters"
+              className={`eh-filters-btn ${hasActiveFilters ? "eh-active" : ""}`}
+              onClick={() => setFiltersPanelOpen(true)}
             >
               <Filter size={20} />
-              <span className="filter-btn-text">Filters</span>
-              {activeFiltersCount > 0 && <span className="filter-count">{activeFiltersCount}</span>}
+              <span className="eh-filter-btn-text">Filters</span>
+              {activeFiltersCount > 0 && <span className="eh-filter-count">{activeFiltersCount}</span>}
             </button>
 
-            <button className="notification-btn" aria-label="Notifications">
+            <button className="eh-notification-btn">
               <Bell size={20} />
             </button>
           </div>
-        </header>
+        </div>
 
-        {/* Filters Modal */}
-        {filtersPanelOpen && (
-          <div className="modal-overlay" onClick={() => setFiltersPanelOpen(false)}>
-            <div className="filters-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="filters-modal-header">
-                <div className="filters-modal-title">
-                  <SlidersHorizontal size={24} />
-                  <h2>Advanced Filters</h2>
-                </div>
-                <button className="modal-close" onClick={() => setFiltersPanelOpen(false)}>
-                  <X size={24} />
-                </button>
-              </div>
+        {/* Mobile View Toggle */}
+        <div className="eh-mobile-view-toggle">
+          <button
+            className={`eh-view-toggle-btn ${mobileView === "map" ? "eh-active" : ""}`}
+            onClick={() => setMobileView("map")}
+          >
+            <Map size={18} />
+            <span>Map</span>
+          </button>
+          <button
+            className={`eh-view-toggle-btn ${mobileView === "list" ? "eh-active" : ""}`}
+            onClick={() => setMobileView("list")}
+          >
+            <List size={18} />
+            <span>List</span>
+          </button>
+        </div>
 
-              <div className="filters-modal-body">
-                <div className="filters-actions-top">
-                  <p className="filters-description">Refine your search to find the perfect construction jobs</p>
-                  <button className="clear-filters-btn" onClick={clearFilters}>
-                    <X size={16} />
-                    <span>Clear All</span>
-                  </button>
-                </div>
-
-                <div className="filters-grid">
-                  {/* Geographic Filters */}
-                  <div className="filter-group">
-                    <div className="filter-group-header">
-                      <MapPin size={18} />
-                      <h4>Location</h4>
-                    </div>
-                    <div className="filter-options">
-                      {["Ilocos Region"].map((item) => (
-                        <label key={item} className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={filters.regions.includes(item)}
-                            onChange={() => handleFilterChange("regions", item)}
-                          />
-                          <span>{item}</span>
-                        </label>
-                      ))}
-                      {["Dagupan City"].map((item) => (
-                        <label key={item} className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={filters.cities.includes(item)}
-                            onChange={() => handleFilterChange("cities", item)}
-                          />
-                          <span>{item}</span>
-                        </label>
-                      ))}
-                      {["Downtown", "Beachfront", "Business District", "Suburban", "Riverside"].map((item) => (
-                        <label key={item} className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={filters.neighborhoods.includes(item)}
-                            onChange={() => handleFilterChange("neighborhoods", item)}
-                          />
-                          <span>{item}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Work Type Filters */}
-                  <div className="filter-group">
-                    <div className="filter-group-header">
-                      <Wrench size={18} />
-                      <h4>Work Type</h4>
-                    </div>
-                    <div className="filter-options">
-                      {[
-                        "Electrical",
-                        "Plumbing",
-                        "Carpentry",
-                        "Masonry",
-                        "Roofing",
-                        "HVAC",
-                        "Painting",
-                        "Flooring",
-                        "General Maintenance",
-                      ].map((type) => (
-                        <label key={type} className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={filters.workTypes.includes(type)}
-                            onChange={() => handleFilterChange("workTypes", type)}
-                          />
-                          <span>{type}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Urgency Filters */}
-                  <div className="filter-group">
-                    <div className="filter-group-header">
-                      <Zap size={18} />
-                      <h4>Urgency Level</h4>
-                    </div>
-                    <div className="filter-options">
-                      {["Immediate", "This Month", "This Year", "Next Year", "Flexible"].map((urgency) => (
-                        <label key={urgency} className="checkbox-label">
-                          <input
-                            type="checkbox"
-                            checked={filters.urgency.includes(urgency)}
-                            onChange={() => handleFilterChange("urgency", urgency)}
-                          />
-                          <span>{urgency}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Timeline Filters */}
-                  <div className="filter-group">
-                    <div className="filter-group-header">
-                      <Clock size={18} />
-                      <h4>Timeline</h4>
-                    </div>
-                    <div className="filter-inputs">
-                      <div className="input-group">
-                        <label>Days Until Needed (max)</label>
-                        <input
-                          type="number"
-                          placeholder="e.g., 30"
-                          value={filters.daysUntilNeeded}
-                          onChange={(e) => handleFilterChange("daysUntilNeeded", e.target.value)}
-                        />
-                      </div>
-                      <div className="input-group">
-                        <label>Work Duration (max days)</label>
-                        <input
-                          type="number"
-                          placeholder="e.g., 7"
-                          value={filters.duration}
-                          onChange={(e) => handleFilterChange("duration", e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Budget Filters */}
-                  <div className="filter-group">
-                    <div className="filter-group-header">
-                      <DollarSign size={18} />
-                      <h4>Budget Range</h4>
-                    </div>
-                    <div className="filter-inputs">
-                      <div className="input-group">
-                        <label>Minimum Budget ($)</label>
-                        <input
-                          type="number"
-                          placeholder="e.g., 1000"
-                          value={filters.budgetMin}
-                          onChange={(e) => handleFilterChange("budgetMin", e.target.value)}
-                        />
-                      </div>
-                      <div className="input-group">
-                        <label>Maximum Budget ($)</label>
-                        <input
-                          type="number"
-                          placeholder="e.g., 10000"
-                          value={filters.budgetMax}
-                          onChange={(e) => handleFilterChange("budgetMax", e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Property Details */}
-                  <div className="filter-group">
-                    <div className="filter-group-header">
-                      <Building2 size={18} />
-                      <h4>Property Details</h4>
-                    </div>
-                    <div className="filter-section">
-                      <p className="filter-subsection-title">Property Type</p>
-                      <div className="filter-options">
-                        {["Residential", "Commercial", "Mixed-Use"].map((item) => (
-                          <label key={item} className="checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={filters.propertyTypes.includes(item)}
-                              onChange={() => handleFilterChange("propertyTypes", item)}
-                            />
-                            <span>{item}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="filter-section">
-                      <p className="filter-subsection-title">Property Size</p>
-                      <div className="filter-options">
-                        {["Small", "Medium", "Large"].map((item) => (
-                          <label key={item} className="checkbox-label">
-                            <input
-                              type="checkbox"
-                              checked={filters.propertySizes.includes(item)}
-                              onChange={() => handleFilterChange("propertySizes", item)}
-                            />
-                            <span>{item}</span>
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="filter-inputs">
-                      <div className="input-group">
-                        <label>Maximum Existing Bids</label>
-                        <input
-                          type="number"
-                          placeholder="e.g., 5"
-                          value={filters.bidCount}
-                          onChange={(e) => handleFilterChange("bidCount", e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="filters-modal-footer">
-                <button className="cancel-btn" onClick={() => setFiltersPanelOpen(false)}>
-                  Cancel
-                </button>
-                <button className="apply-filters-btn" onClick={() => setFiltersPanelOpen(false)}>
-                  <SlidersHorizontal size={18} />
-                  <span>Apply Filters</span>
-                  {activeFiltersCount > 0 && <span className="footer-badge">({activeFiltersCount})</span>}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="content-grid">
-          <div className="map-section">
-            <MapContainer
-              center={[16.0418, 120.3335]}
-              zoom={14}
-              style={{ height: "100%", width: "100%", borderRadius: "12px" }}
-              zoomControl={false}
-              attributionControl={false}
-            >
+        <div className="eh-content-grid">
+          <div className={`eh-map-section ${mobileView === "list" ? "eh-mobile-hidden" : ""}`}>
+            <MapContainer center={[16.0413, 120.3333]} zoom={13} style={{ height: "100%", width: "100%" }} zoomControl={false} attributionControl={false} >
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -853,15 +739,15 @@ function HomePageEntrepreneur() {
                     position={[property.latitude, property.longitude]}
                     icon={createBuildingIcon(jobCount)}
                     eventHandlers={{
-                      click: () => setSelectedProperty(property),
+                      click: () => handlePropertyClick(property),
                     }}
                   >
                     <Popup>
-                      <div className="popup-content">
+                      <div className="eh-popup-content">
                         <h3>{property.name}</h3>
                         <p>{property.address}</p>
-                        <div className="popup-stats">
-                          <span className="popup-stat highlight">{jobCount} Open Jobs</span>
+                        <div className="eh-popup-stats">
+                          <span className="eh-popup-stat eh-highlight">{jobCount} Open Jobs</span>
                         </div>
                       </div>
                     </Popup>
@@ -871,86 +757,90 @@ function HomePageEntrepreneur() {
             </MapContainer>
           </div>
 
-          <div className="details-section">
+          <div className={`eh-details-section ${mobileView === "map" ? "eh-mobile-hidden" : ""}`}>
             {selectedProperty ? (
-              <div className="property-details">
-                <div className="details-header">
-                  <div className="details-header-content">
-                    <div className="header-icon">
+              <div className="eh-property-details">
+                <div className="eh-details-header">
+                  <div className="eh-details-header-content">
+                    <div className="eh-header-icon">
                       <Building2 size={28} />
                     </div>
-                    <div className="header-text">
-                      <h2 className="property-name">{selectedProperty.name}</h2>
-                      <p className="property-address">{selectedProperty.address}</p>
-                      <div className="property-meta">
-                        <span className="meta-badge">{selectedProperty.propertyType}</span>
+                    <div className="eh-header-text">
+                      <h2 className="eh-property-name">{selectedProperty.name}</h2>
+                      <p className="eh-property-address">{selectedProperty.address}</p>
+                      <div className="eh-property-meta">
+                        <span className="eh-meta-badge">{selectedProperty.propertyType}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="stats-grid">
-                  <div className="stat-card highlight">
-                    <span className="stat-label">Open Jobs</span>
-                    <span className="stat-value">{getPropertyOpenJobsCount(selectedProperty.id)}</span>
+                <div className="eh-stats-grid">
+                  <div className="eh-stat-card eh-highlight">
+                    <span className="eh-stat-label">Open Jobs</span>
+                    <span className="eh-stat-value">{getPropertyOpenJobsCount(selectedProperty.id)}</span>
                   </div>
                 </div>
 
-                <div className="section-divider"></div>
+                <div className="eh-section-divider"></div>
 
-                <div className="section-tabs">
-                  <div className="section-header">
+                <div className="eh-section-tabs">
+                  <div className="eh-section-header">
                     <h3>Available Jobs for Bidding</h3>
-                    <span className="job-count-badge">{getPropertyOpenJobs(selectedProperty.id).length} Jobs</span>
+                    <span className="eh-job-count-badge">{getPropertyOpenJobs(selectedProperty.id).length} Jobs</span>
                   </div>
-                  <div className="jobs-list">
+                  <div className="eh-jobs-list">
                     {getPropertyOpenJobs(selectedProperty.id).length > 0 ? (
                       getPropertyOpenJobs(selectedProperty.id).map((job) => {
                         return (
-                          <div key={job.id} className="job-card">
-                            <div className="job-card-header">
-                              <div className="job-title-section">
-                                <h4 className="job-title">{job.title}</h4>
-                                <div className="job-meta-row">
-                                  <span className="job-category">{job.category}</span>
-                                  <span className="bid-count-badge">{job.bidCount} bids</span>
+                          <div key={job.id} className="eh-job-card">
+                            <div className="eh-job-card-header">
+                              <div className="eh-job-title-section">
+                                <h4 className="eh-job-title">{job.title}</h4>
+                                <div className="eh-job-meta-row">
+                                  <span className="eh-job-category">{job.category}</span>
+                                  <span className="eh-bid-count-badge">{job.bidCount} bids</span>
                                 </div>
                               </div>
-                              <span className="urgency-badge" style={{ backgroundColor: getUrgencyColor(job.urgency) }}>
+                              <span className="eh-urgency-badge" style={{ backgroundColor: getUrgencyColor(job.urgency) }}>
                                 {job.urgency}
                               </span>
                             </div>
 
-                            <p className="job-description">{job.description}</p>
+                            <p className="eh-job-description">{job.description}</p>
 
-                            <div className="job-details-grid">
-                              <div className="detail-item">
+                            <div className="eh-job-details-grid">
+                              <div className="eh-detail-item">
                                 <DollarSign size={16} />
                                 <div>
-                                  <span className="detail-label">Budget Range</span>
-                                  <span className="detail-value">
+                                  <span className="eh-detail-label">Budget Range</span>
+                                  <span className="eh-detail-value">
                                     ${Number.parseFloat(job.budget_min).toLocaleString()} - $
                                     {Number.parseFloat(job.budget_max).toLocaleString()}
                                   </span>
                                 </div>
                               </div>
-                              <div className="detail-item">
+                              <div className="eh-detail-item">
                                 <Clock size={16} />
                                 <div>
-                                  <span className="detail-label">Duration</span>
-                                  <span className="detail-value">{job.estimated_duration_days} days</span>
+                                  <span className="eh-detail-label">Duration</span>
+                                  <span className="eh-detail-value">{job.estimated_duration_days} days</span>
                                 </div>
                               </div>
-                              <div className="detail-item">
+                              <div className="eh-detail-item">
                                 <AlertCircle size={16} />
                                 <div>
-                                  <span className="detail-label">Needed In</span>
-                                  <span className="detail-value">{job.daysUntilNeeded} days</span>
+                                  <span className="eh-detail-label">Needed In</span>
+                                  <span className="eh-detail-value">{job.daysUntilNeeded} days</span>
                                 </div>
                               </div>
                             </div>
 
-                            <button className={(submittedBids.includes(job.id)? 'bid-button submitted-bid': 'bid-button')} onClick={() => handleBidClick(job)}>
+                            <button className={(submittedBids.includes(job.id)? 'eh-bid-button eh-submitted-bid': 'eh-bid-button')} onClick={() => {
+                              if(!submittedBids.includes(job.id)) {
+                                handleBidClick(job)
+                              }
+                            }}>
                               <Hammer size={18} />
                               {submittedBids.includes(job.id)? 'Bid Submitted' : 'Submit Your Bid'}
                             </button>
@@ -958,49 +848,343 @@ function HomePageEntrepreneur() {
                         )
                       })
                     ) : (
-                      <div className="no-jobs">
+                      <div className="eh-no-jobs">
                         <Hammer size={48} color="var(--color-border-divider)" />
-                        <p className="no-jobs-title">No Open Jobs</p>
-                        <p className="no-jobs-text">This property has no available jobs for bidding at the moment.</p>
+                        <p className="eh-no-jobs-title">No Open Jobs</p>
+                        <p className="eh-no-jobs-text">This property has no available jobs for bidding at the moment.</p>
                       </div>
                     )}
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="no-selection">
-                <Building2 size={64} color="var(--color-border-divider)" />
-                <h3>Select a Property</h3>
-                <p>Click on a building marker on the map to view available construction jobs</p>
+              <div className="eh-all-properties-list">
+                <div className="eh-list-header">
+                  <h3>All Properties</h3>
+                  <span className="eh-property-count-badge">{filteredProperties.length} Properties</span>
+                </div>
+                <div className="eh-properties-grid">
+                  {filteredProperties.map((property) => {
+                    const jobCount = getPropertyOpenJobsCount(property.id)
+                    return (
+                      <div
+                        key={property.id}
+                        className="eh-property-list-card"
+                        onClick={() => handlePropertyClick(property)}
+                      >
+                        <div className="eh-property-card-header">
+                          <div className="eh-property-icon">
+                            <Building2 size={24} />
+                          </div>
+                          <div className="eh-property-info">
+                            <h4 className="eh-property-card-name">{property.name}</h4>
+                            <p className="eh-property-card-address">{property.address}</p>
+                            <span className="eh-property-type-badge">{property.propertyType}</span>
+                          </div>
+                        </div>
+                        <div className="eh-property-card-footer">
+                          <div className="eh-job-count-indicator">
+                            <Hammer size={16} />
+                            <span>{jobCount} Open Jobs</span>
+                          </div>
+                          <button className="eh-view-jobs-btn">View Jobs</button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </div>
         </div>
       </main>
 
-      {/* Bid Modal */}
-      {bidModalOpen && selectedJob && (
-        <div className="modal-overlay submit-bid" onClick={() => setBidModalOpen(false)}>
-          <div className="modal-content bid-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header submit-bid">
-              <h2>Submit Your Bid</h2>
-              <button className="modal-close" onClick={() => setBidModalOpen(false)}>
+      {/* Filters Modal */}
+      {filtersPanelOpen && (
+        <div className="eh-modal-overlay eh-filters" onClick={() => setFiltersPanelOpen(false)}>
+          <div className="eh-modal-content eh-filters-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="eh-modal-header eh-filters">
+              <div className="eh-filters-header-content">
+                <div className="eh-header-icon-wrapper">
+                  <SlidersHorizontal size={24} />
+                </div>
+                <h2>Filter Jobs</h2>
+              </div>
+              <button className="eh-modal-close" onClick={() => setFiltersPanelOpen(false)}>
                 <X size={24} />
               </button>
             </div>
 
-            <div className="modal-body">
-              <div className="job-summary">
+            <div className="eh-modal-body">
+              <div className="eh-filters-grid">
+                {/* Location Filters */}
+                <div className="eh-filter-group">
+                  <div className="eh-filter-group-header">
+                    <MapPin size={18} />
+                    <h3>Location</h3>
+                  </div>
+                  <div className="eh-filter-section">
+                    <div className="eh-filter-subsection-title">Region</div>
+                    <div className="eh-checkbox-group">
+                      {["NCR", "Ilocos", "Calabarzon"].map((region) => (
+                        <label key={region} className="eh-checkbox-label">
+                          <input
+                            type="checkbox"
+                            checked={filters.regions.includes(region)}
+                            onChange={() => handleFilterChange("regions", region)}
+                          />
+                          <span className="eh-checkbox-text">{region}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Work Type Filters */}
+                <div className="eh-filter-group">
+                  <div className="eh-filter-group-header">
+                    <Wrench size={18} />
+                    <h3>Work Type</h3>
+                  </div>
+                  <div className="eh-checkbox-group">
+                    {["Plumbing", "Electrical", "HVAC", "General Maintenance", "Carpentry"].map((type) => (
+                      <label key={type} className="eh-checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={filters.workTypes.includes(type)}
+                          onChange={() => handleFilterChange("workTypes", type)}
+                        />
+                        <span className="eh-checkbox-text">{type}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Urgency Filters */}
+                <div className="eh-filter-group">
+                  <div className="eh-filter-group-header">
+                    <Zap size={18} />
+                    <h3>Urgency</h3>
+                  </div>
+                  <div className="eh-checkbox-group">
+                    {["Critical", "High", "Medium", "Low"].map((urgency) => (
+                      <label key={urgency} className="eh-checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={filters.urgency.includes(urgency)}
+                          onChange={() => handleFilterChange("urgency", urgency)}
+                        />
+                        <span className="eh-checkbox-text">{urgency}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Budget Filters */}
+                <div className="eh-filter-group">
+                  <div className="eh-filter-group-header">
+                    <DollarSign size={18} />
+                    <h3>Budget Range</h3>
+                  </div>
+                  <div className="eh-budget-inputs">
+                    <div className="eh-input-group">
+                      <label>Min ($)</label>
+                      <input
+                        type="number"
+                        value={filters.budgetMin}
+                        onChange={(e) => handleFilterChange("budgetMin", e.target.value)}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="eh-input-group">
+                      <label>Max ($)</label>
+                      <input
+                        type="number"
+                        value={filters.budgetMax}
+                        onChange={(e) => handleFilterChange("budgetMax", e.target.value)}
+                        placeholder="Any"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Duration Filters */}
+                <div className="eh-filter-group">
+                  <div className="eh-filter-group-header">
+                    <Clock size={18} />
+                    <h3>Duration</h3>
+                  </div>
+                  <div className="eh-input-group">
+                    <label>Max Duration (days)</label>
+                    <input
+                      type="number"
+                      value={filters.duration}
+                      onChange={(e) => handleFilterChange("duration", e.target.value)}
+                      placeholder="Any"
+                    />
+                  </div>
+                </div>
+
+                {/* Property Type Filters */}
+                <div className="eh-filter-group">
+                  <div className="eh-filter-group-header">
+                    <Building2 size={18} />
+                    <h3>Property Type</h3>
+                  </div>
+                  <div className="eh-checkbox-group">
+                    {["Commercial", "Residential", "Industrial"].map((type) => (
+                      <label key={type} className="eh-checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={filters.propertyTypes.includes(type)}
+                          onChange={() => handleFilterChange("propertyTypes", type)}
+                        />
+                        <span className="eh-checkbox-text">{type}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {hasActiveFilters && (
+                <button className="eh-clear-filters-btn" onClick={clearFilters}>
+                  Clear All Filters
+                </button>
+              )}
+            </div>
+
+            <div className="eh-filters-modal-footer">
+              <button className="eh-cancel-btn" onClick={() => setFiltersPanelOpen(false)}>
+                Cancel
+              </button>
+              <button className="eh-apply-filters-btn" onClick={() => setFiltersPanelOpen(false)}>
+                <Filter size={18} />
+                Apply Filters
+                {activeFiltersCount > 0 && <span className="eh-footer-badge">{activeFiltersCount}</span>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Property Modal */}
+      {propertyModalOpen && selectedProperty && (
+        <div className="eh-modal-overlay eh-property-modal" onClick={() => setPropertyModalOpen(false)}>
+          <div className="eh-modal-content eh-property-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="eh-modal-header eh-property">
+              <h2>{selectedProperty.name}</h2>
+              <button className="eh-modal-close" onClick={() => setPropertyModalOpen(false)}>
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="eh-modal-body eh-property-modal-body">
+              <div className="eh-property-modal-info">
+                <p className="eh-property-modal-address">{selectedProperty.address}</p>
+                <div className="eh-property-modal-meta">
+                  <span className="eh-meta-badge">{selectedProperty.propertyType}</span>
+                  <span className="eh-jobs-count-meta">{getPropertyOpenJobsCount(selectedProperty.id)} Open Jobs</span>
+                </div>
+              </div>
+
+              <div className="eh-section-divider"></div>
+
+              <div className="eh-section-tabs">
+                <h3 className="eh-modal-section-title">Available Jobs</h3>
+                <div className="eh-jobs-list">
+                  {getPropertyOpenJobs(selectedProperty.id).length > 0 ? (
+                    getPropertyOpenJobs(selectedProperty.id).map((job) => {
+                      return (
+                        <div key={job.id} className="eh-job-card">
+                          <div className="eh-job-card-header">
+                            <div className="eh-job-title-section">
+                              <h4 className="eh-job-title">{job.title}</h4>
+                              <div className="eh-job-meta-row">
+                                <span className="eh-job-category">{job.category}</span>
+                                <span className="eh-bid-count-badge">{job.bidCount} bids</span>
+                              </div>
+                            </div>
+                            <span className="eh-urgency-badge" style={{ backgroundColor: getUrgencyColor(job.urgency) }}>
+                              {job.urgency}
+                            </span>
+                          </div>
+
+                          <p className="eh-job-description">{job.description}</p>
+
+                          <div className="eh-job-details-grid">
+                            <div className="eh-detail-item">
+                              <DollarSign size={16} />
+                              <div>
+                                <span className="eh-detail-label">Budget Range</span>
+                                <span className="eh-detail-value">
+                                  ${Number.parseFloat(job.budget_min).toLocaleString()} - $
+                                  {Number.parseFloat(job.budget_max).toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="eh-detail-item">
+                              <Clock size={16} />
+                              <div>
+                                <span className="eh-detail-label">Duration</span>
+                                <span className="eh-detail-value">{job.estimated_duration_days} days</span>
+                              </div>
+                            </div>
+                            <div className="eh-detail-item">
+                              <AlertCircle size={16} />
+                              <div>
+                                <span className="eh-detail-label">Needed In</span>
+                                <span className="eh-detail-value">{job.daysUntilNeeded} days</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <button className={(submittedBids.includes(job.id)? 'eh-bid-button eh-submitted-bid': 'eh-bid-button')} onClick={() => {
+                            setPropertyModalOpen(false)
+                            handleBidClick(job)
+                          }}>
+                            <Hammer size={18} />
+                            {submittedBids.includes(job.id)? 'Bid Submitted' : 'Submit Your Bid'}
+                          </button>
+                        </div>
+                      )
+                    })
+                  ) : (
+                    <div className="eh-no-jobs">
+                      <Hammer size={48} color="var(--color-border-divider)" />
+                      <p className="eh-no-jobs-title">No Open Jobs</p>
+                      <p className="eh-no-jobs-text">This property has no available jobs for bidding at the moment.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bid Modal */}
+      {bidModalOpen && selectedJob && (
+        <div className="eh-modal-overlay eh-submit-bid" onClick={() => setBidModalOpen(false)}>
+          <div className="eh-modal-content eh-bid-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="eh-modal-header eh-submit-bid">
+              <h2>Submit Your Bid</h2>
+              <button className="eh-modal-close" onClick={() => setBidModalOpen(false)}>
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="eh-modal-body">
+              <div className="eh-job-summary">
                 <h3>{selectedJob.title}</h3>
-                <p className="job-summary-category">{selectedJob.category}</p>
-                <p className="job-summary-budget">
+                <p className="eh-job-summary-category">{selectedJob.category}</p>
+                <p className="eh-job-summary-budget">
                   Budget Range: ${Number.parseFloat(selectedJob.budget_min).toLocaleString()} - $
                   {Number.parseFloat(selectedJob.budget_max).toLocaleString()}
                 </p>
               </div>
 
-              <div className="bid-form">
-                <div className="form-group">
+              <div className="eh-bid-form">
+                <div className="eh-form-group">
                   <label htmlFor="bidAmount">Your Bid Amount ($) *</label>
                   <input
                     type="number"
@@ -1011,10 +1195,10 @@ function HomePageEntrepreneur() {
                     min={selectedJob.budget_min}
                     max={selectedJob.budget_max}
                   />
-                  <span className="form-hint">Must be between budget range</span>
+                  <span className="eh-form-hint">Must be between budget range</span>
                 </div>
 
-                <div className="form-group">
+                <div className="eh-form-group">
                   <label htmlFor="bidMessage">Proposal Message *</label>
                   <textarea
                     id="bidMessage"
@@ -1025,7 +1209,7 @@ function HomePageEntrepreneur() {
                   />
                 </div>
 
-                <button onClick={handleSubmitBid} className="submit-bid-button">
+                <button onClick={handleSubmitBid} className="eh-submit-bid-button">
                   <Send size={18} />
                   Submit Bid
                 </button>

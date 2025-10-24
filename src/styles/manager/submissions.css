@@ -453,14 +453,15 @@
   letter-spacing: 0.3px;
 }
 
-.status-pending {
-  background-color: rgba(243, 156, 18, 0.1);
-  color: var(--color-status-warning);
+/* Updated status badges to match job statuses */
+.status-open {
+  background-color: rgba(52, 152, 219, 0.1);
+  color: var(--color-status-info);
 }
 
 .status-accepted {
-  background-color: rgba(52, 152, 219, 0.1);
-  color: var(--color-status-info);
+  background-color: rgba(46, 204, 113, 0.1);
+  color: #27ae60;
 }
 
 .status-ongoing {
@@ -472,6 +473,12 @@
   background-color: rgba(46, 204, 113, 0.15);
   color: #27ae60;
   border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+/* Kept for backwards compatibility if needed */
+.status-pending {
+  background-color: rgba(243, 156, 18, 0.1);
+  color: var(--color-status-warning);
 }
 
 .status-declined {
