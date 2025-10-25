@@ -25,6 +25,7 @@ import {
 import Nav from "../../components/Nav"
 import "../../styles/entrepreneur/homepageentrepreneur.css"
 import SubscriptionModal from "../../components/SubcriptionModal"
+import UnlockBudgetForm from '../../components/UnlockBudgetForm'
 
 
 // Map Controller Component for programmatic map control
@@ -163,6 +164,9 @@ function HomePageEntrepreneur() {
   const [properties, setProperties] = useState([])
   const [jobs, setJobs] = useState([])
   const [submittedBids, setSubmittedBids] = useState([])
+  const [showUnlockBudgetModal, setShowUnlockBudgetModal] = useState(false)
+  const [paymentMethos, setPaymentMethod] = useState('pm_card_visa')
+  const [budgetJobId, setBudgetJobId] = useState('')
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -492,6 +496,7 @@ function HomePageEntrepreneur() {
         if (profileString) {
           const user = JSON.parse(profileString)
           setUserProfile(user)
+          getProfileAfterSubs(user)
 
           const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
@@ -567,25 +572,35 @@ function HomePageEntrepreneur() {
             console.error(`HTTP error fetching jobs! Status: ${response.status}`)
           } else {
             const jobsData = await response.json()
-            
+            const transformedJobs = []
 
-            const transformedJobs = jobsData.map((job) => ({
-              id: job.id,
-              property_id: job.property_id,
-              title: job.title,
-              description: job.description,
-              category: job.category,
-              urgency: job.urgency,
-              due_date: job.due_date,
-              estimated_duration_days: job.estimated_duration_days,
-              budget_min: job.budget_min.toString(),
-              budget_max: job.budget_max.toString(),
-              status: job.status,
-              bidCount: 0,
-              daysUntilNeeded: Math.ceil(
-                (new Date(job.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
-              ),
-            }))
+            jobsData.forEach(async job => {
+              const budgetData = await fetchBudgetStatus(job, user, API_BASE_URL)
+              const transformJobData = {
+                id: job.id,
+                property_id: job.property_id,
+                title: job.title,
+                description: job.description,
+                category: job.category,
+                urgency: job.urgency,
+                due_date: job.due_date,
+                estimated_duration_days: job.estimated_duration_days,
+                budget_min: job.budget_min.toString(),
+                budget_max: job.budget_max.toString(),
+                status: job.status,
+                bidCount: 0,
+                daysUntilNeeded: Math.ceil(
+                  (new Date(job.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
+                ),
+                budgetData: {
+                  unlocked: budgetData.unlocked,
+                  unlockDate: budgetData.unlock_date,
+                  amountPaid: budgetData.amount_paid
+                }
+              }
+
+              transformedJobs.push(transformJobData)
+            })
 
             setJobs(transformedJobs)
             fetchBids()
@@ -598,6 +613,65 @@ function HomePageEntrepreneur() {
 
     fetchJobs()
   }, [])
+
+  const getProfileAfterSubs = (user) => {
+    const uProf = localStorage.getItem('userProfile')
+
+    const fetchSubscription = async () => {
+      if(uProf) {
+        const u = JSON.parse(uProf)
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+        const getSubsscription = await fetch(`${API_BASE_URL}/api/payments/subscription`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${u.token}`
+          }
+        })
+
+        if(!getSubsscription.ok) {
+          throw new Error(`Error ${getSubsscription.status}`)
+        }
+
+        const subscription = await getSubsscription.json()
+
+        setUserProfile({
+          ...u,
+          entrepProfile: {
+            ...u.entrepProfile,
+            subscription,
+          },
+        });
+        
+        // console.log("NEW USER PROFILE", userProfile)
+      }
+    }
+    fetchSubscription()
+  }
+
+
+  const fetchBudgetStatus = async (job, user, API_BASE_URL) => {
+    const budgetUnlockResponse = await fetch(`${API_BASE_URL}/api/payments/budget-status/${job.id}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${user.token}`
+      }
+    })
+
+    if(!budgetUnlockResponse.ok) {
+      throw new Error(`Error ${budgetUnlockResponse.status}`)
+    }
+
+    const data = await budgetUnlockResponse.json()
+    return await data
+  }
+
+  const handleBudgetModal = (success) => {
+    setShowUnlockBudgetModal(false)
+
+    if(success) {
+       window.location.reload(false);
+    }
+  }
 
   if (isLoading) {
     return (
@@ -615,11 +689,15 @@ function HomePageEntrepreneur() {
     )
   }
 
+  const refresher = () => {
+    window.location.reload(false); 
+  }
+
   return (
     <div className="eh-homepage-container">
       <Nav user={userProfile} />
       <main className="eh-main-content">
-        {userProfile && userProfile.subscription && userProfile.subscription.plan_type === "none" && <SubscriptionModal />}
+        {userProfile && userProfile.entrepProfile && !userProfile.entrepProfile.subscription.hasSubscription && <SubscriptionModal token={userProfile.token} refresher={refresher} />}
         <div className="eh-page-header">
           <div className="eh-header-left">
             <h1 className="eh-page-title">Available Jobs</h1>
@@ -785,6 +863,11 @@ function HomePageEntrepreneur() {
 
                 <div className="eh-section-divider"></div>
 
+                {
+                  showUnlockBudgetModal &&
+                  <UnlockBudgetForm jobId={budgetJobId} token={userProfile.token} handleBudgetModal={handleBudgetModal} />
+                }
+
                 <div className="eh-section-tabs">
                   <div className="eh-section-header">
                     <h3>Available Jobs for Bidding</h3>
@@ -816,8 +899,17 @@ function HomePageEntrepreneur() {
                                   {/* unlock */}
                                   <span className="eh-detail-label">Budget Range</span>
                                   <span className="eh-detail-value">
-                                    ${Number.parseFloat(job.budget_min).toLocaleString()} - $
-                                    {Number.parseFloat(job.budget_max).toLocaleString()}
+                                    {
+                                      job.budgetData.unlocked?
+                                    `$${Number.parseFloat(job.budget_min).toLocaleString()} - 
+                                     $${Number.parseFloat(job.budget_max).toLocaleString()}` :
+                                     <>
+                                      <button className="unlock-budget-button" onClick={() => {
+                                        setBudgetJobId(job.id)
+                                        setShowUnlockBudgetModal(true)
+                                      }}>Show budget</button>
+                                     </>
+                                    }
                                   </span>
                                 </div>
                               </div>
@@ -1173,14 +1265,23 @@ function HomePageEntrepreneur() {
                 <X size={24} />
               </button>
             </div>
-
+            {console.log("SELECTED job", selectedJob)}
             <div className="eh-modal-body">
               <div className="eh-job-summary">
                 <h3>{selectedJob.title}</h3>
                 <p className="eh-job-summary-category">{selectedJob.category}</p>
                 <p className="eh-job-summary-budget">
-                  Budget Range: ${Number.parseFloat(selectedJob.budget_min).toLocaleString()} - $
-                  {Number.parseFloat(selectedJob.budget_max).toLocaleString()}
+                  Budget Range: {
+                    selectedJob.budgetData.unlocked ?
+                    `$${Number.parseFloat(selectedJob.budget_min).toLocaleString()} - 
+                     $${Number.parseFloat(selectedJob.budget_max).toLocaleString()}` :
+                    <>
+                    <button className="unlock-budget-button" onClick={() => {
+                      setBudgetJobId(selectedJob.id)
+                      setShowUnlockBudgetModal(true)
+                    }}>Show budget</button>
+                    </>
+                  }
                 </p>
               </div>
 

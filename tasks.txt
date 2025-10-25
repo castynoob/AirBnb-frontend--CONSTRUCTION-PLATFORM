@@ -1,17 +1,15 @@
 Hello, Clocking out
-Oct 24, 2025
+Oct 25, 2025
 03:24:10
 
 Intervos App
 
-- API and Backend Development
-    * Defined and updated API endpoints
-    * Merged team project (ongoing)
-
+- Making the app mobile first approach at all screens (ongoing)
 - Backend testing and frontend integration:
-    * Entrepreneurs can now view bids that they submitted
-    * Project manager profile is now connected to the backend
+    * Payment method integration
+    * Entrepreneurs subscription and subscription based access is now working and payment method is now working using stripe (test mode)
+    * Hiding and showing of budget range from entrepreneurs, entrepreneurs need to pay to show the budget and payment method is now working using stripe (test mode)
+    * Create and fix registration for user and creating entrepreneurs profile
 
-- Implementing abstraction logic to hide budget from entrepreneurs if payment not completed (ongoing)
 
 Thank you!

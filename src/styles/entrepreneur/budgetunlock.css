@@ -1,0 +1,170 @@
+/* ===== Overlay ===== */
+.ub-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 25, 0.55);
+  backdrop-filter: blur(7px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: ub-fadeIn 0.3s ease;
+}
+
+/* ===== Modal ===== */
+.ub-modal {
+  background: #fff;
+  border-radius: 18px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  position: relative;
+  animation: ub-slideUp 0.3s ease;
+  text-align: left;
+  border-top: 6px solid #007bff;
+}
+
+@keyframes ub-fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ub-slideUp {
+  from {
+    transform: translateY(25px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ===== Header Branding ===== */
+.ub-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.4rem;
+}
+
+.ub-logo {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+}
+
+.ub-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #111;
+  margin: 0;
+}
+
+.ub-subtitle {
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 0.2rem;
+}
+
+/* ===== Close Button ===== */
+.ub-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  color: #888;
+  cursor: pointer;
+  transition: color 0.25s ease;
+}
+.ub-close-btn:hover {
+  color: #000;
+}
+
+/* ===== Description ===== */
+.ub-description {
+  color: #333;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  margin-bottom: 1.5rem;
+}
+
+/* ===== Payment Summary ===== */
+.ub-summary {
+  background: #f3f6fb;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1.4rem;
+}
+
+.ub-summary-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  color: #333;
+  padding: 0.4rem 0;
+}
+
+.ub-summary-row strong {
+  font-weight: 600;
+  color: #000;
+}
+
+/* ===== Stripe Card Element ===== */
+.StripeElement {
+  background: #f9fafb;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  border: 1px solid #d2d6dc;
+  transition: all 0.25s ease;
+  margin-bottom: 1rem;
+}
+.StripeElement--focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+.StripeElement--invalid {
+  border-color: #fa755a;
+}
+
+/* ===== Submit Button ===== */
+.ub-form button {
+  background: linear-gradient(90deg, #007bff, #0056b3);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.9rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.25s ease;
+}
+.ub-form button:hover:not(:disabled) {
+  background: linear-gradient(90deg, #006ae1, #004c9c);
+  transform: translateY(-1px);
+}
+.ub-form button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* ===== Messages ===== */
+.ub-message {
+  margin-top: 1rem;
+  color: #444;
+  font-size: 0.95rem;
+}
+.ub-secure-text {
+  font-size: 0.8rem;
+  color: #777;
+  margin-top: 0.8rem;
+  text-align: center;
+}

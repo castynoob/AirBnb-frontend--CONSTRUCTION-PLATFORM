@@ -14,19 +14,13 @@ MANAGER:
 - in jobs, return how many bids in the job
 
 ENTREP:
-- integrate location based
 - add notification UI
-- add bedding submissions
 - notification settings
 - add supplier tab in chats/messages
-- bidding abstraction
-- make subscription work
 - make the favorites works
-
 
 GENERAL:
 - fix Responsiveness
-- Registration
 - Add skeleton loading and lazy loading
 
 DONE:

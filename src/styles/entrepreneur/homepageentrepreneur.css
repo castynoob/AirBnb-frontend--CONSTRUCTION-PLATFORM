@@ -1772,3 +1772,14 @@
     width: 100%;
   }
 }
+
+
+.unlock-budget-button {
+  padding: .5rem .7rem;
+  background-color: var(--color-status-success);
+  color: var(--color-white);
+  border: none;
+  outline: none;
+  border-radius: 1rem;
+  cursor: pointer;
+}

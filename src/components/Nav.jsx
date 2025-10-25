@@ -145,11 +145,12 @@ function Nav() {
                 </NavLink>
               </li>
               {
+    
                 userProfile != null && role == 'entrepreneur' &&
                 <li>
                   <NavLink
                     to={'/subscription/' + role}
-                    className={({ isActive }) => (isActive ? `nav-link active ${userProfile.subscription.plan_type == 'premium'? 'premium-endicator' : ''}`  : `nav-link ${userProfile.subscription.plan_type == 'premium'? 'premium-endicator' : ''}`)}
+                    className={({ isActive }) => (isActive ? `nav-link active ${userProfile.entrepProfile.subscription.hasSubscription? 'premium-endicator' : ''}`  : `nav-link ${userProfile.entrepProfile.subscription.hasSubscription? 'premium-endicator' : ''}`)}
                   >
                     <div className="nav-icon">
                       <Crown size={20} />

@@ -16,6 +16,7 @@ export default function LandingPage() {
     email: "",
     password: "",
   })
+
   const [loginErrors, setLoginErrors] = useState({})
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
@@ -88,6 +89,34 @@ export default function LandingPage() {
 
       const data = await response.json()
 
+      let entrepProfile = {}
+      let subscription = null
+
+      if(data.user.role == 'entrepreneur') {
+        const getEntreProfile = await fetch(`${API_BASE_URL}/api/users/entrepreneur/user/${data.user.id}`, {
+          method: "GET",
+          headers: {
+            'Authorization': `Bearer ${data.accessToken}`
+          }
+        })
+
+        const getSubsscription = await fetch(`${API_BASE_URL}/api/payments/subscription`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${data.accessToken}`
+          }
+        })
+
+        if(!getEntreProfile.ok || !getSubsscription.ok) {
+          throw new Error(`Error getting profile ${getEntreProfile}`)
+        }
+
+        const subs = await getSubsscription.json()
+        const entrep = await getEntreProfile.json()
+        entrepProfile = entrep.profile
+        subscription = subs
+      }
+
       // Construct userProfile
       const userProfile = {
         id: data.user.id || 101,
@@ -95,22 +124,10 @@ export default function LandingPage() {
         email: data.user.email || loginFormData.email,
         role: data.user.role,
         token: data.accessToken || null,
-        subscription: data.subscription || {
-          plan_type: "premium",
-          status: "trialing",
-          trial_end: "2025-11-01",
-          trial_days_remaining: 14,
-          current_period_end: "2025-11-01",
-          cancel_at_period_end: false,
-          bids: {
-            used: 0,
-            limit: 30,
-            remaining: 30,
-          },
-          is_trial: true,
-          price: 250,
-        },
+        entrepProfile: data.user.role == 'entrepreneur' ? {entrepProfile, subscription} : null
       }
+
+      console.log(userProfile)
 
       console.log(userProfile)
 
@@ -244,6 +261,134 @@ export default function LandingPage() {
       icon: "🔒",
     },
   ]
+
+  // Registration form state
+  const [registerFormData, setRegisterFormData] = useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirm_password: "",
+    company_name: "",
+    address: "",
+    license_number: "",
+    years_in_business: "",
+    num_employees: "",
+    specializations: "",
+    property_name: "",
+    unit_number: "",
+    move_in_date: "",
+    website: "",
+    delivery_areas: "",
+  })
+
+  const handleRegisterChange = (e) => {
+    const { name, value } = e.target
+    setRegisterFormData({
+      ...registerFormData,
+      [name]: value,
+    })
+  }
+
+  const handleRegisterSubmit = async (e) => {
+    e.preventDefault();
+    setIsRegistering(true);
+    setRegisterErrors({});
+
+    try {
+      // 1️⃣ Basic validation
+      if (registerFormData.password !== registerFormData.confirm_password) {
+        setRegisterErrors({ submit: "Passwords do not match." });
+        setIsRegistering(false);
+        return;
+      }
+
+      // 2️⃣ Choose endpoint based on selectedRole
+      let endpoint = "";
+      switch (selectedRole) {
+        case "entrepreneur":
+          endpoint = "/api/register/entrepreneur";
+          break;
+        case "property-manager":
+          endpoint = "/api/register/property-manager";
+          break;
+        case "resident":
+          endpoint = "/api/register/resident";
+          break;
+        case "supplier":
+          endpoint = "/api/register/supplier";
+          break;
+        default:
+          setRegisterErrors({ submit: "Please select a role." });
+          setIsRegistering(false);
+          return;
+      }
+
+      // 3️⃣ Prepare payload (trim unnecessary fields if needed)
+      const payload = { ...registerFormData };
+      payload.role = selectedRole;
+
+      // If specializations are comma-separated text, convert to array
+      if (payload.specializations && typeof payload.specializations === "string") {
+        payload.specializations = payload.specializations
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      // 5️⃣ Handle response
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to register.");
+      }
+
+      // ✅ Success
+      console.log("Registration successful:", data);
+      alert("Account created successfully!");
+      setRegistrationStep(1); // Go back to login form or reset view
+      setRegisterFormData({
+        first_name: "",
+        last_name: "",
+        email: "",
+        phone: "",
+        password: "",
+        confirm_password: "",
+        company_name: "",
+        address: "",
+        license_number: "",
+        years_in_business: "",
+        num_employees: "",
+        specializations: "",
+        property_name: "",
+        unit_number: "",
+        move_in_date: "",
+        website: "",
+        delivery_areas: "",
+      });
+
+    } catch (err) {
+      console.error("Error registering:", err);
+      setRegisterErrors({ submit: err.message || "Registration failed." });
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
+
+  const [registerErrors, setRegisterErrors] = useState({
+    submit: ''
+  })
+
+  const [isRegistering, setIsRegistering] = useState(false)
+
 
   return (
     <div className="lp-landing-page">
@@ -649,120 +794,305 @@ export default function LandingPage() {
                   <h2>Create Your Account</h2>
                   <p>Tell us about yourself</p>
                 </div>
-                <form className="lp-modal-form">
+                <form className="lp-modal-form" onSubmit={handleRegisterSubmit}>
+                  {registerErrors.submit && (
+                    <div className="lp-form-error-banner">
+                      {registerErrors.submit}
+                    </div>
+                  )}
+
                   <div className="lp-form-row">
                     <div className="lp-form-group">
                       <label>First Name</label>
-                      <input type="text" placeholder="John" required />
+                      <input
+                        type="text"
+                        name="first_name"
+                        placeholder="John"
+                        value={registerFormData.first_name}
+                        onChange={handleRegisterChange}
+                        required
+                      />
                     </div>
                     <div className="lp-form-group">
                       <label>Last Name</label>
-                      <input type="text" placeholder="Doe" required />
+                      <input
+                        type="text"
+                        name="last_name"
+                        placeholder="Doe"
+                        value={registerFormData.last_name}
+                        onChange={handleRegisterChange}
+                        required
+                      />
                     </div>
                   </div>
+
                   <div className="lp-form-group">
                     <label>Email Address</label>
-                    <input type="email" placeholder="john@example.com" required />
+                    <input
+                      type="email"
+                      name="email"
+                      placeholder="john@example.com"
+                      value={registerFormData.email}
+                      onChange={handleRegisterChange}
+                      required
+                    />
                   </div>
+
                   <div className="lp-form-group">
                     <label>Phone Number</label>
-                    <input type="tel" placeholder="+1 (555) 000-0000" required />
+                    <input
+                      type="tel"
+                      name="phone"
+                      placeholder="+1 (555) 000-0000"
+                      value={registerFormData.phone}
+                      onChange={handleRegisterChange}
+                      required
+                    />
                   </div>
+
                   <div className="lp-form-group">
                     <label>Password</label>
-                    <input type="password" placeholder="Create a strong password" required />
+                    <input
+                      type="password"
+                      name="password"
+                      placeholder="Create a strong password"
+                      value={registerFormData.password}
+                      onChange={handleRegisterChange}
+                      required
+                    />
                   </div>
+
                   <div className="lp-form-group">
                     <label>Confirm Password</label>
-                    <input type="password" placeholder="Re-enter your password" required />
+                    <input
+                      type="password"
+                      name="confirm_password"
+                      placeholder="Re-enter your password"
+                      value={registerFormData.confirm_password}
+                      onChange={handleRegisterChange}
+                      required
+                    />
                   </div>
-                  
-                  {selectedRole === 'property-manager' && (
+
+                  {/* ===== Property Manager Fields ===== */}
+                  {selectedRole === "property-manager" && (
                     <>
                       <div className="lp-form-divider">Property Manager Details</div>
+
                       <div className="lp-form-group">
                         <label>Company Name</label>
-                        <input type="text" placeholder="Your property management company" required />
+                        <input
+                          type="text"
+                          name="company_name"
+                          placeholder="Your property management company"
+                          value={registerFormData.company_name}
+                          onChange={handleRegisterChange}
+                          required
+                        />
                       </div>
+
                       <div className="lp-form-group">
                         <label>Business Address</label>
-                        <input type="text" placeholder="Street address" required />
+                        <input
+                          type="text"
+                          name="address"
+                          placeholder="Street address"
+                          value={registerFormData.address}
+                          onChange={handleRegisterChange}
+                          required
+                        />
                       </div>
+
                       <div className="lp-form-group">
                         <label>Number of Properties</label>
-                        <input type="number" placeholder="How many properties do you manage?" />
+                        <input
+                          type="number"
+                          name="num_properties"
+                          placeholder="How many properties do you manage?"
+                          value={registerFormData.num_properties || ""}
+                          onChange={handleRegisterChange}
+                        />
                       </div>
                     </>
                   )}
 
-                  {selectedRole === 'entrepreneur' && (
+                  {/* ===== Entrepreneur Fields ===== */}
+                  {selectedRole === "entrepreneur" && (
                     <>
                       <div className="lp-form-divider">Contractor Details</div>
+
                       <div className="lp-form-group">
                         <label>Company Name</label>
-                        <input type="text" placeholder="Your construction company" required />
+                        <input
+                          type="text"
+                          name="company_name"
+                          placeholder="Your construction company"
+                          value={registerFormData.company_name}
+                          onChange={handleRegisterChange}
+                          required
+                        />
                       </div>
+
+                      <div className="lp-form-group">
+                        <label>Business Address</label>
+                        <input
+                          type="text"
+                          name="address"
+                          placeholder="Street address"
+                          value={registerFormData.address}
+                          onChange={handleRegisterChange}
+                          required
+                        />
+                      </div>
+
                       <div className="lp-form-group">
                         <label>License Number</label>
-                        <input type="text" placeholder="Professional license number" />
+                        <input
+                          type="text"
+                          name="license_number"
+                          placeholder="Professional license number"
+                          value={registerFormData.license_number}
+                          onChange={handleRegisterChange}
+                        />
                       </div>
+
                       <div className="lp-form-row">
                         <div className="lp-form-group">
                           <label>Years in Business</label>
-                          <input type="number" placeholder="5" />
+                          <input
+                            type="number"
+                            name="years_in_business"
+                            placeholder="5"
+                            value={registerFormData.years_in_business}
+                            onChange={handleRegisterChange}
+                          />
                         </div>
                         <div className="lp-form-group">
                           <label>Number of Employees</label>
-                          <input type="number" placeholder="10" />
+                          <input
+                            type="number"
+                            name="num_employees"
+                            placeholder="10"
+                            value={registerFormData.num_employees}
+                            onChange={handleRegisterChange}
+                          />
                         </div>
                       </div>
+
                       <div className="lp-form-group">
                         <label>Specializations</label>
-                        <input type="text" placeholder="e.g., Plumbing, Electrical, HVAC" />
+                        <input
+                          type="text"
+                          name="specializations"
+                          placeholder="e.g., Plumbing, Electrical, HVAC"
+                          value={registerFormData.specializations}
+                          onChange={handleRegisterChange}
+                        />
                       </div>
                     </>
                   )}
 
-                  {selectedRole === 'resident' && (
+                  {/* ===== Resident Fields ===== */}
+                  {selectedRole === "resident" && (
                     <>
                       <div className="lp-form-divider">Resident Details</div>
+
                       <div className="lp-form-group">
                         <label>Property Name</label>
-                        <input type="text" placeholder="Your building or property name" required />
+                        <input
+                          type="text"
+                          name="property_name"
+                          placeholder="Your building or property name"
+                          value={registerFormData.property_name}
+                          onChange={handleRegisterChange}
+                          required
+                        />
                       </div>
+
                       <div className="lp-form-group">
                         <label>Unit Number</label>
-                        <input type="text" placeholder="e.g., Apt 4A" required />
+                        <input
+                          type="text"
+                          name="unit_number"
+                          placeholder="e.g., Apt 4A"
+                          value={registerFormData.unit_number}
+                          onChange={handleRegisterChange}
+                          required
+                        />
                       </div>
+
                       <div className="lp-form-group">
                         <label>Move-in Date</label>
-                        <input type="date" />
+                        <input
+                          type="date"
+                          name="move_in_date"
+                          value={registerFormData.move_in_date}
+                          onChange={handleRegisterChange}
+                        />
                       </div>
                     </>
                   )}
 
-                  {selectedRole === 'supplier' && (
+                  {/* ===== Supplier Fields ===== */}
+                  {selectedRole === "supplier" && (
                     <>
                       <div className="lp-form-divider">Supplier Details</div>
+
                       <div className="lp-form-group">
                         <label>Company Name</label>
-                        <input type="text" placeholder="Your supply company" required />
+                        <input
+                          type="text"
+                          name="company_name"
+                          placeholder="Your supply company"
+                          value={registerFormData.company_name}
+                          onChange={handleRegisterChange}
+                          required
+                        />
                       </div>
+
                       <div className="lp-form-group">
                         <label>Business Address</label>
-                        <input type="text" placeholder="Street address" required />
+                        <input
+                          type="text"
+                          name="address"
+                          placeholder="Street address"
+                          value={registerFormData.address}
+                          onChange={handleRegisterChange}
+                          required
+                        />
                       </div>
+
                       <div className="lp-form-group">
                         <label>Website</label>
-                        <input type="url" placeholder="https://yourwebsite.com" />
+                        <input
+                          type="url"
+                          name="website"
+                          placeholder="https://yourwebsite.com"
+                          value={registerFormData.website}
+                          onChange={handleRegisterChange}
+                        />
                       </div>
+
                       <div className="lp-form-group">
                         <label>Years in Business</label>
-                        <input type="number" placeholder="10" />
+                        <input
+                          type="number"
+                          name="years_in_business"
+                          placeholder="10"
+                          value={registerFormData.years_in_business}
+                          onChange={handleRegisterChange}
+                        />
                       </div>
+
                       <div className="lp-form-group">
                         <label>Delivery Areas</label>
-                        <input type="text" placeholder="Cities or regions you serve" />
+                        <input
+                          type="text"
+                          name="delivery_areas"
+                          placeholder="Cities or regions you serve"
+                          value={registerFormData.delivery_areas}
+                          onChange={handleRegisterChange}
+                        />
                       </div>
                     </>
                   )}
@@ -770,14 +1100,22 @@ export default function LandingPage() {
                   <div className="lp-form-group lp-form-checkbox">
                     <label className="lp-checkbox">
                       <input type="checkbox" required />
-                      <span>I agree to the <a href="#terms">Terms of Service</a> and <a href="#privacy">Privacy Policy</a></span>
+                      <span>
+                        I agree to the <a href="#terms">Terms of Service</a> and{" "}
+                        <a href="#privacy">Privacy Policy</a>
+                      </span>
                     </label>
                   </div>
 
-                  <button type="submit" className="lp-btn-primary lp-btn-full">
-                    Create Account
+                  <button
+                    type="submit"
+                    className="lp-btn-primary lp-btn-full"
+                    disabled={isRegistering}
+                  >
+                    {isRegistering ? "Creating Account..." : "Create Account"}
                   </button>
                 </form>
+
               </>
             )}
           </div>

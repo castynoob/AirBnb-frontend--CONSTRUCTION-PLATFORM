@@ -1,8 +1,0 @@
-API Endpoint:
-
-get bids with join join:
-- all entites
-- entrepreneur id
-- job id
-
-get all bids from all the properties where (property_manager table) property_manager id = (property table)property_manager id

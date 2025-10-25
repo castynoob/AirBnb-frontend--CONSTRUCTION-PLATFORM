@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import '../styles/entrepreneur/subscriptionmodal.css'
 import logo from '../assets/logo.png'
-import PaymentMethodCard from './PaymentMethodCard';
+import SubscriptionPaymentForm from '../components/SubscriptionPaymentModal'
 
-
-export default function SubscriptionModal() {
+export default function SubscriptionModal({token, refresher}) {
   const [isOpen, setIsOpen] = useState(true);
-  const [showPayment, setShowPayment] = useState(0);
+  const [showPayment, setShowPayment] = useState(false)
+  const [planType, setPlanType] = useState('')
 
   const features = [
     { name: 'Browse jobs', noSub: false, trialBasic: true, trialPremium: true, activeBasic: true, activePremium: true },
@@ -15,6 +15,18 @@ export default function SubscriptionModal() {
     { name: 'Unlock budget ($20)', noSub: false, trialBasic: true, trialPremium: true, activeBasic: true, activePremium: true },
     { name: 'Message (approved)', noSub: false, trialBasic: true, trialPremium: true, activeBasic: true, activePremium: true },
   ];
+
+  const handleSubsciption = (type) => {
+    setPlanType(type)
+    setShowPayment(true)
+  }
+
+  const handleCloseModal = (success) => {
+    setShowPayment(false)
+    if(success) {
+      refresher()
+    }
+  }
 
   if (!isOpen) {
     return (
@@ -26,12 +38,13 @@ export default function SubscriptionModal() {
     );
   }
 
-  const handleShowPayment = (val) => {
-    setShowPayment(val)
-  }
-
   return (
     <>
+      {
+        showPayment &&
+        <SubscriptionPaymentForm token={token} planType={planType} handleCloseModal={handleCloseModal} />
+      }
+
       <div className="subscription-modal">
         <div className="modal-overlay"/>
         
@@ -48,10 +61,6 @@ export default function SubscriptionModal() {
 
           <div className="plans-container">
             {/* Basic Plan */}
-            {
-              showPayment == 1?
-              < PaymentMethodCard handleShowPayment={handleShowPayment} />
-              :
               <div className="plan-card">
                 <div className="plan-header">
                   <div className="plan-label">Basic Plan</div>
@@ -96,15 +105,10 @@ export default function SubscriptionModal() {
                   </li>
                 </ul>
                 
-                <button className="cta-btn btn-basic" onClick={() => setShowPayment(1)}>Start Basic Trial</button>
+                <button className="cta-btn btn-basic" onClick={() => handleSubsciption('basic')}>Start Basic Trial</button>
               </div>
-            }
+            
 
-            {/* Premium Plan */}
-            {
-              showPayment == 2?
-              <PaymentMethodCard handleShowPayment={handleShowPayment}  />
-              :
               <div className="plan-card premium">
                 <div className="plan-badge">RECOMMENDED</div>
 
@@ -158,9 +162,8 @@ export default function SubscriptionModal() {
                   </li>
                 </ul>
                 
-                <button className="cta-btn btn-premium" onClick={() => setShowPayment(2)}>Start Premium Trial</button>
+                <button className="cta-btn btn-premium" onClick={() => handleSubsciption('premium')} >Start Premium Trial</button>
               </div>
-            }
           </div>
 
           {/* Comparison Table */}
