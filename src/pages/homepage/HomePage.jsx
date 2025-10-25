@@ -116,7 +116,7 @@ function HomePage() {
               const propertyResponse = await fetch(`${API_BASE_URL}/api/properties/${job.property_id}`, {
                 method: "GET",
                 headers: {
-                  Authorization: `Bearer ${user.token}`,
+                  'Authorization': `Bearer ${user.token}`,
                 },
               })
 
@@ -145,7 +145,6 @@ function HomePage() {
                 console.error("Error fetching bids:", bidError)
                 // Continue with 0 bids if fetch fails
               }
-              console.log(property)
               return {
                 id: job.id,
                 property: property.building_name || property.address || "Unknown Property",

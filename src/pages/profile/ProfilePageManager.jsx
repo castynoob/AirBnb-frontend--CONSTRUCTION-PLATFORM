@@ -1,336 +1,288 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { MapPin, Building2, Home, Calendar, Edit2, Mail, Phone, User, Briefcase, Plus } from "lucide-react";
-import Nav from "../../components/Nav";
+import React, { useEffect, useState } from 'react'
+import Nav from '../../components/Nav'
 import "../../styles/manager/profilepagemanager.css"
+import { FiUser, FiMail, FiShield, FiHome, FiPlus, FiMapPin, FiCalendar, FiEdit2, FiX } from 'react-icons/fi'
+import { useNavigate } from 'react-router-dom'
 
 function ProfilePageManager() {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('properties');
-  const [isEditing, setIsEditing] = useState(false);
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const [user, setUser] = useState({})
+  const [properties, setProperties] = useState([])
+  const [selectedProperty, setSelectedProperty] = useState(null)
+  const navigate = useNavigate()
 
-  const [managerProfile] = useState({
-    id: "1",
-    user_id: "user-123",
-    property_name: "Skyline Property Management",
-    address: "123 Main Street, Downtown District",
-    image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop",
-    email: "manager@skylinepm.com",
-    phone: "+1 (555) 123-4567",
-    created_at: "2023-01-15T10:30:00",
-    updated_at: "2024-10-15T14:20:00"
-  });
+  useEffect(() => {
+    const getProfileAndProperties = async () => {
+      const userProfile = localStorage.getItem('userProfile')
 
-  const [properties] = useState([
-    {
-      id: "prop-1",
-      manager_id: "1",
-      address: "456 Oak Avenue",
-      city: "Metro City",
-      province: "Central Province",
-      postal_code: "12345",
-      num_units: 24,
-      building_type: "Apartment Complex",
-      created_at: "2023-02-10T09:00:00",
-      updated_at: "2024-09-20T11:30:00"
-    },
-    {
-      id: "prop-2",
-      manager_id: "1",
-      address: "789 Pine Street",
-      city: "Metro City",
-      province: "Central Province",
-      postal_code: "12346",
-      num_units: 12,
-      building_type: "Condominium",
-      created_at: "2023-03-15T10:15:00",
-      updated_at: "2024-08-10T16:45:00"
-    },
-    {
-      id: "prop-3",
-      manager_id: "1",
-      address: "321 Elm Boulevard",
-      city: "Riverside",
-      province: "Eastern Province",
-      postal_code: "54321",
-      num_units: 36,
-      building_type: "High-Rise",
-      created_at: "2023-05-20T14:00:00",
-      updated_at: "2024-10-01T09:20:00"
+      if (userProfile) {
+        const userData = JSON.parse(userProfile)
+        setUser(userData)
+
+        try {
+          // 🟢 Fetch Manager Profile
+          const profileRes = await fetch(`${API_BASE_URL}/api/users/manager/${userData.id}`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${userData.token}`,
+            },
+          })
+
+          if (!profileRes.ok) throw new Error('Error getting manager profile')
+          const profileData = await profileRes.json()
+          console.log("MANAGER DATA:", profileData)
+
+          // 🟢 Fetch Manager Properties
+          const propertiesRes = await fetch(`${API_BASE_URL}/api/properties`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${userData.token}`,
+            },
+          })
+
+          if (!propertiesRes.ok) throw new Error('Error getting properties')
+          const propertiesData = await propertiesRes.json()
+          console.log("PROPERTIES:", propertiesData)
+          setProperties(propertiesData.properties || [])
+
+        } catch (error) {
+          console.error(error.message)
+        }
+      }
     }
-  ]);
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  };
+    getProfileAndProperties()
+  }, [])
 
-  const totalUnits = properties.reduce((sum, prop) => sum + prop.num_units, 0);
-  const totalCities = new Set(properties.map(p => p.city)).size;
-
-  // Handler for navigating to add property page
   const handleAddProperty = () => {
-    navigate('/profile/add-property');
-  };
+    navigate("/profile/add-property")
+  }
+
+  const handleEditProfile = () => {
+    // TODO: Add edit profile logic
+    alert("Edit profile functionality")
+  }
+
+  const handlePropertyClick = (property) => {
+    setSelectedProperty(property)
+  }
+
+  const handleCloseModal = () => {
+    setSelectedProperty(null)
+  }
+
+  const handelLogout = () => {
+    localStorage.removeItem('userProfile')
+    navigate("/");
+  }
+
+  // Calculate stats
+  const totalUnits = properties.reduce((sum, prop) => sum + (prop.num_units || 0), 0)
+  const totalProperties = properties.length
 
   return (
-    <div className="profile-page">
+    <div className="mp-profile-page-manager">
       <Nav />
-      
-      <div className="profile-gradient-bg" />
-      
-      <main className="profile-content main-container">
-        <div className="profile-container">
-          {/* Header */}
-          <div className="profile-header">
-            <h1 className="page-title">Manager Profile</h1>
-            <button className="edit-btn" onClick={() => setIsEditing(!isEditing)}>
-              <Edit2 size={16} />
-              <span>Edit Profile</span>
-            </button>
-          </div>
-
-          {/* Profile Card */}
-          <div className="profile-card">
-            <div className="profile-main">
-              <div className="profile-image-section">
-                <img 
-                  src={managerProfile.image} 
-                  alt="Manager" 
-                  className="profile-image"
-                />
-                <div className="profile-badge">Manager</div>
+      <div className="mp-profile-content">
+        {/* Profile Header */}
+        <div className="mp-profile-header">
+          <div className="mp-profile-banner"></div>
+          <div className="mp-profile-info-section">
+            <div className="mp-profile-avatar-container">
+              <div className="mp-profile-avatar">
+                <FiUser size={48} />
               </div>
-
-              <div className="profile-info">
-                <h2 className="profile-name">{managerProfile.property_name}</h2>
-                <div className="profile-detail">
-                  <MapPin size={16} />
-                  <span>{managerProfile.address}</span>
+              <button className="mp-edit-avatar-btn" onClick={handleEditProfile}>
+                <FiEdit2 size={14} />
+              </button>
+            </div>
+            <div className="mp-profile-details">
+              <div className="mp-profile-name-section">
+                <h1 className="mp-profile-name">{user?.email?.split('@')[0] || 'Property Manager'}</h1>
+                <span className="mp-profile-role-badge">
+                  <FiShield size={14} />
+                  {user?.role || 'Manager'}
+                </span>
+              </div>
+              <div className="mp-profile-contact-info">
+                <div className="mp-contact-item">
+                  <FiMail size={16} />
+                  <span>{user?.email}</span>
                 </div>
-                <div className="profile-detail">
-                  <Calendar size={16} />
-                  <span>Member since {formatDate(managerProfile.created_at)}</span>
-                </div>
-                <div className="profile-detail">
-                  <Mail size={16} />
-                  <span>{managerProfile.email}</span>
-                </div>
-                <div className="profile-detail">
-                  <Phone size={16} />
-                  <span>{managerProfile.phone}</span>
+                <div className="mp-contact-item">
+                  <FiUser size={16} />
+                  <span>ID: {user?.id}</span>
                 </div>
               </div>
             </div>
-
-            {/* Stats */}
-            <div className="profile-stats">
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <Building2 size={20} />
-                </div>
-                <div className="stat-info">
-                  <div className="stat-value">{properties.length}</div>
-                  <div className="stat-label">Properties</div>
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <Home size={20} />
-                </div>
-                <div className="stat-info">
-                  <div className="stat-value">{totalUnits}</div>
-                  <div className="stat-label">Total Units</div>
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <MapPin size={20} />
-                </div>
-                <div className="stat-info">
-                  <div className="stat-value">{totalCities}</div>
-                  <div className="stat-label">Cities</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Tabs */}
-          <div className="profile-tabs">
-            <button 
-              className={`tab ${activeTab === 'properties' ? 'active' : ''}`}
-              onClick={() => setActiveTab('properties')}
-            >
-              <Building2 size={16} />
-              <span>Properties</span>
-              <span className="tab-count">{properties.length}</span>
+            <button className="mp-edit-profile-btn" onClick={handleEditProfile}>
+              <FiEdit2 size={16} />
+              Edit Profile
             </button>
-            <button 
-              className={`tab ${activeTab === 'contact' ? 'active' : ''}`}
-              onClick={() => setActiveTab('contact')}
-            >
-              <Mail size={16} />
-              <span>Contact</span>
+            <button className="mp-edit-profile-btn" onClick={handelLogout}>
+              Log out
             </button>
-            <button 
-              className={`tab ${activeTab === 'about' ? 'active' : ''}`}
-              onClick={() => setActiveTab('about')}
-            >
-              <User size={16} />
-              <span>About</span>
-            </button>
-          </div>
-
-          {/* Tab Content */}
-          <div className="tab-content">
-            {activeTab === 'properties' && (
-              <div className="properties-section">
-                <div className="section-header">
-                  <h2 className="section-title">Managed Properties</h2>
-                  <span className="property-count">{properties.length} Properties</span>
-                </div>
-
-                <div className="properties-grid">
-                  {properties.map((property) => (
-                    <div key={property.id} className="property-card">
-                      <div className="property-header">
-                        <div className="property-type-badge">
-                          {property.building_type}
-                        </div>
-                        <div className="property-units">
-                          {property.num_units} Units
-                        </div>
-                      </div>
-
-                      <div className="property-body">
-                        <h3 className="property-address">{property.address}</h3>
-                        
-                        <div className="property-details">
-                          <div className="property-detail-item">
-                            <MapPin size={14} />
-                            <span>{property.city}, {property.province}</span>
-                          </div>
-                          <div className="property-detail-item">
-                            <Building2 size={14} />
-                            <span>{property.postal_code}</span>
-                          </div>
-                        </div>
-
-                        <div className="property-footer">
-                          <div className="property-date">
-                            <Calendar size={12} />
-                            <span>Added {formatDate(property.created_at)}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <button className="view-property-btn">
-                        View Details
-                      </button>
-                    </div>
-                  ))}
-
-                  {/* Add Property Card with onClick handler */}
-                  <div className="add-property-card" onClick={handleAddProperty}>
-                    <div className="add-property-content">
-                      <Plus size={40} />
-                      <p>Add New Property</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'contact' && (
-              <div className="contact-section">
-                <div className="section-header">
-                  <h2 className="section-title">Contact Information</h2>
-                </div>
-
-                <div className="contact-grid">
-                  <div className="contact-card">
-                    <div className="contact-icon">
-                      <Mail size={20} />
-                    </div>
-                    <div className="contact-info">
-                      <div className="contact-label">Email Address</div>
-                      <div className="contact-value">{managerProfile.email}</div>
-                    </div>
-                  </div>
-
-                  <div className="contact-card">
-                    <div className="contact-icon">
-                      <Phone size={20} />
-                    </div>
-                    <div className="contact-info">
-                      <div className="contact-label">Phone Number</div>
-                      <div className="contact-value">{managerProfile.phone}</div>
-                    </div>
-                  </div>
-
-                  <div className="contact-card">
-                    <div className="contact-icon">
-                      <MapPin size={20} />
-                    </div>
-                    <div className="contact-info">
-                      <div className="contact-label">Office Address</div>
-                      <div className="contact-value">{managerProfile.address}</div>
-                    </div>
-                  </div>
-
-                  <div className="contact-card">
-                    <div className="contact-icon">
-                      <Briefcase size={20} />
-                    </div>
-                    <div className="contact-info">
-                      <div className="contact-label">Company</div>
-                      <div className="contact-value">{managerProfile.property_name}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'about' && (
-              <div className="about-section">
-                <div className="about-card">
-                  <h3>Account Information</h3>
-                  <div className="about-grid">
-                    <div className="about-item">
-                      <div className="about-label">User ID</div>
-                      <div className="about-value">{managerProfile.user_id}</div>
-                    </div>
-                    <div className="about-item">
-                      <div className="about-label">Profile ID</div>
-                      <div className="about-value">{managerProfile.id}</div>
-                    </div>
-                    <div className="about-item">
-                      <div className="about-label">Account Created</div>
-                      <div className="about-value">{formatDate(managerProfile.created_at)}</div>
-                    </div>
-                    <div className="about-item">
-                      <div className="about-label">Last Updated</div>
-                      <div className="about-value">{formatDate(managerProfile.updated_at)}</div>
-                    </div>
-                    <div className="about-item">
-                      <div className="about-label">Total Properties</div>
-                      <div className="about-value">{properties.length} properties</div>
-                    </div>
-                    <div className="about-item">
-                      <div className="about-label">Total Managed Units</div>
-                      <div className="about-value">{totalUnits} units</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
-      </main>
+
+        {/* Stats Cards */}
+        <div className="mp-stats-grid">
+          <div className="mp-stat-card">
+            <div className="mp-stat-icon mp-properties">
+              <FiHome size={24} />
+            </div>
+            <div className="mp-stat-content">
+              <h3 className="mp-stat-value">{totalProperties}</h3>
+              <p className="mp-stat-label">Total Properties</p>
+            </div>
+          </div>
+          <div className="mp-stat-card">
+            <div className="mp-stat-icon mp-units">
+              <FiMapPin size={24} />
+            </div>
+            <div className="mp-stat-content">
+              <h3 className="mp-stat-value">{totalUnits}</h3>
+              <p className="mp-stat-label">Total Units</p>
+            </div>
+          </div>
+          <div className="mp-stat-card">
+            <div className="mp-stat-icon mp-active">
+              <FiCalendar size={24} />
+            </div>
+            <div className="mp-stat-content">
+              <h3 className="mp-stat-value">{totalProperties > 0 ? totalProperties : '0'}</h3>
+              <p className="mp-stat-label">Active Listings</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Properties Section */}
+        <div className="mp-properties-section">
+          <div className="mp-section-header">
+            <div className="mp-section-title-group">
+              <h2 className="mp-section-title">My Properties</h2>
+              <span className="mp-property-count">{properties.length} {properties.length === 1 ? 'Property' : 'Properties'}</span>
+            </div>
+            <button onClick={handleAddProperty} className="mp-add-property-btn">
+              <FiPlus size={18} />
+              Add New Property
+            </button>
+          </div>
+
+          {properties.length > 0 ? (
+            <div className="mp-properties-grid">
+              {properties.map((property) => (
+                <div key={property.id} className="mp-property-card" onClick={() => handlePropertyClick(property)}>
+                  <div className="mp-property-card-header">
+                    <div className="mp-property-type-badge">
+                      {property.building_type}
+                    </div>
+                    <div className="mp-property-units-badge">
+                      {property.num_units} {property.num_units === 1 ? 'Unit' : 'Units'}
+                    </div>
+                  </div>
+                  <div className="mp-property-card-body">
+                    <h3 className="mp-property-address">{property.address}</h3>
+                    <div className="mp-property-location">
+                      <FiMapPin size={14} />
+                      <span>{property.city}, {property.province} {property.postal_code}</span>
+                    </div>
+                  </div>
+                  <div className="mp-property-card-footer">
+                    <div className="mp-property-date">
+                      <FiCalendar size={14} />
+                      <span>Added {new Date(property.created_at).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric' 
+                      })}</span>
+                    </div>
+                    <button className="mp-view-property-btn">View Details</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="mp-empty-state">
+              <div className="mp-empty-state-icon">
+                <FiHome size={48} />
+              </div>
+              <h3>No Properties Yet</h3>
+              <p>Start by adding your first property to manage</p>
+              <button onClick={handleAddProperty} className="mp-empty-state-btn">
+                <FiPlus size={18} />
+                Add Your First Property
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Property Details Modal */}
+        {selectedProperty && (
+          <div className="mp-modal-overlay" onClick={handleCloseModal}>
+            <div className="mp-modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="mp-modal-header">
+                <h2>Property Details</h2>
+                <button className="mp-modal-close-btn" onClick={handleCloseModal}>
+                  <FiX size={24} />
+                </button>
+              </div>
+              <div className="mp-modal-body">
+                <div className="mp-modal-section">
+                  <h3 className="mp-modal-section-title">Address Information</h3>
+                  <div className="mp-modal-info-grid">
+                    <div className="mp-modal-info-item">
+                      <label>Address</label>
+                      <p>{selectedProperty.address}</p>
+                    </div>
+                    <div className="mp-modal-info-item">
+                      <label>City</label>
+                      <p>{selectedProperty.city}</p>
+                    </div>
+                    <div className="mp-modal-info-item">
+                      <label>Province</label>
+                      <p>{selectedProperty.province}</p>
+                    </div>
+                    <div className="mp-modal-info-item">
+                      <label>Postal Code</label>
+                      <p>{selectedProperty.postal_code}</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mp-modal-section">
+                  <h3 className="mp-modal-section-title">Property Details</h3>
+                  <div className="mp-modal-info-grid">
+                    <div className="mp-modal-info-item">
+                      <label>Building Type</label>
+                      <p>{selectedProperty.building_type}</p>
+                    </div>
+                    <div className="mp-modal-info-item">
+                      <label>Number of Units</label>
+                      <p>{selectedProperty.num_units}</p>
+                    </div>
+                    <div className="mp-modal-info-item">
+                      <label>Property ID</label>
+                      <p>{selectedProperty.id}</p>
+                    </div>
+                    <div className="mp-modal-info-item">
+                      <label>Created At</label>
+                      <p>{new Date(selectedProperty.created_at).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
-  );
+  )
 }
 
-export default ProfilePageManager;
+export default ProfilePageManager

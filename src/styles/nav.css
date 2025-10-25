@@ -1,4 +1,5 @@
 /* Sidebar Navigation */
+/* <Nav /> styling */
 .sidebar {
   width: 220px;
   background: linear-gradient(180deg, var(--color-primary) 0%, #0a1829 100%);

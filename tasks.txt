@@ -1,16 +1,17 @@
 Hello, Clocking out
-Oct 23, 2025
-03:22:14
+Oct 24, 2025
+03:24:10
 
 Intervos App
 
-- Fixed bugs in job and bid submission tabs, including filtering issues
-- Resolved display issues with map-based job searching and job listings on mobile view
-- Improved landing page with login and role-based registration forms
+- API and Backend Development
+    * Defined and updated API endpoints
+    * Merged team project (ongoing)
 
 - Backend testing and frontend integration:
-    * Created bid details page
-    * Enabled project managers to accept or decline bids
-    * Fixed job status updates functionality
+    * Entrepreneurs can now view bids that they submitted
+    * Project manager profile is now connected to the backend
+
+- Implementing abstraction logic to hide budget from entrepreneurs if payment not completed (ongoing)
 
 Thank you!

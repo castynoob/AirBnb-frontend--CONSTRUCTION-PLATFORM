@@ -112,6 +112,8 @@ export default function LandingPage() {
         },
       }
 
+      console.log(userProfile)
+
       // Save to localStorage
       localStorage.setItem("userProfile", JSON.stringify(userProfile))
       

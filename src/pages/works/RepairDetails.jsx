@@ -153,6 +153,10 @@ function RepairDetails({ handleRepairClicked, repair }) {
         }
       );
 
+      if (!response.ok) {
+        throw new Error(data.message || `Failed to approve bid: ${response.status}`);
+      }
+
       const data = await response.json();
 
       const jobResponse = await fetch(`${API_BASE_URL}/api/jobs/${repair.data.jobId}`, {
@@ -164,7 +168,18 @@ function RepairDetails({ handleRepairClicked, repair }) {
         body: JSON.stringify({ status: 'ongoing' })
       })
 
-      if (!response.ok || !jobResponse.ok) {
+      if (!jobResponse.ok) {
+        throw new Error(data.message || `Failed to approve bid: ${response.status}`);
+      }
+
+      const bidsOnJob = await fetch(`${API_BASE_URL}/api/bids/job/${repair.data.jobId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      })
+
+      if (!bidsOnJob.ok) {
         throw new Error(data.message || `Failed to approve bid: ${response.status}`);
       }
 

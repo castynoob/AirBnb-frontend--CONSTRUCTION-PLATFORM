@@ -567,6 +567,7 @@ function HomePageEntrepreneur() {
             console.error(`HTTP error fetching jobs! Status: ${response.status}`)
           } else {
             const jobsData = await response.json()
+            
 
             const transformedJobs = jobsData.map((job) => ({
               id: job.id,
@@ -799,7 +800,6 @@ function HomePageEntrepreneur() {
                                 <h4 className="eh-job-title">{job.title}</h4>
                                 <div className="eh-job-meta-row">
                                   <span className="eh-job-category">{job.category}</span>
-                                  <span className="eh-bid-count-badge">{job.bidCount} bids</span>
                                 </div>
                               </div>
                               <span className="eh-urgency-badge" style={{ backgroundColor: getUrgencyColor(job.urgency) }}>
@@ -813,6 +813,7 @@ function HomePageEntrepreneur() {
                               <div className="eh-detail-item">
                                 <DollarSign size={16} />
                                 <div>
+                                  {/* unlock */}
                                   <span className="eh-detail-label">Budget Range</span>
                                   <span className="eh-detail-value">
                                     ${Number.parseFloat(job.budget_min).toLocaleString()} - $

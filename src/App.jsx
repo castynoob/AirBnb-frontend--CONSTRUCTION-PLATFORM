@@ -14,6 +14,7 @@ import SubscriptionPage from './pages/subscription/SubscriptionPage';
 import SubmittedBids from './pages/submissions/SubmittedBids';
 import AddPropertyPage from "./pages/profile/AddPropertyPage";
 import LandingPage from "./pages/landingpage/LandingPage";
+import ProfilePageEntrepreneur from "./pages/profile/ProfilePageEntrepreneur";
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
           <Route path="/subscription/entrepreneur" element={<SubscriptionPage/>} />
           <Route path="/submissions/entrepreneur" element={<SubmittedBids/>} />
           <Route path="/profile/add-property" element={<AddPropertyPage/>} />
+          <Route path="/profile/entrepreneur" element={<ProfilePageEntrepreneur/>} />
         </Routes>
       </div>
     </Router>

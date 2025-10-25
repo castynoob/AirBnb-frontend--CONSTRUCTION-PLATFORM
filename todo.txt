@@ -9,21 +9,19 @@ add events on nav (Manager POV)
     ●"Elevator maintenance Tuesday 9am-5pm"
 
 MANAGER:
-- fix property
-  id | manager_id | address | city | province | postal_code | num_units | building_type | created_at | updated_at
 - add hire on work/job details view
 - work in progress
 - in jobs, return how many bids in the job
 
 ENTREP:
 - integrate location based
-- improve UI ng map, if walang naselect na property collaps yung card
-  if meron lalabas yung card
-  if wala, naka full screen si map
 - add notification UI
 - add bedding submissions
 - notification settings
 - add supplier tab in chats/messages
+- bidding abstraction
+- make subscription work
+- make the favorites works
 
 
 GENERAL:

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Home, MessageSquare, User, LogOut, Heart, FileText, Crown  } from "lucide-react"; 
+import { Home, MessageSquare, User, LogOut, Heart, FileText, Crown, Wrench   } from "lucide-react"; 
 import logo from '../assets/logo-light.png'
 import '../styles/nav.css'
 
@@ -24,7 +24,7 @@ function Nav() {
   }, [])
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
+    localStorage.removeItem("userProfile");
     navigate("/");
   };
 
@@ -98,6 +98,21 @@ function Nav() {
                   </NavLink>
                 </li>
                 
+              }
+
+              {
+                role == 'entrepreneur' &&
+                <li>
+                  <NavLink
+                    to={'/jobs/'+role}
+                    className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+                  >
+                    <div className="nav-icon">
+                      <Wrench size={20} />
+                    </div>
+                    <span className="nav-text">Jobs</span>
+                  </NavLink>
+                </li>
               }
 
               <li>
