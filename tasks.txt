@@ -1,15 +1,13 @@
 Hello, Clocking out
-Oct 25, 2025
-03:24:10
+Oct 27, 2025
+05:06:24
 
 Intervos App
-
-- Making the app mobile first approach at all screens (ongoing)
-- Backend testing and frontend integration:
-    * Payment method integration
-    * Entrepreneurs subscription and subscription based access is now working and payment method is now working using stripe (test mode)
-    * Hiding and showing of budget range from entrepreneurs, entrepreneurs need to pay to show the budget and payment method is now working using stripe (test mode)
-    * Create and fix registration for user and creating entrepreneurs profile
-
+- Implemented Google registration and login (ongoing; entrepreneur role completed)
+- Update database schema
+- Defined and update API endpoints
+- Attended team meeting
+- Fix responsiveness issue
+- Created entrepreneurs’ job list (ongoing)
 
 Thank you!

@@ -2,6 +2,9 @@ import { useState, useEffect } from "react"
 import "../../styles/landinpage.css"
 import logo from '../../assets/logo.png'
 import { useNavigate } from "react-router-dom"
+import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
+
 
 export default function LandingPage() {
   const [showLoginModal, setShowLoginModal] = useState(false)
@@ -147,6 +150,7 @@ export default function LandingPage() {
       setIsLoggingIn(false)
     }
   }
+  
 
   const closeModals = () => {
     setShowLoginModal(false)
@@ -281,6 +285,7 @@ export default function LandingPage() {
     move_in_date: "",
     website: "",
     delivery_areas: "",
+    provider: 'local'
   })
 
   const handleRegisterChange = (e) => {
@@ -290,98 +295,89 @@ export default function LandingPage() {
       [name]: value,
     })
   }
-
   const handleRegisterSubmit = async (e) => {
-    e.preventDefault();
-    setIsRegistering(true);
-    setRegisterErrors({});
+      e.preventDefault();
+      setIsRegistering(true);
 
-    try {
-      // 1️⃣ Basic validation
-      if (registerFormData.password !== registerFormData.confirm_password) {
-        setRegisterErrors({ submit: "Passwords do not match." });
-        setIsRegistering(false);
-        return;
-      }
+      try {
+          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+          let endpoint = "";
 
-      // 2️⃣ Choose endpoint based on selectedRole
-      let endpoint = "";
-      switch (selectedRole) {
-        case "entrepreneur":
-          endpoint = "/api/register/entrepreneur";
-          break;
-        case "property-manager":
-          endpoint = "/api/register/property-manager";
-          break;
-        case "resident":
-          endpoint = "/api/register/resident";
-          break;
-        case "supplier":
-          endpoint = "/api/register/supplier";
-          break;
-        default:
-          setRegisterErrors({ submit: "Please select a role." });
+          switch (selectedRole) {
+              case "entrepreneur":
+                  endpoint = "/api/register/entrepreneur";
+                  break;
+              case "property-manager":
+                  endpoint = "/api/register/manager";
+                  break;
+              case "resident":
+                  endpoint = "/api/register/resident";
+                  break;
+              case "supplier":
+                  endpoint = "/api/register/supplier";
+                  break;
+              default: {
+                  setIsRegistering(false);
+                  throw new Error(`Invalid role selected: ${selectedRole}`);
+              }
+          }
+          
+          // 1. Prepare the full payload
+          const payload = { 
+              ...registerFormData, 
+              role: selectedRole 
+          };
+
+          // 2. Clean the payload before sending
+          delete payload.confirm_password; 
+          
+          // CRITICAL: Remove password if registration was via Google, as the backend shouldn't
+          // try to hash an empty password or validate it.
+          if (payload.provider === 'google') {
+              delete payload.password;
+          }
+          
+          // 3. Convert specializations string to an array (for entrepreneur)
+          if (selectedRole === "entrepreneur" && payload.specializations && typeof payload.specializations === "string") {
+              payload.specializations = payload.specializations
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean); // Filter out empty strings
+          } else if (selectedRole === "entrepreneur") {
+              // Ensure it's an empty array if not provided, matching your DB schema (text[])
+              payload.specializations = []; 
+          }
+
+          console.log("Payload being sent:", payload);
+
+          // 4. Send to backend
+          const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+          });
+
+          const data = await response.json();
+          
+          // 5. Check response status and handle errors
+          if (!response.ok) {
+              // This catches the "Email already registered" or other error messages from the backend
+              throw new Error(data.message || "Registration failed"); 
+          }
+
+          // 6. Success handling (reset form and notify)
+          alert("Registration successful! You can now log in.");
+          closeModals(); // Close the modal and reset state
+          setShowLoginModal(true); // Direct user to the login modal
+          
+      } catch (error) {
+          console.error("Registration error:", error);
+          // Display the specific error message to the user
+          setRegisterErrors({ submit: error.message || "Registration failed due to a server error." });
+      } finally {
           setIsRegistering(false);
-          return;
       }
-
-      // 3️⃣ Prepare payload (trim unnecessary fields if needed)
-      const payload = { ...registerFormData };
-      payload.role = selectedRole;
-
-      // If specializations are comma-separated text, convert to array
-      if (payload.specializations && typeof payload.specializations === "string") {
-        payload.specializations = payload.specializations
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean);
-      }
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      // 5️⃣ Handle response
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to register.");
-      }
-
-      // ✅ Success
-      console.log("Registration successful:", data);
-      alert("Account created successfully!");
-      setRegistrationStep(1); // Go back to login form or reset view
-      setRegisterFormData({
-        first_name: "",
-        last_name: "",
-        email: "",
-        phone: "",
-        password: "",
-        confirm_password: "",
-        company_name: "",
-        address: "",
-        license_number: "",
-        years_in_business: "",
-        num_employees: "",
-        specializations: "",
-        property_name: "",
-        unit_number: "",
-        move_in_date: "",
-        website: "",
-        delivery_areas: "",
-      });
-
-    } catch (err) {
-      console.error("Error registering:", err);
-      setRegisterErrors({ submit: err.message || "Registration failed." });
-    } finally {
-      setIsRegistering(false);
-    }
   };
-
 
   const [registerErrors, setRegisterErrors] = useState({
     submit: ''
@@ -389,6 +385,126 @@ export default function LandingPage() {
 
   const [isRegistering, setIsRegistering] = useState(false)
 
+
+// Add provider_id to the payload sent to your backend
+  const handleSuccess = async (credentialResponse) => {
+      const token = credentialResponse.credential;
+      const userData = jwtDecode(token);
+
+      console.log("Google user:", userData);
+      
+      // 1. Get the Google provider_id (sub is the standard unique Google ID)
+      const providerId = userData.sub; 
+
+      // 2. Pre-fill the registerFormData state
+      setRegisterFormData((prev) => ({
+        ...prev,
+        // Pre-fill fields from Google
+        first_name: userData.given_name || "",
+        last_name: userData.family_name || "",
+        email: userData.email || "",
+        // Set provider details
+        provider: "google",
+        provider_id: providerId, // Store the Google ID
+        // Clear password fields for Google sign-in (backend should ignore these for provider: 'google')
+        password: "",
+        confirm_password: "",
+        // Other fields remain as they were, allowing the user to fill them on the form
+      }));
+
+      // 3. Notify the user to complete the form
+      alert("Google details pre-filled! Please complete the remaining fields to finalize your registration.");
+
+      // The user remains on registrationStep=2 and submits via handleRegisterSubmit.
+  };
+
+
+  const handleError = () => {
+    console.error("Google Sign-In failed");
+  };
+
+  const handleLoginSuccess = async (credentialResponse) => {
+    const token = credentialResponse.credential;
+    const userData = jwtDecode(token);
+    
+    setIsLoggingIn(true);
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+    try {
+        // 1. Send Google data to your backend's specialized Google login endpoint
+        const response = await fetch(`${API_BASE_URL}/api/auth/google-login`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                email: userData.email,
+                provider_id: userData.sub,
+            }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            // Catches "User not found" (404) or any other errors
+            throw new Error(data.message || "Google login failed.");
+        }
+
+        // 2. Replication of your existing local login success logic
+        let entrepProfile = {}
+        let subscription = null
+
+        if(data.user.role === 'entrepreneur') {
+            const getEntreProfile = await fetch(`${API_BASE_URL}/api/users/entrepreneur/user/${data.user.id}`, {
+                method: "GET",
+                headers: {
+                    'Authorization': `Bearer ${data.accessToken}`
+                }
+            })
+
+            const getSubsscription = await fetch(`${API_BASE_URL}/api/payments/subscription`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${data.accessToken}`
+                }
+            })
+
+            if(!getEntreProfile.ok || !getSubsscription.ok) {
+                // Use the error message from the response if available
+                const entrepError = await getEntreProfile.json()
+                const subscriptionError = await getSubsscription.json()
+                throw new Error(entrepError.message || subscriptionError.message || `Error getting profile/subscription data`)
+            }
+
+            const subs = await getSubsscription.json()
+            const entrep = await getEntreProfile.json()
+            entrepProfile = entrep.profile
+            subscription = subs
+        }
+
+        const userProfile = {
+            id: data.user.id,
+            name: `${data.user.first_name || ""} ${data.user.last_name || ""}`.trim(),
+            email: data.user.email,
+            role: data.user.role,
+            token: data.accessToken || null,
+            entrepProfile: data.user.role === 'entrepreneur' ? {entrepProfile, subscription} : null
+        }
+
+        localStorage.setItem("userProfile", JSON.stringify(userProfile))
+        console.log(userProfile)
+        setShowLoginModal(false)
+        navigate(`/homepage/${userProfile.role}`)
+
+    } catch (error) {
+        console.error("Google Login error:", error);
+        setLoginErrors({ 
+            submit: error.message || "Login failed. Please try again." 
+        });
+    } finally {
+        setIsLoggingIn(false);
+    }
+  }
 
   return (
     <div className="lp-landing-page">
@@ -652,6 +768,20 @@ export default function LandingPage() {
               <h2>Welcome Back</h2>
               <p>Log in to your INTERVOS account</p>
             </div>
+
+            {/* 💡 NEW GOOGLE LOGIN BUTTON 💡 */}
+            <div className="lp-google-login-container">
+              <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+                <GoogleLogin 
+                  onSuccess={handleLoginSuccess} // Use the new login handler
+                  onError={handleError} 
+                  text="signin_with" 
+                  width="100%"
+                />
+              </GoogleOAuthProvider>
+            </div>
+            
+            <div className="lp-modal-divider"><span>OR</span></div>
             <form className="lp-modal-form" onSubmit={handleLoginSubmit}>
               {loginErrors.submit && (
                 <div className="lp-form-error-banner">
@@ -791,6 +921,10 @@ export default function LandingPage() {
                   <button className="lp-back-button" onClick={() => setRegistrationStep(1)}>
                     ← Back
                   </button>
+                  <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+                    <GoogleLogin onSuccess={handleSuccess} onError={handleError} />
+                  </GoogleOAuthProvider>
+                  {/* <hr /> */}
                   <h2>Create Your Account</h2>
                   <p>Tell us about yourself</p>
                 </div>
@@ -800,6 +934,8 @@ export default function LandingPage() {
                       {registerErrors.submit}
                     </div>
                   )}
+
+                  <input type="hidden" value={registerFormData.provider} name="provider" />
 
                   <div className="lp-form-row">
                     <div className="lp-form-group">
@@ -850,29 +986,34 @@ export default function LandingPage() {
                     />
                   </div>
 
-                  <div className="lp-form-group">
-                    <label>Password</label>
-                    <input
-                      type="password"
-                      name="password"
-                      placeholder="Create a strong password"
-                      value={registerFormData.password}
-                      onChange={handleRegisterChange}
-                      required
-                    />
-                  </div>
+                  {
+                    registerFormData.provider == 'local' &&
+                    <>
+                    <div className="lp-form-group">
+                      <label>Password</label>
+                      <input
+                        type="password"
+                        name="password"
+                        placeholder="Create a strong password"
+                        value={registerFormData.password}
+                        onChange={handleRegisterChange}
+                        required
+                      />
+                    </div>
 
-                  <div className="lp-form-group">
-                    <label>Confirm Password</label>
-                    <input
-                      type="password"
-                      name="confirm_password"
-                      placeholder="Re-enter your password"
-                      value={registerFormData.confirm_password}
-                      onChange={handleRegisterChange}
-                      required
-                    />
-                  </div>
+                    <div className="lp-form-group">
+                      <label>Confirm Password</label>
+                      <input
+                        type="password"
+                        name="confirm_password"
+                        placeholder="Re-enter your password"
+                        value={registerFormData.confirm_password}
+                        onChange={handleRegisterChange}
+                        required
+                      />
+                    </div>
+                    </>
+                  }
 
                   {/* ===== Property Manager Fields ===== */}
                   {selectedRole === "property-manager" && (

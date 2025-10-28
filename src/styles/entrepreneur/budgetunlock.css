@@ -168,3 +168,13 @@
   margin-top: 0.8rem;
   text-align: center;
 }
+
+@media (max-width: 1400px) {
+  .ub-modal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 10000;
+    transform: translate(-50%, -50%);
+  }
+}

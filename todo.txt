@@ -18,6 +18,8 @@ ENTREP:
 - notification settings
 - add supplier tab in chats/messages
 - make the favorites works
+- jobs list interface
+- hide budget in mobile
 
 GENERAL:
 - fix Responsiveness

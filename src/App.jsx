@@ -13,6 +13,7 @@ import SubmittedBids from './pages/submissions/SubmittedBids';
 import AddPropertyPage from "./pages/profile/AddPropertyPage";
 import LandingPage from "./pages/landingpage/LandingPage";
 import ProfilePageEntrepreneur from "./pages/profile/ProfilePageEntrepreneur";
+import EntrepreneurJobs from "./pages/works/EntrepreneurJobs";
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
           <Route path="/submissions/entrepreneur" element={<SubmittedBids/>} />
           <Route path="/profile/add-property" element={<AddPropertyPage/>} />
           <Route path="/profile/entrepreneur" element={<ProfilePageEntrepreneur/>} />
+          <Route path="jobs/entrepreneur" element={< EntrepreneurJobs />} />
         </Routes>
       </div>
     </Router>

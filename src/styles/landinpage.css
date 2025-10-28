@@ -1411,3 +1411,42 @@ body {
 .lp-modal::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-muted);
 }
+
+
+.continue-with-google {
+  margin-block: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem 1rem;
+  width: 100%;
+  border: 1px solid var(--color-status-info);
+  border-radius: 3rem;
+  cursor: pointer;
+
+  img {
+    width: 1rem;
+    /* height: 1rem; */
+  }
+}
+
+/* Add this to your landinpage.css file */
+
+.lp-google-login-container {
+    margin-bottom: 20px;
+}
+
+.lp-modal-divider {
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+    line-height: 0.1em;
+    margin: 20px 0 30px;
+}
+
+.lp-modal-divider span {
+    background: #fff;
+    padding: 0 10px;
+    font-size: 14px;
+    color: #888;
+}
