@@ -135,6 +135,9 @@ export default function LandingPage() {
       console.log(userProfile)
 
       // Save to localStorage
+      localStorage.setItem('token', userProfile.token);
+      localStorage.setItem('userId', userProfile.id);
+      localStorage.setItem('email', userProfile.email);
       localStorage.setItem("userProfile", JSON.stringify(userProfile))
       
       // Close modal and redirect

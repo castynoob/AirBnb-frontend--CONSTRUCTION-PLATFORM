@@ -1,9 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Nav from "../../components/Nav";
-import "../../styles/manager/message.css"
-import { MessageSquare, Users, User, Briefcase, Send, PhoneCall, Lock, Search, UserPlus, X, ArrowLeft } from "lucide-react";
+import "../../styles/manager/message.css";
+import {
+  MessageSquare,
+  Users,
+  User,
+  Briefcase,
+  Send,
+  PhoneCall,
+  Lock,
+  Search,
+  UserPlus,
+  X,
+  ArrowLeft,
+} from "lucide-react";
+import { useSocket } from "../../contexts/SocketContext";
+import {
+  getConversations,
+  getMessages,
+  markConversationAsRead,
+  getUnreadCount,
+  sendMessage,
+} from "../../utils/api";
 
 function Messages() {
+  const socket = useSocket();
   const [activeTab, setActiveTab] = useState("residents");
   const [selectedChat, setSelectedChat] = useState(null);
   const [message, setMessage] = useState("");
@@ -11,164 +32,246 @@ function Messages() {
   const [showAddMember, setShowAddMember] = useState(false);
   const [newMemberEmail, setNewMemberEmail] = useState("");
   const [showMobileChatWindow, setShowMobileChatWindow] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
-  const residents = [
-    { 
-      id: 1,
-      name: "Sarah Johnson", 
-      apt: "Unit 204", 
-      lastMessage: "Thanks for fixing the elevator!",
-      time: "2:30 PM",
-      unread: 0
-    },
-    { 
-      id: 2, 
-      name: "James Lee", 
-      apt: "Unit 305", 
-      lastMessage: "There's a water leak in the kitchen.",
-      time: "1:15 PM",
-      unread: 2
-    },
-    { 
-      id: 3, 
-      name: "Maria Chen", 
-      apt: "Unit 102", 
-      lastMessage: "Can I schedule an inspection?",
-      time: "Yesterday",
-      unread: 0
-    },
-    { 
-      id: 4, 
-      name: "Robert Williams", 
-      apt: "Unit 501", 
-      lastMessage: "Heating system working great now.",
-      time: "2 days ago",
-      unread: 0
-    },
-  ];
+  const [allConversations, setAllConversations] = useState([]);
+  const [conversation, setConversation] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const currentUserId = localStorage.getItem("userId");
 
-  const personal = [
-    { 
-      id: 1,
-      name: "David Martinez", 
-      role: "Building Manager", 
-      lastMessage: "Meeting scheduled for tomorrow.",
-      time: "3:15 PM",
-      unread: 1
-    },
-    { 
-      id: 2, 
-      name: "Emily Chen", 
-      role: "Maintenance Staff", 
-      lastMessage: "All inspections complete.",
-      time: "1:45 PM",
-      unread: 0
-    },
-    { 
-      id: 3, 
-      name: "Michael Brown", 
-      role: "Security Manager", 
-      lastMessage: "Updated security protocols sent.",
-      time: "Yesterday",
-      unread: 0
-    },
-  ];
+  // ✅ Added ref for auto-scroll
+  const messagesEndRef = useRef(null);
 
-  const communities = [
-    { 
-      id: 1,
-      name: "Building A Residents", 
-      members: "24 members", 
-      lastMessage: "Weekly maintenance scheduled for Friday.",
-      time: "3:20 PM",
-      unread: 3,
-      membersList: ["Sarah Johnson", "James Lee", "Maria Chen", "Robert Williams"]
-    },
-    { 
-      id: 2, 
-      name: "Emergency Response Team", 
-      members: "8 members", 
-      lastMessage: "All clear on the elevator inspection.",
-      time: "1:45 PM",
-      unread: 0,
-      membersList: ["David Martinez", "Emily Chen", "Michael Brown"]
-    },
-    { 
-      id: 3, 
-      name: "Rooftop Garden Committee", 
-      members: "12 members", 
-      lastMessage: "New plants arriving next week!",
-      time: "Yesterday",
-      unread: 1,
-      membersList: ["Sarah Johnson", "Maria Chen"]
-    },
-  ];
+  const scrollToBottom = (smooth = true) => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: smooth ? "smooth" : "auto",
+    });
+  };
 
-  const entrepreneurs = [
-    { 
-      id: 1, 
-      name: "BuildRight Contractors", 
-      status: "accepted", 
-      lastMessage: "We'll start Monday.",
-      time: "3:45 PM",
-      unread: 1
-    },
-    { 
-      id: 2, 
-      name: "FixPro Plumbing", 
-      status: "pending", 
-      lastMessage: "Awaiting approval...",
-      time: "12:00 PM",
-      unread: 0
-    },
-    { 
-      id: 3, 
-      name: "Skyline Roofing", 
-      status: "accepted", 
-      lastMessage: "Materials are being delivered.",
-      time: "Yesterday",
-      unread: 0
-    },
-    { 
-      id: 4, 
-      name: "Elite HVAC Services", 
-      status: "accepted", 
-      lastMessage: "Annual maintenance complete.",
-      time: "2 days ago",
-      unread: 0
-    },
-  ];
+  // Scroll instantly when a new chat opens
+  useEffect(() => {
+    if (selectedChat) scrollToBottom(false);
+  }, [selectedChat]);
 
-  // Sample conversation
-  const conversation = [
-    { id: 1, text: "Hi there! How can I help?", type: "received", time: "2:25 PM" },
-    { id: 2, text: "Just checking on progress.", type: "sent", time: "2:27 PM" },
-    { id: 3, text: "Everything is on schedule. We'll have an update by tomorrow.", type: "received", time: "2:30 PM" },
-  ];
+  // Scroll smoothly when new messages arrive
+  useEffect(() => {
+    scrollToBottom(true);
+  }, [conversation]);
 
-  const handleSend = () => {
-    if (!message.trim()) return;
-    console.log(`Message sent to ${selectedChat.name}: "${message}"`);
+  const residents = [];
+  const personal = [];
+  const communities = [];
+
+  const formatTime = (timestamp) => {
+    if (!timestamp) return "";
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInHours = (now - date) / (1000 * 60 * 60);
+
+    if (diffInHours < 24) {
+      return date.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } else if (diffInHours < 168) {
+      return date.toLocaleDateString("en-US", { weekday: "short" });
+    } else {
+      const days = Math.floor(diffInHours / 24);
+      return `${days} days ago`;
+    }
+  };
+
+  const entrepreneurs = allConversations.map((conv) => ({
+    id: conv.id,
+    name: conv.other_user_name,
+    status: "accepted",
+    lastMessage: conv.last_message || "No messages yet",
+    time: formatTime(conv.last_message_at),
+    unread: conv.unread_count || 0,
+    other_user_id: conv.other_user_id,
+  }));
+
+  useEffect(() => {
+    loadConversations();
+    loadUnreadCount();
+  }, []);
+
+  const loadConversations = async () => {
+    try {
+      setIsLoading(true);
+      const data = await getConversations();
+      if (data.success) setAllConversations(data.conversations);
+    } catch (err) {
+      console.error("Error loading conversations:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadUnreadCount = async () => {
+    try {
+      await getUnreadCount();
+    } catch (err) {
+      console.error("Error loading unread count:", err);
+    }
+  };
+
+  // Socket.io Real-time logic
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("new_message", ({ message: newMsg, conversationId }) => {
+      console.log("📨 New message received:", newMsg);
+      if (selectedChat?.id === conversationId) {
+        setConversation((prev) => {
+          const exists = prev.some((msg) => msg.id === newMsg.id);
+          if (exists) return prev;
+          return [
+            ...prev,
+            {
+              id: newMsg.id,
+              text: newMsg.content,
+              type: newMsg.sender_id === currentUserId ? "sent" : "received",
+              time: formatTime(newMsg.created_at),
+            },
+          ];
+        });
+        if (newMsg.sender_id !== currentUserId) {
+          socket.emit("mark_as_read", { conversationId });
+        }
+      }
+      loadConversations();
+      setIsSending(false);
+    });
+
+    socket.on("message_sent", ({ message: sentMsg, conversationId }) => {
+      console.log("✅ Message sent successfully:", sentMsg);
+      if (selectedChat?.id === conversationId) {
+        setConversation((prev) => {
+          const exists = prev.some((msg) => msg.id === sentMsg.id);
+          if (exists) return prev;
+          return [
+            ...prev,
+            {
+              id: sentMsg.id,
+              text: sentMsg.content,
+              type: "sent",
+              time: formatTime(sentMsg.created_at),
+            },
+          ];
+        });
+      }
+      setIsSending(false);
+      loadConversations();
+    });
+
+    socket.on("message_notification", () => loadConversations());
+
+    socket.on("error", ({ message: errorMsg }) => {
+      console.error("Socket error:", errorMsg);
+      setIsSending(false);
+      alert(`Error: ${errorMsg}`);
+    });
+
+    return () => {
+      socket.off("new_message");
+      socket.off("message_sent");
+      socket.off("message_notification");
+      socket.off("error");
+    };
+  }, [socket, selectedChat, currentUserId]);
+
+  const handleSend = async () => {
+    if (!message.trim() || !selectedChat || isSending) return;
+
+    const messageContent = message.trim();
     setMessage("");
+    setIsSending(true);
+
+    try {
+      if (socket && socket.connected) {
+        socket.emit("send_message", {
+          receiverId: selectedChat.other_user_id,
+          content: messageContent,
+          conversationId: selectedChat.id,
+        });
+      } else {
+        await sendViaHTTP(messageContent);
+      }
+    } catch (err) {
+      console.error("Error sending message:", err);
+      setIsSending(false);
+      setMessage(messageContent);
+      alert("Failed to send message. Please try again.");
+    }
+  };
+
+  const sendViaHTTP = async (messageContent) => {
+    try {
+      const data = await sendMessage(
+        selectedChat.other_user_id,
+        messageContent,
+        selectedChat.job_id || null
+      );
+      if (data.success) {
+        setConversation((prev) => [
+          ...prev,
+          {
+            id: data.message.id,
+            text: data.message.content,
+            type: "sent",
+            time: formatTime(data.message.created_at),
+          },
+        ]);
+        setIsSending(false);
+        loadConversations();
+      }
+    } catch (err) {
+      console.error("HTTP send failed:", err);
+      throw err;
+    }
   };
 
   const handleAddMember = () => {
     if (!newMemberEmail.trim()) return;
-    console.log(`Adding member to ${selectedChat.name}: ${newMemberEmail}`);
-    alert(`Invitation sent to ${newMemberEmail} to join ${selectedChat.name}!`);
+    alert(`Invitation sent to ${newMemberEmail}`);
     setNewMemberEmail("");
     setShowAddMember(false);
   };
 
-  const handleChatClick = (chat) => {
+  const handleChatClick = async (chat) => {
     if (chat.status === "pending") return;
+
     setSelectedChat(chat);
     setShowMobileChatWindow(true);
+    socket?.emit("join_conversation", chat.id);
+
+    try {
+      const data = await getMessages(chat.id);
+      if (data.success) {
+        const formattedMessages = data.messages.map((msg) => ({
+          id: msg.id,
+          text: msg.content,
+          type: msg.sender_id === currentUserId ? "sent" : "received",
+          time: formatTime(msg.created_at),
+        }));
+        setConversation(formattedMessages);
+      }
+    } catch (err) {
+      console.error("Error loading messages:", err);
+    }
+
+    try {
+      await markConversationAsRead(chat.id);
+      socket?.emit("mark_as_read", { conversationId: chat.id });
+      loadConversations();
+    } catch (err) {
+      console.error("Error marking as read:", err);
+    }
   };
 
-  const handleBackToList = () => {
-    setShowMobileChatWindow(false);
-  };
+  const handleBackToList = () => setShowMobileChatWindow(false);
 
   const getCurrentChats = () => {
     if (activeTab === "residents") return residents;
@@ -177,68 +280,39 @@ function Messages() {
     return entrepreneurs;
   };
 
-  const filteredChats = getCurrentChats().filter(
-    chat => chat.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredChats = getCurrentChats().filter((chat) =>
+    chat.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="messages-page-fullscreen">
       <Nav />
-
-      <div className="messages-container-fullscreen main-container ">
+      <div className="messages-container-fullscreen main-container">
         <div className="messages-header-bar">
           <h1>Messages</h1>
           <div className="tabs-section">
-            <button
-              className={activeTab === "residents" ? "tab-btn active" : "tab-btn"}
-              onClick={() => {
-                setActiveTab("residents");
-                setSelectedChat(null);
-                setShowMobileChatWindow(false);
-              }}
-            >
-              <Users size={18} />
-              <span>Residents</span>
-            </button>
-            <button
-              className={activeTab === "personal" ? "tab-btn active" : "tab-btn"}
-              onClick={() => {
-                setActiveTab("personal");
-                setSelectedChat(null);
-                setShowMobileChatWindow(false);
-              }}
-            >
-              <User size={18} />
-              <span>Personal</span>
-            </button>
-            <button
-              className={activeTab === "community" ? "tab-btn active" : "tab-btn"}
-              onClick={() => {
-                setActiveTab("community");
-                setSelectedChat(null);
-                setShowMobileChatWindow(false);
-              }}
-            >
-              <Users size={18} />
-              <span>Community</span>
-            </button>
-            <button
-              className={activeTab === "entrepreneurs" ? "tab-btn active" : "tab-btn"}
-              onClick={() => {
-                setActiveTab("entrepreneurs");
-                setSelectedChat(null);
-                setShowMobileChatWindow(false);
-              }}
-            >
-              <Briefcase size={18} />
-              <span>Entrepreneurs</span>
-            </button>
+            {["residents", "personal", "community", "entrepreneurs"].map((tab) => (
+              <button
+                key={tab}
+                className={activeTab === tab ? "tab-btn active" : "tab-btn"}
+                onClick={() => {
+                  setActiveTab(tab);
+                  setSelectedChat(null);
+                  setShowMobileChatWindow(false);
+                }}
+              >
+                {tab === "residents" && <Users size={18} />}
+                {tab === "personal" && <User size={18} />}
+                {tab === "community" && <Users size={18} />}
+                {tab === "entrepreneurs" && <Briefcase size={18} />}
+                <span>{tab.charAt(0).toUpperCase() + tab.slice(1)}</span>
+              </button>
+            ))}
           </div>
         </div>
 
         <div className="messages-layout">
-          {/* Sidebar Chat List */}
-          <aside className={`chat-sidebar ${showMobileChatWindow ? 'mobile-hidden' : ''}`}>
+          <aside className={`chat-sidebar ${showMobileChatWindow ? "mobile-hidden" : ""}`}>
             <div className="sidebar-search">
               <Search size={16} className="search-icon" />
               <input
@@ -251,84 +325,69 @@ function Messages() {
             </div>
 
             <div className="chat-list">
-              {filteredChats.map((chat) => (
-                <div
-                  key={chat.id}
-                  className={`chat-item ${selectedChat?.id === chat.id && selectedChat?.name === chat.name ? "active" : ""} ${
-                    chat.status === "pending" ? "restricted" : ""
-                  }`}
-                  onClick={() => handleChatClick(chat)}
-                >
-                  <div className="chat-avatar">
-                    <div className="avatar-circle">
-                      {chat.name.charAt(0).toUpperCase()}
-                    </div>
-                    {chat.unread > 0 && <span className="unread-badge">{chat.unread}</span>}
-                  </div>
-
-                  <div className="chat-info">
-                    <div className="chat-top">
-                      <h4 className="chat-name">{chat.name}</h4>
-                      <span className="chat-time">{chat.time}</span>
-                    </div>
-                    <div className="chat-bottom">
-                      <p className="chat-preview">{chat.lastMessage}</p>
-                      {chat.status === "pending" && (
-                        <Lock size={14} className="lock-icon" />
-                      )}
-                    </div>
-                    {chat.members && (
-                      <p className="chat-members">{chat.members}</p>
-                    )}
-                  </div>
+              {isLoading ? (
+                <div style={{ padding: "20px", textAlign: "center", color: "#888" }}>
+                  Loading conversations...
                 </div>
-              ))}
-
-              {filteredChats.length === 0 && (
+              ) : filteredChats.length === 0 ? (
                 <div className="no-results">
                   <p>No conversations found</p>
                 </div>
+              ) : (
+                filteredChats.map((chat) => (
+                  <div
+                    key={chat.id}
+                    className={`chat-item ${selectedChat?.id === chat.id ? "active" : ""} ${
+                      chat.status === "pending" ? "restricted" : ""
+                    }`}
+                    onClick={() => handleChatClick(chat)}
+                  >
+                    <div className="chat-avatar">
+                      <div className="avatar-circle">
+                        {chat.name.charAt(0).toUpperCase()}
+                      </div>
+                      {chat.unread > 0 && <span className="unread-badge">{chat.unread}</span>}
+                    </div>
+                    <div className="chat-info">
+                      <div className="chat-top">
+                        <h4 className="chat-name">{chat.name}</h4>
+                        <span className="chat-time">{chat.time}</span>
+                      </div>
+                      <div className="chat-bottom">
+                        <p className="chat-preview">{chat.lastMessage}</p>
+                        {chat.status === "pending" && <Lock size={14} className="lock-icon" />}
+                      </div>
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </aside>
 
-          {/* Chat Window */}
-          <section className={`chat-window ${showMobileChatWindow ? 'mobile-show' : ''}`}>
+          {/* ✅ Chat window with scroll ref */}
+          <section className={`chat-window ${showMobileChatWindow ? "mobile-show" : ""}`}>
             {selectedChat ? (
               <>
                 <div className="chat-header manager">
-                    <button 
-                      className="mobile-back-btn"
-                      onClick={handleBackToList}
-                    >
-                      <ArrowLeft size={20} />
-                    </button>
-                    <div className="chat-name-info">
-                      <div className="header-avatar">
-                        {selectedChat.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <h3 className="header-name">{selectedChat.name}</h3>
-                        {selectedChat.apt && (
-                          <p className="header-subtitle">{selectedChat.apt}</p>
-                        )}
-                        {selectedChat.role && (
-                          <p className="header-subtitle">{selectedChat.role}</p>
-                        )}
-                        {selectedChat.members && (
-                          <p className="header-subtitle">{selectedChat.members}</p>
-                        )}
-                        {selectedChat.status && (
-                          <span className={`header-status ${selectedChat.status}`}>
-                            {selectedChat.status}
-                          </span>
-                        )}
-                      </div>
+                  <button className="mobile-back-btn" onClick={handleBackToList}>
+                    <ArrowLeft size={20} />
+                  </button>
+                  <div className="chat-name-info">
+                    <div className="header-avatar">
+                      {selectedChat.name.charAt(0).toUpperCase()}
                     </div>
-
+                    <div>
+                      <h3 className="header-name">{selectedChat.name}</h3>
+                      {selectedChat.status && (
+                        <span className={`header-status ${selectedChat.status}`}>
+                          {selectedChat.status}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                   <div className="header-actions">
                     {activeTab === "community" && (
-                      <button 
+                      <button
                         className="add-member-btn"
                         onClick={() => setShowAddMember(true)}
                       >
@@ -336,7 +395,7 @@ function Messages() {
                         <span>Add Member</span>
                       </button>
                     )}
-                    {activeTab === "entrepreneurs" && selectedChat.status === "accepted" && (
+                    {activeTab === "entrepreneurs" && (
                       <button className="contact-btn">
                         <PhoneCall size={16} />
                         <span>Contact</span>
@@ -354,6 +413,17 @@ function Messages() {
                       </div>
                     </div>
                   ))}
+
+                  {isSending && (
+                    <div className="message-wrapper sent">
+                      <div className="message-bubble" style={{ opacity: 0.6 }}>
+                        <p className="message-text">Sending...</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 🔽 Scroll anchor */}
+                  <div ref={messagesEndRef} />
                 </div>
 
                 <div className="chat-input-area">
@@ -364,8 +434,13 @@ function Messages() {
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyPress={(e) => e.key === "Enter" && handleSend()}
                     className="message-input"
+                    disabled={isSending}
                   />
-                  <button onClick={handleSend} className="send-btn">
+                  <button
+                    onClick={handleSend}
+                    className="send-btn"
+                    disabled={isSending || !message.trim()}
+                  >
                     <Send size={18} />
                   </button>
                 </div>
@@ -379,69 +454,6 @@ function Messages() {
             )}
           </section>
         </div>
-
-        {/* Add Member Modal */}
-        {showAddMember && (
-          <div className="modal-overlay" onClick={() => setShowAddMember(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2>Add Member to {selectedChat?.name}</h2>
-                <button 
-                  className="modal-close-btn"
-                  onClick={() => setShowAddMember(false)}
-                >
-                  <X size={24} />
-                </button>
-              </div>
-
-              <div className="modal-body">
-                <p className="modal-description">
-                  Enter the email address of the member you want to add to this community.
-                </p>
-                
-                {selectedChat?.membersList && (
-                  <div className="current-members">
-                    <h4>Current Members:</h4>
-                    <ul>
-                      {selectedChat.membersList.map((member, index) => (
-                        <li key={index}>{member}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                <div className="form-group">
-                  <label htmlFor="member-email">Member Email</label>
-                  <input
-                    id="member-email"
-                    type="email"
-                    placeholder="Enter email address..."
-                    value={newMemberEmail}
-                    onChange={(e) => setNewMemberEmail(e.target.value)}
-                    className="modal-input"
-                  />
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <button 
-                  className="modal-cancel-btn"
-                  onClick={() => setShowAddMember(false)}
-                >
-                  Cancel
-                </button>
-                <button 
-                  className="modal-submit-btn"
-                  onClick={handleAddMember}
-                  disabled={!newMemberEmail.trim()}
-                >
-                  <UserPlus size={16} />
-                  Add Member
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
