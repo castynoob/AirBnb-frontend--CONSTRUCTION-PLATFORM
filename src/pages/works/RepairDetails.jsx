@@ -165,7 +165,7 @@ function RepairDetails({ handleRepairClicked, repair }) {
           'Authorization': `Bearer ${user.token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ status: 'ongoing' })
+        body: JSON.stringify({ status: 'accepted', entrepreneur_id: `${selectedBidder.profile.id}` })
       })
 
       if (!jobResponse.ok) {

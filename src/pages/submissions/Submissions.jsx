@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import Nav from "../../components/Nav"
 import "../../styles/manager/submissions.css"
+import { useNavigate } from "react-router-dom"
 
 function SubmissionsPage() {
   const [submissions, setSubmissions] = useState([])
@@ -28,6 +29,9 @@ function SubmissionsPage() {
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState("all")
   const [expandedCards, setExpandedCards] = useState({})
+  const [uProfile, setUProfile] = useState({})
+  
+  const navigate = useNavigate()
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState("")
@@ -36,6 +40,10 @@ function SubmissionsPage() {
   const [amountRange, setAmountRange] = useState({ min: "", max: "" })
   const [dateRange, setDateRange] = useState({ start: "", end: "" })
   const [showFilters, setShowFilters] = useState(false)
+
+
+  // review
+  const [isAddingReview, setIsAddingReview] = useState(false)
 
   useEffect(() => {
     const fetchSubmissions = async () => {
@@ -50,6 +58,7 @@ function SubmissionsPage() {
         }
 
         const user = JSON.parse(userProfile)
+        setUProfile(user)
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
         // Fetch jobs for the manager
@@ -233,8 +242,14 @@ function SubmissionsPage() {
   }
 
   const handleChat = (submission) => {
-    console.log(`Opening chat with ${submission.entrepreneur_profile.company_name}`)
-    alert(`Chat with ${submission.entrepreneur_profile.company_name} would open here`)
+    let entrepId = submission.entrepreneur_profile.id
+    let jobId = submission.job.id
+    let name = submission.entrepreneur_profile.company_name
+
+    localStorage.setItem("targetReceiverId", entrepId);
+    localStorage.setItem("targetReceiverName", name);
+    if (jobId) localStorage.setItem("targetJobId", jobId);
+    navigate(`/messages/${uProfile.role}`)
   }
 
   const handleReview = (submission) => {
@@ -567,6 +582,10 @@ function SubmissionsPage() {
           </div>
         )}
 
+        {
+          
+        }
+
         {loading ? (
           <div className="subs-loading-state">
             <div className="subs-spinner"></div>
@@ -643,7 +662,7 @@ function SubmissionsPage() {
                       
                       {/* Chat button: Show when job is accepted or ongoing AND bid is accepted */}
                       {(submission.job.status === "accepted" || submission.job.status === "ongoing") && 
-                       submission.bid.status === "accepted" && (
+                        (
                         <button className="subs-chat-btn" onClick={() => handleChat(submission)}>
                           <MessageCircle size={14} />
                           Chat
@@ -651,7 +670,7 @@ function SubmissionsPage() {
                       )}
                       
                       {/* Review button: Show when job is completed AND bid is accepted */}
-                      {submission.job.status === "completed" && submission.bid.status === "accepted" && (
+                      {submission.job.status === "completed" && (
                         <button className="subs-review-btn" onClick={() => handleReview(submission)}>
                           <Star size={14} />
                           Review

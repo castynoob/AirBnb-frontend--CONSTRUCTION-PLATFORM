@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom"
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 
-
 export default function LandingPage() {
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showRegisterModal, setShowRegisterModal] = useState(false)
@@ -14,7 +13,6 @@ export default function LandingPage() {
   const [registrationStep, setRegistrationStep] = useState(1)
   const navigate = useNavigate()
 
-  // Login form state
   const [loginFormData, setLoginFormData] = useState({
     email: "",
     password: "",
@@ -135,11 +133,8 @@ export default function LandingPage() {
       console.log(userProfile)
 
       // Save to localStorage
-      localStorage.setItem('token', userProfile.token);
-      localStorage.setItem('userId', userProfile.id);
-      localStorage.setItem('email', userProfile.email);
       localStorage.setItem("userProfile", JSON.stringify(userProfile))
-      
+      console.log(userProfile)
       // Close modal and redirect
       setShowLoginModal(false)
       navigate(`/homepage/${userProfile.role}`)

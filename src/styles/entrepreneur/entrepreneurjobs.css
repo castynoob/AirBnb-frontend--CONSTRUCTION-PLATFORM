@@ -1,0 +1,336 @@
+.ej-home-container {
+  background-color: var(--color-background-light);
+  min-height: 100vh;
+  color: var(--color-text-dark);
+}
+
+.ej-main-container {
+  margin-left: 220px;
+  padding: 2rem;
+  position: relative;
+}
+
+/* Header */
+.ej-header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.ej-page-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.ej-search-filter {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ej-search-input {
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--color-border-divider);
+  border-radius: 8px;
+  font-size: 1rem;
+  width: 250px;
+}
+
+/* Tabs */
+.ej-status-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.ej-tab-btn {
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border-divider);
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.ej-tab-btn.active {
+  background-color: var(--color-secondary);
+  color: var(--color-white);
+  border: none;
+}
+
+/* Job Cards */
+.ej-job-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ej-job-card {
+  background-color: var(--color-white);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(15, 34, 61, 0.08);
+  padding: 20px;
+  transition: transform 0.2s;
+}
+
+.ej-job-card:hover {
+  transform: translateY(-4px);
+}
+
+.ej-job-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ej-job-title {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.ej-job-status {
+  font-size: 0.85rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  color: var(--color-white);
+}
+
+.ej-status-accepted {
+  background-color: var(--color-status-info);
+}
+
+.ej-status-ongoing {
+  background-color: var(--color-status-warning);
+}
+
+.ej-status-completed {
+  background-color: var(--color-status-success);
+}
+
+.ej-job-desc {
+  margin: 8px 0;
+  color: var(--color-text-muted);
+}
+
+.ej-job-details {
+  display: flex;
+  gap: 2rem;
+  font-size: 0.9rem;
+}
+
+.ej-job-actions {
+  margin-top: 1rem;
+}
+
+.ej-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.ej-btn:hover {
+  opacity: 0.9;
+}
+
+.ej-btn-start {
+  background-color: var(--color-secondary);
+  color: var(--color-white);
+}
+
+.ej-btn-done {
+  background-color: var(--color-status-success);
+  color: var(--color-white);
+}
+
+.ej-btn-review {
+  background-color: var(--color-status-warning);
+  color: var(--color-white);
+}
+
+/* Modal */
+.ej-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(15, 34, 61, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.ej-modal {
+  background-color: var(--color-white);
+  padding: 2rem;
+  border-radius: 12px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+.ej-modal-title {
+  font-size: 1.2rem;
+  color: var(--color-primary);
+  margin-bottom: 1rem;
+}
+
+.ej-modal-body {
+  color: var(--color-text-muted);
+  margin-bottom: 1.5rem;
+}
+
+.ej-modal-actions {
+  display: flex;
+  justify-content: space-around;
+}
+
+.ej-btn-cancel {
+  background-color: var(--color-border-divider);
+  color: var(--color-text-dark);
+}
+
+.ej-btn-confirm {
+  background-color: var(--color-secondary);
+  color: var(--color-white);
+}
+
+/* Loading */
+.ej-loading-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.ej-loading-text {
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 1.5rem;
+}
+
+.ej-stars {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.ej-textarea {
+  width: 100%;
+  height: 100px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px;
+  resize: none;
+  margin-bottom: 16px;
+}
+
+.ej-view-job-modal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10000;
+
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 600px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ej-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ej-job-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.ej-close-button {
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  color: #888;
+  transition: color 0.2s;
+}
+.ej-close-button:hover {
+  color: #000;
+}
+
+.ej-job-meta {
+  display: flex;
+  justify-content: flex-start;
+  gap: 0.75rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.ej-job-description {
+  line-height: 1.6;
+  color: #444;
+}
+
+.ej-job-budget {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+.ej-budget-values {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  font-size: 1rem;
+}
+
+.ej-manager-section, .ej-review-section {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+.ej-manager-company {
+  font-weight: 600;
+}
+
+.ej-review-rating {
+  color: #f5c518;
+  font-size: 1.2rem;
+}
+.star.inactive {
+  color: #ddd;
+}
+
+.ej-review-comment {
+  margin-top: 0.5rem;
+  font-style: italic;
+  color: #333;
+}
+
+.ej-review-by {
+  font-size: 0.85rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+
+

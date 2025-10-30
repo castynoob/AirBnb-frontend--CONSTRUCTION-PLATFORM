@@ -9,7 +9,13 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 // API REQUEST HELPER
 // ============================================
 async function apiRequest(endpoint, options = {}) {
-  const token = localStorage.getItem('token');
+  const userProfile = localStorage.getItem('userProfile')
+
+  if(!userProfile) {
+    throw new Error(`Error userProfile does not exist`)
+  }
+  const user = JSON.parse(userProfile)
+  const token = user.token;
 
   if (!token) {
     throw new Error('No token provided');

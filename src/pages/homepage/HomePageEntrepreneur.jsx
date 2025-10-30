@@ -165,7 +165,6 @@ function HomePageEntrepreneur() {
   const [jobs, setJobs] = useState([])
   const [submittedBids, setSubmittedBids] = useState([])
   const [showUnlockBudgetModal, setShowUnlockBudgetModal] = useState(false)
-  const [paymentMethos, setPaymentMethod] = useState('pm_card_visa')
   const [budgetJobId, setBudgetJobId] = useState('')
 
   // Filter states
@@ -863,11 +862,6 @@ function HomePageEntrepreneur() {
 
                 <div className="eh-section-divider"></div>
 
-                {
-                  showUnlockBudgetModal &&
-                  <UnlockBudgetForm jobId={budgetJobId} token={userProfile.token} handleBudgetModal={handleBudgetModal} />
-                }
-
                 <div className="eh-section-tabs">
                   <div className="eh-section-header">
                     <h3>Available Jobs for Bidding</h3>
@@ -991,6 +985,11 @@ function HomePageEntrepreneur() {
           </div>
         </div>
       </main>
+
+      {
+        showUnlockBudgetModal &&
+        <UnlockBudgetForm jobId={budgetJobId} token={userProfile.token} handleBudgetModal={handleBudgetModal} />
+      }
 
       {/* Filters Modal */}
       {filtersPanelOpen && (
@@ -1210,8 +1209,17 @@ function HomePageEntrepreneur() {
                               <div>
                                 <span className="eh-detail-label">Budget Range</span>
                                 <span className="eh-detail-value">
-                                  ${Number.parseFloat(job.budget_min).toLocaleString()} - $
-                                  {Number.parseFloat(job.budget_max).toLocaleString()}
+                                  {
+                                      job.budgetData.unlocked?
+                                    `$${Number.parseFloat(job.budget_min).toLocaleString()} - 
+                                     $${Number.parseFloat(job.budget_max).toLocaleString()}` :
+                                     <>
+                                      <button className="unlock-budget-button" onClick={() => {
+                                        setBudgetJobId(job.id)
+                                        setShowUnlockBudgetModal(true)
+                                      }}>Show budget</button>
+                                     </>
+                                    }
                                 </span>
                               </div>
                             </div>

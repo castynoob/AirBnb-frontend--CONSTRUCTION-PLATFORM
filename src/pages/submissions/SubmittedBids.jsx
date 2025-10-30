@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Nav from '../../components/Nav';
 import '../../styles/entrepreneur/submittedbids.css'
 import { Search, Calendar, DollarSign, Clock, Eye, MessageSquare, MoreVertical, CheckCircle, XCircle, AlertCircle, MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const SubmittedBids = () => {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -11,6 +12,8 @@ const SubmittedBids = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+
+  const navigate = useNavigate()
 
   useEffect(() => {
     const fetchBids = async () => {
@@ -65,6 +68,7 @@ const SubmittedBids = () => {
           declined: declinedCount
         };
         
+        console.log(mappedBids)
         setBids(mappedBids);
         setSummary(mappedSummary);
         setLoading(false);
@@ -154,6 +158,32 @@ const SubmittedBids = () => {
       bid.city?.toLowerCase().includes(searchLower)
     );
   });
+
+  const handleMessageClicked = async (bid) => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+    const userProfile = localStorage.getItem('userProfile')
+
+    if(userProfile) {
+      const user = JSON.parse(userProfile)
+      const jobResponse = await fetch(`${API_BASE_URL}/api/jobs/${bid.job_id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      })
+
+      if(!jobResponse.ok) {
+        throw new Error('Error', jobResponse.status)
+      }
+
+      const data = await jobResponse.json()
+      const manageId = data.manager_id;
+      localStorage.setItem("targetReceiverId", manageId);
+      localStorage.setItem("targetReceiverName", "THIS IS NAME");
+      if (data.id) localStorage.setItem("targetJobId", data.id);
+      navigate('/messages/entrepreneur')
+    }
+  }
 
   if (loading) {
     return (
@@ -327,12 +357,14 @@ const SubmittedBids = () => {
                       <Eye size={16} />
                       View Details
                     </button>
-                    <button className="eb-btn-icon">
+                    {
+                      bid.status == 'accepted' &&
+                    <>
+                    <button className="eb-btn-icon" onClick={() => handleMessageClicked(bid)}>
                       <MessageSquare size={16} />
                     </button>
-                    <button className="eb-btn-icon">
-                      <MoreVertical size={16} />
-                    </button>
+                    </>
+                    }
                   </div>
                 </div>
               </div>

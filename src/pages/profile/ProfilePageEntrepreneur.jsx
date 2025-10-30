@@ -2,28 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Star, CheckCircle, Award, Briefcase, MapPin, Calendar, Mail, Phone, Building } from 'lucide-react';
 import Nav from "../../components/Nav";
 import '../../styles/entrepreneur/profilepageentrepreneur.css';
+import { useNavigate } from 'react-router-dom';
 
 function ProfilePageEntrepreneur() {
   const [activeTab, setActiveTab] = useState('specialization');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-  // Static placeholder data - now using state so it can be updated
-  const [profileData, setProfileData] = useState({
-    companyName: 'BuildPro Construction Inc.',
-    licenseNumber: 'LIC-2024-12345',
-    yearsInBusiness: 8,
-    numEmployees: 25,
-    address: '123 Construction Avenue, Dagupan City, Pangasinan 2400',
-    phone: '+63 912 345 6789',
-    email: 'contact@buildpro.com',
-    memberSince: 'January 15, 2023',
-    specializations: ['Electrical', 'Plumbing', 'HVAC', 'Carpentry', 'Roofing', 'Painting', 'Flooring', 'Masonry'],
-    portfolio: [
-      { id: 1, url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400', description: 'Modern Office Renovation - Complete electrical and HVAC upgrade', location: 'Metro City, Central Province', propertyId: '12345', dateAdded: 'February 10, 2023' },
-      { id: 2, url: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=400', description: 'Residential Plumbing Installation - New home construction project', location: 'Metro City, Central Province', propertyId: '12346', dateAdded: 'March 15, 2023' },
-      { id: 3, url: 'https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=400', description: 'Commercial Electrical System - 5-story building complete wiring', location: 'Riverside, Eastern Province', propertyId: '54321', dateAdded: 'May 20, 2023' }
-    ]
-  });
+  const [profile, setProfile] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const navigate = useNavigate();
 
   const performanceMetrics = {
     averageRating: 4.8,
@@ -34,7 +20,6 @@ function ProfilePageEntrepreneur() {
     cities: 2
   };
 
-  // Edit form state - updates when modal opens
   const [formData, setFormData] = useState({
     company_name: '',
     license_number: '',
@@ -46,21 +31,65 @@ function ProfilePageEntrepreneur() {
     specializations: []
   });
 
-  // Update form data when modal opens
+  useEffect(() => {
+    fetchEntreprenuerProfile()
+  }, [])
+
+  const fetchEntreprenuerProfile = async () => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+    const userProfile = localStorage.getItem('userProfile')
+
+    if(userProfile) {
+      const user = JSON.parse(userProfile)
+      const entrepResponse = await fetch(`${API_BASE_URL}/api/users/entrepreneur/profile`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      })
+
+      if(!entrepResponse.ok) {
+        throw new Error(`Error ${entrepResponse.status}`)
+      }
+
+      const entrepData = await entrepResponse.json()
+
+      const newEntrepData = {
+        companyName: entrepData.profile.company_name,
+        licenseNumber: entrepData.profile.license_number,
+        yearsInBusiness: entrepData.profile.years_in_business,
+        numEmployees: entrepData.profile.num_employees,
+        address: entrepData.profile.address,
+        phone: '09xxxxxxxxx',
+        email: entrepData.profile.email,
+        specializations: entrepData.profile.specializations,
+        averageRating: entrepData.profile.average_rating,
+        portfolio: [
+          { id: 1, url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400', description: 'Modern Office Renovation - Complete electrical and HVAC upgrade', location: 'Metro City, Central Province', propertyId: '12345', dateAdded: 'February 10, 2023' },
+          { id: 2, url: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=400', description: 'Residential Plumbing Installation - New home construction project', location: 'Metro City, Central Province', propertyId: '12346', dateAdded: 'March 15, 2023' },
+          { id: 3, url: 'https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=400', description: 'Commercial Electrical System - 5-story building complete wiring', location: 'Riverside, Eastern Province', propertyId: '54321', dateAdded: 'May 20, 2023' }
+        ]
+      }
+
+      setProfile(newEntrepData)
+      setIsLoading(false)
+    }
+  }
+
   useEffect(() => {
     if (isEditModalOpen) {
       setFormData({
-        company_name: profileData.companyName,
-        license_number: profileData.licenseNumber,
-        years_in_business: profileData.yearsInBusiness,
-        num_employees: profileData.numEmployees,
-        address: profileData.address,
-        phone: profileData.phone,
-        email: profileData.email,
-        specializations: profileData.specializations
+        company_name: profile.companyName,
+        license_number: profile.licenseNumber,
+        years_in_business: profile.yearsInBusiness,
+        num_employees: profile.numEmployees,
+        address: profile.address,
+        phone: profile.phone,
+        email: profile.email,
+        specializations: profile.specializations
       });
     }
-  }, [isEditModalOpen, profileData]);
+  }, [isEditModalOpen, profile]);
 
   const specializationOptions = [
     'Electrical', 'Plumbing', 'Carpentry', 'Masonry', 'Roofing', 'HVAC',
@@ -95,22 +124,24 @@ function ProfilePageEntrepreneur() {
       return;
     }
     
-    // Update the profile data with the new form data
-    setProfileData(prev => ({
-      ...prev,
-      companyName: formData.company_name,
-      licenseNumber: formData.license_number,
-      yearsInBusiness: formData.years_in_business,
-      numEmployees: formData.num_employees,
-      address: formData.address,
-      phone: formData.phone,
-      email: formData.email,
-      specializations: formData.specializations
-    }));
-    
-    console.log('Form updated:', formData);
     setIsEditModalOpen(false); // Close modal and go back
   };
+
+  const handleLogout = () => {
+    localStorage.removeItem("userProfile");
+    navigate("/");
+  };
+
+  if(isLoading) {
+    return (
+      <>
+        <div>
+          <Nav />
+          <h1>LOADING...........................</h1>
+        </div>
+      </>
+    )
+  }
 
   return (
     <div className="entrepreneur-app-layout">
@@ -127,14 +158,14 @@ function ProfilePageEntrepreneur() {
               <div className="entrepreneur-profile-image-container">
                 <img 
                   src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=200" 
-                  alt={profileData.companyName}
+                  alt={profile.companyName}
                   className="entrepreneur-company-logo"
                 />
               </div>
               <div className="entrepreneur-profile-info">
-                <h1 className="entrepreneur-profile-title">{profileData.companyName}</h1>
+                <h1 className="entrepreneur-profile-title">{profile.companyName}</h1>
                 <span className="entrepreneur-license-verified">
-                  {profileData.licenseNumber} <CheckCircle size={16} />
+                  {profile.licenseNumber} <CheckCircle size={16} />
                 </span>
                 
                 {/* Additional Details */}
@@ -144,7 +175,7 @@ function ProfilePageEntrepreneur() {
                       Years in Business
                     </div>
                     <div className="entrepreneur-header-detail-value">
-                      {profileData.yearsInBusiness} years
+                      {profile.yearsInBusiness} years
                     </div>
                   </div>
                   <div className="entrepreneur-header-detail-item">
@@ -152,7 +183,7 @@ function ProfilePageEntrepreneur() {
                       Employees
                     </div>
                     <div className="entrepreneur-header-detail-value">
-                      {profileData.numEmployees} employees
+                      {profile.numEmployees} employees
                     </div>
                   </div>
                   <div className="entrepreneur-header-detail-item">
@@ -161,7 +192,7 @@ function ProfilePageEntrepreneur() {
                       Phone
                     </div>
                     <div className="entrepreneur-header-detail-value light">
-                      {profileData.phone}
+                      {profile.phone}
                     </div>
                   </div>
                   <div className="entrepreneur-header-detail-item">
@@ -170,7 +201,7 @@ function ProfilePageEntrepreneur() {
                       Email
                     </div>
                     <div className="entrepreneur-header-detail-value light">
-                      {profileData.email}
+                      {profile.email}
                     </div>
                   </div>
                   <div className="entrepreneur-header-detail-item entrepreneur-header-address">
@@ -179,7 +210,7 @@ function ProfilePageEntrepreneur() {
                       Address
                     </div>
                     <div className="entrepreneur-header-detail-value light">
-                      {profileData.address}
+                      {profile.address}
                     </div>
                   </div>
                 </div>
@@ -191,6 +222,12 @@ function ProfilePageEntrepreneur() {
               onClick={() => setIsEditModalOpen(true)}
             >
               Edit Profile
+            </button>
+            <button 
+              className="entrepreneur-edit-button"
+              onClick={() => handleLogout()}
+            >
+              Log out
             </button>
           </div>
 
@@ -226,7 +263,7 @@ function ProfilePageEntrepreneur() {
                   <div className="entrepreneur-card">
                     <div className="entrepreneur-card-body">
                       <div className="entrepreneur-specializations-display">
-                        {profileData.specializations.map((spec) => (
+                        {profile.specializations.map((spec) => (
                           <span key={spec} className="entrepreneur-spec-badge">{spec}</span>
                         ))}
                       </div>
@@ -267,7 +304,7 @@ function ProfilePageEntrepreneur() {
                       <CheckCircle size={24} color="#00A5A9" />
                       <div>
                         <div className="entrepreneur-metric-label">Experience</div>
-                        <div className="entrepreneur-metric-value">{profileData.yearsInBusiness} Years</div>
+                        <div className="entrepreneur-metric-value">{profile.yearsInBusiness} Years</div>
                       </div>
                     </div>
                   </div>
@@ -280,7 +317,7 @@ function ProfilePageEntrepreneur() {
               <div className="entrepreneur-tab-panel">
                 <h2 className="entrepreneur-section-title">Project Portfolio</h2>
                 <div className="entrepreneur-form-grid">
-                  {profileData.portfolio.map((item, index) => (
+                  {profile.portfolio.map((item, index) => (
                     <div key={item.id} className="entrepreneur-card">
                       <div className="entrepreneur-card-header">
                         <span className="entrepreneur-card-badge">

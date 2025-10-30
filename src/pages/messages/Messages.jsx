@@ -48,12 +48,84 @@ function Messages() {
     });
   };
 
-  // Scroll instantly when a new chat opens
+  // 🔥 SINGLE socket listener effect
+  useEffect(() => {
+    if (!socket) return;
+
+    const onNewMessage = ({ message: newMsg, conversationId }) => {
+      console.log("📨 New message received:", newMsg);
+      if (selectedChat?.id === conversationId) {
+        setConversation((prev) => {
+          const exists = prev.some((msg) => msg.id === newMsg.id);
+          if (exists) return prev;
+          return [
+            ...prev,
+            {
+              id: newMsg.id,
+              text: newMsg.content,
+              type: newMsg.sender_id === currentUserId ? "sent" : "received",
+              time: formatTime(newMsg.created_at),
+            },
+          ];
+        });
+        if (newMsg.sender_id !== currentUserId) {
+          socket.emit("mark_as_read", { conversationId });
+        }
+      }
+      loadConversations();
+    };
+
+    const onMessageSent = ({ message: sentMsg, conversationId }) => {
+      console.log("✅ Message sent successfully:", sentMsg);
+      
+      // Update the selectedChat if it was a temporary one (id: null)
+      if (selectedChat?.id === null && conversationId) {
+        setSelectedChat(prev => ({ ...prev, id: conversationId }));
+      }
+      
+      if (selectedChat?.id === conversationId || selectedChat?.id === null) {
+        setConversation((prev) => {
+          const exists = prev.some((msg) => msg.id === sentMsg.id);
+          if (exists) return prev;
+          return [
+            ...prev,
+            {
+              id: sentMsg.id,
+              text: sentMsg.content,
+              type: "sent",
+              time: formatTime(sentMsg.created_at),
+            },
+          ];
+        });
+      }
+      setIsSending(false);
+      loadConversations();
+    };
+
+    const onError = ({ message: errorMsg }) => {
+      console.error("Socket error:", errorMsg);
+      setIsSending(false);
+      alert(`Error: ${errorMsg}`);
+    };
+
+    socket.on("new_message", onNewMessage);
+    socket.on("message_sent", onMessageSent);
+    socket.on("message_notification", loadConversations);
+    socket.on("error", onError);
+
+    return () => {
+      socket.off("new_message", onNewMessage);
+      socket.off("message_sent", onMessageSent);
+      socket.off("message_notification", loadConversations);
+      socket.off("error", onError);
+    };
+  }, [socket, selectedChat, currentUserId]);
+
+  // Auto-scroll effects
   useEffect(() => {
     if (selectedChat) scrollToBottom(false);
   }, [selectedChat]);
-
-  // Scroll smoothly when new messages arrive
+  
   useEffect(() => {
     scrollToBottom(true);
   }, [conversation]);
@@ -67,7 +139,6 @@ function Messages() {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInHours = (now - date) / (1000 * 60 * 60);
-
     if (diffInHours < 24) {
       return date.toLocaleTimeString("en-US", {
         hour: "numeric",
@@ -92,6 +163,7 @@ function Messages() {
     other_user_id: conv.other_user_id,
   }));
 
+  // Load initial data
   useEffect(() => {
     loadConversations();
     loadUnreadCount();
@@ -109,6 +181,59 @@ function Messages() {
     }
   };
 
+  // 🔥 SINGLE navigation effect
+  useEffect(() => {
+    const openTargetChat = async () => {
+      const targetId = localStorage.getItem("targetReceiverId");
+      const targetName = localStorage.getItem("targetReceiverName");
+      const targetJobId = localStorage.getItem("targetJobId");
+      
+      if (!targetId || !targetName) return;
+      
+      console.log("Opening target chat for:", targetName, targetId);
+      
+      try {
+        // Wait for conversations to load if they haven't yet
+        if (allConversations.length === 0) {
+          await loadConversations();
+        }
+        
+        // Try to find existing conversation
+        const existing = allConversations.find(
+          (conv) => conv.other_user_id === targetId
+        );
+        
+        if (existing) {
+          console.log("Opening existing conversation:", existing);
+          await handleChatClick(existing);
+        } else {
+          console.log("Creating new chat");
+          const tempChat = {
+            id: null,
+            name: targetName,
+            other_user_id: targetId,
+            job_id: targetJobId || null,
+            status: "accepted"
+          };
+          
+          setSelectedChat(tempChat);
+          setShowMobileChatWindow(true);
+          setConversation([]);
+          setActiveTab("entrepreneurs");
+        }
+      } catch (error) {
+        console.error("Error opening target chat:", error);
+      } finally {
+        // Clean up
+        localStorage.removeItem("targetReceiverId");
+        localStorage.removeItem("targetReceiverName");
+        localStorage.removeItem("targetJobId");
+      }
+    };
+
+    openTargetChat();
+  }, [allConversations]); // Depend on allConversations so it runs when they load
+
   const loadUnreadCount = async () => {
     try {
       await getUnreadCount();
@@ -117,155 +242,101 @@ function Messages() {
     }
   };
 
-  // Socket.io Real-time logic
-  useEffect(() => {
-    if (!socket) return;
-
-    socket.on("new_message", ({ message: newMsg, conversationId }) => {
-      console.log("📨 New message received:", newMsg);
-      if (selectedChat?.id === conversationId) {
-        setConversation((prev) => {
-          const exists = prev.some((msg) => msg.id === newMsg.id);
-          if (exists) return prev;
-          return [
-            ...prev,
-            {
-              id: newMsg.id,
-              text: newMsg.content,
-              type: newMsg.sender_id === currentUserId ? "sent" : "received",
-              time: formatTime(newMsg.created_at),
-            },
-          ];
-        });
-        if (newMsg.sender_id !== currentUserId) {
-          socket.emit("mark_as_read", { conversationId });
-        }
-      }
-      loadConversations();
-      setIsSending(false);
-    });
-
-    socket.on("message_sent", ({ message: sentMsg, conversationId }) => {
-      console.log("✅ Message sent successfully:", sentMsg);
-      if (selectedChat?.id === conversationId) {
-        setConversation((prev) => {
-          const exists = prev.some((msg) => msg.id === sentMsg.id);
-          if (exists) return prev;
-          return [
-            ...prev,
-            {
-              id: sentMsg.id,
-              text: sentMsg.content,
-              type: "sent",
-              time: formatTime(sentMsg.created_at),
-            },
-          ];
-        });
-      }
-      setIsSending(false);
-      loadConversations();
-    });
-
-    socket.on("message_notification", () => loadConversations());
-
-    socket.on("error", ({ message: errorMsg }) => {
-      console.error("Socket error:", errorMsg);
-      setIsSending(false);
-      alert(`Error: ${errorMsg}`);
-    });
-
-    return () => {
-      socket.off("new_message");
-      socket.off("message_sent");
-      socket.off("message_notification");
-      socket.off("error");
-    };
-  }, [socket, selectedChat, currentUserId]);
-
+  // 🔥 FIXED handleSend with proper error handling
   const handleSend = async () => {
-    if (!message.trim() || !selectedChat || isSending) return;
-
-    const messageContent = message.trim();
-    setMessage("");
+    if (!message.trim() || !selectedChat) return;
+    
+    console.log("🚀 Sending message:", {
+      selectedChat,
+      message: message.trim(),
+      apiUrl: import.meta.env.VITE_API_URL // Debug log
+    });
+    
     setIsSending(true);
+    const payload = {
+      receiverId: selectedChat.other_user_id,
+      content: message.trim(),
+      jobId: selectedChat.job_id || null,
+    };
 
     try {
-      if (socket && socket.connected) {
-        socket.emit("send_message", {
-          receiverId: selectedChat.other_user_id,
-          content: messageContent,
-          conversationId: selectedChat.id,
-        });
-      } else {
-        await sendViaHTTP(messageContent);
+      // 🔥 FIXED: Proper URL construction with fallback
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const url = `${apiUrl}/api/messages`;
+      
+      console.log("📡 Making request to:", url);
+      
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      console.log("📡 Response status:", res.status);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       }
-    } catch (err) {
-      console.error("Error sending message:", err);
-      setIsSending(false);
-      setMessage(messageContent);
-      alert("Failed to send message. Please try again.");
-    }
-  };
-
-  const sendViaHTTP = async (messageContent) => {
-    try {
-      const data = await sendMessage(
-        selectedChat.other_user_id,
-        messageContent,
-        selectedChat.job_id || null
-      );
-      if (data.success) {
-        setConversation((prev) => [
-          ...prev,
-          {
-            id: data.message.id,
-            text: data.message.content,
-            type: "sent",
-            time: formatTime(data.message.created_at),
-          },
-        ]);
-        setIsSending(false);
-        loadConversations();
+      
+      const data = await res.json();
+      console.log("✅ API Response:", data);
+      
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to send message');
       }
-    } catch (err) {
-      console.error("HTTP send failed:", err);
-      throw err;
-    }
-  };
 
-  const handleAddMember = () => {
-    if (!newMemberEmail.trim()) return;
-    alert(`Invitation sent to ${newMemberEmail}`);
-    setNewMemberEmail("");
-    setShowAddMember(false);
+      // Clear the input
+      setMessage("");
+      
+      // The socket listener will handle adding the message to conversation
+      
+    } catch (err) {
+      console.error("❌ Send failed:", err);
+      alert(`Failed to send message: ${err.message}`);
+      setIsSending(false); // Reset on error
+    }
+    // Note: setIsSending(false) is handled by socket listener on success
   };
 
   const handleChatClick = async (chat) => {
     if (chat.status === "pending") return;
-
+    
     setSelectedChat(chat);
     setShowMobileChatWindow(true);
-    socket?.emit("join_conversation", chat.id);
-
+    
+    if (chat.id) {
+      socket?.emit("join_conversation", chat.id);
+    }
+    
     try {
-      const data = await getMessages(chat.id);
-      if (data.success) {
-        const formattedMessages = data.messages.map((msg) => ({
-          id: msg.id,
-          text: msg.content,
-          type: msg.sender_id === currentUserId ? "sent" : "received",
-          time: formatTime(msg.created_at),
-        }));
-        setConversation(formattedMessages);
+      if (chat.id) {
+        const data = await getMessages(chat.id);
+        if (data.success) {
+          const formattedMessages = data.messages.map((msg) => ({
+            id: msg.id,
+            text: msg.content,
+            type: msg.sender_id === currentUserId ? "sent" : "received",
+            time: formatTime(msg.created_at),
+          }));
+          setConversation(formattedMessages);
+        }
+      } else {
+        // New conversation
+        setConversation([]);
       }
     } catch (err) {
       console.error("Error loading messages:", err);
     }
 
     try {
-      await markConversationAsRead(chat.id);
-      socket?.emit("mark_as_read", { conversationId: chat.id });
-      loadConversations();
+      if (chat.id) {
+        await markConversationAsRead(chat.id);
+        socket?.emit("mark_as_read", { conversationId: chat.id });
+        loadConversations();
+      }
     } catch (err) {
       console.error("Error marking as read:", err);
     }

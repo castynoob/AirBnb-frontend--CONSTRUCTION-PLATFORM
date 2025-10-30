@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useState, useEffect, useRef } from "react"
-import { Bell, Wrench, Search, Plus, X, FileText, CheckCircle } from "lucide-react"
+import { Bell, Wrench, Search, Plus, X, FileText, CheckCircle, LoaderIcon  } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import "../../styles/manager/homepage.css"
 import Nav from "../../components/Nav"
@@ -78,6 +78,7 @@ function HomePage() {
   const [error, setError] = useState(null)
 
   const [notifications] = useState([])
+  const [uProfile, setUProfile] = useState({})
 
   useEffect(() => {
     const fetchData = async () => {
@@ -92,7 +93,7 @@ function HomePage() {
 
         const user = JSON.parse(userProfile)
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-
+        setUProfile(user)
         // Fetch jobs
         const jobsResponse = await fetch(`${API_BASE_URL}/api/jobs/manager/${user.id}`, {
           method: "GET",
@@ -191,9 +192,40 @@ function HomePage() {
   const searchInputRef = useRef(null)
   const notificationRef = useRef(null)
 
-  const handleUrgentRequest = () => {
-    alert("Urgent Request Triggered — This would notify all entrepreneurs.")
-  }
+  // urgent
+  const [isSending, setIsSending] = useState(false)
+
+  const handleUrgentRequest = async () => {
+    setIsSending(true)
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+    try {
+      const emailResponse = await fetch(`${API_BASE_URL}/api/email/send-to-entrepreneurs`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          subject: `🚨 Urgent Request from ${uProfile.name}`,
+          message: "Please check your dashboard for an important update.",
+        }),
+      });
+
+      if (!emailResponse.ok) {
+        throw new Error(`Error ${emailResponse.status}`);
+      }
+
+      const data = await emailResponse.json();
+      console.log("✅ EMAIL RES:", data);
+      setIsSending(false)
+      alert(data.message); // optional feedback for the UI
+    } catch (error) {
+      setIsSending(false)
+      console.error("❌ Email send error:", error);
+      alert("Failed to send urgent request emails.");
+    }
+  };
+
 
   const handleAddWork = () => {
     navigate("/add-work/property_manager")
@@ -332,7 +364,11 @@ function HomePage() {
                 />
               </div>
               <button onClick={handleUrgentRequest} className="pm-urgent-button-icon" aria-label="Urgent Request">
-                <Wrench size={20} />
+                {
+                  isSending ? 
+                  <LoaderIcon size={20} /> :
+                  <Wrench size={20} />
+                }
               </button>
               <button onClick={handleAddWork} className="pm-add-work-btn-icon" aria-label="Add New Work">
                 <Plus size={20} />

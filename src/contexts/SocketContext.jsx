@@ -1,19 +1,18 @@
 // ============================================
-// FIXED SocketContext.jsx
-// Properly exports socket object to components
+// UPDATED SocketContext.jsx
+// Avoids crashing when no userProfile/token
 // ============================================
 
-import { createContext, useContext, useEffect, useState } from 'react';
-import io from 'socket.io-client';
+import { createContext, useContext, useEffect, useState } from "react";
+import io from "socket.io-client";
 
 const SocketContext = createContext(null);
 
 export const useSocket = () => {
   const context = useContext(SocketContext);
   if (context === undefined) {
-    throw new Error('useSocket must be used within a SocketProvider');
+    throw new Error("useSocket must be used within a SocketProvider");
   }
-  // Return the socket directly (not an object containing it)
   return context;
 };
 
@@ -21,50 +20,51 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const userProfile = localStorage.getItem("userProfile");
 
-    if (!token) {
-      console.log('⚠️ No token found, socket connection skipped');
+    // ✅ Skip socket setup if no profile or no token
+    if (!userProfile) {
+      console.log("🚫 No userProfile found — socket not initialized");
       return;
     }
 
-    // Initialize Socket.io connection
-    const newSocket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000', {
-      auth: {
-        token: token
-      },
-      transports: ['websocket', 'polling'],
+    const user = JSON.parse(userProfile);
+    const token = user?.token;
+
+    if (!token) {
+      console.log("⚠️ No token found — socket not initialized");
+      return;
+    }
+
+    // ✅ Initialize Socket.io connection
+    const newSocket = io(import.meta.env.VITE_API_URL || "http://localhost:5000", {
+      auth: { token },
+      transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
     });
 
-    // Connection successful
-    newSocket.on('connect', () => {
-      console.log('✅ Socket connected:', newSocket.id);
+    newSocket.on("connect", () => {
+      console.log("✅ Socket connected:", newSocket.id);
     });
 
-    // Connection error
-    newSocket.on('connect_error', (error) => {
-      console.error('❌ Socket connection error:', error.message);
+    newSocket.on("connect_error", (error) => {
+      console.error("❌ Socket connection error:", error.message);
     });
 
-    // Disconnection
-    newSocket.on('disconnect', (reason) => {
-      console.log('❌ Socket disconnected:', reason);
+    newSocket.on("disconnect", (reason) => {
+      console.log("🔌 Socket disconnected:", reason);
     });
 
-    // Set the socket in state
     setSocket(newSocket);
 
-    // Cleanup on unmount
     return () => {
-      console.log('🔌 Disconnecting socket...');
+      console.log("🧹 Cleaning up socket connection...");
       newSocket.disconnect();
     };
   }, []);
 
-  // CRITICAL: Return the socket directly, not { socket }
   return (
     <SocketContext.Provider value={socket}>
       {children}
