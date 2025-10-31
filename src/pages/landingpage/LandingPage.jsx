@@ -133,6 +133,8 @@ export default function LandingPage() {
       console.log(userProfile)
 
       // Save to localStorage
+      localStorage.setItem("token", userProfile.token);
+      localStorage.setItem("userId", userProfile.id);
       localStorage.setItem("userProfile", JSON.stringify(userProfile))
       console.log(userProfile)
       // Close modal and redirect
@@ -489,6 +491,7 @@ export default function LandingPage() {
             entrepProfile: data.user.role === 'entrepreneur' ? {entrepProfile, subscription} : null
         }
 
+        localStorage.setItem("userId", userProfile.id);
         localStorage.setItem("userProfile", JSON.stringify(userProfile))
         console.log(userProfile)
         setShowLoginModal(false)

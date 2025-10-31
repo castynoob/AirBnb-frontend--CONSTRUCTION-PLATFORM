@@ -60,18 +60,18 @@ async function apiRequest(endpoint, options = {}) {
 
 /**
  * Get all conversations for the authenticated user
- * GET /api/messages/conversations
+ * GET /api/conversations
  */
 export async function getConversations() {
-  return apiRequest('/api/messages/conversations');
+  return apiRequest('/api/conversations');
 }
 
 /**
  * Start a new conversation or get existing one
- * POST /api/messages/conversations
+ * POST /api/conversations
  */
 export async function startConversation(otherUserId, jobId = null) {
-  return apiRequest('/api/messages/conversations', {
+  return apiRequest('/api/conversations', {
     method: 'POST',
     body: JSON.stringify({ otherUserId, jobId }),
   });
@@ -79,20 +79,20 @@ export async function startConversation(otherUserId, jobId = null) {
 
 /**
  * Get messages in a conversation (with pagination)
- * GET /api/messages/conversations/:conversationId/messages
+ * GET /api/conversations/:conversationId/messages
  */
 export async function getMessages(conversationId, limit = 50, offset = 0) {
   return apiRequest(
-    `/api/messages/conversations/${conversationId}/messages?limit=${limit}&offset=${offset}`
+    `/api/conversations/${conversationId}/messages?limit=${limit}&offset=${offset}`
   );
 }
 
 /**
  * Mark all messages in a conversation as read
- * PUT /api/messages/conversations/:conversationId/read
+ * PUT /api/conversations/:conversationId/read
  */
 export async function markConversationAsRead(conversationId) {
-  return apiRequest(`/api/messages/conversations/${conversationId}/read`, {
+  return apiRequest(`/api/conversations/${conversationId}/read`, {
     method: 'PUT',
   });
 }
@@ -103,11 +103,11 @@ export async function markConversationAsRead(conversationId) {
 
 /**
  * Send a message (HTTP fallback)
- * POST /api/messages/messages
+ * POST /api/messages
  * Note: Prefer Socket.io for real-time messaging
  */
 export async function sendMessage(receiverId, content, jobId = null) {
-  return apiRequest('/api/messages/messages', {
+  return apiRequest('/api/messages', {
     method: 'POST',
     body: JSON.stringify({ receiverId, content, jobId }),
   });
@@ -115,20 +115,20 @@ export async function sendMessage(receiverId, content, jobId = null) {
 
 /**
  * Delete a message (only sender can delete)
- * DELETE /api/messages/messages/:messageId
+ * DELETE /api/messages/:messageId
  */
 export async function deleteMessage(messageId) {
-  return apiRequest(`/api/messages/messages/${messageId}`, {
+  return apiRequest(`/api/messages/${messageId}`, {
     method: 'DELETE',
   });
 }
 
 /**
  * Get total unread message count
- * GET /api/messages/unread-count
+ * GET /api/unread-count
  */
 export async function getUnreadCount() {
-  return apiRequest('/api/messages/unread-count');
+  return apiRequest('/api/unread-count');
 }
 
 // ============================================
@@ -137,14 +137,14 @@ export async function getUnreadCount() {
 
 /**
  * Check if current user can message another user
- * GET /api/messages/can-message/:otherUserId
- * 
+ * GET /api/can-message/:otherUserId
+ *
  * CRITICAL: This checks bid approval for entrepreneurs
  * Returns: { canMessage: boolean, message: string }
  */
 export async function canMessageUser(otherUserId) {
   try {
-    const data = await apiRequest(`/api/messages/can-message/${otherUserId}`);
+    const data = await apiRequest(`/api/can-message/${otherUserId}`);
     return {
       canMessage: data.canMessage,
       message: data.message,

@@ -104,18 +104,27 @@ function MessagesEntrepreneur() {
 
     socket.on("new_message", ({ message: newMsg, conversationId }) => {
       console.log("📨 New message received:", newMsg);
+      console.log("🔍 Debug - sender_id:", newMsg.sender_id, "type:", typeof newMsg.sender_id);
+      console.log("🔍 Debug - currentUserId:", currentUserId, "type:", typeof currentUserId);
+      console.log("🔍 Debug - Are they equal?", newMsg.sender_id === currentUserId);
 
       if (selectedChat?.id === conversationId) {
         setConversation((prev) => {
           const exists = prev.some((msg) => msg.id === newMsg.id);
-          if (exists) return prev;
+          if (exists) {
+            console.log("⚠️ Message already exists, skipping");
+            return prev;
+          }
+
+          const messageType = newMsg.sender_id === currentUserId ? "sent" : "received";
+          console.log("🔍 Message type determined in new_message:", messageType);
 
           return [
             ...prev,
             {
               id: newMsg.id,
               text: newMsg.content,
-              type: newMsg.sender_id === currentUserId ? "sent" : "received",
+              type: messageType,
               time: formatTime(newMsg.created_at),
             },
           ];
