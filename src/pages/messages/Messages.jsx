@@ -257,9 +257,9 @@ function Messages() {
     console.log("🚀 Sending message:", {
       selectedChat,
       message: message.trim(),
-      apiUrl: import.meta.env.VITE_API_URL // Debug log
+      apiUrl: import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL // Debug log
     });
-    
+
     setIsSending(true);
     const payload = {
       receiverId: selectedChat.other_user_id,
@@ -269,7 +269,7 @@ function Messages() {
 
     try {
     // 🔥 FIXED: Proper URL construction with fallback
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const apiUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000';
     const url = `${apiUrl}/api/messages`;
     
     console.log("📡 Making request to:", url);
