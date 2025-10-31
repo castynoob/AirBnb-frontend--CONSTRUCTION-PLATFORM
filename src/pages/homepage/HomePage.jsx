@@ -204,6 +204,7 @@ function HomePage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${uProfile.token}`,
         },
         body: JSON.stringify({
           subject: `🚨 Urgent Request from ${uProfile.name}`,
