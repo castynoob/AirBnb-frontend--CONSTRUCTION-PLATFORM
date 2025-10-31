@@ -236,6 +236,7 @@ function HomePageEntrepreneur() {
 
   // Filter properties and jobs based on all filters
   const filteredProperties = useMemo(() => {
+    console.log('🔄 Recalculating filteredProperties - properties:', properties.length, 'jobs:', jobs.length)
     const filtered = properties.filter((property) => {
       const matchesSearch =
         property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -620,7 +621,12 @@ function HomePageEntrepreneur() {
 
             // Use Promise.all to wait for all async operations
             const transformedJobsPromises = jobsArray.map(async job => {
-              const budgetData = await fetchBudgetStatus(job, user, API_BASE_URL)
+              let budgetData = { unlocked: false, unlock_date: null, amount_paid: 0 }
+              try {
+                budgetData = await fetchBudgetStatus(job, user, API_BASE_URL)
+              } catch (error) {
+                console.warn('Error fetching budget status for job:', job.id, error)
+              }
               return {
                 id: job.id,
                 property_id: job.property_id,
@@ -646,6 +652,8 @@ function HomePageEntrepreneur() {
             })
 
             const transformedJobsResults = await Promise.all(transformedJobsPromises)
+            console.log('✅ Setting jobs state with', transformedJobsResults.length, 'jobs')
+            console.log('Jobs data:', transformedJobsResults)
             setJobs(transformedJobsResults)
             fetchBids()
           }
