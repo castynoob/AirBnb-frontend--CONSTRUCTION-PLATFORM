@@ -18,7 +18,7 @@ function AddPropertyPage() {
     postal_code: "",
     num_units: 0,
     building_type: "Apartment",
-    latitude: 14.5995, // Default to Philippines coordinates
+    latitude: 14.5995,
     longitude: 120.9842,
   });
 
@@ -40,7 +40,6 @@ function AddPropertyPage() {
     "Senior Living"
   ];
 
-  // Initialize Leaflet map
   useEffect(() => {
     // Load Leaflet CSS
     const link = document.createElement('link');
@@ -52,41 +51,36 @@ function AddPropertyPage() {
     const script = document.createElement('script');
     script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
     script.async = true;
-    
+
     script.onload = () => {
       if (mapRef.current && window.L) {
         const L = window.L;
-        
-        const mapInstance = L.map(mapRef.current).setView([formData.latitude, formData.longitude], 13);
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: '© OpenStreetMap contributors'
-        }).addTo(mapInstance);
 
-        const marker = L.marker([formData.latitude, formData.longitude], {
-          draggable: true
-        }).addTo(mapInstance);
+        // Attempt to get user's location
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const userLat = position.coords.latitude;
+              const userLng = position.coords.longitude;
 
-        marker.on('dragend', function(e) {
-          const position = marker.getLatLng();
-          setFormData(prev => ({
-            ...prev,
-            latitude: position.lat,
-            longitude: position.lng
-          }));
-        });
+              setFormData(prev => ({
+                ...prev,
+                latitude: userLat,
+                longitude: userLng
+              }));
 
-        mapInstance.on('click', function(e) {
-          marker.setLatLng(e.latlng);
-          setFormData(prev => ({
-            ...prev,
-            latitude: e.latlng.lat,
-            longitude: e.latlng.lng
-          }));
-        });
-
-        markerRef.current = marker;
-        setMap(mapInstance);
+              initializeMap(userLat, userLng, L);
+            },
+            (error) => {
+              console.warn("Geolocation error, using default location", error);
+              // Use default coordinates
+              initializeMap(formData.latitude, formData.longitude, L);
+            }
+          );
+        } else {
+          // Browser doesn't support geolocation, use default
+          initializeMap(formData.latitude, formData.longitude, L);
+        }
       }
     };
 
@@ -98,6 +92,37 @@ function AddPropertyPage() {
       }
     };
   }, []);
+
+  const initializeMap = (lat, lng, L) => {
+    const mapInstance = L.map(mapRef.current).setView([lat, lng], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(mapInstance);
+
+    const marker = L.marker([lat, lng], { draggable: true }).addTo(mapInstance);
+
+    marker.on('dragend', (e) => {
+      const position = marker.getLatLng();
+      setFormData(prev => ({
+        ...prev,
+        latitude: position.lat,
+        longitude: position.lng
+      }));
+    });
+
+    mapInstance.on('click', (e) => {
+      marker.setLatLng(e.latlng);
+      setFormData(prev => ({
+        ...prev,
+        latitude: e.latlng.lat,
+        longitude: e.latlng.lng
+      }));
+    });
+
+    markerRef.current = marker;
+    setMap(mapInstance);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -144,15 +169,6 @@ function AddPropertyPage() {
     setIsSubmitting(true);
 
     try {
-      // Make API call to add property
-      // const response = await fetch('/api/properties', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData)
-      // });
-      
-      // const data = await response.json();
-
       const userProfile = localStorage.getItem('userProfile')
 
       if(userProfile) {

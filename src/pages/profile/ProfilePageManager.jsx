@@ -3,6 +3,7 @@ import Nav from '../../components/Nav'
 import "../../styles/manager/profilepagemanager.css"
 import { FiUser, FiMail, FiShield, FiHome, FiPlus, FiMapPin, FiCalendar, FiEdit2, FiX } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
+import EditManagerProfileModal from '../../components/modal/EditManagerProfileModal'
 
 function ProfilePageManager() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -10,6 +11,10 @@ function ProfilePageManager() {
   const [properties, setProperties] = useState([])
   const [selectedProperty, setSelectedProperty] = useState(null)
   const navigate = useNavigate()
+  const [uProfile, setUProfile] = useState({})
+
+  // edit
+  const [isEditingProfile, setIsEditingProfile] = useState(false)
 
   useEffect(() => {
     const getProfileAndProperties = async () => {
@@ -31,6 +36,7 @@ function ProfilePageManager() {
           if (!profileRes.ok) throw new Error('Error getting manager profile')
           const profileData = await profileRes.json()
           console.log("MANAGER DATA:", profileData)
+          setUProfile(profileData)
 
           // 🟢 Fetch Manager Properties
           const propertiesRes = await fetch(`${API_BASE_URL}/api/properties`, {
@@ -76,6 +82,10 @@ function ProfilePageManager() {
     navigate("/");
   }
 
+  const closeEditModal = () => {
+    setIsEditingProfile(false)
+  }
+
   // Calculate stats
   const totalUnits = properties.reduce((sum, prop) => sum + (prop.num_units || 0), 0)
   const totalProperties = properties.length
@@ -98,7 +108,7 @@ function ProfilePageManager() {
             </div>
             <div className="mp-profile-details">
               <div className="mp-profile-name-section">
-                <h1 className="mp-profile-name">{user?.email?.split('@')[0] || 'Property Manager'}</h1>
+                <h1 className="mp-profile-name">{uProfile?.profile?.first_name + ' ' + uProfile?.profile?.last_name || 'Property Manager'}</h1>
                 <span className="mp-profile-role-badge">
                   <FiShield size={14} />
                   {user?.role || 'Manager'}
@@ -115,7 +125,9 @@ function ProfilePageManager() {
                 </div>
               </div>
             </div>
-            <button className="mp-edit-profile-btn" onClick={handleEditProfile}>
+            <button className="mp-edit-profile-btn" onClick={() => {
+              setIsEditingProfile(true)
+            }}>
               <FiEdit2 size={16} />
               Edit Profile
             </button>
@@ -281,6 +293,10 @@ function ProfilePageManager() {
           </div>
         )}
       </div>
+      
+      { isEditingProfile &&
+        <EditManagerProfileModal userProfile={uProfile} onClose={closeEditModal} onSave={closeEditModal} />
+      }
     </div>
   )
 }

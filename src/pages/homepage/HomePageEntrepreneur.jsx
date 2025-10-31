@@ -183,6 +183,47 @@ function HomePageEntrepreneur() {
     propertySizes: [],
   })
 
+  const [userLocation, setUserLocation] = useState(null)
+  const [error, setError] = useState(null);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(true)
+
+  // get user location
+  useEffect(() => {
+    setIsLoadingLocation(true)
+
+    // Default location (Philippines - Baguio City coordinates as fallback)
+    const defaultLocation = { lat: 16.4023, lng: 120.5960 }
+
+    if (!navigator.geolocation) {
+      setError('Geolocation is not supported by your browser');
+      setUserLocation(defaultLocation)
+      setIsLoadingLocation(false)
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+
+        setIsLoadingLocation(false)
+      },
+      (err) => {
+        console.warn('Geolocation error:', err.message);
+        setError(err.message);
+        // Use default location if geolocation fails
+        setUserLocation(defaultLocation)
+        setIsLoadingLocation(false)
+      },
+      {
+        timeout: 10000, // 10 second timeout
+        enableHighAccuracy: false
+      }
+    );
+  }, [])
+
   // Get open jobs count for each property
   const getPropertyOpenJobsCount = (propertyId) => {
     return jobs.filter((job) => job.property_id === propertyId && job.status === "Open").length
@@ -452,6 +493,7 @@ function HomePageEntrepreneur() {
 
   // Close search when clicking outside
   useEffect(() => {
+    localStorage.removeItem("selectedPropertyId")
     const handleClickOutside = (event) => {
       if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
         if (searchExpanded && !searchTerm) {
@@ -573,9 +615,13 @@ function HomePageEntrepreneur() {
             const jobsData = await response.json()
             const transformedJobs = []
 
-            jobsData.forEach(async job => {
+            // Handle both array and object responses
+            const jobsArray = Array.isArray(jobsData) ? jobsData : (jobsData.jobs || [])
+
+            // Use Promise.all to wait for all async operations
+            const transformedJobsPromises = jobsArray.map(async job => {
               const budgetData = await fetchBudgetStatus(job, user, API_BASE_URL)
-              const transformJobData = {
+              return {
                 id: job.id,
                 property_id: job.property_id,
                 title: job.title,
@@ -597,11 +643,10 @@ function HomePageEntrepreneur() {
                   amountPaid: budgetData.amount_paid
                 }
               }
-
-              transformedJobs.push(transformJobData)
             })
 
-            setJobs(transformedJobs)
+            const transformedJobsResults = await Promise.all(transformedJobsPromises)
+            setJobs(transformedJobsResults)
             fetchBids()
           }
         }
@@ -672,7 +717,7 @@ function HomePageEntrepreneur() {
     }
   }
 
-  if (isLoading) {
+  if (isLoading && isLoadingLocation) {
     return (
       <div className="eh-homepage-container">
         <Nav user={userProfile} />
@@ -801,7 +846,8 @@ function HomePageEntrepreneur() {
 
         <div className="eh-content-grid">
           <div className={`eh-map-section ${mobileView === "list" ? "eh-mobile-hidden" : ""}`}>
-            <MapContainer center={[16.0413, 120.3333]} zoom={13} style={{ height: "100%", width: "100%" }} zoomControl={false} attributionControl={false} >
+            {userLocation ? (
+              <MapContainer center={[userLocation.lat, userLocation.lng]} zoom={15} style={{ height: "100%", width: "100%" }} zoomControl={false} attributionControl={false} >
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -833,6 +879,15 @@ function HomePageEntrepreneur() {
                 )
               })}
             </MapContainer>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', background: '#f5f5f5', gap: '10px' }}>
+                <div style={{ width: '40px', height: '40px', border: '4px solid #e0e0e0', borderTop: '4px solid #00A5A9', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                <p style={{ color: '#666', fontSize: '14px' }}>
+                  {isLoadingLocation ? 'Getting your location...' : 'Loading map...'}
+                </p>
+                {error && <p style={{ color: '#999', fontSize: '12px' }}>Using default location</p>}
+              </div>
+            )}
           </div>
 
           <div className={`eh-details-section ${mobileView === "map" ? "eh-mobile-hidden" : ""}`}>

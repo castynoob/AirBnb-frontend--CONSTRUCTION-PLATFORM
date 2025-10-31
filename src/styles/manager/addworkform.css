@@ -443,3 +443,193 @@
 .select-wrapper select:focus + .dropdown-icon {
   color: var(--color-secondary);
 }
+
+
+.aw-header-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.upload-excel {
+  background-color: var(--color-secondary);
+  color: var(--color-white);
+}
+
+
+/* ================================================ */
+/* Skeleton Loader Animation */
+@keyframes aws-skeleton-shimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.aws-skeleton,
+.aws-skeleton * {
+  animation: aws-skeleton-shimmer 1.6s infinite linear;
+  background: linear-gradient(
+    90deg,
+    rgba(240, 240, 240, 1) 25%,
+    rgba(250, 250, 250, 1) 50%,
+    rgba(240, 240, 240, 1) 75%
+  );
+  background-size: 200% 100%;
+  border-radius: 8px;
+}
+
+.aws-skeleton-header .aws-skeleton-btns {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.aws-skeleton-btn {
+  width: 160px;
+  height: 38px;
+  border-radius: 8px;
+}
+
+.aws-skeleton-title {
+  width: 300px;
+  height: 28px;
+  margin-bottom: 0.5rem;
+}
+
+.aws-skeleton-subtitle {
+  width: 200px;
+  height: 18px;
+}
+
+.aws-skeleton-section-title {
+  width: 180px;
+  height: 22px;
+  margin-bottom: 1.5rem;
+}
+
+.aws-skeleton-input {
+  width: 100%;
+  height: 42px;
+  margin-bottom: 1.25rem;
+}
+
+.aws-skeleton-textarea {
+  width: 100%;
+  height: 100px;
+  margin-bottom: 1.25rem;
+}
+
+.aws-skeleton-upload {
+  width: 100%;
+  height: 180px;
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
+}
+
+.aws-skeleton-btn-action {
+  width: 130px;
+  height: 44px;
+  border-radius: 8px;
+}
+
+.aws-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.aws-form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.25rem;
+}
+
+/* Match layout spacing from the real form */
+.aws-main-container {
+  flex: 1;
+  padding: 2rem 2.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  margin-left: 220px;
+}
+
+.aws-add-work-form {
+  padding: 2.5rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid var(--color-border-divider);
+  box-shadow: 0 2px 8px rgba(15, 34, 61, 0.08);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .aws-skeleton-btn {
+    width: 120px;
+    height: 36px;
+  }
+
+  .aws-skeleton-btn-action {
+    width: 100%;
+  }
+
+  .aws-form-actions {
+    flex-direction: column;
+  }
+}
+
+/* Standard Skeleton Classes (for compatibility) */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #f2f2f2 25%,
+    #e6e6e6 50%,
+    #f2f2f2 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-button {
+  height: 40px;
+  border-radius: 8px;
+}
+
+.skeleton-title {
+  height: 32px;
+  border-radius: 8px;
+}
+
+.skeleton-line {
+  height: 16px;
+  border-radius: 4px;
+}
+
+.skeleton-input {
+  height: 48px;
+  border-radius: 8px;
+}
+
+.skeleton-textarea {
+  height: 120px;
+  border-radius: 8px;
+}
+
+.skeleton-upload-area {
+  height: 200px;
+  border-radius: 12px;
+}

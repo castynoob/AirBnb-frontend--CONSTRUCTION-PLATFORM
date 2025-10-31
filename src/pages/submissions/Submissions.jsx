@@ -41,12 +41,17 @@ function SubmissionsPage() {
   const [dateRange, setDateRange] = useState({ start: "", end: "" })
   const [showFilters, setShowFilters] = useState(false)
 
-
   // review
   const [isAddingReview, setIsAddingReview] = useState(false)
+  const [selectedSubmission, setSelectedSubmission] = useState({})
+  const [rating, setRating] = useState(1)
+  const [comment, setComment] = useState('')
 
   useEffect(() => {
-    const fetchSubmissions = async () => {
+    fetchSubmissions()
+  }, [])
+
+  const fetchSubmissions = async () => {
       try {
         setLoading(true)
         const userProfile = localStorage.getItem("userProfile")
@@ -81,12 +86,20 @@ function SubmissionsPage() {
 
         for (const job of jobs) {
           try {
+            console.log(job)
             // Fetch bids for this job (includes entrepreneur info)
             const bidsResponse = await fetch(`${API_BASE_URL}/api/bids/job/${job.id}`, {
               method: "GET",
               headers: {
                 Authorization: `Bearer ${user.token}`,
               },
+            })
+
+            const jobReview = await fetch(`${API_BASE_URL}/api/reviews/job/${job.id}`, {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${user.token}`
+              }
             })
 
             if (!bidsResponse.ok) {
@@ -178,6 +191,7 @@ function SubmissionsPage() {
         }
 
         setSubmissions(submissionsData)
+        console.log(submissionsData)
         setFilteredSubmissions(submissionsData)
         setError(null)
       } catch (err) {
@@ -186,10 +200,7 @@ function SubmissionsPage() {
       } finally {
         setLoading(false)
       }
-    }
-
-    fetchSubmissions()
-  }, [])
+  }
 
   const toggleCardExpanded = (bidId) => {
     setExpandedCards((prev) => ({
@@ -253,8 +264,36 @@ function SubmissionsPage() {
   }
 
   const handleReview = (submission) => {
-    console.log(`Opening review form for ${submission.entrepreneur_profile.company_name}`)
-    alert(`Review form for ${submission.entrepreneur_profile.company_name} would open here`)
+    setSelectedSubmission(submission)
+    setIsAddingReview(true)
+    console.log("SUBMISSION: ", submission)
+  }
+
+  const handleSubmitReview = async () => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+    const payload = {
+      reviewer_id: selectedSubmission.job.manager_id,
+      reviewed_user_id: selectedSubmission.entrepreneur_profile.id,
+      job_id: selectedSubmission.job.id,
+      rating: rating,
+      comment: comment,
+    }
+
+    const addReviewResponse = await fetch(`${API_BASE_URL}/api/reviews`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${uProfile.token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+
+    if(!addReviewResponse.ok) {
+      throw new Error('Error', addReviewResponse.status)
+    }
+
+    fetchSubmissions()
   }
 
   // Updated to use job status instead of bid status
@@ -582,9 +621,54 @@ function SubmissionsPage() {
           </div>
         )}
 
-        {
-          
-        }
+        {isAddingReview && (
+          <div className="subs-add-review-modal-overlay">
+            <div className="subs-add-review-modal">
+              <div className="subs-add-review-header">
+                <h3>Add Your Review</h3>
+                <p>{selectedSubmission.entrepreneur_profile.company_name}</p>
+                <button 
+                  className="close-btn" 
+                  onClick={() => setIsAddingReview(false)}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="subs-add-review-body">
+                <p className="rating-label">Rate your experience:</p>
+                <div className="rating-stars">
+                  {[1, 2, 3, 4, 5].map((num) => (
+                    <button
+                      key={num}
+                      className={`star-btn ${rating >= num ? 'active' : ''}`}
+                      onClick={() => setRating(num)}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+
+                <textarea
+                  name="comment"
+                  placeholder="Write your feedback..."
+                  className="review-textarea"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                />
+
+                <button 
+                  className="submit-btn"
+                  onClick={handleSubmitReview}
+                  disabled={!rating || !comment.trim()}
+                >
+                  Submit Review
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
 
         {loading ? (
           <div className="subs-loading-state">
@@ -671,9 +755,15 @@ function SubmissionsPage() {
                       
                       {/* Review button: Show when job is completed AND bid is accepted */}
                       {submission.job.status === "completed" && (
-                        <button className="subs-review-btn" onClick={() => handleReview(submission)}>
+                        <button className="subs-review-btn" onClick={() =>  {
+                          if(submission.job.review == null) {
+                            handleReview(submission)
+                          }
+                        }}>
                           <Star size={14} />
-                          Review
+                          {
+                            submission.job.review == null? 'Review' : 'Reviewed'
+                          }
                         </button>
                       )}
                     </div>

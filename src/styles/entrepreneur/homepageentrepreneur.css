@@ -1668,12 +1668,12 @@
 
   .eh-content-grid {
     gap: 1rem;
-    height: auto;
+    height: calc(100% - 20rem);
     grid-template-columns: 1fr;
   }
 
   .eh-map-section {
-    height: 400px;
+    height: 100%;
   }
 
   .eh-stats-grid {
@@ -1786,4 +1786,14 @@
   outline: none;
   border-radius: 1rem;
   cursor: pointer;
+}
+
+/* Spinner animation for loading map */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }

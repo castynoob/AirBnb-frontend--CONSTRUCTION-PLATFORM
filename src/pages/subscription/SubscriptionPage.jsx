@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Crown, TrendingUp, Check, X, Zap, Shield, Star, ArrowRight, Building2, FileText, MessageSquare, DollarSign, Calendar, Clock, Activity } from 'lucide-react';
 import Nav from '../../components/Nav';
 import logo from "../../assets/logo.png"
 import '../../styles/entrepreneur/subscriptionpage.css';
 
 function SubscriptionPage() {
-  // TO SEE TRIAL VIEW: Change is_trial to true and status to 'trialing'
-  // TO SEE ACTIVE SUBSCRIPTION: Change is_trial to false and status to 'active'
   const [userProfile, setUserProfile] = useState({
     id: 101,
     role: 'entrepreneur',
@@ -28,6 +26,15 @@ function SubscriptionPage() {
     }
   });
 
+  const [subscription, setSubscription] = useState({})
+
+  useEffect(() => {
+    const uProfile = localStorage.getItem('userProfile')
+    const u = JSON.parse(uProfile)
+    setUserProfile(u)
+    setSubscription(u.entrepProfile.subscription.subscription)
+  }, [])
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -35,7 +42,7 @@ function SubscriptionPage() {
   };
 
   const getTrialInfo = () => {
-    const trialEndDate = new Date(userProfile.subscription.trial_end);
+    const trialEndDate = new Date(subscription.trial_end);
     const now = new Date();
     const totalTrialDays = 14; // Standard trial period
     
@@ -60,8 +67,8 @@ function SubscriptionPage() {
   };
 
   const getSubscriptionDuration = () => {
-    const start = new Date(userProfile.subscription.start_date);
-    const end = new Date(userProfile.subscription.current_period_end);
+    const start = new Date(subscription.start);
+    const end = new Date(subscription.current_period_end);
     const now = new Date();
     
     const totalDuration = end - start;
@@ -114,9 +121,9 @@ function SubscriptionPage() {
     console.log(`Upgrade to ${planName}`);
   };
 
-  const currentPlan = plans.find(p => p.name.toLowerCase() === userProfile.subscription.plan_type);
-  const subscriptionProgress = !userProfile.subscription.is_trial ? getSubscriptionDuration() : null;
-  const trialInfo = userProfile.subscription.is_trial ? getTrialInfo() : null;
+  const currentPlan = plans.find(p => p.name.toLowerCase() === subscription.plan_type);
+  const subscriptionProgress = !subscription.is_trial ? getSubscriptionDuration() : null;
+  const trialInfo = subscription.is_trial ? getTrialInfo() : null;
 
   return (
     <div className="subscription-page-container">
@@ -135,7 +142,7 @@ function SubscriptionPage() {
         </div>
 
         {/* Trial Banner - Only show during trial */}
-        {userProfile.subscription.is_trial && trialInfo && (
+        {subscription.is_trial && trialInfo && (
           <div className="status-banner trial-banner">
             <div className="banner-content">
               <div className="banner-icon-wrapper">
@@ -150,7 +157,7 @@ function SubscriptionPage() {
                   {trialInfo.daysRemaining} {trialInfo.daysRemaining === 1 ? 'day' : 'days'}, {trialInfo.hoursRemaining} {trialInfo.hoursRemaining === 1 ? 'hour' : 'hours'}, {trialInfo.minutesRemaining} {trialInfo.minutesRemaining === 1 ? 'minute' : 'minutes'} remaining
                 </p>
                 <p className="banner-subtext">
-                  Trial ends on {formatDate(userProfile.subscription.trial_end)}
+                  Trial ends on {formatDate(subscription.trial_end)}
                 </p>
                 <div className="trial-progress-bar">
                   <div 
@@ -176,7 +183,7 @@ function SubscriptionPage() {
         )}
 
         {/* Current Plan Display - Only show if not on trial */}
-        {!userProfile.subscription.is_trial && currentPlan && (
+        {!subscription.is_trial && currentPlan && (
           <div className="current-plan-section">
             <div className="plan-overview-grid">
               {/* Plan Info Card */}
@@ -211,11 +218,11 @@ function SubscriptionPage() {
                   <div className="timeline-dates">
                     <div className="date-item">
                       <span className="date-label">Started</span>
-                      <span className="date-value">{formatDate(userProfile.subscription.start_date)}</span>
+                      <span className="date-value">{formatDate(subscription.start_date)}</span>
                     </div>
                     <div className="date-item">
                       <span className="date-label">Next Billing</span>
-                      <span className="date-value">{formatDate(userProfile.subscription.current_period_end)}</span>
+                      <span className="date-value">{formatDate(subscription.current_period_end)}</span>
                     </div>
                   </div>
                   <div className="timeline-progress">
@@ -243,79 +250,11 @@ function SubscriptionPage() {
                     <Check className="feature-icon" size={20} />
                     <div className="feature-content">
                       <span className="feature-name">{feature.text}</span>
-                      {feature.limit && <span className="feature-badge">{feature.limit}</span>}
+                      {feature?.limit && <span className="feature-badge">{feature?.limit}</span>}
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Plans Comparison - Only show during trial */}
-        {userProfile.subscription.is_trial && (
-          <div className="plans-section">
-            <div className="section-header">
-              <div className="section-icon">
-                <Building2 size={24} />
-              </div>
-              <div className="section-text">
-                <h2 className="section-title">Choose Your Plan</h2>
-                <p className="section-subtitle">Select the best plan for your construction bidding needs</p>
-              </div>
-            </div>
-            
-            <div className="plans-grid">
-              {plans.map((plan, index) => (
-                <div 
-                  key={index} 
-                  className={`plan-card ${plan.popular ? 'popular' : ''}`}
-                >
-                  {plan.popular && (
-                    <div className="popular-badge">
-                      <Star size={14} />
-                      <span>Recommended</span>
-                    </div>
-                  )}
-
-                  <div className="plan-card-header">
-                    <h3 className="plan-card-title">{plan.name}</h3>
-                    <p className="plan-card-description">{plan.description}</p>
-                  </div>
-
-                  <div className="plan-card-pricing">
-                    <span className="pricing-currency">$</span>
-                    <span className="pricing-amount">{plan.price}</span>
-                    <span className="pricing-period">/month</span>
-                  </div>
-
-                  <div className="plan-card-features">
-                    {plan.features.map((feature, idx) => (
-                      <div key={idx} className="plan-feature-item">
-                        {feature.included ? (
-                          <Check className="feature-check-icon" size={18} />
-                        ) : (
-                          <X className="feature-x-icon" size={18} />
-                        )}
-                        <span className={`feature-text ${!feature.included ? 'disabled' : ''}`}>
-                          {feature.text}
-                        </span>
-                        {feature.limit && (
-                          <span className="feature-limit-text">{feature.limit}</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  <button 
-                    className={`plan-cta-button ${plan.popular ? 'premium' : 'basic'}`}
-                    onClick={() => handleUpgrade(plan.name)}
-                  >
-                    Continue with {plan.name}
-                    <ArrowRight size={18} />
-                  </button>
-                </div>
-              ))}
             </div>
           </div>
         )}
@@ -341,16 +280,16 @@ function SubscriptionPage() {
                 <span className="stat-label">Bids Submitted</span>
               </div>
               <div className="stat-value subsval">
-                {userProfile.subscription.bids.used}
-                {userProfile.subscription.bids.limit !== 'unlimited' && (
-                  <span className="stat-total"> / {userProfile.subscription.bids.limit}</span>
+                {subscription?.bids?.used}
+                {subscription?.bids?.limit !== 'unlimited' && (
+                  <span className="stat-total"> / {subscription?.bids?.limit}</span>
                 )}
               </div>
-              {userProfile.subscription.bids.limit !== 'unlimited' && (
+              {subscription?.bids?.limit !== 'unlimited' && (
                 <div className="stat-progress">
                   <div 
                     className="stat-progress-fill"
-                    style={{ width: `${(userProfile.subscription.bids.used / userProfile.subscription.bids.limit) * 100}%` }}
+                    style={{ width: `${(subscription?.bids?.used / subscription?.bids?.limit) * 100}%` }}
                   ></div>
                 </div>
               )}
@@ -364,9 +303,9 @@ function SubscriptionPage() {
                 <span className="stat-label">Remaining Bids</span>
               </div>
               <div className="stat-value accent subsval">
-                {userProfile.subscription.bids.remaining === 'unlimited' 
+                {subscription?.bids?.remaining === 'unlimited' 
                   ? '∞' 
-                  : userProfile.subscription.bids.remaining}
+                  : subscription?.bids?.remaining}
               </div>
             </div>
 

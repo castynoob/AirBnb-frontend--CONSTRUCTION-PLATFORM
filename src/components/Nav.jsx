@@ -25,6 +25,7 @@ function Nav() {
 
   const handleLogout = () => {
     localStorage.removeItem("userProfile");
+    localStorage.removeItem("selectedPropertyId")
     navigate("/");
   };
 

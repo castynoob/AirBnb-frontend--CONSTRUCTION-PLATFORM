@@ -12,9 +12,11 @@ import {
   AlertCircle,
   Tag,
   Calendar,
-  Clock
+  Clock,
+  ClipboardList 
 } from "lucide-react";
 import "../../styles/manager/addworkform.css";
+import AddWorkFormSkeleton from '../../components/loading/AddWorkFormSkeleton'
 
 function AddWorkForm() {
   const navigate = useNavigate();
@@ -184,6 +186,8 @@ function AddWorkForm() {
         is_emergency: false,
         status: "Open",
       });
+
+      setImages([])
     } catch (error) {
       console.error("Error creating job:", error);
       alert("Something went wrong while creating the job.");
@@ -194,7 +198,8 @@ function AddWorkForm() {
   if (isLoading) {
     return (
       <div className="loading">
-        <h1>Loading Properties...</h1>
+        <Nav />
+        <AddWorkFormSkeleton />
       </div>
     );
   }
@@ -205,10 +210,16 @@ function AddWorkForm() {
 
       <div className="main-container">
         <header className="form-header">
-          <button className="back-btn" onClick={() => navigate(-1)}>
-            <ArrowLeft size={18} />
-            <span>Back</span>
-          </button>
+          <div className="aw-header-buttons">
+            <button className="back-btn" onClick={() => navigate(-1)}>
+              <ArrowLeft size={18} />
+              <span>Back</span>
+            </button>
+            <button className="back-btn upload-excel">
+              <ClipboardList size={18} />
+              <span>Upload excel file</span>
+            </button>
+          </div>
           <div>
             <h1>Add New Work | Repair | Job</h1>
             <p>Submit a new repair request for your property</p>

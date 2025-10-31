@@ -3,6 +3,7 @@ import { Star, CheckCircle, Award, Briefcase, MapPin, Calendar, Mail, Phone, Bui
 import Nav from "../../components/Nav";
 import '../../styles/entrepreneur/profilepageentrepreneur.css';
 import { useNavigate } from 'react-router-dom';
+import EntrepreneurProfileSkeleton from '../../components/loading/EntrepreneurProfileSkeleton'
 
 function ProfilePageEntrepreneur() {
   const [activeTab, setActiveTab] = useState('specialization');
@@ -129,6 +130,7 @@ function ProfilePageEntrepreneur() {
 
   const handleLogout = () => {
     localStorage.removeItem("userProfile");
+    localStorage.removeItem("selectedPropertyId")
     navigate("/");
   };
 
@@ -137,7 +139,7 @@ function ProfilePageEntrepreneur() {
       <>
         <div>
           <Nav />
-          <h1>LOADING...........................</h1>
+          <EntrepreneurProfileSkeleton />
         </div>
       </>
     )
@@ -224,7 +226,7 @@ function ProfilePageEntrepreneur() {
               Edit Profile
             </button>
             <button 
-              className="entrepreneur-edit-button"
+              className="entrepreneur-edit-button entrep-logout"
               onClick={() => handleLogout()}
             >
               Log out
