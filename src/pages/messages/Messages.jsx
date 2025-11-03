@@ -54,24 +54,16 @@ function Messages() {
 
     const onNewMessage = ({ message: newMsg, conversationId }) => {
       console.log("📨 New message received:", newMsg);
-      console.log("🔍 Debug - sender_id:", newMsg.sender_id, "type:", typeof newMsg.sender_id);
-      console.log("🔍 Debug - currentUserId:", currentUserId, "type:", typeof currentUserId);
-      console.log("🔍 Debug - Are they equal?", newMsg.sender_id === currentUserId);
-
       if (selectedChat?.id === conversationId) {
         setConversation((prev) => {
           const exists = prev.some((msg) => msg.id === newMsg.id);
           if (exists) return prev;
-
-          const messageType = newMsg.sender_id === currentUserId ? "sent" : "received";
-          console.log("🔍 Message type determined:", messageType);
-
           return [
             ...prev,
             {
               id: newMsg.id,
               text: newMsg.content,
-              type: messageType,
+              type: newMsg.sender_id === currentUserId ? "sent" : "received",
               time: formatTime(newMsg.created_at),
             },
           ];
@@ -257,9 +249,9 @@ function Messages() {
     console.log("🚀 Sending message:", {
       selectedChat,
       message: message.trim(),
-      apiUrl: import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL // Debug log
+      apiUrl: import.meta.env.VITE_API_URL // Debug log
     });
-
+    
     setIsSending(true);
     const payload = {
       receiverId: selectedChat.other_user_id,
@@ -268,37 +260,20 @@ function Messages() {
     };
 
     try {
-    // 🔥 FIXED: Proper URL construction with fallback
-    const apiUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const url = `${apiUrl}/api/messages`;
-    
-    console.log("📡 Making request to:", url);
-    
-    // Get the user profile from localStorage
-    const userProfile = localStorage.getItem("userProfile");
-    
-    // Initialize token variable
-    let token = null;
-    
-    // Extract token from userProfile if it exists
-    if (userProfile) {
-      const user = JSON.parse(userProfile);
-      token = user.token;
-    }
-    
-    // Proceed only if we have a token
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
-  
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(payload),
-  });
+      // 🔥 FIXED: Proper URL construction with fallback
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const url = `${apiUrl}/api/messages`;
+      
+      console.log("📡 Making request to:", url);
+      
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(payload),
+      });
       
       console.log("📡 Response status:", res.status);
       

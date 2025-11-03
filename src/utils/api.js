@@ -1,9 +1,66 @@
 // ============================================
-// UPDATED api.js - With Bid Approval Integration
+// UPDATED api.js - With Bid Approval Integration & Token Refresh
 // Matches your documented API endpoints exactly
 // ============================================
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+// ============================================
+// TOKEN REFRESH HELPER
+// ============================================
+let isRefreshing = false;
+let refreshSubscribers = [];
+
+function subscribeTokenRefresh(callback) {
+  refreshSubscribers.push(callback);
+}
+
+function onTokenRefreshed(newToken) {
+  refreshSubscribers.forEach(callback => callback(newToken));
+  refreshSubscribers = [];
+}
+
+async function refreshAccessToken() {
+  const refreshToken = localStorage.getItem('refreshToken');
+
+  if (!refreshToken) {
+    throw new Error('No refresh token available');
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api/auth/refresh-token`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ refreshToken }),
+  });
+
+  if (!response.ok) {
+    // Refresh token expired or invalid - logout user
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userProfile');
+    window.location.href = '/';
+    throw new Error('Session expired - Please login again');
+  }
+
+  const data = await response.json();
+  const newAccessToken = data.accessToken;
+
+  // Update token in localStorage
+  localStorage.setItem('token', newAccessToken);
+
+  // Update token in userProfile
+  const userProfile = localStorage.getItem('userProfile');
+  if (userProfile) {
+    const user = JSON.parse(userProfile);
+    user.token = newAccessToken;
+    localStorage.setItem('userProfile', JSON.stringify(user));
+  }
+
+  return newAccessToken;
+}
 
 // ============================================
 // API REQUEST HELPER
@@ -15,7 +72,7 @@ async function apiRequest(endpoint, options = {}) {
     throw new Error(`Error userProfile does not exist`)
   }
   const user = JSON.parse(userProfile)
-  const token = user.token;
+  let token = user.token;
 
   if (!token) {
     throw new Error('No token provided');
@@ -31,12 +88,46 @@ async function apiRequest(endpoint, options = {}) {
   };
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-  
-  // Handle 401 Unauthorized
+
+  // Handle 401 Unauthorized - Try to refresh token
   if (response.status === 401) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    throw new Error('Unauthorized - Please login again');
+    // Check if we're already refreshing
+    if (!isRefreshing) {
+      isRefreshing = true;
+
+      try {
+        const newToken = await refreshAccessToken();
+        isRefreshing = false;
+        onTokenRefreshed(newToken);
+
+        // Retry original request with new token
+        config.headers['Authorization'] = `Bearer ${newToken}`;
+        const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, config);
+
+        if (!retryResponse.ok) {
+          const data = await retryResponse.json();
+          throw new Error(data.message || 'Request failed');
+        }
+
+        return retryResponse.json();
+
+      } catch (error) {
+        isRefreshing = false;
+        refreshSubscribers = [];
+        throw error;
+      }
+    } else {
+      // Wait for the token refresh to complete
+      return new Promise((resolve, reject) => {
+        subscribeTokenRefresh((newToken) => {
+          config.headers['Authorization'] = `Bearer ${newToken}`;
+          fetch(`${API_BASE_URL}${endpoint}`, config)
+            .then(res => res.ok ? res.json() : Promise.reject(res))
+            .then(resolve)
+            .catch(reject);
+        });
+      });
+    }
   }
 
   // Handle 403 Forbidden (Bid approval required)

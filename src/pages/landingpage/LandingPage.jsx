@@ -132,8 +132,9 @@ export default function LandingPage() {
 
       console.log(userProfile)
 
-      // Save to localStorage
+      // Save to localStorage (including refresh token for auto-refresh)
       localStorage.setItem("token", userProfile.token);
+      localStorage.setItem("refreshToken", data.refreshToken); // Store refresh token
       localStorage.setItem("userId", userProfile.id);
       localStorage.setItem("userProfile", JSON.stringify(userProfile))
       console.log(userProfile)

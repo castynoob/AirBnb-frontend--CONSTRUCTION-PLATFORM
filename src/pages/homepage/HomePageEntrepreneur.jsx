@@ -226,12 +226,12 @@ function HomePageEntrepreneur() {
 
   // Get open jobs count for each property
   const getPropertyOpenJobsCount = (propertyId) => {
-    return jobs.filter((job) => job.property_id === propertyId && job.status === "Open").length
+    return jobs.filter((job) => job.property_id === propertyId && job.status?.toLowerCase() === "open").length
   }
 
   // Get open jobs for a property
   const getPropertyOpenJobs = (propertyId) => {
-    return jobs.filter((job) => job.property_id === propertyId && job.status === "Open")
+    return jobs.filter((job) => job.property_id === propertyId && job.status?.toLowerCase() === "open")
   }
 
   // Filter properties and jobs based on all filters
@@ -247,7 +247,7 @@ function HomePageEntrepreneur() {
       const matchesPropertyType =
         filters.propertyTypes.length === 0 || filters.propertyTypes.includes(property.propertyType)
 
-      const propertyJobs = jobs.filter((job) => job.property_id === property.id && job.status === "Open")
+      const propertyJobs = jobs.filter((job) => job.property_id === property.id && job.status?.toLowerCase() === "open")
 
       const matchesWorkType =
         filters.workTypes.length === 0 || propertyJobs.some((job) => filters.workTypes.includes(job.category))
@@ -411,7 +411,7 @@ function HomePageEntrepreneur() {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
 
-        const data = await response.json()
+        await response.json()
         fetchBids()
         
         alert("Bid submitted successfully!")
@@ -602,6 +602,9 @@ function HomePageEntrepreneur() {
           const user = JSON.parse(profileString)
           const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
+          console.log(`Fetching jobs from: ${API_BASE_URL}/api/jobs`)
+          console.log(`User role: ${user.role}, User ID: ${user.id}`)
+
           const response = await fetch(`${API_BASE_URL}/api/jobs`, {
             method: "GET",
             headers: {
@@ -611,52 +614,91 @@ function HomePageEntrepreneur() {
 
           if (!response.ok) {
             console.error(`HTTP error fetching jobs! Status: ${response.status}`)
-          } else {
-            const jobsData = await response.json()
-            const transformedJobs = []
-
-            // Handle both array and object responses
-            const jobsArray = Array.isArray(jobsData) ? jobsData : (jobsData.jobs || [])
-
-            // Use Promise.all to wait for all async operations
-            const transformedJobsPromises = jobsArray.map(async job => {
-              let budgetData = { unlocked: false, unlock_date: null, amount_paid: 0 }
-              try {
-                budgetData = await fetchBudgetStatus(job, user, API_BASE_URL)
-              } catch (error) {
-                console.warn('Error fetching budget status for job:', job.id, error)
-              }
-              return {
-                id: job.id,
-                property_id: job.property_id,
-                title: job.title,
-                description: job.description,
-                category: job.category,
-                urgency: job.urgency,
-                due_date: job.due_date,
-                estimated_duration_days: job.estimated_duration_days,
-                budget_min: job.budget_min.toString(),
-                budget_max: job.budget_max.toString(),
-                status: job.status,
-                bidCount: 0,
-                daysUntilNeeded: Math.ceil(
-                  (new Date(job.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
-                ),
-                budgetData: {
-                  unlocked: budgetData.unlocked,
-                  unlockDate: budgetData.unlock_date,
-                  amountPaid: budgetData.amount_paid
-                }
-              }
-            })
-
-            const transformedJobsResults = await Promise.all(transformedJobsPromises)
-            setJobs(transformedJobsResults)
-            fetchBids()
+            // Show user-friendly error message
+            if (response.status === 401) {
+              alert('Session expired. Please refresh the page and login again.')
+            } else {
+              console.error(`Failed to fetch jobs. Status: ${response.status}`)
+            }
+            return
           }
+
+          const jobsData = await response.json()
+
+          // DEBUG: Log the raw response from backend
+          console.log('Raw jobs response from backend:', jobsData)
+
+          // Handle multiple response formats:
+          // 1. Direct array: [job1, job2, ...]
+          // 2. Object with jobs property: { jobs: [...] }
+          // 3. Object with numeric keys: { 0: job1, 1: job2, ... }
+          let jobsArray = []
+
+          if (Array.isArray(jobsData)) {
+            // Format 1: Direct array
+            jobsArray = jobsData
+          } else if (jobsData.jobs && Array.isArray(jobsData.jobs)) {
+            // Format 2: Object with jobs property
+            jobsArray = jobsData.jobs
+          } else if (typeof jobsData === 'object' && jobsData !== null) {
+            // Format 3: Object with numeric keys (convert to array)
+            jobsArray = Object.values(jobsData).filter(item => typeof item === 'object' && item !== null && item.id)
+          }
+
+          console.log(`Fetched ${jobsArray.length} jobs from API`)
+
+          // DEBUG: If there are jobs, log the first one
+          if (jobsArray.length > 0) {
+            console.log('First job sample:', jobsArray[0])
+          }
+
+          // Use Promise.allSettled to prevent one failure from breaking all jobs
+          const transformedJobsPromises = jobsArray.map(async job => {
+            let budgetData = { unlocked: false, unlock_date: null, amount_paid: 0 }
+            try {
+              budgetData = await fetchBudgetStatus(job, user, API_BASE_URL)
+            } catch (error) {
+              console.warn('Error fetching budget status for job:', job.id, error)
+              // Continue with default budgetData
+            }
+            return {
+              id: job.id,
+              property_id: job.property_id,
+              title: job.title,
+              description: job.description,
+              category: job.category,
+              urgency: job.urgency,
+              due_date: job.due_date,
+              estimated_duration_days: job.estimated_duration_days,
+              budget_min: job.budget_min.toString(),
+              budget_max: job.budget_max.toString(),
+              status: job.status,
+              bidCount: 0,
+              daysUntilNeeded: Math.ceil(
+                (new Date(job.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
+              ),
+              budgetData: {
+                unlocked: budgetData.unlocked,
+                unlockDate: budgetData.unlock_date,
+                amountPaid: budgetData.amount_paid
+              }
+            }
+          })
+
+          const transformedJobsResults = await Promise.allSettled(transformedJobsPromises)
+
+          // Filter out failed promises and get successful values
+          const successfulJobs = transformedJobsResults
+            .filter(result => result.status === 'fulfilled')
+            .map(result => result.value)
+
+          console.log(`Successfully transformed ${successfulJobs.length} jobs`)
+          setJobs(successfulJobs)
+          fetchBids()
         }
       } catch (error) {
         console.error("Error fetching jobs:", error)
+        alert('Failed to load jobs. Please refresh the page.')
       }
     }
 
