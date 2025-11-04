@@ -99,6 +99,59 @@ function MessagesEntrepreneur() {
     }
   };
 
+  // 🔥 HANDLE INCOMING CHAT REQUEST FROM SUBMITTED BIDS
+  useEffect(() => {
+    const openTargetChat = async () => {
+      const targetId = localStorage.getItem("targetReceiverId");
+      const targetName = localStorage.getItem("targetReceiverName");
+      const targetJobId = localStorage.getItem("targetJobId");
+
+      if (!targetId || !targetName) return;
+
+      console.log("Opening target chat for:", targetName, targetId);
+
+      try {
+        // Wait for conversations to load if they haven't yet
+        if (allConversations.length === 0) {
+          await loadConversations();
+        }
+
+        // Try to find existing conversation
+        const existing = allConversations.find(
+          (conv) => conv.other_user_id === targetId
+        );
+
+        if (existing) {
+          console.log("Opening existing conversation:", existing);
+          await handleChatClick(existing);
+        } else {
+          console.log("Creating new chat");
+          const tempChat = {
+            id: null,
+            name: targetName,
+            other_user_id: targetId,
+            job_id: targetJobId || null,
+            status: "accepted",
+          };
+
+          setSelectedChat(tempChat);
+          setShowMobileChatWindow(true);
+          setConversation([]);
+          setActiveTab("property-manager");
+        }
+      } catch (error) {
+        console.error("Error opening target chat:", error);
+      } finally {
+        // Clean up
+        localStorage.removeItem("targetReceiverId");
+        localStorage.removeItem("targetReceiverName");
+        localStorage.removeItem("targetJobId");
+      }
+    };
+
+    openTargetChat();
+  }, [allConversations]);
+
   useEffect(() => {
     if (!socket) return;
 
