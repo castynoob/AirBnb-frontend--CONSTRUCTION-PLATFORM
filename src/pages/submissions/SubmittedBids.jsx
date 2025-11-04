@@ -183,9 +183,13 @@ const SubmittedBids = () => {
       }
 
       const data = await jobResponse.json()
-      const manageId = data.manager_id;
+      // Use manager_user_id if available, otherwise fall back to manager_id
+      // The backend should return manager_user_id for proper authorization
+      const manageId = data.manager_user_id || data.manager_id;
+      console.log("Job data:", data); // Debug log
+      console.log("Manager ID being sent:", manageId); // Debug log
       localStorage.setItem("targetReceiverId", manageId);
-      localStorage.setItem("targetReceiverName", "THIS IS NAME");
+      localStorage.setItem("targetReceiverName", data.manager_name || "Manager");
       if (data.id) localStorage.setItem("targetJobId", data.id);
       navigate('/messages/entrepreneur')
     }
