@@ -170,6 +170,7 @@ function SubmissionsPage() {
                 },
                 entrepreneur_profile: {
                   id: bid.entrepreneur_id,
+                  user_id: bid.user_id || bid.entrepreneur_user_id, // ✅ Add user_id for messaging
                   company_name: bid.company_name,
                   license_number: bid.license_number,
                   years_in_business: bid.years_in_business,
@@ -253,11 +254,12 @@ function SubmissionsPage() {
   }
 
   const handleChat = (submission) => {
-    let entrepId = submission.entrepreneur_profile.id
+    // ✅ FIX: Use user_id instead of profile id
+    let entrepUserId = submission.entrepreneur_profile.user_id
     let jobId = submission.job.id
     let name = submission.entrepreneur_profile.company_name
 
-    localStorage.setItem("targetReceiverId", entrepId);
+    localStorage.setItem("targetReceiverId", entrepUserId);
     localStorage.setItem("targetReceiverName", name);
     if (jobId) localStorage.setItem("targetJobId", jobId);
     navigate(`/messages/${uProfile.role}`)
