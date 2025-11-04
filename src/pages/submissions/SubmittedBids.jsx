@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Nav from '../../components/Nav';
 import '../../styles/entrepreneur/submittedbids.css'
-import { Search, Calendar, DollarSign, Clock, Eye, MessageSquare, MoreVertical, CheckCircle, XCircle, AlertCircle, MapPin } from 'lucide-react';
+import { Search, Calendar, DollarSign, Clock, MessageSquare, CheckCircle, XCircle, AlertCircle, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const SubmittedBids = () => {
@@ -40,36 +40,38 @@ const SubmittedBids = () => {
         }
 
         const data = await bidsResponse.json();
-        
+
         // Backend doesn't group accepted bids, so we filter them from "all"
         const allBids = data.bids.all || [];
-        
+
         // Filter bids by status from the "all" array
-        const acceptedBids = allBids.filter(bid => bid.status?.toLowerCase() === 'accepted');
+        // Inside fetchBids:
+        const acceptedBids = allBids.filter(bid => bid.status?.toLowerCase() === 'approved' || bid.status?.toLowerCase() === 'accepted');  // Changed from 'accepted'
         const pendingBids = data.bids.pending || [];
         const declinedBids = data.bids.declined || [];
-        
+
         // Calculate accurate counts
         const acceptedCount = acceptedBids.length;
         const pendingCount = pendingBids.length;
         const declinedCount = declinedBids.length;
-        
+
         const mappedBids = {
           all: allBids,
           pending: pendingBids,
           accepted: acceptedBids,
           declined: declinedBids
         };
-        
+
         const mappedSummary = {
           total: allBids.length,
           pending: pendingCount,
           accepted: acceptedCount,
           declined: declinedCount
         };
-        
+
         console.log(mappedBids)
         setBids(mappedBids);
+        console.log("Mapped bids: ", mappedBids)
         setSummary(mappedSummary);
         setLoading(false);
       } catch (err) {
@@ -87,6 +89,8 @@ const SubmittedBids = () => {
     switch (normalizedStatus) {
       case 'accepted':
         return <CheckCircle size={18} />;
+      case 'approved':
+        return <CheckCircle size={18} />;
       case 'declined':
         return <XCircle size={18} />;
       case 'pending':
@@ -100,6 +104,8 @@ const SubmittedBids = () => {
     const normalizedStatus = status?.toLowerCase();
     switch (normalizedStatus) {
       case 'accepted':
+        return 'eb-status-accepted';
+      case 'approved':
         return 'eb-status-accepted';
       case 'declined':
         return 'eb-status-declined';
@@ -353,10 +359,6 @@ const SubmittedBids = () => {
                 <div className="eb-bid-footer">
                   <span className="eb-response-time">{getTimeAgo(bid.created_at)}</span>
                   <div className="eb-bid-actions">
-                    <button className="eb-btn-secondary eb-btn-small">
-                      <Eye size={16} />
-                      View Details
-                    </button>
                     {
                       bid.status == 'accepted' &&
                     <>
