@@ -288,17 +288,29 @@ function Messages() {
         throw new Error(data.message || 'Failed to send message');
       }
 
+      // 🔥 OPTIMISTIC UPDATE: Add message to UI immediately (don't wait for socket)
+      setConversation((prev) => [
+        ...prev,
+        {
+          id: data.message.id,
+          text: data.message.content,
+          type: "sent",
+          time: formatTime(data.message.created_at),
+        },
+      ]);
+
       // Clear the input
       setMessage("");
-      
-      // The socket listener will handle adding the message to conversation
-      
+      setIsSending(false);
+
+      // Reload conversations to update last message
+      loadConversations();
+
     } catch (err) {
       console.error("❌ Send failed:", err);
       alert(`Failed to send message: ${err.message}`);
       setIsSending(false); // Reset on error
     }
-    // Note: setIsSending(false) is handled by socket listener on success
   };
 
   const handleChatClick = async (chat) => {

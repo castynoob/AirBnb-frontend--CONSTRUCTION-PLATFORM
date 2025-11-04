@@ -161,7 +161,13 @@ function MessagesEntrepreneur() {
       console.log("🔍 Debug - currentUserId:", currentUserId, "type:", typeof currentUserId);
       console.log("🔍 Debug - Are they equal?", newMsg.sender_id === currentUserId);
 
-      if (selectedChat?.id === conversationId) {
+      // 🔥 FIX: Handle new conversations (selectedChat.id is null initially)
+      if (selectedChat?.id === conversationId || selectedChat?.id === null) {
+        // If it's a new conversation, update the selectedChat with the new ID
+        if (selectedChat?.id === null && conversationId) {
+          setSelectedChat(prev => ({ ...prev, id: conversationId }));
+        }
+
         setConversation((prev) => {
           const exists = prev.some((msg) => msg.id === newMsg.id);
           if (exists) {
@@ -195,7 +201,13 @@ function MessagesEntrepreneur() {
     socket.on("message_sent", ({ message: sentMsg, conversationId }) => {
       console.log("✅ Message sent successfully:", sentMsg);
 
-      if (selectedChat?.id === conversationId) {
+      // 🔥 FIX: Handle new conversations (selectedChat.id is null initially)
+      if (selectedChat?.id === conversationId || selectedChat?.id === null) {
+        // If it's a new conversation, update the selectedChat with the new ID
+        if (selectedChat?.id === null && conversationId) {
+          setSelectedChat(prev => ({ ...prev, id: conversationId }));
+        }
+
         setConversation((prev) => {
           const exists = prev.some((msg) => msg.id === sentMsg.id);
           if (exists) return prev;
