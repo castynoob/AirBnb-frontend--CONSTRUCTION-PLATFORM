@@ -5,6 +5,9 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import io from "socket.io-client";
+import toast from 'react-hot-toast';
+import { useNotifications } from '../hooks/useNotifications';
+import { playNotificationSound } from '../utils/notificationSound';
 
 const SocketContext = createContext(null);
 
@@ -18,6 +21,12 @@ export const useSocket = () => {
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
+  const { showNotification, requestPermission } = useNotifications();
+
+  // Request notification permission on mount
+  useEffect(() => {
+    requestPermission();
+  }, []);
 
   useEffect(() => {
     const userProfile = localStorage.getItem("userProfile");
@@ -55,6 +64,41 @@ export const SocketProvider = ({ children }) => {
 
     newSocket.on("disconnect", (reason) => {
       console.log("🔌 Socket disconnected:", reason);
+    });
+
+    // Listen for message notifications
+    newSocket.on("message_notification", (data) => {
+      console.log("📬 New message notification:", data);
+
+      const senderName = data.senderName || 'Someone';
+      const messagePreview = data.content ? data.content.substring(0, 50) + (data.content.length > 50 ? '...' : '') : 'New message';
+
+      // Play notification sound
+      playNotificationSound();
+
+      // Show toast notification
+      toast.success(
+        `New message from ${senderName}`,
+        {
+          duration: 5000,
+          icon: '💬',
+          style: {
+            borderRadius: '10px',
+            background: '#333',
+            color: '#fff',
+          },
+        }
+      );
+
+      // Show desktop notification (if permission granted)
+      showNotification(
+        `New message from ${senderName}`,
+        {
+          body: messagePreview,
+          tag: 'message-notification',
+          requireInteraction: false,
+        }
+      );
     });
 
     setSocket(newSocket);

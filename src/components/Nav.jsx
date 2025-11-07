@@ -1,14 +1,18 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Home, MessageSquare, User, LogOut, Heart, FileText, Crown, Wrench   } from "lucide-react"; 
+import { Home, MessageSquare, User, LogOut, Heart, FileText, Crown, Wrench   } from "lucide-react";
 import logo from '../assets/logo-light.png'
 import '../styles/nav.css'
+import { getUnreadCount } from '../utils/api';
+import { useSocket } from '../contexts/SocketContext';
 
 function Nav() {
   const navigate = useNavigate();
   const [role, setRole] = useState('property_manager')
   const [userProfile, setUserProfile] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [unreadCount, setUnreadCount] = useState(0)
+  const socket = useSocket();
 
   useEffect(() => {
     const profileString = localStorage.getItem('userProfile');
@@ -17,11 +21,60 @@ function Nav() {
       const user = JSON.parse(profileString);
       setUserProfile(user)
       setRole(user.role)
+
+      // Fetch initial unread count
+      fetchUnreadCount();
     } else {
       console.log("User profile not found.");
     }
     setIsLoading(false)
   }, [])
+
+  // Fetch unread message count
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await getUnreadCount();
+      if (response.success) {
+        setUnreadCount(response.unreadCount);
+      }
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+    }
+  };
+
+  // Listen for real-time message notifications via socket
+  useEffect(() => {
+    if (socket) {
+      // Update unread count when new message arrives
+      const handleNewMessage = () => {
+        fetchUnreadCount();
+      };
+
+      // Update unread count when messages are marked as read
+      const handleMessagesRead = () => {
+        fetchUnreadCount();
+      };
+
+      socket.on('message_notification', handleNewMessage);
+      socket.on('messages_read', handleMessagesRead);
+
+      return () => {
+        socket.off('message_notification', handleNewMessage);
+        socket.off('messages_read', handleMessagesRead);
+      };
+    }
+  }, [socket])
+
+  // Poll for unread count every 30 seconds as fallback
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (userProfile) {
+        fetchUnreadCount();
+      }
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(interval);
+  }, [userProfile])
 
   const handleLogout = () => {
     localStorage.removeItem("userProfile");
@@ -69,7 +122,9 @@ function Nav() {
                     <MessageSquare size={20} />
                   </div>
                   <span className="nav-text">Messages</span>
-                  <span className="notification-badge">3</span>
+                  {unreadCount > 0 && (
+                    <span className="notification-badge">{unreadCount}</span>
+                  )}
                 </NavLink>
               </li>
 

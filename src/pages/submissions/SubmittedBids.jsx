@@ -186,8 +186,15 @@ const SubmittedBids = () => {
       // Use manager_user_id if available, otherwise fall back to manager_id
       // The backend should return manager_user_id for proper authorization
       const manageId = data.manager_user_id || data.manager_id;
-      console.log("Job data:", data); // Debug log
-      console.log("Manager ID being sent:", manageId); // Debug log
+      console.log("🔍 Job data:", data); // Debug log
+      console.log("🎯 Manager ID being sent:", manageId); // Debug log
+      console.log("👤 Current user ID:", user.id); // Your own ID
+
+      if (!manageId || manageId === user.id) {
+        alert("Error: Cannot find property manager for this job or manager ID is same as your ID");
+        return;
+      }
+
       localStorage.setItem("targetReceiverId", manageId);
       localStorage.setItem("targetReceiverName", data.manager_name || "Manager");
       if (data.id) localStorage.setItem("targetJobId", data.id);

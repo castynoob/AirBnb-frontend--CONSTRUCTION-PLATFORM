@@ -1,16 +1,16 @@
-import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Toaster } from 'react-hot-toast';
 
 // Pages
 import LandingPage from "./pages/landingpage/LandingPage";
 import HomePage from "./pages/homepage/HomePage";
-import Messages from "./pages/messages/Messages";
+import Messages from "./pages/messages/MessagesNew";
 import Submissions from "./pages/submissions/Submissions";
 import FavoriteEntrepreneurs from "./pages/favorites/FavoriteEntrepreneurs";
 import AddWorkForm from "./pages/works/AddWorkForm";
 import ProfilePageManager from "./pages/profile/ProfilePageManager";
 import HomePageEntrepreneur from "./pages/homepage/HomePageEntrepreneur";
-import MessagesEntrepreneur from "./pages/messages/MessagesEntrepreneur";
+import MessagesEntrepreneur from "./pages/messages/MessagesEntrepreneurNew";
 import SubscriptionPage from "./pages/subscription/SubscriptionPage";
 import SubmittedBids from "./pages/submissions/SubmittedBids";
 import AddPropertyPage from "./pages/profile/AddPropertyPage";
@@ -26,6 +26,23 @@ import { SocketProvider } from "./contexts/SocketContext"
 function App() {
   return (
     <Router>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: '#00a5a9',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       <div className="main-app">
         <Routes>
           {/* ===== PUBLIC ROUTES ===== */}
