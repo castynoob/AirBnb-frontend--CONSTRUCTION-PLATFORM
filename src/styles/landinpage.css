@@ -1089,12 +1089,25 @@ body {
   box-shadow: 0 0 0 3px rgba(0, 165, 169, 0.1);
 }
 
-.lp-input-error {
+.lp-input-error,
+.lp-modal-form input.error,
+.lp-modal-form select.error {
   border-color: var(--color-status-urgent) !important;
+  background-color: rgba(231, 76, 60, 0.05);
 }
 
-.lp-input-error:focus {
+.lp-input-error:focus,
+.lp-modal-form input.error:focus,
+.lp-modal-form select.error:focus {
   box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1) !important;
+}
+
+.lp-field-error {
+  display: block;
+  color: var(--color-status-urgent);
+  font-size: 0.8125rem;
+  margin-top: 0.375rem;
+  font-weight: var(--font-weight-medium);
 }
 
 .lp-error-message {

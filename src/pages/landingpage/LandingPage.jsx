@@ -4,6 +4,12 @@ import logo from '../../assets/logo.png'
 import { useNavigate } from "react-router-dom"
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
+import {
+  validateEmail,
+  validatePassword,
+  validateName,
+  validatePasswordConfirmation
+} from "../../utils/validation";
 
 export default function LandingPage() {
   const [showLoginModal, setShowLoginModal] = useState(false)
@@ -295,6 +301,39 @@ export default function LandingPage() {
       ...registerFormData,
       [name]: value,
     })
+
+    // Live validation - validate as user types
+    let error = "";
+
+    switch (name) {
+      case "email":
+        error = validateEmail(value);
+        break;
+      case "password":
+        if (registerFormData.provider === "local") {
+          error = validatePassword(value);
+        }
+        break;
+      case "confirm_password":
+        if (registerFormData.provider === "local") {
+          error = validatePasswordConfirmation(registerFormData.password, value);
+        }
+        break;
+      case "first_name":
+        error = validateName(value, "First name");
+        break;
+      case "last_name":
+        error = validateName(value, "Last name");
+        break;
+      default:
+        break;
+    }
+
+    // Update errors state
+    setRegisterErrors({
+      ...registerErrors,
+      [name]: error
+    });
   }
   const handleRegisterSubmit = async (e) => {
       e.preventDefault();
@@ -324,9 +363,11 @@ export default function LandingPage() {
           }
           
           // 1. Prepare the full payload
-          const payload = { 
-              ...registerFormData, 
-              role: selectedRole 
+          // Convert role format: "property-manager" -> "property_manager"
+          const roleForBackend = selectedRole.replace(/-/g, '_');
+          const payload = {
+              ...registerFormData,
+              role: roleForBackend
           };
 
           // 2. Clean the payload before sending
@@ -359,18 +400,28 @@ export default function LandingPage() {
           });
 
           const data = await response.json();
-          
+
           // 5. Check response status and handle errors
           if (!response.ok) {
-              // This catches the "Email already registered" or other error messages from the backend
-              throw new Error(data.message || "Registration failed"); 
+              // Check if backend returned field-specific errors
+              if (data.errors && typeof data.errors === 'object') {
+                  // Set field-specific errors
+                  setRegisterErrors({
+                      submit: data.message || "Please check your input and try again",
+                      ...data.errors
+                  });
+              } else {
+                  // Generic error (e.g., "Email already registered")
+                  setRegisterErrors({ submit: data.message || "Registration failed" });
+              }
+              return;
           }
 
           // 6. Success handling (reset form and notify)
           alert("Registration successful! You can now log in.");
           closeModals(); // Close the modal and reset state
           setShowLoginModal(true); // Direct user to the login modal
-          
+
       } catch (error) {
           console.error("Registration error:", error);
           // Display the specific error message to the user
@@ -385,6 +436,20 @@ export default function LandingPage() {
   })
 
   const [isRegistering, setIsRegistering] = useState(false)
+
+  // Revalidate confirm_password when password changes
+  useEffect(() => {
+    if (registerFormData.confirm_password && registerFormData.provider === "local") {
+      const error = validatePasswordConfirmation(
+        registerFormData.password,
+        registerFormData.confirm_password
+      );
+      setRegisterErrors(prev => ({
+        ...prev,
+        confirm_password: error
+      }));
+    }
+  }, [registerFormData.password])
 
 
 // Add provider_id to the payload sent to your backend
@@ -844,7 +909,17 @@ export default function LandingPage() {
                   />
                   <span>Remember me</span>
                 </label>
-                <a href="#forgot" className="lp-link">Forgot password?</a>
+                <button
+                  type="button"
+                  className="lp-link"
+                  onClick={() => {
+                    setShowLoginModal(false);
+                    navigate('/forgot-password');
+                  }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                >
+                  Forgot password?
+                </button>
               </div>
 
               <button 
@@ -949,7 +1024,11 @@ export default function LandingPage() {
                         value={registerFormData.first_name}
                         onChange={handleRegisterChange}
                         required
+                        className={registerErrors.first_name ? 'error' : ''}
                       />
+                      {registerErrors.first_name && (
+                        <span className="lp-field-error">{registerErrors.first_name}</span>
+                      )}
                     </div>
                     <div className="lp-form-group">
                       <label>Last Name</label>
@@ -960,7 +1039,11 @@ export default function LandingPage() {
                         value={registerFormData.last_name}
                         onChange={handleRegisterChange}
                         required
+                        className={registerErrors.last_name ? 'error' : ''}
                       />
+                      {registerErrors.last_name && (
+                        <span className="lp-field-error">{registerErrors.last_name}</span>
+                      )}
                     </div>
                   </div>
 
@@ -973,7 +1056,11 @@ export default function LandingPage() {
                       value={registerFormData.email}
                       onChange={handleRegisterChange}
                       required
+                      className={registerErrors.email ? 'error' : ''}
                     />
+                    {registerErrors.email && (
+                      <span className="lp-field-error">{registerErrors.email}</span>
+                    )}
                   </div>
 
                   <div className="lp-form-group">
@@ -985,7 +1072,11 @@ export default function LandingPage() {
                       value={registerFormData.phone}
                       onChange={handleRegisterChange}
                       required
+                      className={registerErrors.phone ? 'error' : ''}
                     />
+                    {registerErrors.phone && (
+                      <span className="lp-field-error">{registerErrors.phone}</span>
+                    )}
                   </div>
 
                   {
@@ -1000,7 +1091,11 @@ export default function LandingPage() {
                         value={registerFormData.password}
                         onChange={handleRegisterChange}
                         required
+                        className={registerErrors.password ? 'error' : ''}
                       />
+                      {registerErrors.password && (
+                        <span className="lp-field-error">{registerErrors.password}</span>
+                      )}
                     </div>
 
                     <div className="lp-form-group">
@@ -1012,7 +1107,11 @@ export default function LandingPage() {
                         value={registerFormData.confirm_password}
                         onChange={handleRegisterChange}
                         required
+                        className={registerErrors.confirm_password ? 'error' : ''}
                       />
+                      {registerErrors.confirm_password && (
+                        <span className="lp-field-error">{registerErrors.confirm_password}</span>
+                      )}
                     </div>
                     </>
                   }

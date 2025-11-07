@@ -16,6 +16,8 @@ import SubmittedBids from "./pages/submissions/SubmittedBids";
 import AddPropertyPage from "./pages/profile/AddPropertyPage";
 import ProfilePageEntrepreneur from "./pages/profile/ProfilePageEntrepreneur";
 import EntrepreneurJobs from "./pages/works/EntrepreneurJobs";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -26,8 +28,10 @@ function App() {
     <Router>
       <div className="main-app">
         <Routes>
-          {/* ===== PUBLIC ROUTE ===== */}
+          {/* ===== PUBLIC ROUTES ===== */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* ===== SOCKET-PROTECTED ROUTES ===== */}
           <Route
