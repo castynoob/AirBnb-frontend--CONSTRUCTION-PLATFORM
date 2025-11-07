@@ -79,7 +79,7 @@ function MessagesEntrepreneurNew() {
       const targetReceiverName = localStorage.getItem("targetReceiverName");
       const targetJobId = localStorage.getItem("targetJobId");
 
-      if (targetReceiverId && conversations.length > 0) {
+      if (targetReceiverId) {
         console.log("🔍 Checking for existing conversation with:", targetReceiverId);
 
         const existingConv = conversations.find(
@@ -101,6 +101,7 @@ function MessagesEntrepreneurNew() {
             last_message: null,
             last_message_time: new Date().toISOString(),
             unread_count: 0,
+            job_id: targetJobId || null,
           };
           setSelectedChat(newConv);
           setShowMobileChat(true);

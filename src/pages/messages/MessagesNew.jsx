@@ -65,7 +65,7 @@ function MessagesNew() {
       const targetReceiverName = localStorage.getItem("targetReceiverName");
       const targetJobId = localStorage.getItem("targetJobId");
 
-      if (targetReceiverId && conversations.length > 0) {
+      if (targetReceiverId) {
         console.log("🎯 Initializing conversation with:", targetReceiverId);
 
         // Check if conversation already exists
@@ -88,6 +88,7 @@ function MessagesNew() {
             last_message: null,
             last_message_time: new Date().toISOString(),
             unread_count: 0,
+            job_id: targetJobId || null,
           };
           setSelectedChat(newConv);
           setShowMobileChat(true);
