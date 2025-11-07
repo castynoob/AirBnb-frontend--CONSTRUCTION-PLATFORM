@@ -353,6 +353,7 @@ function MessagesEntrepreneurNew() {
         content: message.trim(),
         imageUrl: uploadedImage?.url || null,
         attachments: uploadedFiles.length > 0 ? uploadedFiles : null,
+        jobId: selectedChat.job_id || null, // Include job_id for proper conversation association
       };
 
       console.log("📤 Sending message:", messageData);
