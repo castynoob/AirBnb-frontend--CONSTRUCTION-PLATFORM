@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react"
 import "../../styles/entrepreneur/entrepreneurjobs.css"
 import Nav from "../../components/Nav"
-import { FaChevronDown, FaSearch, FaTimes } from "react-icons/fa"
+import { FaSearch, FaTimes } from "react-icons/fa"
 
 function EntrepreneurJobs() {
   const [jobs, setJobs] = useState([])
@@ -17,15 +17,16 @@ function EntrepreneurJobs() {
   const [showReviewModal, setShowReviewModal] = useState(false)
   const [manager, setManager] = useState({})
   const [reviewed, setReviewed] = useState(null)
-  const [expandedCards, setExpandedCards] = useState({})
+  const [showDetailsModal, setShowDetailsModal] = useState(false)
+  const [detailsJob, setDetailsJob] = useState(null)
 
   const [reviewForm, setReviewForm] = useState({
-    reviewer_id: "",
-    reviewed_user_id: "",
-    job_id: "",
-    rating: 1,
+    rating: 5,
     comment: "",
   })
+  const [reviewImages, setReviewImages] = useState([])
+  const [reviewImagePreviews, setReviewImagePreviews] = useState([])
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false)
 
   useEffect(() => {
     fetchJobs()
@@ -155,56 +156,114 @@ function EntrepreneurJobs() {
     setIsConfirming(false)
   }
 
-  const handleSubmitReview = async () => {
-    if (!reviewForm.comment.trim()) {
-      alert("Please write a comment.")
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files)
+
+    if (files.length + reviewImages.length > 5) {
+      alert("You can only upload up to 5 images")
       return
     }
 
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-    const user = JSON.parse(localStorage.getItem("userProfile"))
+    setReviewImages((prev) => [...prev, ...files])
 
-    const payload = {
-      reviewer_id: user.entrepProfile.entrepProfile.user_id,
-      reviewed_user_id: selectedJob.manager_id,
-      job_id: selectedJob.id,
-      rating: reviewForm.rating,
-      comment: reviewForm.comment,
+    // Create preview URLs
+    const previews = files.map((file) => URL.createObjectURL(file))
+    setReviewImagePreviews((prev) => [...prev, ...previews])
+  }
+
+  const removeReviewImage = (index) => {
+    setReviewImages((prev) => prev.filter((_, i) => i !== index))
+    setReviewImagePreviews((prev) => {
+      // Revoke the URL to free memory
+      URL.revokeObjectURL(prev[index])
+      return prev.filter((_, i) => i !== index)
+    })
+  }
+
+  const handleSubmitReview = async () => {
+    // Validation
+    if (!reviewForm.rating || reviewForm.rating < 1 || reviewForm.rating > 5) {
+      alert("Please provide a rating between 1 and 5 stars")
+      return
     }
 
-    const res = await fetch(`${API_BASE_URL}/api/reviews`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${user.token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    })
+    if (!reviewForm.comment || !reviewForm.comment.trim()) {
+      alert("Please write a comment for your review")
+      return
+    }
 
-    if (res.ok) {
-      alert("Review added successfully!")
+    if (reviewForm.comment.trim().length < 10) {
+      alert("Please write a more detailed review (at least 10 characters)")
+      return
+    }
+
+    try {
+      setIsSubmittingReview(true)
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+      const user = JSON.parse(localStorage.getItem("userProfile"))
+
+      // Debug logging
+      console.log('🔍 Entrepreneur Review Submission Debug:')
+      console.log('- Selected Job:', selectedJob)
+      console.log('- Manager Profile ID:', selectedJob.manager_id)
+      console.log('- Manager User ID:', selectedJob.manager_user_id)
+
+      // ✅ FIXED: Use manager_user_id (user ID) instead of manager_id (profile ID)
+      const managerUserId = selectedJob.manager_user_id || selectedJob.manager_id
+
+      if (!managerUserId) {
+        throw new Error('Cannot find manager user ID')
+      }
+
+      console.log('💡 Using manager user ID:', managerUserId)
+
+      // ✅ Use FormData to support image uploads
+      const formData = new FormData()
+      formData.append("reviewed_user_id", managerUserId)
+      formData.append("job_id", selectedJob.id)
+      formData.append("rating", reviewForm.rating)
+      formData.append("comment", reviewForm.comment.trim())
+
+      // Append images
+      reviewImages.forEach((image) => {
+        formData.append("images", image)
+      })
+
+      const res = await fetch(`${API_BASE_URL}/api/reviews`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+        body: formData,
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.message || "Failed to submit review")
+      }
+
+      const responseData = await res.json()
+      alert(responseData.message || "Review added successfully!")
+
+      // Reset form
       setOpenReviewModal(false)
-      setReviewForm({ rating: 1, comment: "" })
-      fetchJobs()
-    } else {
-      alert("Failed to submit review.")
+      setReviewForm({ rating: 5, comment: "" })
+      setReviewImages([])
+
+      // Clean up preview URLs
+      reviewImagePreviews.forEach((url) => URL.revokeObjectURL(url))
+      setReviewImagePreviews([])
+
+      // Refresh jobs
+      await fetchJobs()
+    } catch (error) {
+      console.error("Error submitting review:", error)
+      alert(error.message || "Failed to submit review. Please try again.")
+    } finally {
+      setIsSubmittingReview(false)
     }
   }
 
-  const RatingStars = ({ rating, onChange }) => (
-    <div className="ej-stars">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <button
-          key={star}
-          className={`ej-star-btn ${star <= rating ? "active" : ""}`}
-          onClick={() => onChange(star)}
-          type="button"
-        >
-          ★
-        </button>
-      ))}
-    </div>
-  )
 
   const getJobInformation = async (job) => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
@@ -233,11 +292,9 @@ function EntrepreneurJobs() {
     setShowReviewModal(true)
   }
 
-  const toggleCardExpanded = (jobId) => {
-    setExpandedCards((prev) => ({
-      ...prev,
-      [jobId]: !prev[jobId],
-    }))
+  const handleViewDetails = (job) => {
+    setDetailsJob(job);
+    setShowDetailsModal(true);
   }
 
   const getStatusCount = (status) => {
@@ -333,7 +390,6 @@ function EntrepreneurJobs() {
         ) : (
           <div className="ej-jobs-grid">
             {filteredJobs.map((job) => {
-              const isExpanded = expandedCards[job.id]
               return (
                 <div className="ej-job-card" key={job.id}>
                   {/* Card Header */}
@@ -358,39 +414,11 @@ function EntrepreneurJobs() {
                     </div>
                   </div>
 
-                  {/* Expand Button */}
-                  <button className="ej-expand-btn" onClick={() => toggleCardExpanded(job.id)}>
-                    <FaChevronDown size={14} className={isExpanded ? "rotated" : ""} />
-                    {isExpanded ? "Hide Details" : "Show Details"}
-                  </button>
-
-                  {/* Expanded Details */}
-                  {isExpanded && (
-                    <div className="ej-card-details">
-                      <div className="ej-details-section">
-                        <h4 className="ej-section-title">Project Details</h4>
-                        <div className="ej-detail-field">
-                          <span className="ej-detail-label">Category</span>
-                          <span className="ej-detail-value">{job.category}</span>
-                        </div>
-                        <div className="ej-detail-field">
-                          <span className="ej-detail-label">Due Date</span>
-                          <span className="ej-detail-value">{formatDate(job.due_date)}</span>
-                        </div>
-                        {job.budget_min && job.budget_max && (
-                          <div className="ej-detail-field">
-                            <span className="ej-detail-label">Budget Range</span>
-                            <span className="ej-detail-value">
-                              {formatCurrency(job.budget_min)} - {formatCurrency(job.budget_max)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
                   {/* Card Footer with Actions */}
                   <div className="ej-card-footer">
+                    <button className="ej-btn ej-btn-details" onClick={() => handleViewDetails(job)}>
+                      View Details
+                    </button>
                     <div className="ej-action-buttons">
                       {job.status === "accepted" && (
                         <button className="ej-btn ej-btn-primary" onClick={() => openModal(job, "start")}>
@@ -416,7 +444,7 @@ function EntrepreneurJobs() {
                             }
                           }}
                         >
-                          {job.review.length !== 0 ? "View Details" : "Add Review"}
+                          {job.review.length !== 0 ? "View Review" : "Add Review"}
                         </button>
                       )}
                     </div>
@@ -428,38 +456,134 @@ function EntrepreneurJobs() {
         )}
       </div>
 
-      {/* Review Modal */}
+      {/* Review Modal - Improved UI */}
       {openReviewModal && (
-        <div className="ej-modal-overlay" onClick={() => setOpenReviewModal(false)}>
-          <div className="ej-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="ej-modal-header">
-              <h3 className="ej-modal-title">Add Your Review</h3>
-              <button className="ej-modal-close" onClick={() => setOpenReviewModal(false)}>
-                ✕
+        <div className="ej-rm-modal-overlay" onClick={() => {
+          setOpenReviewModal(false)
+          reviewImagePreviews.forEach((url) => URL.revokeObjectURL(url))
+          setReviewImagePreviews([])
+          setReviewImages([])
+        }}>
+          <div className="ej-rm-modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="ej-rm-modal-header">
+              <div className="ej-rm-header-content">
+                <h2 className="ej-rm-modal-title">Leave a Review</h2>
+                <p className="ej-rm-modal-subtitle">{selectedJob?.title}</p>
+              </div>
+              <button
+                className="ej-rm-close-btn"
+                onClick={() => {
+                  setOpenReviewModal(false)
+                  reviewImagePreviews.forEach((url) => URL.revokeObjectURL(url))
+                  setReviewImagePreviews([])
+                  setReviewImages([])
+                }}
+              >
+                <FaTimes size={20} />
               </button>
             </div>
 
-            <div className="ej-modal-body">
-              <p className="ej-rating-label">Rate your experience:</p>
-              <RatingStars
-                rating={reviewForm.rating}
-                onChange={(star) => setReviewForm({ ...reviewForm, rating: star })}
-              />
+            <div className="ej-rm-modal-body">
+              {/* Rating Section */}
+              <div className="ej-rm-rating-section">
+                <label className="ej-rm-section-label">How would you rate your experience?</label>
+                <div className="ej-rm-stars-container">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      className={`ej-rm-star-btn ${reviewForm.rating >= star ? 'ej-rm-active' : ''}`}
+                      onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                    >
+                      ★
+                    </button>
+                  ))}
+                  <span className="ej-rm-rating-text">{reviewForm.rating}/5</span>
+                </div>
+              </div>
 
-              <textarea
-                className="ej-textarea"
-                placeholder="Write your feedback..."
-                value={reviewForm.comment}
-                onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-              />
+              {/* Comment Section */}
+              <div className="ej-rm-comment-section">
+                <label className="ej-rm-section-label">Share your experience</label>
+                <textarea
+                  className="ej-rm-textarea"
+                  placeholder="Tell us about your experience with this property manager..."
+                  value={reviewForm.comment}
+                  onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                  rows={5}
+                />
+                <div className="ej-rm-char-count">
+                  {reviewForm.comment.length} characters {reviewForm.comment.trim().length < 10 && '(minimum 10)'}
+                </div>
+              </div>
+
+              {/* Image Upload Section */}
+              <div className="ej-rm-image-section">
+                <label className="ej-rm-section-label">Add photos (optional)</label>
+                <p className="ej-rm-section-hint">Upload up to 5 photos to showcase the work</p>
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageSelect}
+                  className="ej-rm-file-input"
+                  id="ej-rm-review-images"
+                />
+                <label htmlFor="ej-rm-review-images" className="ej-rm-upload-btn">
+                  <span>📷</span>
+                  <span>Choose Images</span>
+                </label>
+
+                {reviewImagePreviews.length > 0 && (
+                  <div className="ej-rm-image-grid">
+                    {reviewImagePreviews.map((preview, index) => (
+                      <div key={index} className="ej-rm-image-item">
+                        <img src={preview} alt={`Preview ${index + 1}`} className="ej-rm-image-preview" />
+                        <button
+                          type="button"
+                          className="ej-rm-remove-btn"
+                          onClick={() => removeReviewImage(index)}
+                          title="Remove image"
+                        >
+                          <FaTimes size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="ej-modal-footer">
-              <button className="ej-btn ej-btn-outline" onClick={() => setOpenReviewModal(false)}>
+            <div className="ej-rm-modal-footer">
+              <button
+                className="ej-rm-btn ej-rm-btn-cancel"
+                onClick={() => {
+                  setOpenReviewModal(false)
+                  reviewImagePreviews.forEach((url) => URL.revokeObjectURL(url))
+                  setReviewImagePreviews([])
+                  setReviewImages([])
+                }}
+                disabled={isSubmittingReview}
+              >
                 Cancel
               </button>
-              <button className="ej-btn ej-btn-primary" onClick={handleSubmitReview}>
-                Submit Review
+              <button
+                className="ej-rm-btn ej-rm-btn-submit"
+                onClick={handleSubmitReview}
+                disabled={isSubmittingReview || !reviewForm.rating || !reviewForm.comment.trim() || reviewForm.comment.trim().length < 10}
+              >
+                {isSubmittingReview ? (
+                  <>
+                    <div className="ej-rm-spinner"></div>
+                    <span>Submitting...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>⭐</span>
+                    <span>Submit Review</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -552,8 +676,122 @@ function EntrepreneurJobs() {
                   <div className="ej-review-by">
                     — {reviewed[0].reviewer_first_name} {reviewed[0].reviewer_last_name}
                   </div>
+
+                  {/* Display attached images */}
+                  {reviewed[0].images && reviewed[0].images.length > 0 && (
+                    <div className="ej-review-images-section">
+                      <label className="ej-image-label">
+                        Attached Photos ({reviewed[0].images.length}):
+                      </label>
+                      <div className="ej-image-previews">
+                        {reviewed[0].images.map((image, index) => (
+                          <div key={index} className="ej-image-preview">
+                            <img
+                              src={image.image_url}
+                              alt={`Review ${index + 1}`}
+                              onClick={() => window.open(image.image_url, "_blank")}
+                              style={{ cursor: "pointer" }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Project Details Modal */}
+      {showDetailsModal && detailsJob && (
+        <div className="ej-details-modal-overlay" onClick={() => setShowDetailsModal(false)}>
+          <div className="ej-details-modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="ej-details-modal-header">
+              <h2 className="ej-details-modal-title">Project Details</h2>
+              <button className="ej-details-modal-close" onClick={() => setShowDetailsModal(false)}>
+                <FaTimes size={20} />
+              </button>
+            </div>
+
+            <div className="ej-details-modal-body">
+              {/* Project Information */}
+              <div className="ej-details-modal-section">
+                <h4 className="ej-details-section-title">Project Information</h4>
+                <div className="ej-details-field">
+                  <span className="ej-details-label">Title</span>
+                  <span className="ej-details-value">{detailsJob.title}</span>
+                </div>
+                <div className="ej-details-field">
+                  <span className="ej-details-label">Category</span>
+                  <span className="ej-details-value">{detailsJob.category}</span>
+                </div>
+                <div className="ej-details-field">
+                  <span className="ej-details-label">Status</span>
+                  <span className={`ej-details-status-badge ej-status-${detailsJob.status}`}>
+                    {detailsJob.status.charAt(0).toUpperCase() + detailsJob.status.slice(1)}
+                  </span>
+                </div>
+                <div className="ej-details-field">
+                  <span className="ej-details-label">Description</span>
+                  <span className="ej-details-value">{detailsJob.description}</span>
+                </div>
+              </div>
+
+              {/* Timeline & Budget */}
+              <div className="ej-details-modal-section">
+                <h4 className="ej-details-section-title">Timeline & Budget</h4>
+                <div className="ej-details-field">
+                  <span className="ej-details-label">Due Date</span>
+                  <span className="ej-details-value">{formatDate(detailsJob.due_date)}</span>
+                </div>
+                {detailsJob.estimated_duration_days && (
+                  <div className="ej-details-field">
+                    <span className="ej-details-label">Estimated Duration</span>
+                    <span className="ej-details-value">{detailsJob.estimated_duration_days} days</span>
+                  </div>
+                )}
+                {detailsJob.budget_min && detailsJob.budget_max && (
+                  <div className="ej-details-field">
+                    <span className="ej-details-label">Budget Range</span>
+                    <span className="ej-details-value">
+                      {formatCurrency(detailsJob.budget_min)} - {formatCurrency(detailsJob.budget_max)}
+                    </span>
+                  </div>
+                )}
+                {detailsJob.urgency && (
+                  <div className="ej-details-field">
+                    <span className="ej-details-label">Urgency</span>
+                    <span className="ej-details-value">{detailsJob.urgency}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Additional Information */}
+              {(detailsJob.is_emergency || detailsJob.is_budget_hidden !== undefined) && (
+                <div className="ej-details-modal-section">
+                  <h4 className="ej-details-section-title">Additional Information</h4>
+                  {detailsJob.is_emergency && (
+                    <div className="ej-details-field">
+                      <span className="ej-details-label">Emergency</span>
+                      <span className="ej-details-value">Yes</span>
+                    </div>
+                  )}
+                  {detailsJob.is_budget_hidden !== undefined && (
+                    <div className="ej-details-field">
+                      <span className="ej-details-label">Budget Hidden</span>
+                      <span className="ej-details-value">{detailsJob.is_budget_hidden ? 'Yes' : 'No'}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="ej-details-modal-footer">
+              <button className="ej-details-modal-btn-close" onClick={() => setShowDetailsModal(false)}>
+                Close
+              </button>
             </div>
           </div>
         </div>

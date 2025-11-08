@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Nav from '../../components/Nav';
 import '../../styles/entrepreneur/submittedbids.css'
-import { Search, Calendar, DollarSign, Clock, MessageSquare, CheckCircle, XCircle, AlertCircle, MapPin } from 'lucide-react';
+import { Search, Calendar, DollarSign, Clock, MessageSquare, CheckCircle, XCircle, AlertCircle, MapPin, FileText, User, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const SubmittedBids = () => {
@@ -12,6 +12,8 @@ const SubmittedBids = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [selectedBid, setSelectedBid] = useState(null);
 
   const navigate = useNavigate()
 
@@ -164,6 +166,11 @@ const SubmittedBids = () => {
       bid.city?.toLowerCase().includes(searchLower)
     );
   });
+
+  const handleViewDetails = (bid) => {
+    setSelectedBid(bid);
+    setShowDetailsModal(true);
+  };
 
   const handleMessageClicked = async (bid) => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
@@ -349,27 +356,14 @@ const SubmittedBids = () => {
                     <span className="eb-detail-label">Submitted:</span>
                     <span className="eb-detail-value">{formatDate(bid.created_at)}</span>
                   </div>
-
-                  {bid.due_date && (
-                    <div className="eb-detail-item">
-                      <Clock size={16} />
-                      <span className="eb-detail-label">Due Date:</span>
-                      <span className="eb-detail-value">{formatDate(bid.due_date)}</span>
-                    </div>
-                  )}
                 </div>
-
-                {/* Bid Message Preview */}
-                {bid.message && (
-                  <div className="eb-bid-message">
-                    <p className="eb-message-label">Your Proposal:</p>
-                    <p className="eb-message-text">{bid.message}</p>
-                  </div>
-                )}
 
                 <div className="eb-bid-footer">
                   <span className="eb-response-time">{getTimeAgo(bid.created_at)}</span>
                   <div className="eb-bid-actions">
+                    <button className="eb-btn-details" onClick={() => handleViewDetails(bid)}>
+                      View Details
+                    </button>
                     {
                       bid.status == 'accepted' &&
                     <>
@@ -384,6 +378,129 @@ const SubmittedBids = () => {
             ))
           )}
         </div>
+
+        {/* Bid Details Modal */}
+        {showDetailsModal && selectedBid && (
+          <div className="bid-modal-overlay" onClick={() => setShowDetailsModal(false)}>
+            <div className="bid-modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="bid-modal-header">
+                <h2>Bid Details</h2>
+                <button
+                  className="bid-modal-close"
+                  onClick={() => setShowDetailsModal(false)}
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="bid-modal-body">
+                {/* Job Information */}
+                <section className="bid-modal-section">
+                  <h3 className="bid-section-title">
+                    <FileText size={20} />
+                    Job Information
+                  </h3>
+                  <div className="bid-info-grid">
+                    <div className="bid-info-item">
+                      <label>Job Title</label>
+                      <p>{selectedBid.job_title}</p>
+                    </div>
+                    <div className="bid-info-item">
+                      <label>Category</label>
+                      <p>{selectedBid.category}</p>
+                    </div>
+                    <div className="bid-info-item">
+                      <label>
+                        <Clock size={14} /> Urgency
+                      </label>
+                      <p>{selectedBid.urgency}</p>
+                    </div>
+                    {selectedBid.due_date && (
+                      <div className="bid-info-item">
+                        <label>
+                          <Calendar size={14} /> Due Date
+                        </label>
+                        <p>{formatDate(selectedBid.due_date)}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="bid-info-item" style={{ marginTop: '1rem' }}>
+                    <label>Description</label>
+                    <p>{selectedBid.job_description}</p>
+                  </div>
+                  {(selectedBid.property_address || selectedBid.city) && (
+                    <div className="bid-info-item" style={{ marginTop: '1rem' }}>
+                      <label>
+                        <MapPin size={14} /> Property Location
+                      </label>
+                      <p>{selectedBid.property_address}{selectedBid.city ? `, ${selectedBid.city}` : ''}</p>
+                    </div>
+                  )}
+                </section>
+
+                {/* Bid Information */}
+                <section className="bid-modal-section bid-modal-highlight">
+                  <h3 className="bid-section-title">
+                    <DollarSign size={20} />
+                    Your Bid Information
+                  </h3>
+                  <div className="bid-info-display">
+                    <div className="bid-amount-display">
+                      <label>Bid Amount</label>
+                      <p className="amount">
+                        {formatCurrency(selectedBid.amount)}
+                      </p>
+                    </div>
+                    {selectedBid.message && (
+                      <div className="bid-message">
+                        <label>
+                          <MessageSquare size={14} /> Your Proposal Message
+                        </label>
+                        <p>{selectedBid.message}</p>
+                      </div>
+                    )}
+                    <div className="bid-info-grid" style={{ marginTop: '1rem' }}>
+                      <div className="bid-info-item">
+                        <label>
+                          <Calendar size={14} /> Submitted On
+                        </label>
+                        <p>{formatDate(selectedBid.created_at)}</p>
+                      </div>
+                      <div className="bid-info-item">
+                        <label>Status</label>
+                        <span className={`bid-status-badge-modal status-${selectedBid.status}`}>
+                          {getStatusLabel(selectedBid.status)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="bid-modal-footer">
+                {selectedBid.status === 'accepted' && (
+                  <button
+                    className="bid-btn-message"
+                    onClick={() => {
+                      setShowDetailsModal(false);
+                      handleMessageClicked(selectedBid);
+                    }}
+                  >
+                    <MessageSquare size={16} />
+                    Message Manager
+                  </button>
+                )}
+                <button
+                  className="bid-btn-close"
+                  onClick={() => setShowDetailsModal(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

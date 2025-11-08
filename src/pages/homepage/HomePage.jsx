@@ -76,6 +76,7 @@ function HomePage() {
   const [jobs, setJobs] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [imagesLoaded, setImagesLoaded] = useState({})
 
   const [notifications] = useState([])
   const [uProfile, setUProfile] = useState({})
@@ -94,6 +95,7 @@ function HomePage() {
         const user = JSON.parse(userProfile)
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
         setUProfile(user)
+        
         // Fetch jobs
         const jobsResponse = await fetch(`${API_BASE_URL}/api/jobs/manager/${user.id}`, {
           method: "GET",
@@ -109,7 +111,7 @@ function HomePage() {
         const jobsData = await jobsResponse.json()
         setJobs(jobsData.jobs || [])
 
-        // Fetch properties and bids for each job
+        // Fetch properties, bids, and images for each job
         const propertiesData = await Promise.all(
           (jobsData.jobs || []).map(async (job) => {
             try {
@@ -146,6 +148,32 @@ function HomePage() {
                 console.error("Error fetching bids:", bidError)
                 // Continue with 0 bids if fetch fails
               }
+
+              // Fetch images for this job
+              let jobImages = []
+              const placeholderImage = "https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM="
+              
+              try {
+                const imagesResponse = await fetch(`${API_BASE_URL}/api/jobs/${job.id}/images`, {
+                  method: "GET",
+                  headers: {
+                    Authorization: `Bearer ${user.token}`,
+                  },
+                })
+
+                if (imagesResponse.ok) {
+                  const imagesData = await imagesResponse.json()
+                  if (imagesData.images && imagesData.images.length > 0) {
+                    jobImages = imagesData.images.map(img => img.image_url)
+                  }
+                }
+              } catch (imageError) {
+                console.error("Error fetching job images:", imageError)
+              }
+
+              // Use fetched images or fallback to placeholder
+              const finalImages = jobImages.length > 0 ? jobImages : [placeholderImage]
+
               return {
                 id: job.id,
                 property: property.building_name || property.address || "Unknown Property",
@@ -155,14 +183,15 @@ function HomePage() {
                 description: job.description,
                 bids: bidCount,
                 budget: `$${job.budget_min} - $${job.budget_max}`,
-                images: ["https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM="],
+                images: finalImages,
                 data: {
                   mangerId: property.manager_id,
                   propertyId: property.id,
                   jobId: job.id,
                 },
                 created_at: job.created_at,
-                building_type: property.building_type
+                building_type: property.building_type,
+                status: job.status
               }
             } catch (err) {
               console.error("Error fetching property:", err)
@@ -200,6 +229,199 @@ function HomePage() {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
     try {
+      // Filter urgent/emergency jobs
+      const urgentJobs = jobs.filter(job =>
+        job.is_emergency === true || job.urgency?.toLowerCase().includes('urgent')
+      );
+
+      if (urgentJobs.length === 0) {
+        alert("No urgent or emergency jobs to send.");
+        setIsSending(false);
+        return;
+      }
+
+      // Group jobs by category
+      const jobsByCategory = urgentJobs.reduce((acc, job) => {
+        const category = job.category || 'General';
+        if (!acc[category]) {
+          acc[category] = [];
+        }
+        acc[category].push(job);
+        return acc;
+      }, {});
+
+      // Create professional HTML email
+      const htmlEmail = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Urgent Jobs Alert</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7fa;">
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f7fa; padding: 40px 20px;">
+            <tr>
+              <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+
+                  <!-- Header with Branding -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+                      <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: 0.5px;">
+                        🏗️ INTERVOS
+                      </h1>
+                      <p style="margin: 10px 0 0; color: #f0f0f0; font-size: 14px; letter-spacing: 1px;">
+                        Construction Platform
+                      </p>
+                    </td>
+                  </tr>
+
+                  <!-- Alert Banner -->
+                  <tr>
+                    <td style="background-color: #ff4444; padding: 15px 30px; text-align: center;">
+                      <p style="margin: 0; color: #ffffff; font-size: 16px; font-weight: 600;">
+                        ⚠️ URGENT JOBS ALERT
+                      </p>
+                    </td>
+                  </tr>
+
+                  <!-- Main Content -->
+                  <tr>
+                    <td style="padding: 40px 30px;">
+                      <h2 style="margin: 0 0 20px; color: #333333; font-size: 22px; font-weight: 600;">
+                        Dear Contractor,
+                      </h2>
+
+                      <p style="margin: 0 0 25px; color: #555555; font-size: 15px; line-height: 1.6;">
+                        Property Manager <strong>${uProfile.name}</strong> has posted <strong>${urgentJobs.length}</strong> urgent job${urgentJobs.length > 1 ? 's' : ''} that require immediate attention.
+                        These projects are time-sensitive and need experienced contractors.
+                      </p>
+
+                      <!-- Property Manager Info -->
+                      <div style="background-color: #f8f9fa; border-left: 4px solid #667eea; padding: 20px; margin-bottom: 30px; border-radius: 4px;">
+                        <h3 style="margin: 0 0 12px; color: #333333; font-size: 16px; font-weight: 600;">
+                          📋 Property Manager Details
+                        </h3>
+                        <table cellpadding="5" cellspacing="0" border="0" style="width: 100%;">
+                          <tr>
+                            <td style="color: #666666; font-size: 14px; padding: 5px 0;"><strong>Name:</strong></td>
+                            <td style="color: #333333; font-size: 14px; padding: 5px 0;">${uProfile.name}</td>
+                          </tr>
+                          <tr>
+                            <td style="color: #666666; font-size: 14px; padding: 5px 0;"><strong>Email:</strong></td>
+                            <td style="color: #333333; font-size: 14px; padding: 5px 0;">${uProfile.email}</td>
+                          </tr>
+                          ${uProfile.phone ? `
+                          <tr>
+                            <td style="color: #666666; font-size: 14px; padding: 5px 0;"><strong>Phone:</strong></td>
+                            <td style="color: #333333; font-size: 14px; padding: 5px 0;">${uProfile.phone}</td>
+                          </tr>
+                          ` : ''}
+                        </table>
+                      </div>
+
+                      <!-- Jobs by Category -->
+                      <h3 style="margin: 0 0 20px; color: #333333; font-size: 18px; font-weight: 600;">
+                        🔨 Urgent Jobs by Category
+                      </h3>
+
+                      ${Object.entries(jobsByCategory).map(([category, categoryJobs]) => `
+                        <div style="margin-bottom: 25px;">
+                          <div style="background-color: #667eea; color: #ffffff; padding: 10px 15px; border-radius: 6px 6px 0 0; font-weight: 600; font-size: 15px;">
+                            ${category} (${categoryJobs.length} job${categoryJobs.length > 1 ? 's' : ''})
+                          </div>
+                          <div style="border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 6px 6px; padding: 15px;">
+                            ${categoryJobs.map((job, index) => `
+                              <div style="padding: ${index > 0 ? '15px 0 0 0' : '0'}; ${index > 0 ? 'border-top: 1px solid #f0f0f0; margin-top: 15px;' : ''}">
+                                <h4 style="margin: 0 0 8px; color: #333333; font-size: 15px; font-weight: 600;">
+                                  ${job.title}
+                                </h4>
+                                <p style="margin: 0 0 8px; color: #666666; font-size: 14px; line-height: 1.5;">
+                                  ${job.description}
+                                </p>
+                                <div style="display: flex; gap: 15px; margin-top: 10px;">
+                                  <span style="color: #22c55e; font-size: 13px; font-weight: 600;">
+                                    💰 $${job.budget_min} - $${job.budget_max}
+                                  </span>
+                                  ${job.is_emergency ? `
+                                  <span style="background-color: #ff4444; color: #ffffff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">
+                                    EMERGENCY
+                                  </span>
+                                  ` : ''}
+                                </div>
+                              </div>
+                            `).join('')}
+                          </div>
+                        </div>
+                      `).join('')}
+
+                      <!-- Call to Action -->
+                      <div style="text-align: center; margin-top: 35px;">
+                        <a href="https://air-bnb-frontend-construction-platf.vercel.app/"
+                           style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 8px; font-weight: 600; font-size: 15px; letter-spacing: 0.5px; box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);">
+                          View All Jobs on Dashboard →
+                        </a>
+                      </div>
+
+                      <p style="margin: 30px 0 0; color: #888888; font-size: 13px; line-height: 1.6; text-align: center;">
+                        These jobs require immediate attention. Please log in to your dashboard to review full details and submit your bid.
+                      </p>
+                    </td>
+                  </tr>
+
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #f8f9fa; padding: 25px 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+                      <p style="margin: 0 0 8px; color: #666666; font-size: 13px;">
+                        © ${new Date().getFullYear()} Intervos Construction Platform. All rights reserved.
+                      </p>
+                      <p style="margin: 0; color: #999999; font-size: 12px;">
+                        This is an automated notification. Please do not reply to this email.
+                      </p>
+                    </td>
+                  </tr>
+
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `;
+
+      // Plain text version
+      const textMessage = `
+INTERVOS - Construction Platform
+URGENT JOBS ALERT
+
+Dear Contractor,
+
+Property Manager ${uProfile.name} has posted ${urgentJobs.length} urgent job${urgentJobs.length > 1 ? 's' : ''} that require immediate attention.
+
+Property Manager Details:
+- Name: ${uProfile.name}
+- Email: ${uProfile.email}
+${uProfile.phone ? `- Phone: ${uProfile.phone}` : ''}
+
+Urgent Jobs by Category:
+${Object.entries(jobsByCategory).map(([category, categoryJobs]) => `
+${category} (${categoryJobs.length} job${categoryJobs.length > 1 ? 's' : ''}):
+${categoryJobs.map(job => `
+  • ${job.title}
+    ${job.description}
+    Budget: $${job.budget_min} - $${job.budget_max}
+    ${job.is_emergency ? '[EMERGENCY]' : ''}
+`).join('\n')}
+`).join('\n')}
+
+Please log in to your dashboard to review full details and submit your bid.
+
+Visit: https://air-bnb-frontend-construction-platf.vercel.app/
+
+© ${new Date().getFullYear()} Intervos Construction Platform
+      `.trim();
+
       const emailResponse = await fetch(`${API_BASE_URL}/api/email/send-to-entrepreneurs`, {
         method: "POST",
         headers: {
@@ -207,8 +429,9 @@ function HomePage() {
           "Authorization": `Bearer ${uProfile.token}`,
         },
         body: JSON.stringify({
-          subject: `🚨 Urgent Request from ${uProfile.name}`,
-          message: "Please check your dashboard for an important update.",
+          subject: `🚨 Urgent: ${urgentJobs.length} New Job${urgentJobs.length > 1 ? 's' : ''} from ${uProfile.name} - Intervos`,
+          message: textMessage,
+          html: htmlEmail,
         }),
       });
 
@@ -219,14 +442,13 @@ function HomePage() {
       const data = await emailResponse.json();
       console.log("✅ EMAIL RES:", data);
       setIsSending(false)
-      alert(data.message); // optional feedback for the UI
+      alert(`✅ ${data.message}\n\nSent ${urgentJobs.length} urgent job${urgentJobs.length > 1 ? 's' : ''} notification to all entrepreneurs.`);
     } catch (error) {
       setIsSending(false)
       console.error("❌ Email send error:", error);
-      alert("Failed to send urgent request emails.");
+      alert("Failed to send urgent request emails. Please try again.");
     }
   };
-
 
   const handleAddWork = () => {
     navigate("/add-work/property_manager")

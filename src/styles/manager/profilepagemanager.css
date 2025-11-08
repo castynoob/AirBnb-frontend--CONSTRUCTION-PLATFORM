@@ -53,6 +53,14 @@
   justify-content: center;
   color: var(--color-white);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  position: relative;
+}
+
+.mp-profile-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .mp-edit-avatar-btn {
@@ -70,6 +78,7 @@
   cursor: pointer;
   color: var(--color-text-dark);
   transition: all 0.2s ease;
+  z-index: 10;
 }
 
 .mp-edit-avatar-btn:hover {
@@ -888,5 +897,185 @@
 
   .mp-modal-section-title {
     font-size: 1rem;
+  }
+}
+
+/* ==================== SKELETON LOADING STYLES ==================== */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #f2f2f2 25%,
+    #e6e6e6 50%,
+    #f2f2f2 75%
+  );
+  background-size: 200% 100%;
+  animation: skeletonLoading 1.5s infinite ease-in-out;
+  border-radius: 8px;
+}
+
+@keyframes skeletonLoading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-circle {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    #f2f2f2 25%,
+    #e6e6e6 50%,
+    #f2f2f2 75%
+  );
+  background-size: 200% 100%;
+  animation: skeletonLoading 1.5s infinite ease-in-out;
+  border-radius: 50%;
+}
+
+.skeleton-title {
+  width: 200px;
+  height: 28px;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-badge {
+  width: 120px;
+  height: 24px;
+  border-radius: 20px;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-line {
+  width: 100%;
+  height: 16px;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-line.short {
+  width: 60%;
+}
+
+.skeleton-button {
+  width: 150px;
+  height: 42px;
+  border-radius: 8px;
+  margin-top: 0.5rem;
+}
+
+.skeleton-button.small {
+  width: 100px;
+  height: 36px;
+}
+
+.skeleton-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+}
+
+.skeleton-stat-value {
+  width: 80px;
+  height: 32px;
+  margin-bottom: 0.5rem;
+}
+
+.skeleton-stat-label {
+  width: 120px;
+  height: 18px;
+}
+
+.skeleton-section-title {
+  width: 180px;
+  height: 28px;
+}
+
+.skeleton-count-badge {
+  width: 100px;
+  height: 24px;
+  border-radius: 20px;
+}
+
+.skeleton-card {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Skeleton-specific adjustments for Manager Profile */
+.mp-profile-page-manager .skeleton {
+  pointer-events: none;
+}
+
+.mp-profile-avatar.skeleton {
+  background: linear-gradient(
+    90deg,
+    #f2f2f2 25%,
+    #e6e6e6 50%,
+    #f2f2f2 75%
+  );
+  background-size: 200% 100%;
+  animation: skeletonLoading 1.5s infinite ease-in-out;
+}
+
+.mp-profile-banner.skeleton {
+  background: linear-gradient(
+    90deg,
+    #d0d9e2 25%,
+    #c4cdd6 50%,
+    #d0d9e2 75%
+  );
+  background-size: 200% 100%;
+  animation: skeletonLoading 1.5s infinite ease-in-out;
+}
+
+/* Responsive skeleton adjustments */
+@media (max-width: 768px) {
+  .skeleton-title {
+    width: 150px;
+    height: 24px;
+  }
+
+  .skeleton-section-title {
+    width: 140px;
+    height: 22px;
+  }
+
+  .skeleton-button {
+    width: 100%;
+    height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .skeleton-title {
+    width: 120px;
+    height: 20px;
+  }
+
+  .skeleton-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .skeleton-stat-value {
+    width: 60px;
+    height: 24px;
+  }
+
+  .skeleton-stat-label {
+    width: 100px;
+    height: 16px;
   }
 }

@@ -91,7 +91,53 @@ function AddPropertyPage() {
         map.remove();
       }
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount to initialize map
+
+  // Reverse geocode coordinates to get address information
+  const reverseGeocode = async (lat, lng) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`
+      );
+
+      if (!response.ok) {
+        throw new Error('Geocoding failed');
+      }
+
+      const data = await response.json();
+
+      if (data && data.address) {
+        const address = data.address;
+
+        // Extract address components
+        const road = address.road || '';
+        const houseNumber = address.house_number || '';
+        const suburb = address.suburb || address.neighbourhood || '';
+        const city = address.city || address.town || address.village || address.municipality || '';
+        const province = address.state || address.province || '';
+        const postalCode = address.postcode || '';
+
+        // Construct full address
+        let fullAddress = '';
+        if (houseNumber) fullAddress += houseNumber + ' ';
+        if (road) fullAddress += road;
+        if (suburb && !fullAddress.includes(suburb)) fullAddress += (fullAddress ? ', ' : '') + suburb;
+
+        // Update form data with geocoded information
+        setFormData(prev => ({
+          ...prev,
+          address: fullAddress.trim() || prev.address,
+          city: city || prev.city,
+          province: province || prev.province,
+          postal_code: postalCode || prev.postal_code,
+        }));
+      }
+    } catch (error) {
+      console.error('Reverse geocoding error:', error);
+      // Silently fail - coordinates are still updated
+    }
+  };
 
   const initializeMap = (lat, lng, L) => {
     const mapInstance = L.map(mapRef.current).setView([lat, lng], 13);
@@ -109,6 +155,9 @@ function AddPropertyPage() {
         latitude: position.lat,
         longitude: position.lng
       }));
+
+      // Reverse geocode the new position
+      reverseGeocode(position.lat, position.lng);
     });
 
     mapInstance.on('click', (e) => {
@@ -118,6 +167,9 @@ function AddPropertyPage() {
         latitude: e.latlng.lat,
         longitude: e.latlng.lng
       }));
+
+      // Reverse geocode the clicked position
+      reverseGeocode(e.latlng.lat, e.latlng.lng);
     });
 
     markerRef.current = marker;

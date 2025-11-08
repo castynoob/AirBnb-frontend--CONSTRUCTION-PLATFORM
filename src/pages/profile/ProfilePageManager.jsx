@@ -1,9 +1,11 @@
+// ProfilePageManager.jsx
 import React, { useEffect, useState } from 'react'
 import Nav from '../../components/Nav'
 import "../../styles/manager/profilepagemanager.css"
 import { FiUser, FiMail, FiShield, FiHome, FiPlus, FiMapPin, FiCalendar, FiEdit2, FiX } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
 import EditManagerProfileModal from '../../components/modal/EditManagerProfileModal'
+import ManagerProfileSkeleton from '../../components/loading/ManagerProfileSkeleton'
 
 function ProfilePageManager() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -12,61 +14,60 @@ function ProfilePageManager() {
   const [selectedProperty, setSelectedProperty] = useState(null)
   const navigate = useNavigate()
   const [uProfile, setUProfile] = useState({})
+  const [isLoading, setIsLoading] = useState(true)
 
   // edit
   const [isEditingProfile, setIsEditingProfile] = useState(false)
 
   useEffect(() => {
-    const getProfileAndProperties = async () => {
-      const userProfile = localStorage.getItem('userProfile')
-
-      if (userProfile) {
-        const userData = JSON.parse(userProfile)
-        setUser(userData)
-
-        try {
-          // 🟢 Fetch Manager Profile
-          const profileRes = await fetch(`${API_BASE_URL}/api/users/manager/${userData.id}`, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${userData.token}`,
-            },
-          })
-
-          if (!profileRes.ok) throw new Error('Error getting manager profile')
-          const profileData = await profileRes.json()
-          console.log("MANAGER DATA:", profileData)
-          setUProfile(profileData)
-
-          // 🟢 Fetch Manager Properties
-          const propertiesRes = await fetch(`${API_BASE_URL}/api/properties`, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${userData.token}`,
-            },
-          })
-
-          if (!propertiesRes.ok) throw new Error('Error getting properties')
-          const propertiesData = await propertiesRes.json()
-          console.log("PROPERTIES:", propertiesData)
-          setProperties(propertiesData.properties || [])
-
-        } catch (error) {
-          console.error(error.message)
-        }
-      }
-    }
-
     getProfileAndProperties()
   }, [])
 
-  const handleAddProperty = () => {
-    navigate("/profile/add-property")
+  const getProfileAndProperties = async () => {
+    setIsLoading(true)
+    const userProfile = localStorage.getItem('userProfile')
+
+    if (userProfile) {
+      const userData = JSON.parse(userProfile)
+      setUser(userData)
+
+      try {
+        // 🟢 Fetch Manager Profile
+        const profileRes = await fetch(`${API_BASE_URL}/api/users/manager/${userData.id}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${userData.token}`,
+          },
+        })
+
+        if (!profileRes.ok) throw new Error('Error getting manager profile')
+        const profileData = await profileRes.json()
+        console.log("MANAGER DATA:", profileData)
+        setUProfile(profileData)
+
+        // 🟢 Fetch Manager Properties
+        const propertiesRes = await fetch(`${API_BASE_URL}/api/properties`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${userData.token}`,
+          },
+        })
+
+        if (!propertiesRes.ok) throw new Error('Error getting properties')
+        const propertiesData = await propertiesRes.json()
+        console.log("PROPERTIES:", propertiesData)
+        setProperties(propertiesData.properties || [])
+
+      } catch (error) {
+        console.error(error.message)
+      } finally {
+        setIsLoading(false)
+      }
+    }
   }
 
-  const handleEditProfile = () => {
-    // TODO: Add edit profile logic
-    alert("Edit profile functionality")
+  const handleAddProperty = () => {
+    navigate("/profile/add-property")
   }
 
   const handlePropertyClick = (property) => {
@@ -86,9 +87,24 @@ function ProfilePageManager() {
     setIsEditingProfile(false)
   }
 
+  const handleSaveProfile = async (updatedProfile) => {
+    // Refresh the profile data after successful save
+    await getProfileAndProperties()
+    setIsEditingProfile(false)
+  }
+
   // Calculate stats
   const totalUnits = properties.reduce((sum, prop) => sum + (prop.num_units || 0), 0)
   const totalProperties = properties.length
+
+  if (isLoading) {
+    return (
+      <>
+        <Nav />
+        <ManagerProfileSkeleton />
+      </>
+    )
+  }
 
   return (
     <div className="mp-profile-page-manager">
@@ -100,9 +116,13 @@ function ProfilePageManager() {
           <div className="mp-profile-info-section">
             <div className="mp-profile-avatar-container">
               <div className="mp-profile-avatar">
-                <FiUser size={48} />
+                {uProfile?.profile?.image ? (
+                  <img src={uProfile.profile.image} alt="Profile" className="mp-profile-avatar-img" />
+                ) : (
+                  <FiUser size={48} />
+                )}
               </div>
-              <button className="mp-edit-avatar-btn" onClick={handleEditProfile}>
+              <button className="mp-edit-avatar-btn" onClick={() => setIsEditingProfile(true)}>
                 <FiEdit2 size={14} />
               </button>
             </div>
@@ -295,7 +315,7 @@ function ProfilePageManager() {
       </div>
       
       { isEditingProfile &&
-        <EditManagerProfileModal userProfile={uProfile} onClose={closeEditModal} onSave={closeEditModal} />
+        <EditManagerProfileModal userProfile={uProfile} onClose={closeEditModal} onSave={handleSaveProfile} />
       }
     </div>
   )

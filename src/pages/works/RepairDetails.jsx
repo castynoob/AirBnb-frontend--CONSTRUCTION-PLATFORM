@@ -27,8 +27,6 @@ import {
 import "../../styles/manager/repairdetails.css";
 
 function RepairDetails({ handleRepairClicked, repair }) {
-  if (!repair) return null;
-
   const [favorites, setFavorites] = useState([]);
   const [sortBy, setSortBy] = useState("rating");
   const [bidders, setBidders] = useState([]);
@@ -36,7 +34,12 @@ function RepairDetails({ handleRepairClicked, repair }) {
   const [selectedBidder, setSelectedBidder] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [jobImages, setJobImages] = useState([]);
+  const [isLoadingImages, setIsLoadingImages] = useState(true);
+  const [isLoadingBidders, setIsLoadingBidders] = useState(true);
 
+  const PLACEHOLDER_IMAGE = "https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=";
+  
   const showNotification = (message, type = "success") => {
     setNotification({ message, type });
     setTimeout(() => {
@@ -52,15 +55,24 @@ function RepairDetails({ handleRepairClicked, repair }) {
     );
   };
 
+  // Fetch job images
   useEffect(() => {
-    setBidders([]);
-    const userProfile = localStorage.getItem("userProfile");
-    const fetchBids = async () => {
-      if (userProfile) {
+    if (!repair?.data?.jobId) {
+      setIsLoadingImages(false);
+      return;
+    }
+
+    const fetchJobImages = async () => {
+      try {
+        setIsLoadingImages(true);
+        const userProfile = localStorage.getItem("userProfile");
+        if (!userProfile) return;
+
         const user = JSON.parse(userProfile);
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
         const response = await fetch(
-          `${API_BASE_URL}/api/bids/job/${repair.data.jobId}`,
+          `${API_BASE_URL}/api/jobs/${repair.data.jobId}/images`,
           {
             method: "GET",
             headers: {
@@ -70,19 +82,76 @@ function RepairDetails({ handleRepairClicked, repair }) {
         );
 
         if (!response.ok) {
-          throw new Error(`Failed to fetch jobs: ${response.status}`);
+          throw new Error(`Failed to fetch images: ${response.status}`);
         }
 
         const data = await response.json();
-        console.log(data.bids);
-        data.bids.forEach((bid) => {
-          getEntrepreneur(bid, user);
-        });
+        console.log("Fetched job images:", data.images);
+        setJobImages(data.images || []);
+      } catch (err) {
+        console.error("Error fetching job images:", err);
+        setJobImages([]);
+      } finally {
+        setIsLoadingImages(false);
+      }
+    };
+
+    fetchJobImages();
+  }, [repair]);
+
+  // Fetch bidders
+  useEffect(() => {
+    if (!repair?.data?.jobId) {
+      setIsLoadingBidders(false);
+      return;
+    }
+
+    setBidders([]);
+    setIsLoadingBidders(true);
+    const userProfile = localStorage.getItem("userProfile");
+
+    const fetchBids = async () => {
+      if (userProfile) {
+        const user = JSON.parse(userProfile);
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+        try {
+          const response = await fetch(
+            `${API_BASE_URL}/api/bids/job/${repair.data.jobId}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${user.token}`,
+              },
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error(`Failed to fetch jobs: ${response.status}`);
+          }
+
+          const data = await response.json();
+          console.log(data.bids);
+
+          if (data.bids.length === 0) {
+            setIsLoadingBidders(false);
+            return;
+          }
+
+          data.bids.forEach((bid) => {
+            getEntrepreneur(bid, user);
+          });
+
+          setIsLoadingBidders(false);
+        } catch (error) {
+          console.error('Error fetching bids:', error);
+          setIsLoadingBidders(false);
+        }
       }
     };
 
     fetchBids();
-  }, []);
+  }, [repair]);
 
   const getEntrepreneur = async (bid, user) => {
     try {
@@ -103,11 +172,11 @@ function RepairDetails({ handleRepairClicked, repair }) {
 
       const data = await response.json();
       console.log("CONTRACTOR:", data.profile);
-
+      
       setBidders((prevBidders) => {
         const exists = prevBidders.some((existing) => existing.id === bid.id);
         if (exists) return prevBidders;
-
+        
         return [
           ...prevBidders,
           {
@@ -119,7 +188,6 @@ function RepairDetails({ handleRepairClicked, repair }) {
             bid_amount: Number(bid.amount),
             bid_message: bid.message,
             bid_status: bid.status,
-            // Full entrepreneur profile
             profile: data.profile,
           },
         ];
@@ -136,8 +204,8 @@ function RepairDetails({ handleRepairClicked, repair }) {
 
   const handleAcceptBid = async () => {
     if (!selectedBidder) return;
-
     setIsProcessing(true);
+
     try {
       const userProfile = localStorage.getItem("userProfile");
       const user = JSON.parse(userProfile);
@@ -166,7 +234,7 @@ function RepairDetails({ handleRepairClicked, repair }) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ status: 'accepted', entrepreneur_id: `${selectedBidder.profile.id}` })
-      })
+      });
 
       if (!jobResponse.ok) {
         throw new Error(data.message || `Failed to approve bid: ${response.status}`);
@@ -177,13 +245,12 @@ function RepairDetails({ handleRepairClicked, repair }) {
         headers: {
           'Authorization': `Bearer ${user.token}`
         }
-      })
+      });
 
       if (!bidsOnJob.ok) {
         throw new Error(data.message || `Failed to approve bid: ${response.status}`);
       }
 
-      // Update local state
       setBidders((prevBidders) =>
         prevBidders.map((bidder) =>
           bidder.id === selectedBidder.id
@@ -193,11 +260,12 @@ function RepairDetails({ handleRepairClicked, repair }) {
       );
 
       setSelectedBidder((prev) => ({ ...prev, bid_status: "approved" }));
-
+      
       showNotification(
         data.message || "Bid approved successfully! Messaging is now unlocked.",
         "success"
       );
+
       setShowModal(false);
     } catch (error) {
       console.error("Error accepting bid:", error);
@@ -212,8 +280,8 @@ function RepairDetails({ handleRepairClicked, repair }) {
 
   const handleDeclineBid = async () => {
     if (!selectedBidder) return;
-
     setIsProcessing(true);
+
     try {
       const userProfile = localStorage.getItem("userProfile");
       const user = JSON.parse(userProfile);
@@ -235,7 +303,6 @@ function RepairDetails({ handleRepairClicked, repair }) {
         throw new Error(data.message || `Failed to decline bid: ${response.status}`);
       }
 
-      // Update local state
       setBidders((prevBidders) =>
         prevBidders.map((bidder) =>
           bidder.id === selectedBidder.id
@@ -245,7 +312,6 @@ function RepairDetails({ handleRepairClicked, repair }) {
       );
 
       setSelectedBidder((prev) => ({ ...prev, bid_status: "declined" }));
-
       showNotification(data.message || "Bid declined successfully", "info");
       setShowModal(false);
     } catch (error) {
@@ -275,10 +341,16 @@ function RepairDetails({ handleRepairClicked, repair }) {
     }
   });
 
+  // Get the display image - first job image or placeholder
+  const displayImage = jobImages.length > 0 ? jobImages[0].image_url : PLACEHOLDER_IMAGE;
+
+  // Handle null repair after hooks
+  if (!repair) return null;
+
   return (
     <div className="homepage">
       <Nav />
-
+      
       {/* Notification Toast */}
       {notification && (
         <div className={`notification-toast notification-${notification.type}`}>
@@ -309,14 +381,12 @@ function RepairDetails({ handleRepairClicked, repair }) {
             <ArrowLeft size={18} />
             Back
           </div>
-
           <h2>
             {repair.property_type === "Residential"
               ? "Residential"
               : "Commercial"}{" "}
             Repair Details
           </h2>
-
           <span className="status-badge">
             <CheckCircle2 size={16} />
             {repair.status || "Active"}
@@ -327,11 +397,21 @@ function RepairDetails({ handleRepairClicked, repair }) {
         <div className="details-card enhanced">
           {/* Left side - Image */}
           <div className="details-left">
-            <img
-              src={repair.images[0]}
-              alt="Property repair"
-              className="details-image"
-            />
+            {isLoadingImages ? (
+              <div className="image-loading">
+                <p>Loading image...</p>
+              </div>
+            ) : (
+              <img
+                src={displayImage}
+                alt="Property repair"
+                className="details-image"
+                loading="lazy"
+                onError={(e) => {
+                  e.target.src = PLACEHOLDER_IMAGE;
+                }}
+              />
+            )}
           </div>
 
           {/* Right side - Details */}
@@ -340,7 +420,7 @@ function RepairDetails({ handleRepairClicked, repair }) {
               <Wrench size={24} />
               {repair.apartment}
             </h3>
-
+            
             <div className="details-grid">
               <div className="detail-box">
                 <div className="icon-circle blue">
@@ -414,7 +494,23 @@ function RepairDetails({ handleRepairClicked, repair }) {
           </div>
 
           <div className="bidders-list">
-            {sortedBidders.map((bidder) => (
+            {isLoadingBidders ? (
+              // Loading skeleton
+              <div className="no-bidders-container">
+                <div className="loading-spinner"></div>
+                <p>Loading bidders...</p>
+              </div>
+            ) : sortedBidders.length === 0 ? (
+              // No bidders available
+              <div className="no-bidders-container">
+                <div className="no-bidders-icon">
+                  <Users size={48} />
+                </div>
+                <h3>No Bidders Yet</h3>
+                <p>There are currently no bids for this job. Check back later for contractor submissions.</p>
+              </div>
+            ) : (
+              sortedBidders.map((bidder) => (
               <div
                 key={bidder.id}
                 className="bidder-card"
@@ -484,7 +580,8 @@ function RepairDetails({ handleRepairClicked, repair }) {
                   </div>
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </section>
       </div>

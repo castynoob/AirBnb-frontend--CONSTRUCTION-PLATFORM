@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Star, CheckCircle, Award, Briefcase, MapPin, Calendar, Mail, Phone, Building } from 'lucide-react';
+import { Star, CheckCircle, Award, Briefcase, MapPin, Calendar, Mail, Phone, LogOut, MessageSquare, User, Upload, Camera, X } from 'lucide-react';
 import Nav from "../../components/Nav";
 import '../../styles/entrepreneur/profilepageentrepreneur.css';
 import { useNavigate } from 'react-router-dom';
@@ -10,16 +10,13 @@ function ProfilePageEntrepreneur() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [profile, setProfile] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [reviews, setReviews] = useState([])
+  const [reviewsLoading, setReviewsLoading] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [profileImage, setProfileImage] = useState(null)
+  const [profileImagePreview, setProfileImagePreview] = useState(null)
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
   const navigate = useNavigate();
-
-  const performanceMetrics = {
-    averageRating: 4.8,
-    totalReviews: 156,
-    completedJobs: 342,
-    totalProperties: 3,
-    totalUnits: 72,
-    cities: 2
-  };
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -56,25 +53,57 @@ function ProfilePageEntrepreneur() {
       const entrepData = await entrepResponse.json()
 
       const newEntrepData = {
+        userId: user.id,
         companyName: entrepData.profile.company_name,
         licenseNumber: entrepData.profile.license_number,
         yearsInBusiness: entrepData.profile.years_in_business,
         numEmployees: entrepData.profile.num_employees,
         address: entrepData.profile.address,
-        phone: '09xxxxxxxxx',
+        phone: entrepData.profile.phone || 'Not provided',
         email: entrepData.profile.email,
         specializations: entrepData.profile.specializations,
         averageRating: entrepData.profile.average_rating,
-        portfolio: [
-          { id: 1, url: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400', description: 'Modern Office Renovation - Complete electrical and HVAC upgrade', location: 'Metro City, Central Province', propertyId: '12345', dateAdded: 'February 10, 2023' },
-          { id: 2, url: 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=400', description: 'Residential Plumbing Installation - New home construction project', location: 'Metro City, Central Province', propertyId: '12346', dateAdded: 'March 15, 2023' },
-          { id: 3, url: 'https://images.unsplash.com/photo-1581094271901-8022df4466f9?w=400', description: 'Commercial Electrical System - 5-story building complete wiring', location: 'Riverside, Eastern Province', propertyId: '54321', dateAdded: 'May 20, 2023' }
-        ]
+        totalReviews: entrepData.profile.total_reviews || 0,
+        image: entrepData.profile.image
       }
 
       setProfile(newEntrepData)
       setIsLoading(false)
+
+      // Fetch reviews after profile is loaded
+      fetchReviews(user.id, user.token)
     }
+  }
+
+  const fetchReviews = async (userId, token) => {
+    setReviewsLoading(true)
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+    try {
+      const reviewsResponse = await fetch(`${API_BASE_URL}/api/reviews/reviewed/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if(reviewsResponse.ok) {
+        const reviewsData = await reviewsResponse.json()
+        setReviews(reviewsData.reviews || [])
+      }
+    } catch (error) {
+      console.error('Error fetching reviews:', error)
+      setReviews([])
+    } finally {
+      setReviewsLoading(false)
+    }
+  }
+
+  // Calculate average rating from reviews
+  const calculateAverageRating = () => {
+    if (reviews.length === 0) return 0
+    const sum = reviews.reduce((acc, review) => acc + review.rating, 0)
+    return (sum / reviews.length).toFixed(1)
   }
 
   useEffect(() => {
@@ -118,14 +147,123 @@ function ProfilePageEntrepreneur() {
     }));
   };
 
-  const handleSubmit = () => {
-    if (!formData.company_name || !formData.license_number || !formData.years_in_business || 
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select a valid image file')
+        return
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image size should not exceed 5MB')
+        return
+      }
+
+      setProfileImage(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setProfileImagePreview(reader.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleRemoveImage = () => {
+    setProfileImage(null)
+    setProfileImagePreview(null)
+  }
+
+  const handleSubmit = async () => {
+    if (!formData.company_name || !formData.license_number || !formData.years_in_business ||
         !formData.num_employees || !formData.address) {
       alert('Please fill in all required fields');
       return;
     }
-    
-    setIsEditModalOpen(false); // Close modal and go back
+
+    setIsUpdating(true)
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+    const userProfile = localStorage.getItem('userProfile')
+
+    try {
+      if (userProfile) {
+        const user = JSON.parse(userProfile)
+
+        // 1. Update profile picture if new image selected
+        if (profileImage) {
+          setIsUploadingImage(true)
+          const imageFormData = new FormData()
+          imageFormData.append('image', profileImage)
+
+          const imageResponse = await fetch(`${API_BASE_URL}/api/users/entrepreneur/profile-picture`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${user.token}`
+            },
+            body: imageFormData
+          })
+
+          if (!imageResponse.ok) {
+            throw new Error('Failed to upload profile picture')
+          }
+
+          setIsUploadingImage(false)
+        }
+
+        // 2. Update entrepreneur profile
+        const profileResponse = await fetch(`${API_BASE_URL}/api/users/entrepreneur/profile`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${user.token}`
+          },
+          body: JSON.stringify({
+            company_name: formData.company_name,
+            license_number: formData.license_number,
+            years_in_business: parseInt(formData.years_in_business),
+            num_employees: parseInt(formData.num_employees),
+            address: formData.address,
+            specializations: formData.specializations
+          })
+        })
+
+        if (!profileResponse.ok) {
+          throw new Error('Failed to update profile')
+        }
+
+        // 3. Update phone number if different
+        if (formData.phone !== profile.phone) {
+          await fetch(`${API_BASE_URL}/api/users/phone`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${user.token}`
+            },
+            body: JSON.stringify({
+              phone: formData.phone
+            })
+          })
+        }
+
+        // Refresh profile data
+        await fetchEntreprenuerProfile()
+
+        // Reset image states
+        setProfileImage(null)
+        setProfileImagePreview(null)
+
+        setIsEditModalOpen(false)
+        alert('Profile updated successfully!')
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      alert('Failed to update profile. Please try again.')
+    } finally {
+      setIsUpdating(false)
+      setIsUploadingImage(false)
+    }
   };
 
   const handleLogout = () => {
@@ -158,10 +296,13 @@ function ProfilePageEntrepreneur() {
           <div className="entrepreneur-profile-header">
             <div className="entrepreneur-profile-header-left">
               <div className="entrepreneur-profile-image-container">
-                <img 
-                  src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=200" 
+                <img
+                  src={profile.image || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=200"}
                   alt={profile.companyName}
                   className="entrepreneur-company-logo"
+                  onError={(e) => {
+                    e.target.src = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=200"
+                  }}
                 />
               </div>
               <div className="entrepreneur-profile-info">
@@ -219,39 +360,36 @@ function ProfilePageEntrepreneur() {
               </div>
             </div>
             
-            <button 
-              className="entrepreneur-edit-button"
-              onClick={() => setIsEditModalOpen(true)}
-            >
-              Edit Profile
-            </button>
-            <button 
-              className="entrepreneur-edit-button entrep-logout"
-              onClick={() => handleLogout()}
-            >
-              Log out
-            </button>
+            <div className="entrepreneur-header-actions">
+              <button
+                className="entrepreneur-edit-button"
+                onClick={() => setIsEditModalOpen(true)}
+              >
+                Edit Profile
+              </button>
+              <button
+                className="entrepreneur-logout-button"
+                onClick={() => handleLogout()}
+              >
+                <LogOut size={18} />
+                Logout
+              </button>
+            </div>
           </div>
 
           {/* Tab Navigation */}
           <div className="entrepreneur-tab-navigation">
-            <button 
+            <button
               className={`entrepreneur-tab-button ${activeTab === 'specialization' ? 'active' : ''}`}
               onClick={() => setActiveTab('specialization')}
             >
               Specialization
             </button>
-            <button 
+            <button
               className={`entrepreneur-tab-button ${activeTab === 'metrics' ? 'active' : ''}`}
               onClick={() => setActiveTab('metrics')}
             >
-              Performance Metrics
-            </button>
-            <button 
-              className={`entrepreneur-tab-button ${activeTab === 'portfolio' ? 'active' : ''}`}
-              onClick={() => setActiveTab('portfolio')}
-            >
-              Portfolio
+              Performance & Reviews
             </button>
           </div>
 
@@ -285,21 +423,14 @@ function ProfilePageEntrepreneur() {
                       <Star size={24} color="#F39C12" fill="#F39C12" />
                       <div>
                         <div className="entrepreneur-metric-label">Average Rating</div>
-                        <div className="entrepreneur-metric-value">{performanceMetrics.averageRating}</div>
+                        <div className="entrepreneur-metric-value">{calculateAverageRating() || 'N/A'}</div>
                       </div>
                     </div>
                     <div className="entrepreneur-metric-card">
                       <Award size={24} color="#2ECC71" />
                       <div>
                         <div className="entrepreneur-metric-label">Total Reviews</div>
-                        <div className="entrepreneur-metric-value">{performanceMetrics.totalReviews}</div>
-                      </div>
-                    </div>
-                    <div className="entrepreneur-metric-card">
-                      <Briefcase size={24} color="#3498DB" />
-                      <div>
-                        <div className="entrepreneur-metric-label">Completed Jobs</div>
-                        <div className="entrepreneur-metric-value">{performanceMetrics.completedJobs}</div>
+                        <div className="entrepreneur-metric-value">{reviews.length}</div>
                       </div>
                     </div>
                     <div className="entrepreneur-metric-card">
@@ -309,61 +440,86 @@ function ProfilePageEntrepreneur() {
                         <div className="entrepreneur-metric-value">{profile.yearsInBusiness} Years</div>
                       </div>
                     </div>
+                    <div className="entrepreneur-metric-card">
+                      <Briefcase size={24} color="#3498DB" />
+                      <div>
+                        <div className="entrepreneur-metric-label">Employees</div>
+                        <div className="entrepreneur-metric-value">{profile.numEmployees}</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
 
-            {/* Portfolio Tab */}
-            {activeTab === 'portfolio' && (
-              <div className="entrepreneur-tab-panel">
-                <h2 className="entrepreneur-section-title">Project Portfolio</h2>
-                <div className="entrepreneur-form-grid">
-                  {profile.portfolio.map((item, index) => (
-                    <div key={item.id} className="entrepreneur-card">
-                      <div className="entrepreneur-card-header">
-                        <span className="entrepreneur-card-badge">
-                          {index === 0 ? 'Commercial' : index === 1 ? 'Residential' : 'Commercial'}
-                        </span>
-                        <span className="entrepreneur-card-count">
-                          {index === 0 ? 'Electrical' : index === 1 ? 'Plumbing' : 'Electrical'}
-                        </span>
+                {/* Reviews Section */}
+                <h2 className="entrepreneur-section-title" style={{ marginTop: '2rem' }}>Reviews</h2>
+                {reviewsLoading ? (
+                  <div className="entrepreneur-reviews-loading">
+                    <div className="entrepreneur-loader"></div>
+                    <p>Loading reviews...</p>
+                  </div>
+                ) : reviews.length > 0 ? (
+                  <div className="entrepreneur-reviews-grid">
+                    {reviews.map((review) => (
+                      <div key={review.id} className="entrepreneur-review-card">
+                        <div className="entrepreneur-review-header">
+                          <div className="entrepreneur-review-author">
+                            <div className="entrepreneur-review-avatar">
+                              <User size={20} />
+                            </div>
+                            <div>
+                              <div className="entrepreneur-review-author-name">
+                                {review.reviewer_first_name} {review.reviewer_last_name}
+                              </div>
+                              <div className="entrepreneur-review-date">
+                                {new Date(review.created_at).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="entrepreneur-review-rating">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                size={16}
+                                fill={i < review.rating ? '#F39C12' : 'none'}
+                                color="#F39C12"
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        {review.job_title && (
+                          <div className="entrepreneur-review-job">
+                            <Briefcase size={14} />
+                            <span>{review.job_title}</span>
+                          </div>
+                        )}
+                        <p className="entrepreneur-review-comment">{review.comment}</p>
+                        {review.images && review.images.length > 0 && (
+                          <div className="entrepreneur-review-images">
+                            {review.images.map((image, idx) => (
+                              <img
+                                key={image.id}
+                                src={image.image_url}
+                                alt={`Review ${idx + 1}`}
+                                className="entrepreneur-review-image"
+                                onClick={() => window.open(image.image_url, '_blank')}
+                              />
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      
-                      <img src={item.url} alt={item.description} className="entrepreneur-portfolio-image" />
-                      
-                      <div className="entrepreneur-card-body">
-                        <h3 className="entrepreneur-card-title">{item.description.split(' - ')[0]}</h3>
-                        
-                        <div className="entrepreneur-display-field">
-                          <div className="entrepreneur-display-label">
-                            <MapPin size={14} />
-                            Location
-                          </div>
-                          <div className="entrepreneur-display-value">{item.location}</div>
-                        </div>
-                        
-                        <div className="entrepreneur-display-field">
-                          <div className="entrepreneur-display-label">
-                            <Building size={14} />
-                            Project ID
-                          </div>
-                          <div className="entrepreneur-display-value">{item.propertyId}</div>
-                        </div>
-                        
-                        <div className="entrepreneur-display-field">
-                          <div className="entrepreneur-display-label">
-                            <Calendar size={14} />
-                            Completed
-                          </div>
-                          <div className="entrepreneur-display-value">{item.dateAdded}</div>
-                        </div>
-                      </div>
-                      
-                      <button className="entrepreneur-view-details-button">View Details</button>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="entrepreneur-no-reviews">
+                    <MessageSquare size={48} color="#ccc" />
+                    <p>No reviews yet</p>
+                    <span>Complete jobs to receive reviews from clients</span>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -387,6 +543,48 @@ function ProfilePageEntrepreneur() {
             </div>
 
             <div className="edit-modal-body">
+              {/* Profile Image Upload */}
+              <div className="edit-form-group">
+                <label className="edit-form-label">Company Logo / Profile Picture</label>
+                <div className="edit-image-upload-container">
+                  <div className="edit-image-preview">
+                    {profileImagePreview ? (
+                      <img src={profileImagePreview} alt="Preview" className="edit-preview-img" />
+                    ) : profile.image ? (
+                      <img src={profile.image} alt="Current" className="edit-preview-img" />
+                    ) : (
+                      <div className="edit-no-image">
+                        <Camera size={40} />
+                        <span>No image</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="edit-image-actions">
+                    <label className="edit-upload-btn">
+                      <Upload size={18} />
+                      {profileImage ? 'Change Image' : 'Upload Image'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        style={{ display: 'none' }}
+                      />
+                    </label>
+                    {(profileImage || profileImagePreview) && (
+                      <button
+                        type="button"
+                        className="edit-remove-btn"
+                        onClick={handleRemoveImage}
+                      >
+                        <X size={18} />
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  <p className="edit-image-hint">Recommended: Square image, max 5MB (JPG, PNG)</p>
+                </div>
+              </div>
+
               <div className="edit-form-group">
                 <label className="edit-form-label">Company Name *</label>
                 <input
@@ -493,11 +691,25 @@ function ProfilePageEntrepreneur() {
               </div>
 
               <div className="edit-button-group">
-                <button onClick={() => setIsEditModalOpen(false)} className="edit-cancel-btn">
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="edit-cancel-btn"
+                  disabled={isUpdating}
+                >
                   Cancel
                 </button>
-                <button onClick={handleSubmit} className="edit-submit-btn">
-                  Save Changes
+                <button
+                  onClick={handleSubmit}
+                  className="edit-submit-btn"
+                  disabled={isUpdating}
+                >
+                  {isUpdating ? (
+                    <>
+                      {isUploadingImage ? 'Uploading Image...' : 'Saving Changes...'}
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
                 </button>
               </div>
             </div>
