@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Building2, Home, DollarSign, Users } from 'lucide-react';
+import { Building2, Home, DollarSign, Users, Grid3x3, List } from 'lucide-react';
 
 function RepairList({ repairs, handleRepairClicked }) {
   const PLACEHOLDER_IMAGE = "https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=";
   const [imagesLoaded, setImagesLoaded] = useState({});
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
   const handleImageError = (e) => {
     e.target.src = PLACEHOLDER_IMAGE;
@@ -16,11 +17,29 @@ function RepairList({ repairs, handleRepairClicked }) {
   return (
     <section className="hp-repairs-section">
       <div className="hp-section-header">
-        <h2>All Repair Work</h2>
-        <p className="hp-section-subtitle">{repairs.length} repair{repairs.length !== 1 ? 's' : ''} available</p>
+        <div className="hp-section-title-group">
+          <h2>All Repair Work</h2>
+          <p className="hp-section-subtitle">{repairs.length} repair{repairs.length !== 1 ? 's' : ''} available</p>
+        </div>
+        <div className="hp-view-toggle">
+          <button
+            className={`hp-view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+            onClick={() => setViewMode('grid')}
+            title="Grid View"
+          >
+            <Grid3x3 size={18} />
+          </button>
+          <button
+            className={`hp-view-btn ${viewMode === 'list' ? 'active' : ''}`}
+            onClick={() => setViewMode('list')}
+            title="List View"
+          >
+            <List size={18} />
+          </button>
+        </div>
       </div>
 
-      <div className="hp-repair-cards-grid">
+      <div className={viewMode === 'grid' ? 'hp-repair-cards-grid' : 'hp-repair-cards-list'}>
         {repairs.map((repair) => (
           <div
             className="hp-repair-card-modern"

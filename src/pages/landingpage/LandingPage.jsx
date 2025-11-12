@@ -17,6 +17,7 @@ export default function LandingPage() {
   const [selectedRole, setSelectedRole] = useState("")
   const [scrolled, setScrolled] = useState(false)
   const [registrationStep, setRegistrationStep] = useState(1)
+  const [registeredEmail, setRegisteredEmail] = useState("") // Store email for verification
   const navigate = useNavigate()
 
   const [loginFormData, setLoginFormData] = useState({
@@ -90,11 +91,26 @@ export default function LandingPage() {
         }),
       })
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`)
-      }
-
       const data = await response.json()
+
+      if (!response.ok) {
+        // Handle email not verified error (403)
+        if (response.status === 403) {
+          setLoginErrors({
+            submit: data.message || "Please verify your email before logging in.",
+            isEmailNotVerified: true, // Flag to show resend link
+            email: loginFormData.email // Store email for resend
+          })
+          return
+        }
+
+        // Handle other errors (401 - invalid credentials, etc.)
+        setLoginErrors({
+          submit: data.message || "Invalid email or password",
+          isEmailNotVerified: false
+        })
+        return
+      }
 
       let entrepProfile = {}
       let subscription = null
@@ -150,8 +166,9 @@ export default function LandingPage() {
 
     } catch (error) {
       console.error("Login error:", error)
-      setLoginErrors({ 
-        submit: "Login failed. Please check your credentials and try again." 
+      setLoginErrors({
+        submit: "Login failed. Please check your connection and try again.",
+        isEmailNotVerified: false
       })
     } finally {
       setIsLoggingIn(false)
@@ -417,10 +434,9 @@ export default function LandingPage() {
               return;
           }
 
-          // 6. Success handling (reset form and notify)
-          alert("Registration successful! You can now log in.");
-          closeModals(); // Close the modal and reset state
-          setShowLoginModal(true); // Direct user to the login modal
+          // 6. Success handling - move to step 3 (verification)
+          setRegisteredEmail(registerFormData.email); // Store email for verification step
+          setRegistrationStep(3); // Move to success/verification step
 
       } catch (error) {
           console.error("Registration error:", error);
@@ -436,6 +452,56 @@ export default function LandingPage() {
   })
 
   const [isRegistering, setIsRegistering] = useState(false)
+  const [isResendingVerification, setIsResendingVerification] = useState(false)
+
+  // Resend verification email (works for both registration and login)
+  const handleResendVerification = async (emailOverride = null) => {
+    // Determine which email to use
+    let emailToUse;
+
+    // If emailOverride is provided and is a string, use it
+    if (emailOverride && typeof emailOverride === 'string') {
+      emailToUse = emailOverride;
+    }
+    // Otherwise use registeredEmail (from registration success)
+    else if (registeredEmail) {
+      emailToUse = registeredEmail;
+    }
+    // Fallback to loginErrors.email (from login error)
+    else if (loginErrors.email && typeof loginErrors.email === 'string') {
+      emailToUse = loginErrors.email;
+    }
+
+    if (!emailToUse) {
+      console.error("No email found for resend verification");
+      return;
+    }
+
+    setIsResendingVerification(true);
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/resend-verification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailToUse }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.message || "Failed to resend verification email");
+        return;
+      }
+
+      alert("Verification email has been resent! Please check your inbox.");
+    } catch (error) {
+      console.error("Resend verification error:", error);
+      alert("Failed to resend verification email. Please try again.");
+    } finally {
+      setIsResendingVerification(false);
+    }
+  };
 
   // Revalidate confirm_password when password changes
   useEffect(() => {
@@ -853,6 +919,18 @@ export default function LandingPage() {
               {loginErrors.submit && (
                 <div className="lp-form-error-banner">
                   {loginErrors.submit}
+                  {loginErrors.isEmailNotVerified && (
+                    <div className="lp-resend-verification-link">
+                      <button
+                        type="button"
+                        className="lp-btn-link"
+                        onClick={() => handleResendVerification(loginErrors.email)}
+                        disabled={isResendingVerification}
+                      >
+                        {isResendingVerification ? "Sending..." : "Click here to resend verification email"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
               
@@ -1358,6 +1436,54 @@ export default function LandingPage() {
                   </button>
                 </form>
 
+              </>
+            )}
+
+            {/* ===== STEP 3: SUCCESS & EMAIL VERIFICATION ===== */}
+            {registrationStep === 3 && (
+              <>
+                <div className="lp-modal-header">
+                  <h2>Registration Successful!</h2>
+                  <p>Please verify your email to continue</p>
+                </div>
+
+                <div className="lp-verification-content">
+                  <div className="lp-success-icon">✓</div>
+
+                  <div className="lp-verification-message">
+                    <p className="lp-verification-title">Check your inbox</p>
+                    <p className="lp-verification-text">
+                      We've sent a verification email to:
+                    </p>
+                    <p className="lp-verification-email">{registeredEmail}</p>
+                    <p className="lp-verification-text">
+                      Please click the verification link in the email to activate your account.
+                    </p>
+                  </div>
+
+                  <div className="lp-verification-actions">
+                    <p className="lp-resend-text">Didn't receive the email?</p>
+                    <button
+                      type="button"
+                      className="lp-btn-link"
+                      onClick={() => handleResendVerification()}
+                      disabled={isResendingVerification}
+                    >
+                      {isResendingVerification ? "Sending..." : "Resend verification email"}
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="lp-btn-primary lp-btn-full"
+                    onClick={() => {
+                      closeModals();
+                      setShowLoginModal(true);
+                    }}
+                  >
+                    Go to Login
+                  </button>
+                </div>
               </>
             )}
           </div>

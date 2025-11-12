@@ -4,30 +4,23 @@ import {
   ArrowLeft,
   Building2,
   Home,
-  Wrench,
   DollarSign,
-  ClipboardList,
   Star,
   Heart,
-  CheckCircle2,
   Filter,
   X,
   Mail,
-  Phone,
   Calendar,
   Users,
-  Award,
-  Briefcase,
   MapPin,
-  MessageSquare,
   CheckCircle,
   XCircle,
   AlertCircle,
 } from "lucide-react";
 import "../../styles/manager/repairdetails.css";
 
-function RepairDetails({ handleBackFromDetails, repair }) {
-  const [favorites, setFavorites] = useState([]); // Now stores bid IDs instead of company names
+function RepairDetails({ handleRepairClicked, repair }) {
+  const [favorites, setFavorites] = useState([]);
   const [sortBy, setSortBy] = useState("rating");
   const [bidders, setBidders] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -37,7 +30,6 @@ function RepairDetails({ handleBackFromDetails, repair }) {
   const [jobImages, setJobImages] = useState([]);
   const [isLoadingImages, setIsLoadingImages] = useState(true);
   const [isLoadingBidders, setIsLoadingBidders] = useState(true);
-  const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
 
   const PLACEHOLDER_IMAGE = "https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=";
   
@@ -48,106 +40,12 @@ function RepairDetails({ handleBackFromDetails, repair }) {
     }, 5000);
   };
 
-  // Scroll to top when component mounts
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
-  // Fetch favorites for current bidders
-  useEffect(() => {
-    const fetchFavorites = async () => {
-      try {
-        setIsLoadingFavorites(true);
-        const userProfile = localStorage.getItem("userProfile");
-        if (!userProfile) return;
-
-        const user = JSON.parse(userProfile);
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-        const response = await fetch(`${API_BASE_URL}/api/favorites`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch favorites: ${response.status}`);
-        }
-
-        const data = await response.json();
-        // Extract bid IDs from favorites
-        const favoriteBidIds = data.favorites
-          .filter(fav => fav.bid_id)
-          .map(fav => fav.bid_id);
-        setFavorites(favoriteBidIds);
-      } catch (err) {
-        console.error("Error fetching favorites:", err);
-      } finally {
-        setIsLoadingFavorites(false);
-      }
-    };
-
-    fetchFavorites();
-  }, []);
-
-  const toggleFavorite = async (bidder) => {
-    try {
-      const userProfile = localStorage.getItem("userProfile");
-      if (!userProfile) {
-        showNotification("Please log in to add favorites", "error");
-        return;
-      }
-
-      const user = JSON.parse(userProfile);
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-      const isFavorited = favorites.includes(bidder.id);
-
-      if (isFavorited) {
-        // Remove from favorites
-        const response = await fetch(
-          `${API_BASE_URL}/api/favorites/bid/${bidder.id}`,
-          {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${user.token}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`Failed to remove favorite: ${response.status}`);
-        }
-
-        setFavorites((prev) => prev.filter((id) => id !== bidder.id));
-        showNotification("Removed from favorites", "info");
-      } else {
-        // Add to favorites
-        const response = await fetch(`${API_BASE_URL}/api/favorites`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            entrepreneurId: bidder.profile.id,
-            jobId: repair.data.jobId,
-            bidId: bidder.id,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || `Failed to add favorite: ${response.status}`);
-        }
-
-        setFavorites((prev) => [...prev, bidder.id]);
-        showNotification("Added to favorites", "success");
-      }
-    } catch (error) {
-      console.error("Error toggling favorite:", error);
-      showNotification(error.message || "Failed to update favorites", "error");
-    }
+  const toggleFavorite = (company_name) => {
+    setFavorites((prev) =>
+      prev.includes(company_name)
+        ? prev.filter((name) => name !== company_name)
+        : [...prev, company_name]
+    );
   };
 
   // Fetch job images
@@ -468,39 +366,45 @@ function RepairDetails({ handleBackFromDetails, repair }) {
 
       <div className="main-container">
         {/* Header */}
-        <header className="details-header">
-          <div
-            className="back-btn rd"
-            onClick={handleBackFromDetails}
+        <header className="rd-header">
+          <button
+            className="rd-back-btn"
+            onClick={() => handleRepairClicked(true, null)}
           >
             <ArrowLeft size={18} />
-            Back
-          </div>
-          <h2>
+            <span>Back</span>
+          </button>
+          <h1 className="rd-title">
             {repair.property_type === "Residential"
               ? "Residential"
               : "Commercial"}{" "}
             Repair Details
-          </h2>
-          <span className="status-badge">
-            <CheckCircle2 size={16} />
-            {repair.status || "Active"}
-          </span>
+          </h1>
+          <div className="rd-header-badge">
+            <span className={`rd-category-badge ${
+              repair.category?.includes("Urgent")
+                ? "urgent"
+                : repair.category?.includes("Next")
+                ? "warning"
+                : "info"
+            }`}>
+              {repair.category || repair.status || "Active"}
+            </span>
+          </div>
         </header>
 
         {/* Main Details Card */}
-        <div className="details-card enhanced">
-          {/* Left side - Image */}
-          <div className="details-left">
+        <div className="rd-details-card">
+          <div className="rd-image-container">
             {isLoadingImages ? (
-              <div className="image-loading">
-                <p>Loading image...</p>
+              <div className="rd-image-loading">
+                <div className="loading-spinner"></div>
               </div>
             ) : (
               <img
                 src={displayImage}
                 alt="Property repair"
-                className="details-image"
+                className="rd-image"
                 loading="lazy"
                 onError={(e) => {
                   e.target.src = PLACEHOLDER_IMAGE;
@@ -509,60 +413,56 @@ function RepairDetails({ handleBackFromDetails, repair }) {
             )}
           </div>
 
-          {/* Right side - Details */}
-          <div className="details-right">
-            <h3 className="repair-title">
-              <Wrench size={24} />
-              {repair.apartment}
-            </h3>
-            
-            <div className="details-grid">
-              <div className="detail-box">
-                <div className="icon-circle blue">
+          <div className="rd-info">
+            <h2 className="rd-apartment">{repair.apartment}</h2>
+
+            <div className="rd-info-grid">
+              <div className="rd-info-item">
+                <div className="rd-info-icon">
                   {repair.property === "Residential" ? (
-                    <Home size={20} />
+                    <Home size={16} />
                   ) : (
-                    <Building2 size={20} />
+                    <Building2 size={16} />
                   )}
                 </div>
-                <div>
+                <div className="rd-info-content">
                   <label>Property</label>
                   <p>{repair.property}</p>
                 </div>
               </div>
 
-              <div className="detail-box">
-                <div className="icon-circle green">
-                  <DollarSign size={20} />
+              <div className="rd-info-item">
+                <div className="rd-info-icon">
+                  <DollarSign size={16} />
                 </div>
-                <div>
+                <div className="rd-info-content">
                   <label>Budget</label>
-                  <p className="budget">{repair.budget}</p>
+                  <p>{repair.budget}</p>
                 </div>
               </div>
 
-              <div className="detail-box">
-                <div className="icon-circle orange">
-                  <ClipboardList size={20} />
+              <div className="rd-info-item">
+                <div className="rd-info-icon">
+                  <Building2 size={16} />
                 </div>
-                <div>
+                <div className="rd-info-content">
                   <label>Building Type</label>
                   <p>{repair.building_type}</p>
                 </div>
               </div>
 
-              <div className="detail-box">
-                <div className="icon-circle purple">
-                  <Calendar size={20} />
+              <div className="rd-info-item">
+                <div className="rd-info-icon">
+                  <Calendar size={16} />
                 </div>
-                <div>
+                <div className="rd-info-content">
                   <label>Posted Date</label>
                   <p>{new Date(repair.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
             </div>
 
-            <div className="description">
+            <div className="rd-description">
               <label>Description</label>
               <p>{repair.description}</p>
             </div>
@@ -570,13 +470,13 @@ function RepairDetails({ handleBackFromDetails, repair }) {
         </div>
 
         {/* Bidders Section */}
-        <section className="bidders-section">
-          <div className="bidders-header">
-            <h3>Available Bidders</h3>
-            <div className="sort-controls">
-              <Filter size={18} />
+        <section className="rd-bidders-section">
+          <div className="rd-bidders-header">
+            <h2>Bidders</h2>
+            <div className="rd-sort-controls">
+              <Filter size={16} />
               <select
-                className="sort-select"
+                className="rd-sort-select"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
               >
@@ -588,178 +488,173 @@ function RepairDetails({ handleBackFromDetails, repair }) {
             </div>
           </div>
 
-          <div className="bidders-list">
-            {isLoadingBidders ? (
-              // Loading skeleton
-              <div className="no-bidders-container">
-                <div className="loading-spinner"></div>
-                <p>Loading bidders...</p>
+          {isLoadingBidders ? (
+            <div className="rd-no-bidders">
+              <div className="loading-spinner"></div>
+              <p>Loading bidders...</p>
+            </div>
+          ) : sortedBidders.length === 0 ? (
+            <div className="rd-no-bidders">
+              <Users size={48} className="rd-no-bidders-icon" />
+              <h3>No Bidders Yet</h3>
+              <p>There are currently no bids for this job. Check back later for contractor submissions.</p>
+            </div>
+          ) : (
+            <div className="rd-bidders-table">
+              <div className="rd-table-header">
+                <div className="rd-th rd-th-company">Company</div>
+                <div className="rd-th rd-th-rating">Rating</div>
+                <div className="rd-th rd-th-amount">Bid Amount</div>
+                <div className="rd-th rd-th-status">Status</div>
+                <div className="rd-th rd-th-actions"></div>
               </div>
-            ) : sortedBidders.length === 0 ? (
-              // No bidders available
-              <div className="no-bidders-container">
-                <div className="no-bidders-icon">
-                  <Users size={48} />
-                </div>
-                <h3>No Bidders Yet</h3>
-                <p>There are currently no bids for this job. Check back later for contractor submissions.</p>
-              </div>
-            ) : (
-              sortedBidders.map((bidder) => (
-              <div
-                key={bidder.id}
-                className="bidder-card"
-                onClick={() => handleBidderClick(bidder)}
-              >
-                <div className="bidder-header">
-                  <div className="bidder-info">
-                    <h4>{bidder.company_name}</h4>
-                    <p className="bidder-location">
-                      <MapPin size={14} />
-                      {bidder.address}
-                    </p>
-                  </div>
-                  <button
-                    className="favorite-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFavorite(bidder);
-                    }}
-                    aria-label="Add to favorites"
-                  >
-                    <Heart
-                      size={18}
-                      fill={
-                        favorites.includes(bidder.id)
-                          ? "#E74C3C"
-                          : "none"
-                      }
-                      stroke="#E74C3C"
-                    />
-                  </button>
-                </div>
 
-                <div className="bidder-rating">
-                  <div className="stars">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
+              {sortedBidders.map((bidder) => (
+                <div
+                  key={bidder.id}
+                  className="rd-table-row"
+                  onClick={() => handleBidderClick(bidder)}
+                >
+                  <div className="rd-td rd-td-company">
+                    <div className="rd-company-info">
+                      <h4>{bidder.company_name}</h4>
+                      <p>
+                        <MapPin size={12} />
+                        {bidder.address}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="rd-td rd-td-rating">
+                    <div className="rd-rating">
+                      <div className="rd-stars">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            size={14}
+                            fill={
+                              i < Math.round(bidder.average_rating)
+                                ? "#facc15"
+                                : "none"
+                            }
+                            stroke="#facc15"
+                          />
+                        ))}
+                      </div>
+                      <span className="rd-rating-text">
+                        {bidder.average_rating} ({bidder.total_reviews})
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="rd-td rd-td-amount">
+                    <span className="rd-amount">${bidder.bid_amount.toLocaleString()}</span>
+                  </div>
+
+                  <div className="rd-td rd-td-status">
+                    <span className={`rd-status-badge status-${bidder.bid_status}`}>
+                      {bidder.bid_status || "pending"}
+                    </span>
+                  </div>
+
+                  <div className="rd-td rd-td-actions">
+                    <button
+                      className="rd-favorite-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(bidder.company_name);
+                      }}
+                      aria-label="Add to favorites"
+                    >
+                      <Heart
                         size={16}
                         fill={
-                          i < Math.round(bidder.average_rating)
-                            ? "#facc15"
+                          favorites.includes(bidder.company_name)
+                            ? "#E74C3C"
                             : "none"
                         }
-                        stroke="#facc15"
+                        stroke="#E74C3C"
                       />
-                    ))}
-                  </div>
-                  <small>
-                    {bidder.average_rating} ({bidder.total_reviews} reviews)
-                  </small>
-                </div>
-
-                {/* Bid Details */}
-                <div className="bid-details">
-                  <div className="bid-detail-item">
-                    <label>Bid Amount</label>
-                    <p className="bid-amount">
-                      ${bidder.bid_amount.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="bid-detail-item">
-                    <label>Status</label>
-                    <p className={`bid-status status-${bidder.bid_status}`}>
-                      {bidder.bid_status || "pending"}
-                    </p>
+                    </button>
                   </div>
                 </div>
-              </div>
-              ))
-            )}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
       </div>
 
       {/* Bid Details Modal */}
       {showModal && selectedBidder && (
-        <div className="bid-modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="bid-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="bid-modal-header">
+        <div className="rd-modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="rd-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="rd-modal-header">
               <h2>Bid Details</h2>
               <button
-                className="bid-modal-close"
+                className="rd-modal-close"
                 onClick={() => setShowModal(false)}
               >
-                <X size={24} />
+                <X size={20} />
               </button>
             </div>
 
-            <div className="bid-modal-body">
+            <div className="rd-modal-body">
               {/* Company Information */}
-              <section className="bid-modal-section">
-                <h3 className="bid-section-title">
-                  <Building2 size={20} />
+              <section className="rd-modal-section">
+                <h3 className="rd-section-title">
+                  <Building2 size={16} />
                   Company Information
                 </h3>
-                <div className="bid-info-grid">
-                  <div className="bid-info-item">
+                <div className="rd-modal-grid">
+                  <div className="rd-modal-item">
                     <label>Company Name</label>
                     <p>{selectedBidder.profile.company_name}</p>
                   </div>
-                  <div className="bid-info-item">
+                  <div className="rd-modal-item">
                     <label>License Number</label>
                     <p>{selectedBidder.profile.license_number || "N/A"}</p>
                   </div>
-                  <div className="bid-info-item">
-                    <label>
-                      <Users size={14} /> Employees
-                    </label>
+                  <div className="rd-modal-item">
+                    <label>Employees</label>
                     <p>{selectedBidder.profile.num_employees || "N/A"}</p>
                   </div>
-                  <div className="bid-info-item">
-                    <label>
-                      <Calendar size={14} /> Years in Business
-                    </label>
+                  <div className="rd-modal-item">
+                    <label>Years in Business</label>
                     <p>{selectedBidder.profile.years_in_business || "N/A"}</p>
                   </div>
                 </div>
               </section>
 
               {/* Contact Information */}
-              <section className="bid-modal-section">
-                <h3 className="bid-section-title">
-                  <Mail size={20} />
+              <section className="rd-modal-section">
+                <h3 className="rd-section-title">
+                  <Mail size={16} />
                   Contact Information
                 </h3>
-                <div className="bid-info-grid">
-                  <div className="bid-info-item">
-                    <label>
-                      <Mail size={14} /> Email
-                    </label>
+                <div className="rd-modal-grid">
+                  <div className="rd-modal-item">
+                    <label>Email</label>
                     <p>{selectedBidder.profile.email}</p>
                   </div>
-                  <div className="bid-info-item">
-                    <label>
-                      <MapPin size={14} /> Address
-                    </label>
+                  <div className="rd-modal-item">
+                    <label>Address</label>
                     <p>{selectedBidder.profile.address}</p>
                   </div>
                 </div>
               </section>
 
               {/* Rating & Reviews */}
-              <section className="bid-modal-section">
-                <h3 className="bid-section-title">
-                  <Award size={20} />
+              <section className="rd-modal-section">
+                <h3 className="rd-section-title">
+                  <Star size={16} />
                   Rating & Reviews
                 </h3>
-                <div className="bid-rating-display">
-                  <div className="bid-rating-stars">
+                <div className="rd-modal-rating">
+                  <div className="rd-modal-stars">
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        size={24}
+                        size={20}
                         fill={
                           i < Math.round(selectedBidder.average_rating)
                             ? "#facc15"
@@ -769,10 +664,10 @@ function RepairDetails({ handleBackFromDetails, repair }) {
                       />
                     ))}
                   </div>
-                  <p className="bid-rating-text">
+                  <p className="rd-modal-rating-text">
                     {selectedBidder.average_rating} out of 5 stars
                   </p>
-                  <p className="bid-review-count">
+                  <p className="rd-modal-review-count">
                     Based on {selectedBidder.total_reviews} reviews
                   </p>
                 </div>
@@ -781,15 +676,15 @@ function RepairDetails({ handleBackFromDetails, repair }) {
               {/* Specializations */}
               {selectedBidder.profile.specializations &&
                 selectedBidder.profile.specializations.length > 0 && (
-                  <section className="bid-modal-section">
-                    <h3 className="bid-section-title">
-                      <Briefcase size={20} />
+                  <section className="rd-modal-section">
+                    <h3 className="rd-section-title">
+                      <Building2 size={16} />
                       Specializations
                     </h3>
-                    <div className="bid-specializations-list">
+                    <div className="rd-modal-tags">
                       {selectedBidder.profile.specializations.map(
                         (spec, index) => (
-                          <span key={index} className="bid-specialization-tag">
+                          <span key={index} className="rd-modal-tag">
                             {spec}
                           </span>
                         )
@@ -799,30 +694,28 @@ function RepairDetails({ handleBackFromDetails, repair }) {
                 )}
 
               {/* Bid Information */}
-              <section className="bid-modal-section bid-modal-highlight">
-                <h3 className="bid-section-title">
-                  <DollarSign size={20} />
+              <section className="rd-modal-section rd-modal-highlight">
+                <h3 className="rd-section-title">
+                  <DollarSign size={16} />
                   Bid Information
                 </h3>
-                <div className="bid-info-display">
-                  <div className="bid-amount-display">
+                <div className="rd-modal-bid-info">
+                  <div className="rd-modal-amount">
                     <label>Bid Amount</label>
-                    <p className="amount">
+                    <p className="rd-amount-value">
                       ${selectedBidder.bid_amount.toLocaleString()}
                     </p>
                   </div>
                   {selectedBidder.bid_message && (
-                    <div className="bid-message">
-                      <label>
-                        <MessageSquare size={14} /> Message from Contractor
-                      </label>
+                    <div className="rd-modal-message">
+                      <label>Message from Contractor</label>
                       <p>{selectedBidder.bid_message}</p>
                     </div>
                   )}
-                  <div className="bid-status-display">
+                  <div className="rd-modal-status">
                     <label>Current Status</label>
                     <span
-                      className={`bid-status-badge-modal status-${selectedBidder.bid_status}`}
+                      className={`rd-status-badge status-${selectedBidder.bid_status}`}
                     >
                       {selectedBidder.bid_status || "pending"}
                     </span>
@@ -832,19 +725,19 @@ function RepairDetails({ handleBackFromDetails, repair }) {
             </div>
 
             {/* Modal Footer with Actions */}
-            <div className="bid-modal-footer">
+            <div className="rd-modal-footer">
               {selectedBidder.bid_status !== "approved" &&
                 selectedBidder.bid_status !== "declined" && (
                   <>
                     <button
-                      className="bid-btn-decline"
+                      className="rd-btn rd-btn-secondary"
                       onClick={handleDeclineBid}
                       disabled={isProcessing}
                     >
                       {isProcessing ? "Processing..." : "Decline Bid"}
                     </button>
                     <button
-                      className="bid-btn-accept"
+                      className="rd-btn rd-btn-primary"
                       onClick={handleAcceptBid}
                       disabled={isProcessing}
                     >
@@ -854,7 +747,7 @@ function RepairDetails({ handleBackFromDetails, repair }) {
                 )}
               {(selectedBidder.bid_status === "approved" ||
                 selectedBidder.bid_status === "declined") && (
-                <p className="bid-status-message">
+                <p className="rd-modal-status-msg">
                   This bid has been {selectedBidder.bid_status}
                 </p>
               )}

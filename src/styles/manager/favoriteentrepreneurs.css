@@ -159,8 +159,8 @@
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
-  flex: 1 1 calc(50% - 0.75rem);
-  min-width: 360px;
+  flex: 1 1 calc(30% - 0.75rem);
+  min-width: 200px;
   max-width: calc(50% - 0.75rem);
 }
 
