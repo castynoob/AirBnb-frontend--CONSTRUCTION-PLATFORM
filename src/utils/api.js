@@ -260,6 +260,79 @@ export async function checkMessagingAccess(otherUserId) {
 }
 
 // ============================================
+// FAVORITES ENDPOINTS
+// ============================================
+
+/**
+ * Add entrepreneur to favorites
+ * POST /api/favorites
+ */
+export async function addFavorite(entrepreneurId, jobId = null, bidId = null, notes = null) {
+  return apiRequest('/api/favorites', {
+    method: 'POST',
+    body: JSON.stringify({
+      entrepreneurId: entrepreneurId,
+      jobId,
+      bidId,
+      notes
+    }),
+  });
+}
+
+/**
+ * Remove a specific bid from favorites
+ * DELETE /api/favorites/bid/:bidId
+ */
+export async function removeFavorite(bidId) {
+  return apiRequest(`/api/favorites/bid/${bidId}`, {
+    method: 'DELETE',
+  });
+}
+
+/**
+ * Get all favorite entrepreneurs
+ * GET /api/favorites
+ */
+export async function getFavorites() {
+  return apiRequest('/api/favorites');
+}
+
+/**
+ * Check if a specific bid is favorited
+ * GET /api/favorites/check/bid/:bidId
+ */
+export async function checkFavorite(bidId) {
+  return apiRequest(`/api/favorites/check/bid/${bidId}`);
+}
+
+/**
+ * Get favorite count
+ * GET /api/favorites/count
+ */
+export async function getFavoriteCount() {
+  return apiRequest('/api/favorites/count');
+}
+
+/**
+ * Get job history with favorite entrepreneur
+ * GET /api/favorites/:entrepreneurId/history
+ */
+export async function getEntrepreneurHistory(entrepreneurId) {
+  return apiRequest(`/api/favorites/${entrepreneurId}/history`);
+}
+
+/**
+ * Update favorite notes
+ * PATCH /api/favorites/:favoriteId/notes
+ */
+export async function updateFavoriteNotes(favoriteId, notes) {
+  return apiRequest(`/api/favorites/${favoriteId}/notes`, {
+    method: 'PATCH',
+    body: JSON.stringify({ notes }),
+  });
+}
+
+// ============================================
 // USAGE EXAMPLES
 // ============================================
 
@@ -278,12 +351,12 @@ if (canMessage) {
 // Example 2: Before starting conversation
 async function handleContactClick(managerId) {
   const hasAccess = await checkMessagingAccess(managerId);
-  
+
   if (!hasAccess) {
     alert('You need an approved bid to message this property manager');
     return;
   }
-  
+
   // Proceed to start conversation
   const { conversation } = await startConversation(managerId, jobId);
   navigateToChat(conversation.id);
@@ -308,6 +381,15 @@ await markConversationAsRead(conversationId);
 // Example 6: Get unread count for badge
 const { unreadCount } = await getUnreadCount();
 setBadgeCount(unreadCount);
+
+// Example 7: Add entrepreneur to favorites
+await addFavorite(entrepreneurId, jobId, bidId, 'Great work on previous project');
+
+// Example 8: Get all favorites
+const { favorites } = await getFavorites();
+
+// Example 9: Remove from favorites
+await removeFavorite(bidId);
 */
 
 export default {
@@ -320,4 +402,11 @@ export default {
   getUnreadCount,
   canMessageUser,
   checkMessagingAccess,
+  addFavorite,
+  removeFavorite,
+  getFavorites,
+  checkFavorite,
+  getFavoriteCount,
+  getEntrepreneurHistory,
+  updateFavoriteNotes,
 };

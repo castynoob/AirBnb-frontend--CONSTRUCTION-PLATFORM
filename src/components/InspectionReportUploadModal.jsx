@@ -329,37 +329,37 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
   if (!isOpen) return null;
 
   return (
-    <div className="inspection-upload-modal">
-      <div className="modal-overlay" onClick={handleClose} />
+    <div className="uir-inspection-upload-modal">
+      <div className="uir-modal-overlay" onClick={handleClose} />
 
-      <div className="modal-content inspection-modal">
-        <button className="close-btn" onClick={handleClose}>×</button>
+      <div className="uir-modal-content uir-inspection-modal">
+        <button className="uir-close-btn" onClick={handleClose}>×</button>
 
-        <div className="modal-header">
+        <div className="uir-modal-header">
           <h2>Upload Inspection Report</h2>
-          <p className="subtitle">
+          <p className="uir-subtitle">
             {!propertyId ? 'Select a property and upload' : 'Upload'} an Excel file containing inspection data, then review and verify the information
           </p>
         </div>
 
         {!extractedData ? (
-          <div className="upload-section">
+          <div className="uir-upload-section">
             {/* Property Selection - only show if propertyId not passed from parent */}
             {!propertyId && (
-              <div className="property-selection-section">
+              <div className="uir-property-selection-section">
                 <h3>Step 1: Select Property</h3>
                 {isLoadingProperties ? (
-                  <div className="loading-message">
-                    <div className="spinner"></div>
+                  <div className="uir-loading-message">
+                    <div className="uir-spinner"></div>
                     <span>Loading properties...</span>
                   </div>
                 ) : (
-                  <div className="form-group">
+                  <div className="uir-form-group">
                     <label htmlFor="property-select">
-                      <svg className="property-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <svg className="uir-property-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
-                      Select Property <span className="required">*</span>
+                      Select Property <span className="uir-required">*</span>
                     </label>
                     <select
                       id="property-select"
@@ -368,7 +368,7 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
                         setSelectedPropertyId(e.target.value);
                         setError('');
                       }}
-                      className="property-dropdown"
+                      className="uir-property-dropdown"
                     >
                       <option value="">-- Choose a Property --</option>
                       {properties.map((property) => (
@@ -383,28 +383,28 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
             )}
 
             <h3>{!propertyId ? 'Step 2: Upload Excel File' : 'Upload Excel File'}</h3>
-            <div className="upload-area">
+            <div className="uir-upload-area">
               <input
                 type="file"
                 id="excel-upload"
                 accept=".xlsx, .xls, .csv"
                 onChange={handleFileUpload}
-                className="file-input"
+                className="uir-file-input"
               />
-              <label htmlFor="excel-upload" className="upload-label">
-                <svg className="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <label htmlFor="excel-upload" className="uir-upload-label">
+                <svg className="uir-upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
-                <span className="upload-text">
+                <span className="uir-upload-text">
                   {file ? file.name : 'Click to upload or drag and drop'}
                 </span>
-                <span className="upload-hint">Excel files (.xlsx, .xls, .csv)</span>
+                <span className="uir-upload-hint">Excel files (.xlsx, .xls, .csv)</span>
               </label>
             </div>
 
             {error && (
-              <div className="error-message">
-                <svg className="error-icon" viewBox="0 0 24 24" fill="currentColor">
+              <div className="uir-error-message">
+                <svg className="uir-error-icon" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
                 </svg>
                 <div>
@@ -447,16 +447,16 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
             )}
 
             {isProcessing && (
-              <div className="processing-message">
-                <div className="spinner"></div>
+              <div className="uir-processing-message">
+                <div className="uir-spinner"></div>
                 <span>Processing Excel file...</span>
               </div>
             )}
 
-            <div className="instructions">
-              <div className="instructions-header">
+            <div className="uir-instructions">
+              <div className="uir-instructions-header">
                 <h3>Inspection Report Format Guidelines</h3>
-                <button className="template-download-btn" onClick={handleDownloadTemplate}>
+                <button className="uir-template-download-btn" onClick={handleDownloadTemplate}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
@@ -490,14 +490,14 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
             </div>
           </div>
         ) : (
-          <div className="review-section">
-            <div className="review-header">
-              <div className="review-info">
+          <div className="uir-review-section">
+            <div className="uir-review-header">
+              <div className="uir-review-info">
                 <h3>Review & Verify Data</h3>
                 <p>{Object.keys(editableData).length} items extracted from {file?.name}</p>
               </div>
-              <button className="reset-btn" onClick={handleReset}>
-                <svg className="reset-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <button className="uir-reset-btn" onClick={handleReset}>
+                <svg className="uir-reset-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
                 Upload Different File
@@ -505,16 +505,16 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
             </div>
 
             {error && (
-              <div className="error-message">
-                <svg className="error-icon" viewBox="0 0 24 24" fill="currentColor">
+              <div className="uir-error-message">
+                <svg className="uir-error-icon" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
                 </svg>
                 {error}
               </div>
             )}
 
-            <div className="data-table-container">
-              <table className="data-table">
+            <div className="uir-data-table-container">
+              <table className="uir-data-table">
                 <thead>
                   <tr>
                     <th>Row</th>
@@ -528,7 +528,7 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
                   {extractedData.map((row, rowIndex) => (
                     editableData[rowIndex] && (
                       <tr key={rowIndex}>
-                        <td className="row-number">{rowIndex + 1}</td>
+                        <td className="uir-row-number">{rowIndex + 1}</td>
                         {Object.keys(row).map((key) => {
                           const inputType = getInputType(key);
                           const displayValue = key === 'notes' || key === 'description'
@@ -541,7 +541,7 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
                                 <textarea
                                   value={displayValue || ''}
                                   onChange={(e) => handleInputChange(rowIndex, key, e.target.value)}
-                                  className="data-input data-textarea"
+                                  className="uir-data-input uir-data-textarea"
                                   rows="2"
                                 />
                               ) : (
@@ -549,7 +549,7 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
                                   type={inputType}
                                   value={displayValue || ''}
                                   onChange={(e) => handleInputChange(rowIndex, key, e.target.value)}
-                                  className="data-input"
+                                  className="uir-data-input"
                                   placeholder={getFieldLabel(key)}
                                   step={inputType === 'number' ? '0.01' : undefined}
                                 />
@@ -557,9 +557,9 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
                             </td>
                           );
                         })}
-                        <td className="action-cell">
+                        <td className="uir-action-cell">
                           <button
-                            className="delete-btn"
+                            className="uir-delete-btn"
                             onClick={() => handleRemoveRow(rowIndex)}
                             title="Remove this row"
                           >
@@ -575,12 +575,12 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
               </table>
             </div>
 
-            <div className="modal-actions">
-              <button className="cancel-btn" onClick={handleClose}>
+            <div className="uir-modal-actions">
+              <button className="uir-cancel-btn" onClick={handleClose}>
                 Cancel
               </button>
-              <button className="submit-btn" onClick={handleSubmit}>
-                <svg className="submit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <button className="uir-submit-btn" onClick={handleSubmit}>
+                <svg className="uir-submit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 Submit Inspection Report

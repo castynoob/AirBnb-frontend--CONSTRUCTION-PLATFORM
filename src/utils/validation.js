@@ -22,7 +22,7 @@ export const validateEmail = (email) => {
   return '';
 };
 
-// Password strength validation
+// Password strength validation - Simplified
 export const validatePassword = (password) => {
   if (!password) {
     return 'Password is required';
@@ -40,22 +40,14 @@ export const validatePassword = (password) => {
     return 'Password must contain at least one lowercase letter';
   }
 
-  if (!/[A-Z]/.test(password)) {
-    return 'Password must contain at least one uppercase letter';
-  }
-
   if (!/\d/.test(password)) {
     return 'Password must contain at least one number';
-  }
-
-  if (!/[@$!%*?&#^()_\-+={}[\]:;"'<>,.?/\\|`~]/.test(password)) {
-    return 'Password must contain at least one special character';
   }
 
   return '';
 };
 
-// Password strength calculator
+// Password strength calculator - Simplified
 export const getPasswordStrength = (password) => {
   if (!password) return { strength: 0, label: '', color: '' };
 
@@ -64,11 +56,14 @@ export const getPasswordStrength = (password) => {
   // Length check
   if (password.length >= 8) strength += 1;
   if (password.length >= 12) strength += 1;
+  if (password.length >= 16) strength += 1;
 
-  // Character variety
+  // Character variety (only check what we require)
   if (/[a-z]/.test(password)) strength += 1;
-  if (/[A-Z]/.test(password)) strength += 1;
   if (/\d/.test(password)) strength += 1;
+
+  // Bonus points for additional character types (optional but strengthens password)
+  if (/[A-Z]/.test(password)) strength += 1;
   if (/[@$!%*?&#^()_\-+={}[\]:;"'<>,.?/\\|`~]/.test(password)) strength += 1;
 
   // Determine label and color

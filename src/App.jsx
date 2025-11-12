@@ -11,13 +11,15 @@ import AddWorkForm from "./pages/works/AddWorkForm";
 import ProfilePageManager from "./pages/profile/ProfilePageManager";
 import HomePageEntrepreneur from "./pages/homepage/HomePageEntrepreneur";
 import MessagesEntrepreneur from "./pages/messages/MessagesEntrepreneurNew";
-import SubscriptionPage from "./pages/subscription/SubscriptionPage";
 import SubmittedBids from "./pages/submissions/SubmittedBids";
 import AddPropertyPage from "./pages/profile/AddPropertyPage";
 import ProfilePageEntrepreneur from "./pages/profile/ProfilePageEntrepreneur";
 import EntrepreneurJobs from "./pages/works/EntrepreneurJobs";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
+import SupplierList from './pages/supplier/SupplierList'
+import SupplierProfile from './pages/supplier/SupplierProfile'
+import SupplierHomepage from './pages/supplier/SupplierHomepage'
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -104,10 +106,6 @@ function ProtectedRoutes() {
         element={<ProtectedRoute element={<MessagesEntrepreneur />} />}
       />
       <Route
-        path="/subscription/entrepreneur"
-        element={<ProtectedRoute element={<SubscriptionPage />} />}
-      />
-      <Route
         path="/submissions/entrepreneur"
         element={<ProtectedRoute element={<SubmittedBids />} />}
       />
@@ -122,6 +120,24 @@ function ProtectedRoutes() {
       <Route
         path="/jobs/entrepreneur"
         element={<ProtectedRoute element={<EntrepreneurJobs />} />}
+      />
+      <Route
+        path="/supplier"
+        element={<ProtectedRoute element={<SupplierList />} />}
+      />
+
+      {/* Supplier protected routes */}
+      <Route
+        path="/homepage/supplier"
+        element={<ProtectedRoute element={<SupplierHomepage />} />}
+      />
+      <Route
+        path="/messages/supplier"
+        element={<ProtectedRoute element={<Messages />} />}
+      />
+      <Route
+        path="/profile/supplier"
+        element={<ProtectedRoute element={<SupplierProfile />} />}
       />
     </Routes>
   );

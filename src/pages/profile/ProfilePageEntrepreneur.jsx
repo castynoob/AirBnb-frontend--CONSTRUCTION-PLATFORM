@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Star, CheckCircle, Award, Briefcase, MapPin, Calendar, Mail, Phone, LogOut, MessageSquare, User, Upload, Camera, X } from 'lucide-react';
+import { Star, CheckCircle, Award, Briefcase, MapPin, Calendar, Mail, Phone, LogOut, MessageSquare, User, Upload, Camera, X, Crown, TrendingUp, Check, Zap, Shield, Activity, DollarSign, FileText } from 'lucide-react';
 import Nav from "../../components/Nav";
 import '../../styles/entrepreneur/profilepageentrepreneur.css';
+import '../../styles/entrepreneur/subscriptionpage.css';
 import { useNavigate } from 'react-router-dom';
 import EntrepreneurProfileSkeleton from '../../components/loading/EntrepreneurProfileSkeleton'
+import logo from "../../assets/logo.png"
 
 function ProfilePageEntrepreneur() {
   const [activeTab, setActiveTab] = useState('specialization');
@@ -16,6 +18,8 @@ function ProfilePageEntrepreneur() {
   const [profileImage, setProfileImage] = useState(null)
   const [profileImagePreview, setProfileImagePreview] = useState(null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const [subscription, setSubscription] = useState({})
+  const [userProfile, setUserProfile] = useState(null)
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -31,7 +35,59 @@ function ProfilePageEntrepreneur() {
 
   useEffect(() => {
     fetchEntreprenuerProfile()
+
+    // Load user profile and subscription data
+    const uProfile = localStorage.getItem('userProfile')
+    if (uProfile) {
+      const u = JSON.parse(uProfile)
+      setUserProfile(u)
+      if (u.entrepProfile && u.entrepProfile.subscription) {
+        setSubscription(u.entrepProfile.subscription.subscription || {})
+      }
+    }
   }, [])
+
+  // Subscription helper functions
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+  };
+
+  const getTrialInfo = () => {
+    if (!subscription.trial_end) return null;
+    const trialEndDate = new Date(subscription.trial_end);
+    const now = new Date();
+    const totalTrialDays = 14;
+
+    const timeRemaining = trialEndDate - now;
+    const daysRemaining = Math.max(0, Math.ceil(timeRemaining / (1000 * 60 * 60 * 24)));
+    const percentage = Math.min(Math.max((daysRemaining / totalTrialDays) * 100, 0), 100);
+    const hoursRemaining = Math.floor((timeRemaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutesRemaining = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+
+    return {
+      daysRemaining,
+      hoursRemaining,
+      minutesRemaining,
+      percentage,
+      totalDays: totalTrialDays
+    };
+  };
+
+  const getSubscriptionDuration = () => {
+    if (!subscription.start || !subscription.current_period_end) return null;
+    const start = new Date(subscription.start);
+    const end = new Date(subscription.current_period_end);
+    const now = new Date();
+
+    const totalDuration = end - start;
+    const elapsed = now - start;
+    const percentage = Math.min(Math.max((elapsed / totalDuration) * 100, 0), 100);
+    const daysRemaining = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+
+    return { percentage, daysRemaining, endDate: end };
+  };
 
   const fetchEntreprenuerProfile = async () => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
@@ -391,6 +447,13 @@ function ProfilePageEntrepreneur() {
             >
               Performance & Reviews
             </button>
+            <button
+              className={`entrepreneur-tab-button ${activeTab === 'subscription' ? 'active' : ''}`}
+              onClick={() => setActiveTab('subscription')}
+            >
+              <Crown size={18} style={{marginRight: '8px'}} />
+              Subscription
+            </button>
           </div>
 
           {/* Tab Content */}
@@ -520,6 +583,287 @@ function ProfilePageEntrepreneur() {
                     <span>Complete jobs to receive reviews from clients</span>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Subscription Tab */}
+            {activeTab === 'subscription' && (
+              <div className="entrepreneur-tab-panel">
+                <h2 className="entrepreneur-section-title">Subscription Management</h2>
+
+                {/* Trial Banner - Only show during trial */}
+                {subscription.is_trial && getTrialInfo() && (
+                  <div className="status-banner trial-banner">
+                    <div className="banner-content">
+                      <div className="banner-icon-wrapper">
+                        <Zap size={28} />
+                      </div>
+                      <div className="banner-info">
+                        <div className="banner-header">
+                          <h3 className="banner-title">Premium Trial Active</h3>
+                          <div className="trial-badge">Trial Period</div>
+                        </div>
+                        <p className="banner-text">
+                          {getTrialInfo().daysRemaining} {getTrialInfo().daysRemaining === 1 ? 'day' : 'days'}, {getTrialInfo().hoursRemaining} {getTrialInfo().hoursRemaining === 1 ? 'hour' : 'hours'}, {getTrialInfo().minutesRemaining} {getTrialInfo().minutesRemaining === 1 ? 'minute' : 'minutes'} remaining
+                        </p>
+                        <p className="banner-subtext">
+                          Trial ends on {formatDate(subscription.trial_end)}
+                        </p>
+                        <div className="trial-progress-bar">
+                          <div
+                            className="trial-progress-fill"
+                            style={{ width: `${getTrialInfo().percentage}%` }}
+                          ></div>
+                        </div>
+                        <div className="trial-progress-label">
+                          {getTrialInfo().daysRemaining} of {getTrialInfo().totalDays} days remaining ({Math.round(getTrialInfo().percentage)}%)
+                        </div>
+                      </div>
+                      <div className="trial-countdown">
+                        <div className="countdown-number">{getTrialInfo().daysRemaining}</div>
+                        <div className="countdown-label">Days Left</div>
+                        {getTrialInfo().hoursRemaining > 0 && (
+                          <div className="countdown-hours">{getTrialInfo().hoursRemaining}h {getTrialInfo().minutesRemaining}m</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Current Plan Display - Only show if not on trial */}
+                {!subscription.is_trial && subscription.plan_type && (
+                  <div className="current-plan-section">
+                    <div className="plan-overview-grid">
+                      {/* Plan Info Card */}
+                      <div className="plan-info-card">
+                        <div className="card-header">
+                          <div className="card-icon">
+                            <Shield size={24} />
+                          </div>
+                          <div className="status-indicator active">
+                            <span className="status-dot"></span>
+                            Active
+                          </div>
+                        </div>
+                        <h2 className="plan-name">{subscription.plan_type === 'premium' ? 'Premium' : 'Basic'} Plan</h2>
+                        <p className="plan-desc">
+                          {subscription.plan_type === 'premium' ? 'Best for professionals' : 'Perfect for getting started'}
+                        </p>
+                        <div className="plan-price">
+                          <span className="price-symbol">$</span>
+                          <span className="price-value">{subscription.price || (subscription.plan_type === 'premium' ? 429 : 250)}</span>
+                          <span className="price-period">/month</span>
+                        </div>
+                      </div>
+
+                      {/* Billing Timeline Card */}
+                      <div className="billing-timeline-card">
+                        <div className="card-header">
+                          <div className="card-icon">
+                            <Calendar size={24} />
+                          </div>
+                          <h3 className="card-title">Billing Cycle</h3>
+                        </div>
+                        <div className="timeline-content">
+                          <div className="timeline-dates">
+                            <div className="date-item">
+                              <span className="date-label">Started</span>
+                              <span className="date-value">{formatDate(subscription.start_date || subscription.start)}</span>
+                            </div>
+                            <div className="date-item">
+                              <span className="date-label">Next Billing</span>
+                              <span className="date-value">{formatDate(subscription.current_period_end)}</span>
+                            </div>
+                          </div>
+                          {getSubscriptionDuration() && (
+                            <div className="timeline-progress">
+                              <div className="progress-bar-container">
+                                <div
+                                  className="progress-bar-fill"
+                                  style={{ width: `${getSubscriptionDuration().percentage}%` }}
+                                ></div>
+                              </div>
+                              <div className="progress-info">
+                                <span className="progress-text">{getSubscriptionDuration().daysRemaining} days until renewal</span>
+                                <span className="progress-percentage">{Math.round(getSubscriptionDuration().percentage)}%</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Usage Stats */}
+                <div className="dashboard-section">
+                  <div className="section-header">
+                    <div className="section-icon">
+                      <Activity size={24} />
+                    </div>
+                    <div className="section-text">
+                      <h2 className="section-title">Usage Analytics</h2>
+                      <p className="section-subtitle">Monitor your monthly bidding activity</p>
+                    </div>
+                  </div>
+
+                  <div className="stats-grid subs">
+                    <div className="stat-card subs">
+                      <div className="stat-header subs">
+                        <div className="stat-icon bids">
+                          <FileText size={22} />
+                        </div>
+                        <span className="stat-label">Bids Submitted</span>
+                      </div>
+                      <div className="stat-value subsval">
+                        {subscription?.bids?.used || 0}
+                        {subscription?.bids?.limit !== 'unlimited' && subscription?.bids?.limit && (
+                          <span className="stat-total"> / {subscription.bids.limit}</span>
+                        )}
+                      </div>
+                      {subscription?.bids?.limit !== 'unlimited' && subscription?.bids?.limit && (
+                        <div className="stat-progress">
+                          <div
+                            className="stat-progress-fill"
+                            style={{ width: `${(subscription.bids.used / subscription.bids.limit) * 100}%` }}
+                          ></div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="stat-card subs">
+                      <div className="stat-header subs">
+                        <div className="stat-icon remaining">
+                          <Zap size={22} />
+                        </div>
+                        <span className="stat-label">Remaining Bids</span>
+                      </div>
+                      <div className="stat-value accent subsval">
+                        {subscription?.bids?.remaining === 'unlimited'
+                          ? '∞'
+                          : subscription?.bids?.remaining || '∞'}
+                      </div>
+                    </div>
+
+                    <div className="stat-card subs">
+                      <div className="stat-header subs">
+                        <div className="stat-icon budget">
+                          <DollarSign size={22} />
+                        </div>
+                        <span className="stat-label">Budget Unlocks</span>
+                      </div>
+                      <div className="stat-value subsval">Unlimited</div>
+                    </div>
+
+                    <div className="stat-card subs">
+                      <div className="stat-header subs">
+                        <div className="stat-icon messages">
+                          <MessageSquare size={22} />
+                        </div>
+                        <span className="stat-label">Active Chats</span>
+                      </div>
+                      <div className="stat-value subsval">Unlimited</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Feature Comparison Table */}
+                <div className="comparison-section">
+                  <div className="section-header">
+                    <div className="section-icon">
+                      <Crown size={24} />
+                    </div>
+                    <div className="section-text">
+                      <h2 className="section-title">Feature Comparison</h2>
+                      <p className="section-subtitle">Compare all features across subscription tiers</p>
+                    </div>
+                  </div>
+
+                  <div className="comparison-table-wrapper">
+                    <table className="comparison-table">
+                      <thead>
+                        <tr>
+                          <th className="feature-col">Feature</th>
+                          <th className="tier-col">No Subscription</th>
+                          <th className="tier-col">Trial (Basic)</th>
+                          <th className="tier-col premium-col">Trial (Premium)</th>
+                          <th className="tier-col">Active Basic</th>
+                          <th className="tier-col premium-col">Active Premium</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="feature-name">Browse construction jobs</td>
+                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                          <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                          <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                        </tr>
+                        <tr>
+                          <td className="feature-name">View job details & specs</td>
+                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                          <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                          <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                        </tr>
+                        <tr>
+                          <td className="feature-name">Submit bids</td>
+                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                          <td className="tier-cell">
+                            <Check className="icon-yes" size={20} />
+                            <span className="feature-note">(30 max)</span>
+                          </td>
+                          <td className="tier-cell premium-cell">
+                            <Check className="icon-yes" size={20} />
+                            <span className="feature-note">(unlimited)</span>
+                          </td>
+                          <td className="tier-cell">
+                            <Check className="icon-yes" size={20} />
+                            <span className="feature-note">(30 max)</span>
+                          </td>
+                          <td className="tier-cell premium-cell">
+                            <Check className="icon-yes" size={20} />
+                            <span className="feature-note">(unlimited)</span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="feature-name">Unlock project budgets</td>
+                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                          <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                          <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                        </tr>
+                        <tr>
+                          <td className="feature-name">Message on approved projects</td>
+                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                          <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                          <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                        </tr>
+                        <tr>
+                          <td className="feature-name">Priority support</td>
+                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                        </tr>
+                        <tr>
+                          <td className="feature-name">Advanced analytics</td>
+                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             )}
           </div>

@@ -26,8 +26,8 @@ import {
 } from "lucide-react";
 import "../../styles/manager/repairdetails.css";
 
-function RepairDetails({ handleRepairClicked, repair }) {
-  const [favorites, setFavorites] = useState([]);
+function RepairDetails({ handleBackFromDetails, repair }) {
+  const [favorites, setFavorites] = useState([]); // Now stores bid IDs instead of company names
   const [sortBy, setSortBy] = useState("rating");
   const [bidders, setBidders] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -37,6 +37,7 @@ function RepairDetails({ handleRepairClicked, repair }) {
   const [jobImages, setJobImages] = useState([]);
   const [isLoadingImages, setIsLoadingImages] = useState(true);
   const [isLoadingBidders, setIsLoadingBidders] = useState(true);
+  const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
 
   const PLACEHOLDER_IMAGE = "https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=";
   
@@ -47,12 +48,106 @@ function RepairDetails({ handleRepairClicked, repair }) {
     }, 5000);
   };
 
-  const toggleFavorite = (company_name) => {
-    setFavorites((prev) =>
-      prev.includes(company_name)
-        ? prev.filter((name) => name !== company_name)
-        : [...prev, company_name]
-    );
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  // Fetch favorites for current bidders
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      try {
+        setIsLoadingFavorites(true);
+        const userProfile = localStorage.getItem("userProfile");
+        if (!userProfile) return;
+
+        const user = JSON.parse(userProfile);
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+        const response = await fetch(`${API_BASE_URL}/api/favorites`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch favorites: ${response.status}`);
+        }
+
+        const data = await response.json();
+        // Extract bid IDs from favorites
+        const favoriteBidIds = data.favorites
+          .filter(fav => fav.bid_id)
+          .map(fav => fav.bid_id);
+        setFavorites(favoriteBidIds);
+      } catch (err) {
+        console.error("Error fetching favorites:", err);
+      } finally {
+        setIsLoadingFavorites(false);
+      }
+    };
+
+    fetchFavorites();
+  }, []);
+
+  const toggleFavorite = async (bidder) => {
+    try {
+      const userProfile = localStorage.getItem("userProfile");
+      if (!userProfile) {
+        showNotification("Please log in to add favorites", "error");
+        return;
+      }
+
+      const user = JSON.parse(userProfile);
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+      const isFavorited = favorites.includes(bidder.id);
+
+      if (isFavorited) {
+        // Remove from favorites
+        const response = await fetch(
+          `${API_BASE_URL}/api/favorites/bid/${bidder.id}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${user.token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to remove favorite: ${response.status}`);
+        }
+
+        setFavorites((prev) => prev.filter((id) => id !== bidder.id));
+        showNotification("Removed from favorites", "info");
+      } else {
+        // Add to favorites
+        const response = await fetch(`${API_BASE_URL}/api/favorites`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            entrepreneurId: bidder.profile.id,
+            jobId: repair.data.jobId,
+            bidId: bidder.id,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || `Failed to add favorite: ${response.status}`);
+        }
+
+        setFavorites((prev) => [...prev, bidder.id]);
+        showNotification("Added to favorites", "success");
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      showNotification(error.message || "Failed to update favorites", "error");
+    }
   };
 
   // Fetch job images
@@ -376,7 +471,7 @@ function RepairDetails({ handleRepairClicked, repair }) {
         <header className="details-header">
           <div
             className="back-btn rd"
-            onClick={() => handleRepairClicked(true, null)}
+            onClick={handleBackFromDetails}
           >
             <ArrowLeft size={18} />
             Back
@@ -528,14 +623,14 @@ function RepairDetails({ handleRepairClicked, repair }) {
                     className="favorite-btn"
                     onClick={(e) => {
                       e.stopPropagation();
-                      toggleFavorite(bidder.company_name);
+                      toggleFavorite(bidder);
                     }}
                     aria-label="Add to favorites"
                   >
                     <Heart
                       size={18}
                       fill={
-                        favorites.includes(bidder.company_name)
+                        favorites.includes(bidder.id)
                           ? "#E74C3C"
                           : "none"
                       }

@@ -1,320 +1,368 @@
-import React, { useState, useMemo } from "react";
-import Nav from "../../components/Nav";
-import { Heart, MapPin, Phone, Mail, MessageCircle, Search } from "lucide-react";
-import "../../styles/manager/favoriteentrepreneurs.css"
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  getFavorites,
+  removeFavorite,
+  getEntrepreneurHistory,
+  updateFavoriteNotes
+} from '../../utils/api';
+import { FaStar, FaTrash, FaCommentAlt, FaHistory, FaEdit, FaSave, FaTimes } from 'react-icons/fa';
+import Nav from '../../components/Nav';
+import '../../styles/manager/favoriteentrepreneurs.css';
 
-function FavoriteEntrepreneurs() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedFilter, setSelectedFilter] = useState("all");
-  
-  const [favorites, setFavorites] = useState([
-    {
-      id: 1,
-      company: "Skyline Roofing Co.",
-      logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK7tD4SdaUsdPOAvaMIJFbZd5-qk2v26quSw&s",
-      licenseNumber: "LIC-45821",
-      yearsInBusiness: 12,
-      address: "123 Elm St, Toronto, ON",
-      specialization: "Roof repair & waterproofing",
-      averageRating: 4.7,
-      contact: {
-        phone: "(416) 555-0123",
-        email: "info@skylineroofing.ca",
-      },
-      isFavorite: true,
-    },
-    {
-      id: 2,
-      company: "UrbanBuild Contractors",
-      logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK7tD4SdaUsdPOAvaMIJFbZd5-qk2v26quSw&s",
-      licenseNumber: "LIC-78213",
-      yearsInBusiness: 8,
-      address: "45 Wellington Ave, Toronto, ON",
-      specialization: "Interior renovations & painting",
-      averageRating: 4.5,
-      contact: {
-        phone: "(416) 555-0198",
-        email: "contact@urbanbuild.ca",
-      },
-      isFavorite: true,
-    },
-    {
-      id: 3,
-      company: "Apex Maintenance Group",
-      logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK7tD4SdaUsdPOAvaMIJFbZd5-qk2v26quSw&s",
-      licenseNumber: "LIC-12489",
-      yearsInBusiness: 15,
-      address: "99 Front St E, Toronto, ON",
-      specialization: "Building maintenance & HVAC",
-      averageRating: 4.9,
-      contact: {
-        phone: "(416) 555-0205",
-        email: "support@apexgroup.ca",
-      },
-      isFavorite: true,
-    },
-    {
-      id: 4,
-      company: "Precision Plumbing Inc.",
-      logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK7tD4SdaUsdPOAvaMIJFbZd5-qk2v26quSw&s",
-      licenseNumber: "LIC-65104",
-      yearsInBusiness: 20,
-      address: "20 King St W, Toronto, ON",
-      specialization: "Commercial & residential plumbing",
-      averageRating: 4.6,
-      contact: {
-        phone: "(416) 555-0311",
-        email: "service@precisionplumbing.ca",
-      },
-      isFavorite: true,
-    },
-    {
-      id: 5,
-      company: "GreenThumb Landscaping",
-      logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK7tD4SdaUsdPOAvaMIJFbZd5-qk2v26quSw&s",
-      licenseNumber: "LIC-90210",
-      yearsInBusiness: 7,
-      address: "15 Queen St E, Toronto, ON",
-      specialization: "Garden design & lawn care",
-      averageRating: 4.8,
-      contact: {
-        phone: "(416) 555-0450",
-        email: "hello@greenthumb.ca",
-      },
-      isFavorite: true,
-    },
-    {
-      id: 6,
-      company: "Volt Electrical Services",
-      logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK7tD4SdaUsdPOAvaMIJFbZd5-qk2v26quSw&s",
-      licenseNumber: "LIC-30592",
-      yearsInBusiness: 18,
-      address: "55 Bay St, Toronto, ON",
-      specialization: "Wiring, panels, and lighting installation",
-      averageRating: 4.7,
-      contact: {
-        phone: "(416) 555-0522",
-        email: "support@voltelectrical.ca",
-      },
-      isFavorite: true,
-    },
-    {
-      id: 7,
-      company: "Cornerstone Masonry",
-      logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK7tD4SdaUsdPOAvaMIJFbZd5-qk2v26quSw&s",
-      licenseNumber: "LIC-88401",
-      yearsInBusiness: 25,
-      address: "10 Bloor St W, Toronto, ON",
-      specialization: "Brick repair & stone work",
-      averageRating: 4.9,
-      contact: {
-        phone: "(416) 555-0678",
-        email: "info@cornerstonemasonry.ca",
-      },
-      isFavorite: true,
-    },
-    {
-      id: 8,
-      company: "Rapid Glass Repair",
-      logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK7tD4SdaUsdPOAvaMIJFbZd5-qk2v26quSw&s",
-      licenseNumber: "LIC-11234",
-      yearsInBusiness: 5,
-      address: "30 Yonge St, Toronto, ON",
-      specialization: "Window & door glass replacement",
-      averageRating: 4.4,
-      contact: {
-        phone: "(416) 555-0707",
-        email: "sales@rapidglass.ca",
-      },
-      isFavorite: true,
-    },
-    {
-      id: 9,
-      company: "SafeGuard Security Systems",
-      logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK7tD4SdaUsdPOAvaMIJFbZd5-qk2v26quSw&s",
-      licenseNumber: "LIC-74567",
-      yearsInBusiness: 10,
-      address: "77 Church St, Toronto, ON",
-      specialization: "Alarm systems & CCTV installation",
-      averageRating: 4.5,
-      contact: {
-        phone: "(416) 555-0819",
-        email: "contact@safeguardsecurity.ca",
-      },
-      isFavorite: true,
-    },
-    {
-      id: 10,
-      company: "Driveway Dynamics",
-      logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK7tD4SdaUsdPOAvaMIJFbZd5-qk2v26quSw&s",
-      licenseNumber: "LIC-29876",
-      yearsInBusiness: 14,
-      address: "50 Lakeshore Blvd E, Toronto, ON",
-      specialization: "Asphalt and concrete paving",
-      averageRating: 4.6,
-      contact: {
-        phone: "(416) 555-0900",
-        email: "info@drivewaydynamics.ca",
-      },
-      isFavorite: true,
-    },
-  ]);
+const FavoriteEntrepreneurs = () => {
+  const navigate = useNavigate();
+  const [favorites, setFavorites] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedEntrepreneur, setSelectedEntrepreneur] = useState(null);
+  const [jobHistory, setJobHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [editingNotes, setEditingNotes] = useState(null);
+  const [notesText, setNotesText] = useState('');
 
-  const handleRemoveFavorite = (id) => {
-    setFavorites((prev) => prev.filter((fav) => fav.id !== id));
+  // Fetch favorites on mount
+  useEffect(() => {
+    loadFavorites();
+  }, []);
+
+  const loadFavorites = async () => {
+    try {
+      setLoading(true);
+      const response = await getFavorites();
+      setFavorites(response.favorites || []);
+      setError(null);
+    } catch (err) {
+      console.error('Error loading favorites:', err);
+      setError('Failed to load favorites. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Filter and search logic
-  const filteredFavorites = useMemo(() => {
-    let result = favorites;
-
-    // Apply search
-    if (searchQuery) {
-      result = result.filter(
-        (fav) =>
-          fav.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          fav.specialization.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          fav.address.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+  // Remove favorite by bid_id
+  const handleRemoveFavorite = async (bidId, entrepreneurName) => {
+    if (!window.confirm(`Remove ${entrepreneurName} from favorites?`)) {
+      return;
     }
 
-    // Apply filter
-    if (selectedFilter !== "all") {
-      if (selectedFilter === "high-rated") {
-        result = result.filter((fav) => fav.averageRating >= 4.7);
-      } else if (selectedFilter === "experienced") {
-        result = result.filter((fav) => fav.yearsInBusiness >= 15);
+    try {
+      await removeFavorite(bidId);
+      setFavorites(prev => prev.filter(fav => fav.bid_id !== bidId));
+
+      // If this was the selected entrepreneur, close the history panel
+      if (selectedEntrepreneur?.bid_id === bidId) {
+        setSelectedEntrepreneur(null);
+        setJobHistory([]);
       }
+    } catch (err) {
+      console.error('Error removing favorite:', err);
+      alert('Failed to remove favorite. Please try again.');
+    }
+  };
+
+  // Load job history for an entrepreneur
+  const handleViewHistory = async (entrepreneur) => {
+    setSelectedEntrepreneur(entrepreneur);
+    setLoadingHistory(true);
+
+    try {
+      const response = await getEntrepreneurHistory(entrepreneur.entrepreneur_id);
+      setJobHistory(response.history || []);
+    } catch (err) {
+      console.error('Error loading history:', err);
+      alert('Failed to load job history.');
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  // Start conversation with entrepreneur
+  const handleMessage = async (favorite) => {
+    // Check if bid is approved before allowing messaging
+    if (favorite.bid_status !== 'approved') {
+      alert('You can only message contractors with approved bids. Please approve the bid first from the Submissions page.');
+      return;
     }
 
-    return result;
-  }, [favorites, searchQuery, selectedFilter]);
+    try {
+      // Store target user info in localStorage for Messages component to pick up
+      localStorage.setItem('targetReceiverId', favorite.user_id);
+      localStorage.setItem('targetReceiverName', `${favorite.first_name} ${favorite.last_name}`);
+      if (favorite.job_id) {
+        localStorage.setItem('targetJobId', favorite.job_id);
+      }
+
+      // Navigate to messages page - Messages component will handle opening the chat
+      navigate('/messages/property_manager');
+    } catch (err) {
+      console.error('Error navigating to messages:', err);
+      alert('Failed to open messages. Please try again.');
+    }
+  };
+
+  // Edit notes
+  const handleEditNotes = (favorite) => {
+    setEditingNotes(favorite.favorite_id);
+    setNotesText(favorite.notes || '');
+  };
+
+  // Save notes
+  const handleSaveNotes = async (favoriteId) => {
+    try {
+      await updateFavoriteNotes(favoriteId, notesText);
+      setFavorites(prev => prev.map(fav =>
+        fav.favorite_id === favoriteId
+          ? { ...fav, notes: notesText }
+          : fav
+      ));
+      setEditingNotes(null);
+    } catch (err) {
+      console.error('Error saving notes:', err);
+      alert('Failed to save notes. Please try again.');
+    }
+  };
+
+  // Cancel editing notes
+  const handleCancelEdit = () => {
+    setEditingNotes(null);
+    setNotesText('');
+  };
+
+  if (loading) {
+    return (
+      <div className="fav-favorite-entrepreneurs-page">
+        <Nav />
+        <div className="fav-loading-container">
+          <div className="fav-spinner-large"></div>
+          <p>Loading your favorites...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="homepage">
+    <div className="fav-favorite-entrepreneurs-page">
       <Nav />
 
-      <div className="main-container">
-        <header className="page-header fav">
-          <h1>Favorite Entrepreneurs</h1>
-          <p>View and manage your favorite construction partners.</p>
-        </header>
-
-        {/* Search and Filter Section */}
-        <div className="search-filter-container">
-          <div className="search-wrapper">
-            <Search size={20} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search by name, specialization, or location..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-            />
-          </div>
-          
-          <div className="filter-section">
-            <span className="filter-label">Filter by:</span>
-            <div className="filter-buttons">
-              <button
-                onClick={() => setSelectedFilter("all")}
-                className={`filter-button ${selectedFilter === "all" ? "active" : ""}`}
-              >
-                All <span className="count">({favorites.length})</span>
-              </button>
-              <button
-                onClick={() => setSelectedFilter("high-rated")}
-                className={`filter-button ${selectedFilter === "high-rated" ? "active" : ""}`}
-              >
-                High Rated <span className="count">(4.7+)</span>
-              </button>
-              <button
-                onClick={() => setSelectedFilter("experienced")}
-                className={`filter-button ${selectedFilter === "experienced" ? "active" : ""}`}
-              >
-                Experienced <span className="count">(15+ years)</span>
-              </button>
-            </div>
-          </div>
+      <div className="fav-favorites-container">
+        <div className="fav-favorites-header">
+          <h1>Favorite Contractors</h1>
+          <p className="fav-favorites-subtitle">
+            {favorites.length === 0
+              ? 'No favorites yet. Add contractors you like for easy access later!'
+              : `You have ${favorites.length} favorite contractor${favorites.length !== 1 ? 's' : ''}`
+            }
+          </p>
         </div>
 
-        <div className="favorites-grid">
-          {filteredFavorites.length > 0 ? (
-            filteredFavorites.map((fav) => (
-              <div key={fav.id} className="entrep-card">
-                <div className="card-header fav">
-                  <div className="company-info">
-                    <div className="logo">
-                      <img src={fav.logo} alt={fav.company} />
+        {error && (
+          <div className="fav-error-message">
+            {error}
+            <button onClick={loadFavorites} className="fav-retry-button">
+              Retry
+            </button>
+          </div>
+        )}
+
+        {favorites.length === 0 ? (
+          <div className="fav-empty-state">
+            <div className="fav-empty-icon">💙</div>
+            <h2>No Favorite Contractors Yet</h2>
+            <p>
+              When you find contractors you like, click the heart button on their bids
+              to save them here for future projects.
+            </p>
+            <button
+              className="fav-browse-button"
+              onClick={() => navigate('/submissions/property_manager')}
+            >
+              Browse Bids
+            </button>
+          </div>
+        ) : (
+          <div className="fav-favorites-grid">
+            {favorites.map(favorite => (
+              <div key={favorite.bid_id || favorite.favorite_id} className="fav-favorite-card">
+                <div className="fav-card-header">
+                  <div className="fav-entrepreneur-info">
+                    <div className="fav-avatar">
+                      {favorite.profile_picture_url ? (
+                        <img src={favorite.profile_picture_url} alt={favorite.first_name} />
+                      ) : (
+                        <div className="fav-avatar-placeholder">
+                          {favorite.first_name?.charAt(0)}{favorite.last_name?.charAt(0)}
+                        </div>
+                      )}
                     </div>
-                    <div className="header-info fav">
-                      <h3 className="company-name">{fav.company}</h3>
-                      <div className="location">
-                        <MapPin size={14} />
-                        <span>{fav.address}</span>
+                    <div className="fav-name-rating">
+                      <h3>{favorite.first_name} {favorite.last_name}</h3>
+                      <div className="fav-rating">
+                        <FaStar className="fav-star-icon" />
+                        <span>{Number(favorite.average_rating).toFixed(1)}</span>
+                        <span className="fav-review-count">({favorite.review_count} reviews)</span>
                       </div>
                     </div>
                   </div>
-                  <div className="header-actions fav">
-                    <button
-                      onClick={() => handleRemoveFavorite(fav.id)}
-                      className="remove-favorite-btn"
-                      aria-label="Remove from favorites"
-                    >
-                      <Heart size={20} fill="#E74C3C" color="#E74C3C" />
-                    </button>
-                    <button className="message-btn-header">
-                      <MessageCircle size={18} />
-                    </button>
+                  <button
+                    className="fav-remove-button"
+                    onClick={() => handleRemoveFavorite(favorite.bid_id, `${favorite.first_name} ${favorite.last_name}`)}
+                    title="Remove from favorites"
+                  >
+                    <FaTrash />
+                  </button>
+                </div>
+
+                <div className="fav-card-body">
+                    <div className="fav-stat">
+                      <span className="fav-stat-value">{favorite.completed_jobs || 0}</span>
+                      <span className="fav-stat-label">Completed Jobs</span>
+                    </div>
+
+                  {favorite.last_job_title && (
+                    <div className="fav-last-job">
+                      <strong>Last Job:</strong> {favorite.last_job_title}
+                      {favorite.last_bid_amount && (
+                        <span className="fav-bid-amount">${Number(favorite.last_bid_amount).toFixed(2)}</span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Bid Status Indicator */}
+                  <div className="fav-bid-status-indicator">
+                    <span className={`fav-status-badge ${favorite.bid_status === 'approved' ? 'fav-accepted' : 'fav-pending'}`}>
+                      {favorite.bid_status === 'approved' ? '✓ Bid Approved' : '⏳ Bid Pending'}
+                    </span>
+                    {favorite.bid_status !== 'approved' && (
+                      <span className="fav-status-note">Approve bid in Submissions to message</span>
+                    )}
+                  </div>
+
+                  <div className="fav-notes-section">
+                    {editingNotes === favorite.favorite_id ? (
+                      <div className="fav-notes-edit">
+                        <textarea
+                          value={notesText}
+                          onChange={(e) => setNotesText(e.target.value)}
+                          placeholder="Add notes about this contractor..."
+                          rows="3"
+                        />
+                        <div className="fav-notes-actions">
+                          <button
+                            className="fav-save-button"
+                            onClick={() => handleSaveNotes(favorite.favorite_id)}
+                          >
+                            <FaSave /> Save
+                          </button>
+                          <button
+                            className="fav-cancel-button"
+                            onClick={handleCancelEdit}
+                          >
+                            <FaTimes /> Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="fav-notes-display">
+                        <div className="fav-notes-header">
+                          <strong>Notes:</strong>
+                          <button
+                            className="fav-edit-notes-button"
+                            onClick={() => handleEditNotes(favorite)}
+                          >
+                            <FaEdit /> Edit
+                          </button>
+                        </div>
+                        <p className="fav-notes-text">
+                          {favorite.notes || 'No notes yet. Click Edit to add notes.'}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                <div className="stats-section">
-                  <div className="stat-box">
-                    <p className="stat-value fav">⭐ {fav.averageRating}</p>
-                    <p className="stat-label">Rating</p>
-                  </div>
-                  <div className="stat-box">
-                    <p className="stat-value fav">{fav.yearsInBusiness} Yrs</p>
-                    <p className="stat-label">Experience</p>
-                  </div>
-                  <div className="stat-box">
-                    <p className="stat-value fav">{fav.licenseNumber}</p>
-                    <p className="stat-label">License</p>
-                  </div>
-                </div>
-
-                <div className="specialization-section">
-                  <p>{fav.specialization}</p>
-                </div>
-
-                <div className="contact-section">
-                  <div className="contact-list">
-                    <a href={`tel:${fav.contact.phone}`} className="contact-link">
-                      <Phone size={14} />
-                      <span>{fav.contact.phone}</span>
-                    </a>
-                    <a href={`mailto:${fav.contact.email}`} className="contact-link">
-                      <Mail size={14} />
-                      <span>{fav.contact.email}</span>
-                    </a>
-                  </div>
+                <div className="fav-card-actions">
+                  <button
+                    className={`fav-action-button ${favorite.bid_status === 'approved' ? 'fav-primary' : 'fav-disabled'}`}
+                    onClick={() => handleMessage(favorite)}
+                    disabled={favorite.bid_status !== 'approved'}
+                    title={favorite.bid_status === 'approved' ? 'Send a message' : 'Bid must be approved to message'}
+                  >
+                    <FaCommentAlt /> Message
+                  </button>
+                  <button
+                    className="fav-action-button fav-secondary"
+                    onClick={() => handleViewHistory(favorite)}
+                  >
+                    <FaHistory /> View History
+                  </button>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="empty-state">
-              <p>
-                {searchQuery || selectedFilter !== "all"
-                  ? "No entrepreneurs match your search criteria."
-                  : "You haven't added any favorite entrepreneurs yet."}
-              </p>
-            </div>
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* History Sidebar */}
+      {selectedEntrepreneur && (
+        <div className="fav-history-sidebar">
+          <div className="fav-sidebar-header">
+            <h2>Job History</h2>
+            <button
+              className="fav-close-sidebar"
+              onClick={() => setSelectedEntrepreneur(null)}
+            >
+              <FaTimes />
+            </button>
+          </div>
+
+          <div className="fav-entrepreneur-summary">
+            <h3>{selectedEntrepreneur.first_name} {selectedEntrepreneur.last_name}</h3>
+            <p className="fav-email">{selectedEntrepreneur.email}</p>
+          </div>
+
+          <div className="fav-history-content">
+            {loadingHistory ? (
+              <div className="fav-loading-history">
+                <div className="fav-spinner"></div>
+                <p>Loading history...</p>
+              </div>
+            ) : jobHistory.length === 0 ? (
+              <div className="fav-no-history">
+                <p>No job history with this contractor yet.</p>
+              </div>
+            ) : (
+              <div className="fav-history-list">
+                {jobHistory.map(job => (
+                  <div key={job.job_id} className="fav-history-item">
+                    <div className="fav-job-title">{job.title}</div>
+                    <div className="fav-job-details">
+                      <span className="fav-category">{job.category}</span>
+                      <span className={`fav-status fav-status-${job.status}`}>{job.status}</span>
+                    </div>
+                    <div className="fav-bid-info">
+                      <strong>Bid Amount:</strong> ${Number(job.bid_amount).toFixed(2)}
+                      <span className={`fav-bid-status ${job.bid_status}`}>
+                        {job.bid_status}
+                      </span>
+                    </div>
+                    <div className="fav-property-name">
+                      <strong>Property:</strong> {job.property_name}
+                    </div>
+                    {job.bid_message && (
+                      <div className="fav-bid-message">
+                        "{job.bid_message}"
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
 
 export default FavoriteEntrepreneurs;

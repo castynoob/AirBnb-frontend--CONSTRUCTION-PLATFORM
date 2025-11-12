@@ -1,0 +1,267 @@
+/* ============================================
+   FAVORITE BUTTON STYLES
+   ============================================ */
+
+   .fav-favorite-button-container {
+    position: relative;
+    display: inline-block;
+  }
+
+  .fav-favorite-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    background: white;
+    color: #666;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    outline: none;
+  }
+
+  .fav-favorite-button:hover {
+    border-color: #ff4757;
+    background: #fff5f7;
+    transform: scale(1.05);
+  }
+
+  .fav-favorite-button.fav-favorited {
+    border-color: #ff4757;
+    background: #fff5f7;
+    color: #ff4757;
+  }
+
+  .fav-favorite-button.fav-favorited .fav-heart-icon {
+    animation: heartBeat 0.3s ease;
+  }
+
+  .fav-favorite-button.fav-loading {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .fav-favorite-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  .fav-favorite-button:active {
+    transform: scale(0.95);
+  }
+
+  /* Heart Icon Styles */
+  .fav-heart-icon {
+    font-size: 18px;
+    transition: all 0.3s ease;
+  }
+
+  .fav-heart-icon.fav-filled {
+    color: #ff4757;
+    animation: heartBeat 0.3s ease;
+  }
+
+  /* Size Variants */
+  .fav-favorite-button.fav-small {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .fav-favorite-button.fav-small .fav-heart-icon {
+    font-size: 14px;
+  }
+
+  .fav-favorite-button.fav-medium {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+
+  .fav-favorite-button.fav-medium .fav-heart-icon {
+    font-size: 18px;
+  }
+
+  .fav-favorite-button.fav-large {
+    padding: 10px 20px;
+    font-size: 16px;
+  }
+
+  .fav-favorite-button.fav-large .fav-heart-icon {
+    font-size: 22px;
+  }
+
+  /* Text */
+  .fav-favorite-text {
+    white-space: nowrap;
+  }
+
+  /* Loading Spinner */
+  .fav-spinner {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #ff4757;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  /* Error Message */
+  .fav-favorite-error {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 5px;
+    padding: 8px 12px;
+    background: #ff4757;
+    color: white;
+    font-size: 12px;
+    border-radius: 4px;
+    white-space: nowrap;
+    z-index: 10;
+    animation: slideDown 0.3s ease;
+  }
+
+  .fav-favorite-error::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: 20px;
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 5px solid #ff4757;
+  }
+
+  /* Animations */
+  @keyframes heartBeat {
+    0%, 100% {
+      transform: scale(1);
+    }
+    25% {
+      transform: scale(1.3);
+    }
+    50% {
+      transform: scale(1.1);
+    }
+    75% {
+      transform: scale(1.25);
+    }
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Icon-only variant (for compact views) */
+  .fav-favorite-button.fav-icon-only .fav-favorite-text {
+    display: none;
+  }
+
+  .fav-favorite-button.fav-icon-only {
+    padding: 8px;
+    min-width: 40px;
+    justify-content: center;
+  }
+
+  /* Mobile Responsive */
+  @media (max-width: 768px) {
+    .fav-favorite-button {
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+
+    .fav-heart-icon {
+      font-size: 16px;
+    }
+
+    .fav-favorite-text {
+      display: none;
+    }
+
+    .fav-favorite-button {
+      padding: 8px;
+      min-width: 36px;
+      justify-content: center;
+    }
+
+    .fav-favorite-error {
+      font-size: 11px;
+      left: auto;
+      right: 0;
+    }
+  }
+
+  /* Dark Mode Support */
+  @media (prefers-color-scheme: dark) {
+    .fav-favorite-button {
+      background: #2d2d2d;
+      border-color: #444;
+      color: #ccc;
+    }
+
+    .fav-favorite-button:hover {
+      background: #3d3d3d;
+    }
+
+    .fav-favorite-button.fav-favorited {
+      background: #3d2d2d;
+    }
+  }
+
+  /* Tooltip Enhancement */
+  .fav-favorite-button[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 5px;
+    padding: 5px 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 12px;
+    border-radius: 4px;
+    white-space: nowrap;
+    z-index: 10;
+    pointer-events: none;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Focus State for Accessibility */
+  .fav-favorite-button:focus-visible {
+    outline: 2px solid #ff4757;
+    outline-offset: 2px;
+  }
+
+  /* Bulk Actions in Lists */
+  .fav-favorites-list .fav-favorite-button {
+    margin-left: auto;
+  }

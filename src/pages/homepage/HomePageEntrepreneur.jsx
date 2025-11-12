@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useMemo, useRef, useEffect } from "react"
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet"
+import { useState, useMemo, useRef, useEffect, useCallback } from "react"
+import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 import {
@@ -21,6 +21,11 @@ import {
   Filter,
   Map,
   List,
+  Plus,
+  Minus,
+  Maximize2,
+  Navigation,
+  Target,
 } from "lucide-react"
 import Nav from "../../components/Nav"
 import "../../styles/entrepreneur/homepageentrepreneur.css"
@@ -155,10 +160,12 @@ function HomePageEntrepreneur() {
   const searchContainerRef = useRef(null)
   const [userProfile, setUserProfile] = useState()
   const [isLoading, setIsLoading] = useState(true)
-  
+  const mapRef = useRef(null)
+
   // Mobile view states
   const [mobileView, setMobileView] = useState("map") // "map" or "list"
   const [propertyModalOpen, setPropertyModalOpen] = useState(false)
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false)
 
   // data variables
   const [properties, setProperties] = useState([])
@@ -166,6 +173,13 @@ function HomePageEntrepreneur() {
   const [submittedBids, setSubmittedBids] = useState([])
   const [showUnlockBudgetModal, setShowUnlockBudgetModal] = useState(false)
   const [budgetJobId, setBudgetJobId] = useState('')
+
+  // Radius filter states
+  const [radiusFilter, setRadiusFilter] = useState({
+    enabled: false,
+    radius: 10, // km
+    center: null // {lat, lng}
+  })
 
   // Filter states
   const [filters, setFilters] = useState({
@@ -186,6 +200,164 @@ function HomePageEntrepreneur() {
   const [userLocation, setUserLocation] = useState(null)
   const [error, setError] = useState(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(true)
+
+  // Calculate distance between two coordinates (Haversine formula)
+  const calculateDistance = useCallback((lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Earth's radius in km
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }, [])
+
+  // Extracted fetch functions for reusability
+  const fetchPropertiesData = useCallback(async (user) => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+    const response = await fetch(`${API_BASE_URL}/api/properties/all`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${user.token}`,
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const newProperties = []
+    data.properties.forEach((d) => {
+      const propertyName = d.building_name && d.building_name.trim() ? d.building_name : d.address
+      newProperties.push({
+        id: d.id,
+        name: propertyName,
+        latitude: Number(d.latitude),
+        longitude: Number(d.longitude),
+        address: d.address,
+        region: d.province,
+        city: d.city,
+        totalUnits: d.num_units,
+        propertyType: d.building_type,
+      })
+    })
+    return newProperties
+  }, [])
+
+  const fetchJobsData = useCallback(async (user) => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+    const response = await fetch(`${API_BASE_URL}/api/jobs`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${user.token}`,
+      },
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`)
+    }
+
+    const jobsData = await response.json()
+    let jobsArray = []
+
+    if (Array.isArray(jobsData)) {
+      jobsArray = jobsData
+    } else if (jobsData.jobs && Array.isArray(jobsData.jobs)) {
+      jobsArray = jobsData.jobs
+    } else if (typeof jobsData === 'object' && jobsData !== null) {
+      jobsArray = Object.values(jobsData).filter(item => typeof item === 'object' && item !== null && item.id)
+    }
+
+    const transformedJobsPromises = jobsArray.map(async job => {
+      let budgetData = { unlocked: false, unlock_date: null, amount_paid: 0 }
+      try {
+        budgetData = await fetchBudgetStatus(job, user, API_BASE_URL)
+      } catch (error) {
+        console.warn('Error fetching budget status for job:', job.id, error)
+      }
+      return {
+        id: job.id,
+        property_id: job.property_id,
+        title: job.title,
+        description: job.description,
+        category: job.category,
+        urgency: job.urgency,
+        due_date: job.due_date,
+        estimated_duration_days: job.estimated_duration_days,
+        budget_min: job.budget_min.toString(),
+        budget_max: job.budget_max.toString(),
+        status: job.status,
+        bidCount: 0,
+        daysUntilNeeded: Math.ceil(
+          (new Date(job.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
+        ),
+        budgetData: {
+          unlocked: budgetData.unlocked,
+          unlockDate: budgetData.unlock_date,
+          amountPaid: budgetData.amount_paid
+        }
+      }
+    })
+
+    const transformedJobsResults = await Promise.allSettled(transformedJobsPromises)
+    const successfulJobs = transformedJobsResults
+      .filter(result => result.status === 'fulfilled')
+      .map(result => result.value)
+
+    return successfulJobs
+  }, [])
+
+  const fetchBidsData = useCallback(async (user) => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+    const bidsResponse = await fetch(`${API_BASE_URL}/api/bids/mine`, {
+      headers: {
+        Authorization: `Bearer ${user.token}`
+      }
+    })
+
+    if (!bidsResponse.ok) {
+      throw new Error(`HTTP error! Status: ${bidsResponse.status}`)
+    }
+
+    const bids = await bidsResponse.json()
+    return bids.bids.all.map(bid => bid.job_id)
+  }, [])
+
+  // Refresh data function (used after subscription/budget unlock)
+  const refreshData = useCallback(async () => {
+    const profileString = localStorage.getItem("userProfile")
+    if (!profileString) return
+
+    try {
+      const user = JSON.parse(profileString)
+
+      // Fetch all data in parallel
+      const [newProperties, newJobs, bidIds] = await Promise.all([
+        fetchPropertiesData(user),
+        fetchJobsData(user),
+        fetchBidsData(user)
+      ])
+
+      setProperties(newProperties)
+      setJobs(newJobs)
+      setSubmittedBids(bidIds)
+
+      // Restore selected property if it exists
+      if (selectedProperty) {
+        const restoredProperty = newProperties.find(p => p.id === selectedProperty.id)
+        if (restoredProperty) {
+          setSelectedProperty(restoredProperty)
+        }
+      }
+    } catch (error) {
+      console.error("Error refreshing data:", error)
+    }
+  }, [fetchPropertiesData, fetchJobsData, fetchBidsData, selectedProperty])
 
   // get user location
   useEffect(() => {
@@ -234,7 +406,7 @@ function HomePageEntrepreneur() {
     return jobs.filter((job) => job.property_id === propertyId && job.status?.toLowerCase() === "open")
   }
 
-  // Filter properties and jobs based on all filters
+  // Filter properties and jobs based on all filters including radius
   const filteredProperties = useMemo(() => {
     const filtered = properties.filter((property) => {
       const matchesSearch =
@@ -246,6 +418,15 @@ function HomePageEntrepreneur() {
 
       const matchesPropertyType =
         filters.propertyTypes.length === 0 || filters.propertyTypes.includes(property.propertyType)
+
+      // Radius filter
+      const matchesRadius = !radiusFilter.enabled || !radiusFilter.center ||
+        calculateDistance(
+          radiusFilter.center.lat,
+          radiusFilter.center.lng,
+          property.latitude,
+          property.longitude
+        ) <= radiusFilter.radius
 
       const propertyJobs = jobs.filter((job) => job.property_id === property.id && job.status?.toLowerCase() === "open")
 
@@ -283,6 +464,7 @@ function HomePageEntrepreneur() {
         matchesRegion &&
         matchesCity &&
         matchesPropertyType &&
+        matchesRadius &&
         matchesWorkType &&
         matchesUrgency &&
         matchesDays &&
@@ -293,7 +475,7 @@ function HomePageEntrepreneur() {
     })
 
     return filtered
-  }, [properties, jobs, searchTerm, filters])
+  }, [properties, jobs, searchTerm, filters, radiusFilter, calculateDistance])
 
   // Get search results for dropdown (only based on search term, not other filters)
   const searchResults = useMemo(() => {
@@ -529,9 +711,9 @@ function HomePageEntrepreneur() {
     }
   }, [selectedProperty])
 
-  // Fetch properties from API
+  // Fetch properties from API (using extracted function)
   useEffect(() => {
-    const fetchProperties = async () => {
+    const fetchInitialData = async () => {
       const profileString = localStorage.getItem("userProfile")
       try {
         if (profileString) {
@@ -539,44 +721,16 @@ function HomePageEntrepreneur() {
           setUserProfile(user)
           getProfileAfterSubs(user)
 
-          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+          const newProperties = await fetchPropertiesData(user)
+          setProperties(newProperties)
 
-          const response = await fetch(`${API_BASE_URL}/api/properties/all`, {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${user.token}`,
-            },
-          })
-
-          if (!response.ok) {
-            console.error(`HTTP error! Status: ${response.status}`)
-          } else {
-            const data = await response.json()
-            const newProperties = []
-            data.properties.forEach((d) => {
-              const propertyName = d.building_name && d.building_name.trim() ? d.building_name : d.address
-              newProperties.push({
-                id: d.id,
-                name: propertyName,
-                latitude: Number(d.latitude),
-                longitude: Number(d.longitude),
-                address: d.address,
-                region: d.province,
-                city: d.city,
-                totalUnits: d.num_units,
-                propertyType: d.building_type,
-              })
-            })
-            setProperties(newProperties)
-
-            const savedPropertyId = localStorage.getItem("selectedPropertyId")
-            if (savedPropertyId) {
-              const restoredProperty = newProperties.find((p) => p.id === savedPropertyId)
-              if (restoredProperty) {
-                setSelectedProperty(restoredProperty)
-                setMapCenter([restoredProperty.latitude, restoredProperty.longitude])
-                setMapZoom(17)
-              }
+          const savedPropertyId = localStorage.getItem("selectedPropertyId")
+          if (savedPropertyId) {
+            const restoredProperty = newProperties.find((p) => p.id === savedPropertyId)
+            if (restoredProperty) {
+              setSelectedProperty(restoredProperty)
+              setMapCenter([restoredProperty.latitude, restoredProperty.longitude])
+              setMapZoom(17)
             }
           }
         } else {
@@ -589,112 +743,24 @@ function HomePageEntrepreneur() {
       }
     }
 
-    fetchProperties()
-  }, [])
+    fetchInitialData()
+  }, [fetchPropertiesData])
 
-  // Fetch jobs from API
+  // Fetch jobs from API (using extracted function)
   useEffect(() => {
-    const fetchJobs = async () => {
+    const fetchInitialJobs = async () => {
       const profileString = localStorage.getItem("userProfile")
 
       try {
         if (profileString) {
           const user = JSON.parse(profileString)
-          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-
-          console.log(`Fetching jobs from: ${API_BASE_URL}/api/jobs`)
-          console.log(`User role: ${user.role}, User ID: ${user.id}`)
-
-          const response = await fetch(`${API_BASE_URL}/api/jobs`, {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${user.token}`,
-            },
-          })
-
-          if (!response.ok) {
-            console.error(`HTTP error fetching jobs! Status: ${response.status}`)
-            // Show user-friendly error message
-            if (response.status === 401) {
-              alert('Session expired. Please refresh the page and login again.')
-            } else {
-              console.error(`Failed to fetch jobs. Status: ${response.status}`)
-            }
-            return
-          }
-
-          const jobsData = await response.json()
-
-          // DEBUG: Log the raw response from backend
-          console.log('Raw jobs response from backend:', jobsData)
-
-          // Handle multiple response formats:
-          // 1. Direct array: [job1, job2, ...]
-          // 2. Object with jobs property: { jobs: [...] }
-          // 3. Object with numeric keys: { 0: job1, 1: job2, ... }
-          let jobsArray = []
-
-          if (Array.isArray(jobsData)) {
-            // Format 1: Direct array
-            jobsArray = jobsData
-          } else if (jobsData.jobs && Array.isArray(jobsData.jobs)) {
-            // Format 2: Object with jobs property
-            jobsArray = jobsData.jobs
-          } else if (typeof jobsData === 'object' && jobsData !== null) {
-            // Format 3: Object with numeric keys (convert to array)
-            jobsArray = Object.values(jobsData).filter(item => typeof item === 'object' && item !== null && item.id)
-          }
-
-          console.log(`Fetched ${jobsArray.length} jobs from API`)
-
-          // DEBUG: If there are jobs, log the first one
-          if (jobsArray.length > 0) {
-            console.log('First job sample:', jobsArray[0])
-          }
-
-          // Use Promise.allSettled to prevent one failure from breaking all jobs
-          const transformedJobsPromises = jobsArray.map(async job => {
-            let budgetData = { unlocked: false, unlock_date: null, amount_paid: 0 }
-            try {
-              budgetData = await fetchBudgetStatus(job, user, API_BASE_URL)
-            } catch (error) {
-              console.warn('Error fetching budget status for job:', job.id, error)
-              // Continue with default budgetData
-            }
-            return {
-              id: job.id,
-              property_id: job.property_id,
-              title: job.title,
-              description: job.description,
-              category: job.category,
-              urgency: job.urgency,
-              due_date: job.due_date,
-              estimated_duration_days: job.estimated_duration_days,
-              budget_min: job.budget_min.toString(),
-              budget_max: job.budget_max.toString(),
-              status: job.status,
-              bidCount: 0,
-              daysUntilNeeded: Math.ceil(
-                (new Date(job.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
-              ),
-              budgetData: {
-                unlocked: budgetData.unlocked,
-                unlockDate: budgetData.unlock_date,
-                amountPaid: budgetData.amount_paid
-              }
-            }
-          })
-
-          const transformedJobsResults = await Promise.allSettled(transformedJobsPromises)
-
-          // Filter out failed promises and get successful values
-          const successfulJobs = transformedJobsResults
-            .filter(result => result.status === 'fulfilled')
-            .map(result => result.value)
-
+          const successfulJobs = await fetchJobsData(user)
           console.log(`Successfully transformed ${successfulJobs.length} jobs`)
           setJobs(successfulJobs)
-          fetchBids()
+
+          // Fetch bids
+          const bidIds = await fetchBidsData(user)
+          setSubmittedBids(bidIds)
         }
       } catch (error) {
         console.error("Error fetching jobs:", error)
@@ -702,8 +768,8 @@ function HomePageEntrepreneur() {
       }
     }
 
-    fetchJobs()
-  }, [])
+    fetchInitialJobs()
+  }, [fetchJobsData, fetchBidsData])
 
   const getProfileAfterSubs = (user) => {
     const uProf = localStorage.getItem('userProfile')
@@ -756,11 +822,12 @@ function HomePageEntrepreneur() {
     return await data
   }
 
-  const handleBudgetModal = (success) => {
+  const handleBudgetModal = async (success) => {
     setShowUnlockBudgetModal(false)
 
     if(success) {
-       window.location.reload(false);
+       // Refresh data instead of reloading page
+       await refreshData()
     }
   }
 
@@ -780,8 +847,10 @@ function HomePageEntrepreneur() {
     )
   }
 
-  const refresher = () => {
-    window.location.reload(false); 
+  const refresher = async () => {
+    // Refresh data instead of reloading page
+    await refreshData()
+    await getProfileAfterSubs(userProfile)
   }
 
   return (
@@ -891,16 +960,36 @@ function HomePageEntrepreneur() {
           </button>
         </div>
 
-        <div className="eh-content-grid">
+        <div className={`eh-content-grid ${isMapFullscreen ? 'eh-map-fullscreen' : ''}`}>
           <div className={`eh-map-section ${mobileView === "list" ? "eh-mobile-hidden" : ""}`}>
             {userLocation ? (
-              <MapContainer center={[userLocation.lat, userLocation.lng]} zoom={15} style={{ height: "100%", width: "100%" }} zoomControl={false} attributionControl={false} >
+              <MapContainer
+                ref={mapRef}
+                center={[userLocation.lat, userLocation.lng]}
+                zoom={15}
+                style={{ height: "100%", width: "100%" }}
+                zoomControl={false}
+                attributionControl={false}
+              >
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
 
               <MapController center={mapCenter} zoom={mapZoom} />
+
+              {/* Radius circle */}
+              {radiusFilter.enabled && radiusFilter.center && (
+                <Circle
+                  center={[radiusFilter.center.lat, radiusFilter.center.lng]}
+                  radius={radiusFilter.radius * 1000}
+                  pathOptions={{
+                    color: '#00A5A9',
+                    fillColor: '#00A5A9',
+                    fillOpacity: 0.1
+                  }}
+                />
+              )}
 
               {filteredProperties.map((property) => {
                 const jobCount = getPropertyOpenJobsCount(property.id)

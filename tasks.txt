@@ -1,14 +1,19 @@
 Hello, Clocking out
-Oct 30, 2025
-05:06:24
+Nov. 8, 2025
+8:08:43
 
 Intervos App
-- Improve UI and functionalities
-- Add images on adding review
-- Add reviews on mobile
-- Addded skeleton and lazy loading
-- Auto fill location on adding property
-- Improve urgent request email message
-
+- Added images to reviews and entrepreneur profiles
+- Added skeleton loading and lazy loading
+- Implemented auto-fill location when adding new properties
+- Improved and redesigned property manager UI for better user experience
+- Added map controller and radius-based job filtering
+- Fixed job status filtering and responsiveness issues
+- Improved Urgent Request email content and formatting
+- Added registration and login for suppliers
+- Created supplier dashboard and material request page for entrepreneurs
+- Added reviews section to entrepreneur profiles
+- Testing & Debugging
+- Fix responsiveness issues
 
 Thank you!

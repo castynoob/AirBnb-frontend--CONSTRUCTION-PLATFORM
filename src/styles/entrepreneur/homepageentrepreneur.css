@@ -1797,3 +1797,443 @@
     transform: rotate(360deg);
   }
 }
+
+/* ============================================
+   MAP CONTROLS
+   ============================================ */
+
+.eh-map-controls {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background-color: var(--color-white);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.eh-map-control-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border-divider);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--color-text-dark);
+  transition: all 0.2s ease;
+}
+
+.eh-map-control-btn:hover {
+  background-color: var(--color-background-light);
+  border-color: var(--color-secondary);
+  color: var(--color-secondary);
+  transform: translateY(-1px);
+}
+
+.eh-map-control-btn.eh-active {
+  background-color: var(--color-secondary);
+  border-color: var(--color-secondary);
+  color: var(--color-white);
+}
+
+.eh-map-control-divider {
+  height: 1px;
+  background-color: var(--color-border-divider);
+  margin: 4px 0;
+}
+
+.eh-radius-control {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background-color: var(--color-background-light);
+  border-radius: 8px;
+  min-width: 150px;
+}
+
+.eh-radius-control label {
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-md);
+  color: var(--color-text-dark);
+  text-align: center;
+}
+
+.eh-radius-slider {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--color-secondary), var(--color-secondary));
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.eh-radius-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-secondary);
+  cursor: pointer;
+  border: 2px solid var(--color-white);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.eh-radius-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-secondary);
+  cursor: pointer;
+  border: 2px solid var(--color-white);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* ============================================
+   FULLSCREEN MAP LAYOUT
+   ============================================ */
+
+.eh-content-grid.eh-map-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.eh-content-grid.eh-map-fullscreen .eh-map-section {
+  width: 100%;
+  height: 100vh;
+  border-radius: 0;
+}
+
+.eh-content-grid.eh-map-fullscreen .eh-details-section {
+  display: none;
+}
+
+/* Exit fullscreen button positioning in fullscreen mode */
+.eh-content-grid.eh-map-fullscreen .eh-map-controls {
+  top: 80px;
+}
+
+/* ============================================
+   IMPROVED MOBILE RESPONSIVENESS
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .eh-main-content {
+    margin-left: 80px;
+    padding: 1.5rem;
+  }
+
+  .eh-content-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .eh-map-section {
+    height: 60vh;
+    min-height: 400px;
+  }
+
+  .eh-details-section {
+    height: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .eh-main-content {
+    margin-left: 0;
+    padding: 1rem;
+    padding-bottom: 5rem;
+  }
+
+  .eh-page-header {
+    padding: 1rem;
+  }
+
+  .eh-page-title {
+    font-size: 1.25rem;
+  }
+
+  .eh-content-grid {
+    height: calc(100vh - 280px);
+  }
+
+  .eh-map-section {
+    height: 100%;
+  }
+
+  .eh-map-controls {
+    top: 10px;
+    right: 10px;
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .eh-map-control-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .eh-radius-control {
+    min-width: 120px;
+    padding: 8px;
+  }
+
+  /* Mobile view toggle */
+  .eh-mobile-view-toggle {
+    display: flex;
+  }
+
+  .eh-map-section.eh-mobile-hidden,
+  .eh-details-section.eh-mobile-hidden {
+    display: none;
+  }
+
+  /* Property details in mobile */
+  .eh-property-details {
+    padding: 1rem;
+  }
+
+  .eh-details-header {
+    padding: 1rem;
+  }
+
+  .eh-stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .eh-jobs-list {
+    gap: 1rem;
+  }
+
+  .eh-job-card {
+    padding: 1rem;
+  }
+
+  /* Job card improvements */
+  .eh-job-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .eh-urgency-badge {
+    align-self: flex-start;
+  }
+
+  .eh-job-details-grid {
+    grid-template-columns: 1fr;
+    gap: 0.875rem;
+  }
+
+  .eh-bid-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Property list improvements */
+  .eh-properties-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .eh-property-list-card {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .eh-main-content {
+    padding: 0.75rem;
+  }
+
+  .eh-page-header {
+    padding: 0.875rem;
+    gap: 0.75rem;
+  }
+
+  .eh-header-actions {
+    width: 100%;
+    gap: 0.5rem;
+  }
+
+  .eh-map-controls {
+    top: 8px;
+    right: 8px;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .eh-map-control-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .eh-map-control-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .eh-radius-control {
+    min-width: 100px;
+    padding: 6px;
+  }
+
+  .eh-radius-control label {
+    font-size: 0.75rem;
+  }
+
+  /* Smaller job cards */
+  .eh-job-card {
+    padding: 0.875rem;
+  }
+
+  .eh-job-title {
+    font-size: 1rem;
+  }
+
+  .eh-job-description {
+    font-size: 0.8125rem;
+  }
+
+  .eh-detail-item {
+    font-size: 0.8125rem;
+  }
+
+  /* Filter button improvements */
+  .eh-filters-btn span.eh-filter-btn-text {
+    display: none;
+  }
+
+  .eh-notification-btn span {
+    display: none;
+  }
+
+  /* Search always expanded on mobile */
+  .eh-search-box-entrep {
+    width: 100%;
+  }
+
+  .eh-search-box-entrep.eh-expanded {
+    width: 100%;
+  }
+}
+
+/* ============================================
+   FULLSCREEN MODE ADJUSTMENTS
+   ============================================ */
+
+.eh-content-grid.eh-map-fullscreen .eh-mobile-view-toggle {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .eh-content-grid.eh-map-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+
+  .eh-content-grid.eh-map-fullscreen .eh-map-section {
+    height: 100vh;
+  }
+
+  .eh-content-grid.eh-map-fullscreen .eh-map-controls {
+    top: 10px;
+  }
+}
+
+/* ============================================
+   IMPROVED MAP POPUP
+   ============================================ */
+
+.eh-popup-content {
+  padding: 0.5rem;
+}
+
+.eh-popup-content h3 {
+  font-size: 1rem;
+  font-weight: var(--font-weight-lg);
+  color: var(--color-text-dark);
+  margin: 0 0 0.5rem 0;
+}
+
+.eh-popup-content p {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin: 0 0 0.75rem 0;
+}
+
+.eh-popup-stats {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.eh-popup-stat {
+  padding: 0.25rem 0.625rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-md);
+  background-color: var(--color-background-light);
+  color: var(--color-text-dark);
+}
+
+.eh-popup-stat.eh-highlight {
+  background-color: var(--color-secondary);
+  color: var(--color-white);
+}
+
+/* ============================================
+   ACCESSIBILITY IMPROVEMENTS
+   ============================================ */
+
+.eh-map-control-btn:focus {
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 2px;
+}
+
+.eh-radius-slider:focus {
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   LOADING STATE IMPROVEMENTS
+   ============================================ */
+
+.eh-loading-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+/* ============================================
+   SMOOTH TRANSITIONS
+   ============================================ */
+
+.eh-content-grid {
+  transition: all 0.3s ease;
+}
+
+.eh-map-section,
+.eh-details-section {
+  transition: all 0.3s ease;
+}

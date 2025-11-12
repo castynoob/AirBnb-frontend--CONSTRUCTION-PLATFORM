@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Home, MessageSquare, User, LogOut, Heart, FileText, Crown, Wrench   } from "lucide-react";
+import { Home, MessageSquare, User, LogOut, Heart, FileText, Crown, Wrench, ShoppingCart } from "lucide-react";
 import logo from '../assets/logo-light.png'
 import '../styles/nav.css'
 import { getUnreadCount } from '../utils/api';
@@ -94,7 +94,11 @@ function Nav() {
             </div>
             <div className="brand-text">
               <span className="brand-name nav">INTERVOS</span>
-              <span className="brand-subtitle">{role[0].toLocaleUpperCase() + role.substring(1, role.length)}</span>
+              <span className="brand-subtitle">
+                {role === 'property_manager' ? 'Property Manager' :
+                 role === 'supplier' ? 'Supplier' :
+                 role[0].toUpperCase() + role.substring(1)}
+              </span>
             </div>
           </div>
 
@@ -128,20 +132,24 @@ function Nav() {
                 </NavLink>
               </li>
 
-              <li>
-                <NavLink
-                  to={'/submissions/'+role}
-                  className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
-                >
-                  <div className="nav-icon">
-                    <FileText size={20} />
-                  </div>
-                  <span className="nav-text">Biddings</span>
-                </NavLink>
-              </li>
+              {
+                role !== 'supplier' &&
+                <li>
+                  <NavLink
+                    to={'/submissions/'+role}
+                    className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+                  >
+                    <div className="nav-icon">
+                      <FileText size={20} />
+                    </div>
+                    <span className="nav-text">Biddings</span>
+                  </NavLink>
+                </li>
+              }
+
 
               {
-                role == 'manager' &&
+                role == 'property_manager' &&
                 <li>
                   <NavLink
                     to={'/favorites/'+role}
@@ -153,22 +161,34 @@ function Nav() {
                     <span className="nav-text">Favorites</span>
                   </NavLink>
                 </li>
-                
               }
 
               {
                 role == 'entrepreneur' &&
+                <>
                 <li>
                   <NavLink
                     to={'/jobs/'+role}
                     className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
-                  >
+                    >
                     <div className="nav-icon">
                       <Wrench size={20} />
                     </div>
                     <span className="nav-text">Jobs</span>
                   </NavLink>
                 </li>
+                <li>
+                  <NavLink
+                    to={'/supplier'}
+                    className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+                  >
+                    <div className="nav-icon">
+                      <ShoppingCart size={20} />
+                    </div>
+                    <span className="nav-text">Supplier</span>
+                  </NavLink>
+                </li>
+                </>
               }
 
               <li>
@@ -200,21 +220,6 @@ function Nav() {
                   <span className="nav-text">Profile</span>
                 </NavLink>
               </li>
-              {
-    
-                userProfile != null && role == 'entrepreneur' &&
-                <li>
-                  <NavLink
-                    to={'/subscription/' + role}
-                    className={({ isActive }) => (isActive ? `nav-link active ${userProfile.entrepProfile.subscription.hasSubscription? 'premium-endicator' : ''}`  : `nav-link ${userProfile.entrepProfile.subscription.hasSubscription? 'premium-endicator' : ''}`)}
-                  >
-                    <div className="nav-icon">
-                      <Crown size={20} />
-                    </div>
-                    <span className="nav-text">Subscription</span>
-                  </NavLink>
-                </li>
-              }
             </ul>
           </div>
 

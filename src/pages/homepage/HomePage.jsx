@@ -1,7 +1,5 @@
-"use client"
-
 import { useCallback, useState, useEffect, useRef } from "react"
-import { Bell, Wrench, Search, Plus, X, FileText, CheckCircle, LoaderIcon  } from "lucide-react"
+import { Bell, Wrench, Search, Plus, X, FileText, CheckCircle, LoaderIcon, Building2, MapPin, Briefcase, Grid, List  } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import "../../styles/manager/homepage.css"
 import Nav from "../../components/Nav"
@@ -77,6 +75,8 @@ function HomePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [imagesLoaded, setImagesLoaded] = useState({})
+  const [selectedProperty, setSelectedProperty] = useState(null)
+  const [groupedProperties, setGroupedProperties] = useState([])
 
   const [notifications] = useState([])
   const [uProfile, setUProfile] = useState({})
@@ -201,7 +201,26 @@ function HomePage() {
         )
 
         // Filter out null values from failed requests
-        setProperties(propertiesData.filter((p) => p !== null))
+        const validProperties = propertiesData.filter((p) => p !== null)
+        setProperties(validProperties)
+
+        // Group properties by unique property
+        const propertyMap = new Map()
+        validProperties.forEach(prop => {
+          const propertyId = prop.data.propertyId
+          if (!propertyMap.has(propertyId)) {
+            propertyMap.set(propertyId, {
+              id: propertyId,
+              name: prop.property,
+              address: prop.address,
+              building_type: prop.building_type,
+              jobs: []
+            })
+          }
+          propertyMap.get(propertyId).jobs.push(prop)
+        })
+
+        setGroupedProperties(Array.from(propertyMap.values()))
         setIsLoading(false)
       } catch (err) {
         console.error("Error fetching data:", err)
@@ -213,11 +232,13 @@ function HomePage() {
     fetchData()
   }, [])
 
-  const [isHome, setIsHome] = useState(true)
+  const [viewState, setViewState] = useState('properties') // 'properties', 'jobs', 'details'
   const [repair, setRepair] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [searchExpanded, setSearchExpanded] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
+  const [propertiesViewMode, setPropertiesViewMode] = useState("grid") // "grid" or "list"
+  const [jobsViewMode, setJobsViewMode] = useState("grid") // "grid" or "list"
   const searchInputRef = useRef(null)
   const notificationRef = useRef(null)
 
@@ -454,10 +475,19 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
     navigate("/add-work/property_manager")
   }
 
-  const handleRepairClicked = useCallback((value, repair) => {
-    setIsHome(value)
+  const handleRepairClicked = useCallback((repair) => {
+    setViewState('details')
     setRepair(repair)
   }, [])
+
+  const handleBackFromDetails = useCallback(() => {
+    if (selectedProperty) {
+      setViewState('jobs')
+    } else {
+      setViewState('properties')
+    }
+    setRepair(null)
+  }, [selectedProperty])
 
   const handleSearchFocus = () => {
     setSearchExpanded(true)
@@ -495,13 +525,17 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
     }
   }, [showNotifications])
 
-  const filteredRepairs = properties.filter(
-    (repair) =>
-      repair.property.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      repair.apartment.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      repair.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      repair.category.toLowerCase().includes(searchTerm.toLowerCase()),
+  const filteredProperties = groupedProperties.filter(
+    (property) =>
+      property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      property.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      property.building_type.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  const handlePropertyClick = (property) => {
+    setSelectedProperty(property)
+    setViewState('jobs')
+  }
 
   const unreadCount = notifications.filter((n) => !n.read).length
 
@@ -512,7 +546,7 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
         <div className="main-container">
           <header className="pm-page-header">
             <div>
-              <h1>Repair Work Overview</h1>
+              <h1>Job Overview</h1>
             </div>
             <div className="pm-header-actions">
               <div className="pm-search-box-header">
@@ -564,11 +598,11 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
   return (
     <div className="homepage">
       <Nav />
-      {isHome ? (
+      {viewState === 'properties' ? (
         <div className="main-container">
           <header className="pm-page-header">
             <div>
-              <h1>Repair Work Overview</h1>
+              <h1>Job Overview</h1>
             </div>
             <div className="pm-header-actions">
               <div className={`pm-search-box-header ${searchExpanded ? "expanded" : ""}`}>
@@ -586,15 +620,17 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                   className="pm-search-input-header"
                 />
               </div>
-              <button onClick={handleUrgentRequest} className="pm-urgent-button-icon" aria-label="Urgent Request">
+              <button onClick={handleUrgentRequest} className="pm-urgent-button-with-label" aria-label="Urgent Request">
                 {
-                  isSending ? 
+                  isSending ?
                   <LoaderIcon size={20} /> :
                   <Wrench size={20} />
                 }
+                <span>Urgent</span>
               </button>
-              <button onClick={handleAddWork} className="pm-add-work-btn-icon" aria-label="Add New Work">
+              <button onClick={handleAddWork} className="pm-add-work-btn-with-label" aria-label="Add New Work">
                 <Plus size={20} />
+                <span>New Job</span>
               </button>
               <div className="pm-notification-wrapper" ref={notificationRef}>
                 <button className="pm-notification-btn" aria-label="Notifications" onClick={toggleNotifications}>
@@ -695,16 +731,195 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
 
           <SummarySection repairs={properties} />
 
-          <RepairList repairs={filteredRepairs} handleRepairClicked={handleRepairClicked} />
+          {/* Properties List */}
+          <section className="pm-repairs-section">
+            <div className="pm-section-header">
+              <div>
+                <h2>Properties</h2>
+                <p className="pm-section-subtitle">View and manage jobs by property</p>
+              </div>
+              <div className="pm-view-toggle">
+                <button
+                  className={`pm-view-btn ${propertiesViewMode === "grid" ? "active" : ""}`}
+                  onClick={() => setPropertiesViewMode("grid")}
+                  title="Grid View"
+                >
+                  <Grid size={18} />
+                </button>
+                <button
+                  className={`pm-view-btn ${propertiesViewMode === "list" ? "active" : ""}`}
+                  onClick={() => setPropertiesViewMode("list")}
+                  title="List View"
+                >
+                  <List size={18} />
+                </button>
+              </div>
+            </div>
+            <div className={propertiesViewMode === "grid" ? "pm-repair-cards-grid" : "pm-properties-list"}>
+              {filteredProperties.map((property) => (
+                <div
+                  key={property.id}
+                  className={`pm-property-card ${propertiesViewMode === "list" ? "pm-property-card-list" : ""}`}
+                  onClick={() => handlePropertyClick(property)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="pm-property-card-header">
+                    <div className="pm-property-icon">
+                      <Building2 size={32} />
+                    </div>
+                    <div className="pm-property-info-main">
+                      <h3 className="pm-property-card-name">{property.name}</h3>
+                      <div className="pm-property-meta">
+                        <MapPin size={14} />
+                        <span>{property.address}</span>
+                      </div>
+                      <div className="pm-property-meta">
+                        <Briefcase size={14} />
+                        <span>{property.building_type}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="pm-property-stats">
+                    <div className="pm-stat-item">
+                      <span className="pm-stat-label">Total Jobs</span>
+                      <span className="pm-stat-value">{property.jobs.length}</span>
+                    </div>
+                    <div className="pm-stat-item">
+                      <span className="pm-stat-label">Open Jobs</span>
+                      <span className="pm-stat-value">
+                        {property.jobs.filter(j => j.status?.toLowerCase() === 'open').length}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
 
-          {filteredRepairs.length === 0 && (
+          {filteredProperties.length === 0 && (
             <div className="pm-no-results-home">
-              <p>No repairs found matching your search.</p>
+              <p>No properties found matching your search.</p>
             </div>
           )}
         </div>
+      ) : viewState === 'jobs' && selectedProperty ? (
+        <div className="main-container pm-fullscreen-view">
+          <header className="pm-page-header">
+            <div className="pm-header-back-section">
+              <button
+                className="pm-back-button"
+                onClick={() => setViewState('properties')}
+                aria-label="Back to properties"
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Back
+              </button>
+              <div>
+                <h1>{selectedProperty.name}</h1>
+                <p className="pm-property-subtitle">{selectedProperty.address}</p>
+              </div>
+            </div>
+          </header>
+
+          <div className="pm-jobs-stats">
+            <div className="pm-jobs-stat-card">
+              <span className="pm-jobs-stat-label">Total Jobs</span>
+              <span className="pm-jobs-stat-value">{selectedProperty.jobs.length}</span>
+            </div>
+            <div className="pm-jobs-stat-card">
+              <span className="pm-jobs-stat-label">Open Jobs</span>
+              <span className="pm-jobs-stat-value">
+                {selectedProperty.jobs.filter(j => j.status?.toLowerCase() === 'open').length}
+              </span>
+            </div>
+            <div className="pm-jobs-stat-card">
+              <span className="pm-jobs-stat-label">Building Type</span>
+              <span className="pm-jobs-stat-value">{selectedProperty.building_type}</span>
+            </div>
+          </div>
+
+          <section className="pm-repairs-section">
+            <div className="pm-section-header">
+              <div>
+                <h2>Jobs at this Property</h2>
+                <p className="pm-section-subtitle">Click on a job to view details</p>
+              </div>
+              <div className="pm-view-toggle">
+                <button
+                  className={`pm-view-btn ${jobsViewMode === "grid" ? "active" : ""}`}
+                  onClick={() => setJobsViewMode("grid")}
+                  title="Grid View"
+                >
+                  <Grid size={18} />
+                </button>
+                <button
+                  className={`pm-view-btn ${jobsViewMode === "list" ? "active" : ""}`}
+                  onClick={() => setJobsViewMode("list")}
+                  title="List View"
+                >
+                  <List size={18} />
+                </button>
+              </div>
+            </div>
+            <div className={jobsViewMode === "grid" ? "pm-jobs-grid" : "pm-jobs-list"}>
+              {selectedProperty.jobs.map((job) => (
+                <div
+                  key={job.id}
+                  className={`pm-job-card-fullscreen ${jobsViewMode === "list" ? "pm-job-card-list" : ""}`}
+                  onClick={() => handleRepairClicked(job)}
+                >
+                  {/* Job Images */}
+                  {job.images && job.images.length > 0 && (
+                    <div className="pm-job-images-container">
+                      <img
+                        src={job.images[0]}
+                        alt={job.apartment}
+                        className="pm-job-main-image"
+                        loading="lazy"
+                        onError={(e) => {
+                          e.target.src = "https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM="
+                        }}
+                      />
+                      {job.images.length > 1 && (
+                        <span className="pm-job-images-count">+{job.images.length - 1}</span>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="pm-job-content">
+                    <div className="pm-job-header-fullscreen">
+                      <h3 className="pm-job-title-fullscreen">{job.apartment}</h3>
+                      <span className={`pm-job-badge pm-${job.category.toLowerCase().replace(/\s+/g, '-')}`}>
+                        {job.category}
+                      </span>
+                    </div>
+
+                    <p className="pm-job-description-fullscreen">{job.description}</p>
+
+                    <div className="pm-job-footer-fullscreen">
+                      <div className="pm-job-info-item">
+                        <FileText size={16} />
+                        <span>{job.bids} bids</span>
+                      </div>
+                      <div className="pm-job-info-item pm-budget">
+                        <span>{job.budget}</span>
+                      </div>
+                      <div className="pm-job-info-item">
+                        <span className={`pm-status-badge pm-status-${job.status?.toLowerCase()}`}>
+                          {job.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
       ) : (
-        <RepairDetails handleRepairClicked={handleRepairClicked} repair={repair} />
+        <RepairDetails handleBackFromDetails={handleBackFromDetails} repair={repair} />
       )}
     </div>
   )

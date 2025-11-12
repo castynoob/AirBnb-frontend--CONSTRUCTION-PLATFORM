@@ -17,6 +17,7 @@ import {
   Building2,
   User,
   FolderOpen,
+  Heart,
 } from "lucide-react"
 import Nav from "../../components/Nav"
 import "../../styles/manager/submissions.css"
@@ -56,8 +57,12 @@ function SubmissionsPage() {
   const [userReviews, setUserReviews] = useState([])
   const [loadingReviews, setLoadingReviews] = useState(false)
 
+  // Favorites state
+  const [favorites, setFavorites] = useState([])
+
   useEffect(() => {
     fetchSubmissions()
+    fetchFavorites()
   }, [])
 
   const showNotification = (message, type = "success") => {
@@ -65,6 +70,99 @@ function SubmissionsPage() {
     setTimeout(() => {
       setNotification(null)
     }, 5000)
+  }
+
+  // Fetch favorites
+  const fetchFavorites = async () => {
+    try {
+      const userProfile = localStorage.getItem("userProfile")
+      if (!userProfile) return
+
+      const user = JSON.parse(userProfile)
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+      const response = await fetch(`${API_BASE_URL}/api/favorites`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch favorites: ${response.status}`)
+      }
+
+      const data = await response.json()
+      // Extract bid IDs from favorites
+      const favoriteBidIds = data.favorites
+        .filter(fav => fav.bid_id)
+        .map(fav => fav.bid_id)
+      setFavorites(favoriteBidIds)
+    } catch (err) {
+      console.error("Error fetching favorites:", err)
+    }
+  }
+
+  // Toggle favorite
+  const toggleFavorite = async (submission, e) => {
+    e.stopPropagation()
+
+    try {
+      const userProfile = localStorage.getItem("userProfile")
+      if (!userProfile) {
+        showNotification("Please log in to add favorites", "error")
+        return
+      }
+
+      const user = JSON.parse(userProfile)
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+      const isFavorited = favorites.includes(submission.bid.id)
+
+      if (isFavorited) {
+        // Remove from favorites
+        const response = await fetch(
+          `${API_BASE_URL}/api/favorites/bid/${submission.bid.id}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${user.token}`,
+            },
+          }
+        )
+
+        if (!response.ok) {
+          throw new Error(`Failed to remove favorite: ${response.status}`)
+        }
+
+        setFavorites((prev) => prev.filter((id) => id !== submission.bid.id))
+        showNotification("Removed from favorites", "info")
+      } else {
+        // Add to favorites
+        const response = await fetch(`${API_BASE_URL}/api/favorites`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            entrepreneurId: submission.entrepreneur_profile.id,
+            jobId: submission.job.id,
+            bidId: submission.bid.id,
+          }),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || `Failed to add favorite: ${response.status}`)
+        }
+
+        setFavorites((prev) => [...prev, submission.bid.id])
+        showNotification("Added to favorites", "success")
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error)
+      showNotification(error.message || "Failed to update favorites", "error")
+    }
   }
 
   const fetchSubmissions = async () => {
@@ -1345,7 +1443,21 @@ function SubmissionsPage() {
                       <StatusIcon size={14} />
                       {statusInfo.label}
                     </div>
-                    <span className="subs-bid-amount">{formatCurrency(submission.bid.amount)}</span>
+                    <div className="subs-header-right">
+                      <span className="subs-bid-amount">{formatCurrency(submission.bid.amount)}</span>
+                      <button
+                        className="subs-favorite-btn"
+                        onClick={(e) => toggleFavorite(submission, e)}
+                        aria-label="Add to favorites"
+                        title={favorites.includes(submission.bid.id) ? "Remove from favorites" : "Add to favorites"}
+                      >
+                        <Heart
+                          size={18}
+                          fill={favorites.includes(submission.bid.id) ? "#E74C3C" : "none"}
+                          stroke="#E74C3C"
+                        />
+                      </button>
+                    </div>
                   </div>
 
                   <h3 className="subs-job-title">{submission.job.title}</h3>

@@ -16,7 +16,6 @@ function SummarySection({ repairs }) {
         <div className="pm-card-content">
           <p className="pm-card-label">Urgent (Current Year)</p>
           <h3 className="pm-card-value">{urgentCount}</h3>
-          <p className="pm-card-subtitle">Requires immediate attention</p>
         </div>
       </div>
 
@@ -27,7 +26,6 @@ function SummarySection({ repairs }) {
         <div className="pm-card-content">
           <p className="pm-card-label">Next Year</p>
           <h3 className="pm-card-value">{nextYearCount}</h3>
-          <p className="pm-card-subtitle">Scheduled for next year</p>
         </div>
       </div>
 
@@ -38,7 +36,6 @@ function SummarySection({ repairs }) {
         <div className="pm-card-content">
           <p className="pm-card-label">Year After</p>
           <h3 className="pm-card-value">{longTermCount}</h3>
-          <p className="pm-card-subtitle">Long-term planning</p>
         </div>
       </div>
     </section>

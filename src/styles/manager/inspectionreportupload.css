@@ -1,4 +1,4 @@
-.inspection-upload-modal {
+.uir-inspection-upload-modal {
   width: 100%;
   height: 100dvh;
   position: fixed;
@@ -37,7 +37,7 @@
   }
 }
 
-.inspection-upload-modal .modal-overlay {
+.uir-inspection-upload-modal .uir-modal-overlay {
   position: absolute;
   top: 0;
   left: 0;
@@ -48,7 +48,7 @@
   z-index: 1001;
 }
 
-.inspection-upload-modal .modal-content {
+.uir-inspection-upload-modal .uir-modal-content {
   position: relative;
   background: #fff;
   border-radius: 12px;
@@ -61,30 +61,30 @@
   animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.inspection-modal {
+.uir-inspection-modal {
   max-width: 1200px;
 }
 
-.inspection-upload-modal .modal-content::-webkit-scrollbar {
+.uir-inspection-upload-modal .uir-modal-content::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-.inspection-upload-modal .modal-content::-webkit-scrollbar-track {
+.uir-inspection-upload-modal .uir-modal-content::-webkit-scrollbar-track {
   background: #f0f0f0;
   border-radius: 10px;
 }
 
-.inspection-upload-modal .modal-content::-webkit-scrollbar-thumb {
+.uir-inspection-upload-modal .uir-modal-content::-webkit-scrollbar-thumb {
   background: #a0a0a0;
   border-radius: 10px;
 }
 
-.inspection-upload-modal .modal-content::-webkit-scrollbar-thumb:hover {
+.uir-inspection-upload-modal .uir-modal-content::-webkit-scrollbar-thumb:hover {
   background: #707070;
 }
 
-.inspection-upload-modal .close-btn {
+.uir-inspection-upload-modal .uir-close-btn {
   position: absolute;
   top: 20px;
   right: 20px;
@@ -104,19 +104,19 @@
   font-weight: 300;
 }
 
-.inspection-upload-modal .close-btn:hover {
+.uir-inspection-upload-modal .uir-close-btn:hover {
   background: #F7F8FA;
   border-color: #00A5A9;
   color: #00A5A9;
   transform: rotate(90deg);
 }
 
-.inspection-upload-modal .modal-header {
+.uir-inspection-upload-modal .uir-modal-header {
   margin-bottom: 32px;
   text-align: center;
 }
 
-.inspection-upload-modal .modal-header h2 {
+.uir-inspection-upload-modal .uir-modal-header h2 {
   font-size: 28px;
   font-weight: 700;
   color: #0F223D;
@@ -124,7 +124,7 @@
   letter-spacing: -0.3px;
 }
 
-.inspection-upload-modal .subtitle {
+.uir-inspection-upload-modal .uir-subtitle {
   font-size: 15px;
   color: #7F8C8D;
   font-weight: 400;
@@ -133,13 +133,13 @@
 }
 
 /* Upload Section */
-.upload-section {
+.uir-upload-section {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
-.upload-section h3 {
+.uir-upload-section h3 {
   font-size: 18px;
   font-weight: 700;
   color: #0F223D;
@@ -147,7 +147,7 @@
 }
 
 /* Property Selection Section */
-.property-selection-section {
+.uir-property-selection-section {
   background: #F7F8FA;
   border: 1px solid #D9E1E7;
   border-radius: 12px;
@@ -155,20 +155,20 @@
   margin-bottom: 8px;
 }
 
-.property-selection-section h3 {
+.uir-property-selection-section h3 {
   font-size: 18px;
   font-weight: 700;
   color: #0F223D;
   margin-bottom: 16px;
 }
 
-.property-selection-section .form-group {
+.uir-property-selection-section .uir-form-group {
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-.property-selection-section label {
+.uir-property-selection-section label {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -177,14 +177,14 @@
   color: #0F223D;
 }
 
-.property-icon {
+.uir-property-icon {
   width: 20px;
   height: 20px;
   color: #00A5A9;
   stroke-width: 2;
 }
 
-.property-dropdown {
+.uir-property-dropdown {
   width: 100%;
   padding: 12px 16px;
   border: 2px solid #D9E1E7;
@@ -197,22 +197,22 @@
   font-weight: 500;
 }
 
-.property-dropdown:hover {
+.uir-property-dropdown:hover {
   border-color: #00A5A9;
 }
 
-.property-dropdown:focus {
+.uir-property-dropdown:focus {
   outline: none;
   border-color: #00A5A9;
   box-shadow: 0 0 0 3px rgba(0, 165, 169, 0.1);
 }
 
-.required {
+.uir-required {
   color: #E74C3C;
   font-weight: 700;
 }
 
-.loading-message {
+.uir-loading-message {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -226,7 +226,7 @@
   font-weight: 500;
 }
 
-.upload-area {
+.uir-upload-area {
   border: 2px dashed #D9E1E7;
   border-radius: 12px;
   padding: 48px 24px;
@@ -235,16 +235,16 @@
   background: #F7F8FA;
 }
 
-.upload-area:hover {
+.uir-upload-area:hover {
   border-color: #00A5A9;
   background: #f0feff;
 }
 
-.file-input {
+.uir-file-input {
   display: none;
 }
 
-.upload-label {
+.uir-upload-label {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -252,25 +252,25 @@
   cursor: pointer;
 }
 
-.upload-icon {
+.uir-upload-icon {
   width: 64px;
   height: 64px;
   color: #00A5A9;
   stroke-width: 1.5;
 }
 
-.upload-text {
+.uir-upload-text {
   font-size: 16px;
   font-weight: 600;
   color: #0F223D;
 }
 
-.upload-hint {
+.uir-upload-hint {
   font-size: 14px;
   color: #7F8C8D;
 }
 
-.error-message {
+.uir-error-message {
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -285,13 +285,13 @@
   line-height: 1.6;
 }
 
-.error-icon {
+.uir-error-icon {
   width: 24px;
   height: 24px;
   flex-shrink: 0;
 }
 
-.processing-message {
+.uir-processing-message {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -305,7 +305,7 @@
   font-weight: 600;
 }
 
-.spinner {
+.uir-spinner {
   width: 20px;
   height: 20px;
   border: 3px solid rgba(0, 165, 169, 0.2);
@@ -314,14 +314,14 @@
   animation: spin 0.8s linear infinite;
 }
 
-.instructions {
+.uir-instructions {
   background: #fff;
   border: 1px solid #D9E1E7;
   border-radius: 8px;
   padding: 24px;
 }
 
-.instructions-header {
+.uir-instructions-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -330,14 +330,14 @@
   flex-wrap: wrap;
 }
 
-.instructions h3 {
+.uir-instructions h3 {
   font-size: 16px;
   font-weight: 700;
   color: #0F223D;
   margin-bottom: 0;
 }
 
-.template-download-btn {
+.uir-template-download-btn {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -353,19 +353,19 @@
   white-space: nowrap;
 }
 
-.template-download-btn:hover {
+.uir-template-download-btn:hover {
   background: #00b8bd;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 165, 169, 0.3);
 }
 
-.template-download-btn svg {
+.uir-template-download-btn svg {
   width: 18px;
   height: 18px;
   stroke-width: 2;
 }
 
-.instructions ul {
+.uir-instructions ul {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -374,7 +374,7 @@
   gap: 12px;
 }
 
-.instructions li {
+.uir-instructions li {
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -384,7 +384,7 @@
   position: relative;
 }
 
-.instructions li::before {
+.uir-instructions li::before {
   content: '•';
   position: absolute;
   left: 8px;
@@ -394,13 +394,13 @@
 }
 
 /* Review Section */
-.review-section {
+.uir-review-section {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
-.review-header {
+.uir-review-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -410,20 +410,20 @@
   gap: 16px;
 }
 
-.review-info h3 {
+.uir-review-info h3 {
   font-size: 20px;
   font-weight: 700;
   color: #0F223D;
   margin-bottom: 4px;
 }
 
-.review-info p {
+.uir-review-info p {
   font-size: 14px;
   color: #7F8C8D;
   margin: 0;
 }
 
-.reset-btn {
+.uir-reset-btn {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -438,19 +438,19 @@
   transition: all 0.2s ease;
 }
 
-.reset-btn:hover {
+.uir-reset-btn:hover {
   border-color: #00A5A9;
   color: #00A5A9;
   background: #f0feff;
 }
 
-.reset-icon {
+.uir-reset-icon {
   width: 18px;
   height: 18px;
   stroke-width: 2;
 }
 
-.data-table-container {
+.uir-data-table-container {
   overflow-x: auto;
   border: 1px solid #D9E1E7;
   border-radius: 8px;
@@ -459,13 +459,13 @@
   overflow-y: auto;
 }
 
-.data-table {
+.uir-data-table {
   width: 100%;
   border-collapse: collapse;
   min-width: 600px;
 }
 
-.data-table thead {
+.uir-data-table thead {
   background: #0F223D;
   color: #fff;
   position: sticky;
@@ -473,7 +473,7 @@
   z-index: 10;
 }
 
-.data-table th {
+.uir-data-table th {
   padding: 14px 12px;
   font-weight: 700;
   font-size: 13px;
@@ -483,26 +483,26 @@
   white-space: nowrap;
 }
 
-.data-table tbody tr {
+.uir-data-table tbody tr {
   border-bottom: 1px solid #F7F8FA;
   transition: background 0.2s ease;
 }
 
-.data-table tbody tr:hover {
+.uir-data-table tbody tr:hover {
   background: #F7F8FA;
 }
 
-.data-table tbody tr:last-child {
+.uir-data-table tbody tr:last-child {
   border-bottom: none;
 }
 
-.data-table td {
+.uir-data-table td {
   padding: 12px;
   font-size: 14px;
   color: #2C3E50;
 }
 
-.row-number {
+.uir-row-number {
   font-weight: 700;
   color: #7F8C8D;
   background: #F7F8FA;
@@ -510,7 +510,7 @@
   min-width: 50px;
 }
 
-.data-input {
+.uir-data-input {
   width: 100%;
   min-width: 150px;
   padding: 8px 12px;
@@ -522,29 +522,29 @@
   background: #fff;
 }
 
-.data-input:focus {
+.uir-data-input:focus {
   outline: none;
   border-color: #00A5A9;
   box-shadow: 0 0 0 3px rgba(0, 165, 169, 0.1);
 }
 
-.data-input:hover {
+.uir-data-input:hover {
   border-color: #00A5A9;
 }
 
-.data-textarea {
+.uir-data-textarea {
   min-width: 250px;
   resize: vertical;
   font-family: inherit;
   line-height: 1.4;
 }
 
-.action-cell {
+.uir-action-cell {
   text-align: center;
   width: 80px;
 }
 
-.delete-btn {
+.uir-delete-btn {
   background: transparent;
   border: none;
   color: #E74C3C;
@@ -557,19 +557,19 @@
   justify-content: center;
 }
 
-.delete-btn:hover {
+.uir-delete-btn:hover {
   background: #fee;
   transform: scale(1.1);
 }
 
-.delete-btn svg {
+.uir-delete-btn svg {
   width: 20px;
   height: 20px;
   stroke-width: 2;
 }
 
 /* Modal Actions */
-.modal-actions {
+.uir-modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
@@ -577,7 +577,7 @@
   border-top: 2px solid #F7F8FA;
 }
 
-.cancel-btn {
+.uir-cancel-btn {
   padding: 12px 28px;
   background: #fff;
   border: 2px solid #D9E1E7;
@@ -591,12 +591,12 @@
   letter-spacing: 0.5px;
 }
 
-.cancel-btn:hover {
+.uir-cancel-btn:hover {
   background: #F7F8FA;
   border-color: #0F223D;
 }
 
-.submit-btn {
+.uir-submit-btn {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -614,13 +614,13 @@
   box-shadow: 0 2px 8px rgba(0, 165, 169, 0.25);
 }
 
-.submit-btn:hover {
+.uir-submit-btn:hover {
   background: #00b8bd;
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(0, 165, 169, 0.35);
 }
 
-.submit-icon {
+.uir-submit-icon {
   width: 18px;
   height: 18px;
   stroke-width: 2.5;
@@ -628,70 +628,70 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .inspection-upload-modal .modal-content {
+  .uir-inspection-upload-modal .uir-modal-content {
     padding: 24px 16px;
   }
 
-  .inspection-upload-modal .modal-header h2 {
+  .uir-inspection-upload-modal .uir-modal-header h2 {
     font-size: 22px;
   }
 
-  .inspection-upload-modal .subtitle {
+  .uir-inspection-upload-modal .uir-subtitle {
     font-size: 14px;
   }
 
-  .upload-area {
+  .uir-upload-area {
     padding: 32px 16px;
   }
 
-  .upload-icon {
+  .uir-upload-icon {
     width: 48px;
     height: 48px;
   }
 
-  .review-header {
+  .uir-review-header {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .data-table-container {
+  .uir-data-table-container {
     max-height: 400px;
   }
 
-  .data-table th,
-  .data-table td {
+  .uir-data-table th,
+  .uir-data-table td {
     padding: 10px 8px;
     font-size: 12px;
   }
 
-  .data-input {
+  .uir-data-input {
     min-width: 120px;
     padding: 6px 10px;
     font-size: 13px;
   }
 
-  .modal-actions {
+  .uir-modal-actions {
     flex-direction: column-reverse;
   }
 
-  .cancel-btn,
-  .submit-btn {
+  .uir-cancel-btn,
+  .uir-submit-btn {
     width: 100%;
     justify-content: center;
   }
 }
 
 @media (max-width: 480px) {
-  .inspection-upload-modal {
+  .uir-inspection-upload-modal {
     padding: 10px;
   }
 
-  .inspection-upload-modal .modal-content {
+  .uir-inspection-upload-modal .uir-modal-content {
     padding: 20px 12px;
     max-height: 95dvh;
   }
 
-  .inspection-upload-modal .close-btn {
+  .uir-inspection-upload-modal .uir-close-btn {
     width: 32px;
     height: 32px;
     font-size: 20px;
@@ -699,13 +699,13 @@
     right: 12px;
   }
 
-  .data-table th,
-  .data-table td {
+  .uir-data-table th,
+  .uir-data-table td {
     padding: 8px 6px;
     font-size: 11px;
   }
 
-  .data-input {
+  .uir-data-input {
     min-width: 100px;
     font-size: 12px;
   }
