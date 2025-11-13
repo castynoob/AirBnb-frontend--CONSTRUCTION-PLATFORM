@@ -1463,3 +1463,115 @@ body {
     font-size: 14px;
     color: #888;
 }
+
+/* ===== STEP 3: EMAIL VERIFICATION SUCCESS ===== */
+.lp-verification-content {
+    padding: 20px;
+    text-align: center;
+}
+
+.lp-success-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 24px;
+    background: linear-gradient(135deg, var(--color-status-success) 0%, #27ae60 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    color: white;
+    font-weight: bold;
+    box-shadow: 0 8px 24px rgba(46, 204, 113, 0.3);
+}
+
+.lp-verification-message {
+    margin-bottom: 32px;
+}
+
+.lp-verification-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--color-text-dark);
+    margin-bottom: 16px;
+}
+
+.lp-verification-text {
+    font-size: 15px;
+    color: var(--color-text-muted);
+    margin-bottom: 8px;
+    line-height: 1.6;
+}
+
+.lp-verification-email {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--color-secondary);
+    margin: 12px 0;
+    padding: 12px;
+    background: #f0f9ff;
+    border-radius: 8px;
+    word-break: break-all;
+}
+
+.lp-verification-actions {
+    margin-bottom: 24px;
+    padding: 20px;
+    background: var(--color-background-light);
+    border-radius: 12px;
+}
+
+.lp-resend-text {
+    font-size: 14px;
+    color: var(--color-text-muted);
+    margin-bottom: 12px;
+}
+
+.lp-btn-link {
+    background: none;
+    border: none;
+    color: var(--color-secondary);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 8px 16px;
+    transition: all 0.2s;
+}
+
+.lp-btn-link:hover:not(:disabled) {
+    color: #008b8f;
+    text-decoration: none;
+}
+
+.lp-btn-link:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ===== RESEND VERIFICATION IN LOGIN/ERROR MESSAGES ===== */
+.lp-resend-verification-link {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.lp-form-error-banner {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.lp-form-error-banner .lp-btn-link:hover:not(:disabled) {
+    color: #c0392b;
+    opacity: 0.9;
+}
+.lp-form-error-banner .lp-btn-link {
+    color: var(--color-status-urgent);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: underline;
+    padding: 4px 0;
+    background: none;
+    border: none;
+}
+
