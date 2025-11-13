@@ -1550,50 +1550,6 @@ export default function LandingPage() {
               </>
             )}
 
-            {/* Step 3: Email Verification Success */}
-            {registrationStep === 3 && (
-              <>
-                <div className="lp-modal-header">
-                  <h2>Registration Successful!</h2>
-                  <p>Please verify your email to continue</p>
-                </div>
-                <div className="lp-verification-content">
-                  <div className="lp-success-icon">✓</div>
-                  <div className="lp-verification-message">
-                    <p className="lp-verification-title">Check your inbox</p>
-                    <p className="lp-verification-text">
-                      We've sent a verification email to:
-                    </p>
-                    <p className="lp-verification-email">{registeredEmail}</p>
-                    <p className="lp-verification-text">
-                      Please click the verification link in the email to activate your account.
-                    </p>
-                  </div>
-                  <div className="lp-verification-actions">
-                    <p className="lp-resend-text">Didn't receive the email?</p>
-                    <button
-                      type="button"
-                      className="lp-btn-link"
-                      onClick={() => handleResendVerification()}
-                      disabled={isResendingVerification}
-                    >
-                      {isResendingVerification ? "Sending..." : "Resend verification email"}
-                    </button>
-                  </div>
-                  <button
-                    type="button"
-                    className="lp-btn-primary lp-btn-full"
-                    onClick={() => {
-                      closeModals();
-                      setShowLoginModal(true);
-                    }}
-                  >
-                    Go to Login
-                  </button>
-                </div>
-              </>
-            )}
-
             {/* ===== STEP 3: SUCCESS & EMAIL VERIFICATION ===== */}
             {registrationStep === 3 && (
               <>
