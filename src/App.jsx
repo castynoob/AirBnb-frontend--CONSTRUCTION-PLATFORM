@@ -20,6 +20,10 @@ import ResetPassword from "./pages/auth/ResetPassword";
 import SupplierList from './pages/supplier/SupplierList'
 import SupplierProfile from './pages/supplier/SupplierProfile'
 import SupplierHomepage from './pages/supplier/SupplierHomepage'
+import HomePageResident from "./pages/homepage/HomePageResident";
+import MessagesResident from "./pages/messages/MessagesResident";
+import MembersResident from "./pages/members/MembersResident";
+import ProfilePageResident from "./pages/profile/ProfilePageResident";
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -138,6 +142,23 @@ function ProtectedRoutes() {
       <Route
         path="/profile/supplier"
         element={<ProtectedRoute element={<SupplierProfile />} />}
+      />
+            {/* Resident protected routes */}
+      <Route
+        path="/homepage/resident"
+        element={<ProtectedRoute element={<HomePageResident />} />}
+      />
+      <Route
+        path="/messages/resident"
+        element={<ProtectedRoute element={<MessagesResident />} />}
+      />
+      <Route
+        path="/members/resident"
+        element={<ProtectedRoute element={<MembersResident />} />}
+      />
+      <Route
+        path="/profile/resident"
+        element={<ProtectedRoute element={<ProfilePageResident />} />}
       />
     </Routes>
   );

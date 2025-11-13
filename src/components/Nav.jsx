@@ -133,7 +133,7 @@ function Nav() {
               </li>
 
               {
-                role !== 'supplier' &&
+                role !== 'supplier' && role != 'resident' &&
                 <li>
                   <NavLink
                     to={'/submissions/'+role}
