@@ -12,24 +12,60 @@ import {
 } from "../../utils/validation";
 
 export default function LandingPage() {
+  // ===== STATE MANAGEMENT =====
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showRegisterModal, setShowRegisterModal] = useState(false)
   const [selectedRole, setSelectedRole] = useState("")
   const [scrolled, setScrolled] = useState(false)
   const [registrationStep, setRegistrationStep] = useState(1)
-  const [registeredEmail, setRegisteredEmail] = useState("") // Store email for verification
+  const [registeredEmail, setRegisteredEmail] = useState("")
   const navigate = useNavigate()
 
+  // Login state
   const [loginFormData, setLoginFormData] = useState({
     email: "",
     password: "",
   })
-
   const [loginErrors, setLoginErrors] = useState({})
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [isLoggingIn, setIsLoggingIn] = useState(false)
 
+  // Registration state
+  const [registerFormData, setRegisterFormData] = useState({
+    first_name: "",
+    last_name: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirm_password: "",
+    company_name: "",
+    address: "",
+    license_number: "",
+    years_in_business: "",
+    num_employees: "",
+    specializations: "",
+    property_name: "",
+    property_id: "",
+    unit_number: "",
+    move_in_date: "",
+    website: "",
+    delivery_areas: "",
+    provider: 'local',
+    num_properties: ""
+  })
+  const [registerErrors, setRegisterErrors] = useState({ submit: '' })
+  const [isRegistering, setIsRegistering] = useState(false)
+  const [isResendingVerification, setIsResendingVerification] = useState(false)
+
+  // Property selection state (for residents)
+  const [properties, setProperties] = useState([])
+  const [isLoadingProperties, setIsLoadingProperties] = useState(false)
+  const [propertySearchTerm, setPropertySearchTerm] = useState("")
+  const [showPropertyDropdown, setShowPropertyDropdown] = useState(false)
+  const [filteredProperties, setFilteredProperties] = useState([])
+
+  // ===== SCROLL EFFECT =====
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 50)
@@ -38,13 +74,67 @@ export default function LandingPage() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
+  // ===== PROPERTY FILTERING =====
+  useEffect(() => {
+    if (propertySearchTerm.trim() === "") {
+      setFilteredProperties(properties)
+    } else {
+      const filtered = properties.filter(property => {
+        const searchLower = propertySearchTerm.toLowerCase()
+        const buildingName = (property.building_name || "").toLowerCase()
+        const address = (property.address || "").toLowerCase()
+        const city = (property.city || "").toLowerCase()
+        return buildingName.includes(searchLower) ||
+               address.includes(searchLower) ||
+               city.includes(searchLower)
+      })
+      setFilteredProperties(filtered)
+    }
+  }, [propertySearchTerm, properties])
+
+  // ===== CLOSE DROPDOWN WHEN CLICKING OUTSIDE =====
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.searchable-dropdown-container')) {
+        setShowPropertyDropdown(false)
+      }
+    }
+    if (showPropertyDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showPropertyDropdown])
+
+  // ===== FETCH PROPERTIES FOR RESIDENTS =====
+  useEffect(() => {
+    if(selectedRole === "resident" && registrationStep === 2) {
+      fetchProperties()
+    }
+  }, [selectedRole, registrationStep])
+
+  // ===== REVALIDATE CONFIRM PASSWORD =====
+  useEffect(() => {
+    if (registerFormData.confirm_password && registerFormData.provider === "local") {
+      const error = validatePasswordConfirmation(
+        registerFormData.password,
+        registerFormData.confirm_password
+      );
+      setRegisterErrors(prev => ({
+        ...prev,
+        confirm_password: error
+      }));
+    }
+  }, [registerFormData.password])
+
+  // ===== LOGIN HANDLERS =====
   const handleLoginChange = (e) => {
     const { name, value } = e.target
     setLoginFormData({
       ...loginFormData,
       [name]: value,
     })
-    // Clear error when user starts typing
     if (loginErrors[name]) {
       setLoginErrors({ ...loginErrors, [name]: "" })
     }
@@ -52,33 +142,25 @@ export default function LandingPage() {
 
   const validateLoginForm = () => {
     const newErrors = {}
-
-    // Email validation
     if (!loginFormData.email) {
       newErrors.email = "Email is required"
     } else if (!/\S+@\S+\.\S+/.test(loginFormData.email)) {
       newErrors.email = "Email is invalid"
     }
-
-    // Password validation
     if (!loginFormData.password) {
       newErrors.password = "Password is required"
     }
-
     setLoginErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault()
-
     if (!validateLoginForm()) {
       return
     }
-
     setIsLoggingIn(true)
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
@@ -90,8 +172,22 @@ export default function LandingPage() {
           password: loginFormData.password,
         }),
       })
-
       const data = await response.json()
+      if (!response.ok) {
+        if (response.status === 403) {
+          setLoginErrors({
+            submit: data.message || "Please verify your email before logging in.",
+            isEmailNotVerified: true,
+            email: loginFormData.email
+          })
+          return
+        }
+        setLoginErrors({
+          submit: data.message || "Invalid email or password",
+          isEmailNotVerified: false
+        })
+        return
+      }
 
       if (!response.ok) {
         // Handle email not verified error (403)
@@ -114,7 +210,6 @@ export default function LandingPage() {
 
       let entrepProfile = {}
       let subscription = null
-
       if(data.user.role == 'entrepreneur') {
         const getEntreProfile = await fetch(`${API_BASE_URL}/api/users/entrepreneur/user/${data.user.id}`, {
           method: "GET",
@@ -122,25 +217,35 @@ export default function LandingPage() {
             'Authorization': `Bearer ${data.accessToken}`
           }
         })
-
         const getSubsscription = await fetch(`${API_BASE_URL}/api/payments/subscription`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${data.accessToken}`
           }
         })
-
         if(!getEntreProfile.ok || !getSubsscription.ok) {
           throw new Error(`Error getting profile ${getEntreProfile}`)
         }
-
         const subs = await getSubsscription.json()
         const entrep = await getEntreProfile.json()
         entrepProfile = entrep.profile
         subscription = subs
       }
 
-      // Construct userProfile
+      // let resProfile = {}
+      // if(data.user.role == 'resident') {
+      //   const getResProfile = await fetch(`${API_BASE_URL}/api/residents/profile`, {
+      //     method: "GET",
+      //     headers: {
+      //       'Authorization': `Bearer ${data.accessToken}`
+      //     }
+      //   })
+
+      //   const resProfile = await getResProfile.json()
+
+      //   console.log('RESIDENT', resProfile)
+      // }
+
       const userProfile = {
         id: data.user.id || 101,
         name: data.user.name || `${data.user.first_name || ""} ${data.user.last_name || ""}`.trim(),
@@ -148,22 +253,16 @@ export default function LandingPage() {
         role: data.user.role,
         token: data.accessToken || null,
         entrepProfile: data.user.role == 'entrepreneur' ? {entrepProfile, subscription} : null
+        // residentProfile: data.user.role = 'resident' ? {  }
       }
 
-      console.log(userProfile)
-
-      console.log(userProfile)
-
-      // Save to localStorage (including refresh token for auto-refresh)
       localStorage.setItem("token", userProfile.token);
-      localStorage.setItem("refreshToken", data.refreshToken); // Store refresh token
+      localStorage.setItem("refreshToken", data.refreshToken);
       localStorage.setItem("userId", userProfile.id);
       localStorage.setItem("userProfile", JSON.stringify(userProfile))
-      console.log(userProfile)
-      // Close modal and redirect
+
       setShowLoginModal(false)
       navigate(`/homepage/${userProfile.role}`)
-
     } catch (error) {
       console.error("Login error:", error)
       setLoginErrors({
@@ -174,14 +273,352 @@ export default function LandingPage() {
       setIsLoggingIn(false)
     }
   }
-  
 
+  const handleLoginSuccess = async (credentialResponse) => {
+    const token = credentialResponse.credential;
+    const userData = jwtDecode(token);
+    
+    setIsLoggingIn(true);
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/google-login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: userData.email,
+          provider_id: userData.sub,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Google login failed.");
+      }
+
+      let entrepProfile = {}
+      let subscription = null
+      if(data.user.role === 'entrepreneur') {
+        const getEntreProfile = await fetch(`${API_BASE_URL}/api/users/entrepreneur/user/${data.user.id}`, {
+          method: "GET",
+          headers: {
+            'Authorization': `Bearer ${data.accessToken}`
+          }
+        })
+        const getSubsscription = await fetch(`${API_BASE_URL}/api/payments/subscription`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${data.accessToken}`
+          }
+        })
+        if(!getEntreProfile.ok || !getSubsscription.ok) {
+          const entrepError = await getEntreProfile.json()
+          const subscriptionError = await getSubsscription.json()
+          throw new Error(entrepError.message || subscriptionError.message || `Error getting profile/subscription data`)
+        }
+        const subs = await getSubsscription.json()
+        const entrep = await getEntreProfile.json()
+        entrepProfile = entrep.profile
+        subscription = subs
+      }
+
+      const userProfile = {
+        id: data.user.id,
+        name: `${data.user.first_name || ""} ${data.user.last_name || ""}`.trim(),
+        email: data.user.email,
+        role: data.user.role,
+        token: data.accessToken || null,
+        entrepProfile: data.user.role === 'entrepreneur' ? {entrepProfile, subscription} : null
+      }
+
+      localStorage.setItem("userId", userProfile.id);
+      localStorage.setItem("userProfile", JSON.stringify(userProfile))
+
+      setShowLoginModal(false)
+      navigate(`/homepage/${userProfile.role}`)
+    } catch (error) {
+      console.error("Google Login error:", error);
+      setLoginErrors({ 
+        submit: error.message || "Login failed. Please try again." 
+      });
+    } finally {
+      setIsLoggingIn(false);
+    }
+  }
+
+  // ===== REGISTRATION HANDLERS =====
+  const handleRegisterChange = (e) => {
+    const { name, value } = e.target
+    setRegisterFormData({
+        ...registerFormData,
+        [name]: value,
+    })
+
+    // Live validation - validate as user types
+    let error = "";
+    
+    // Skip password validation if using Google OAuth
+    if (registerFormData.provider === "google" && (name === "password" || name === "confirm_password")) {
+        setRegisterErrors({
+            ...registerErrors,
+            [name]: ""
+        });
+        return;
+    }
+
+    switch (name) {
+        case "email":
+            error = validateEmail(value);
+            break;
+        case "password":
+            error = validatePassword(value);
+            break;
+        case "confirm_password":
+            error = validatePasswordConfirmation(registerFormData.password, value);
+            break;
+        case "first_name":
+            error = validateName(value, "First name");
+            break;
+        case "last_name":
+            error = validateName(value, "Last name");
+            break;
+        default:
+            break;
+    }
+
+    // Update errors state
+    setRegisterErrors({
+        ...registerErrors,
+        [name]: error
+    });
+  }
+
+  const handleRegisterSubmit = async (e) => {
+    e.preventDefault();
+    setIsRegistering(true);
+    try {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+        let endpoint = "";
+        switch (selectedRole) {
+            case "entrepreneur":
+                endpoint = "/api/register/entrepreneur";
+                break;
+            case "property-manager":
+                endpoint = "/api/register/manager";
+                break;
+            case "resident":
+                endpoint = "/api/register/resident";
+                break;
+            case "supplier":
+                endpoint = "/api/register/supplier";
+                break;
+            default: {
+                setIsRegistering(false);
+                throw new Error(`Invalid role selected: ${selectedRole}`);
+            }
+        }
+
+        const roleForBackend = selectedRole.replace(/-/g, '_');
+        let payload = {
+            ...registerFormData,
+            role: roleForBackend
+        };
+
+        // Remove unnecessary fields
+        delete payload.confirm_password;
+        delete payload.property_name;
+        delete payload.role; // Don't send role, it's determined by endpoint
+
+        // ✅ FIX: Handle Google OAuth registration
+        if (payload.provider === 'google') {
+            delete payload.password;
+            // Ensure provider_id is included
+            if (!payload.provider_id) {
+                setRegisterErrors({ 
+                    submit: "Google registration data missing. Please try again." 
+                });
+                setIsRegistering(false);
+                return;
+            }
+        } else {
+            // For local registration, ensure password exists
+            if (!payload.password) {
+                setRegisterErrors({ 
+                    submit: "Password is required for local registration" 
+                });
+                setIsRegistering(false);
+                return;
+            }
+        }
+
+        // 3. Convert specializations string to array (for entrepreneur)
+        if (selectedRole === "entrepreneur" && payload.specializations && typeof payload.specializations === "string") {
+            payload.specializations = payload.specializations
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean);
+        } else if (selectedRole === "entrepreneur") {
+            payload.specializations = [];
+        }
+
+        // 4. Convert delivery_areas for supplier
+        if (selectedRole === "supplier" && payload.delivery_areas && typeof payload.delivery_areas === "string") {
+            payload.delivery_areas = payload.delivery_areas
+                .split(",")
+                .map((area) => area.trim())
+                .filter(Boolean);
+        }
+
+        console.log("Payload being sent:", payload);
+
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error("Backend response error:", data);
+            if (data.errors && typeof data.errors === 'object') {
+                setRegisterErrors({
+                    submit: data.message || "Please check your input and try again",
+                    ...data.errors
+                });
+            } else {
+                setRegisterErrors({ submit: data.message || "Registration failed" });
+            }
+            return;
+        }
+
+        setRegisteredEmail(registerFormData.email);
+        setRegistrationStep(3);
+    } catch (error) {
+        console.error("Registration error:", error);
+        setRegisterErrors({ submit: error.message || "Registration failed due to a server error." });
+    } finally {
+        setIsRegistering(false);
+    }
+  };
+
+  const handleSuccess = async (credentialResponse) => {
+    const token = credentialResponse.credential;
+    const userData = jwtDecode(token);
+    console.log("Google user:", userData);
+
+    const providerId = userData.sub;
+    
+    // ✅ FIX: Make sure provider_id is set
+    setRegisterFormData((prev) => ({
+        ...prev,
+        first_name: userData.given_name || "",
+        last_name: userData.family_name || "",
+        email: userData.email || "",
+        provider: "google",
+        provider_id: providerId, // ✅ Ensure this is set
+        password: "",
+        confirm_password: "",
+        // Preserve other fields that were already filled
+        company_name: prev.company_name,
+        address: prev.address,
+        phone: prev.phone,
+        // ... other fields
+    }));
+
+    alert("Google details pre-filled! Please complete the remaining fields to finalize your registration.");
+  };
+
+  const handleError = () => {
+    console.error("Google Sign-In failed");
+  };
+
+  // ===== PROPERTY HANDLERS =====
+  const fetchProperties = async () => {
+    setIsLoadingProperties(true)
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/properties/public`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        }
+      })
+      if (!response.ok) {
+        throw new Error(`Failed to fetch properties: ${response.status}`)
+      }
+      const data = await response.json()
+      setProperties(data.properties || data || [])
+    } catch (error) {
+      console.error("Error fetching properties:", error)
+      setRegisterErrors(prev => ({
+        ...prev,
+        submit: "Failed to load properties. Please try again."
+      }))
+    } finally {
+      setIsLoadingProperties(false)
+    }
+  }
+
+  const handlePropertySelect = (property) => {
+    setRegisterFormData({
+      ...registerFormData,
+      property_id: property.id,
+      property_name: property.building_name || property.address,
+    })
+    setPropertySearchTerm(property.building_name || property.address)
+    setShowPropertyDropdown(false)
+  }
+
+  const handlePropertySearchChange = (e) => {
+    setPropertySearchTerm(e.target.value)
+    setShowPropertyDropdown(true)
+  }
+
+  // ===== EMAIL VERIFICATION =====
+  const handleResendVerification = async (emailOverride = null) => {
+    let emailToUse;
+    if (emailOverride && typeof emailOverride === 'string') {
+      emailToUse = emailOverride;
+    } else if (registeredEmail) {
+      emailToUse = registeredEmail;
+    } else if (loginErrors.email && typeof loginErrors.email === 'string') {
+      emailToUse = loginErrors.email;
+    }
+
+    if (!emailToUse) {
+      console.error("No email found for resend verification");
+      return;
+    }
+
+    setIsResendingVerification(true);
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/auth/resend-verification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailToUse }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        alert(data.message || "Failed to resend verification email");
+        return;
+      }
+      alert("Verification email has been resent! Please check your inbox.");
+    } catch (error) {
+      console.error("Resend verification error:", error);
+      alert("Failed to resend verification email. Please try again.");
+    } finally {
+      setIsResendingVerification(false);
+    }
+  };
+
+  // ===== MODAL HELPERS =====
   const closeModals = () => {
     setShowLoginModal(false)
     setShowRegisterModal(false)
     setSelectedRole("")
     setRegistrationStep(1)
-    // Reset login form
     setLoginFormData({ email: "", password: "" })
     setLoginErrors({})
     setShowPassword(false)
@@ -194,6 +631,7 @@ export default function LandingPage() {
     setRegistrationStep(1)
   }
 
+  // ===== DATA =====
   const roles = [
     {
       id: "property-manager",
@@ -290,355 +728,7 @@ export default function LandingPage() {
     },
   ]
 
-  // Registration form state
-  const [registerFormData, setRegisterFormData] = useState({
-    first_name: "",
-    last_name: "",
-    email: "",
-    phone: "",
-    password: "",
-    confirm_password: "",
-    company_name: "",
-    address: "",
-    license_number: "",
-    years_in_business: "",
-    num_employees: "",
-    specializations: "",
-    property_name: "",
-    unit_number: "",
-    move_in_date: "",
-    website: "",
-    delivery_areas: "",
-    provider: 'local'
-  })
-
-  const handleRegisterChange = (e) => {
-    const { name, value } = e.target
-    setRegisterFormData({
-      ...registerFormData,
-      [name]: value,
-    })
-
-    // Live validation - validate as user types
-    let error = "";
-
-    switch (name) {
-      case "email":
-        error = validateEmail(value);
-        break;
-      case "password":
-        if (registerFormData.provider === "local") {
-          error = validatePassword(value);
-        }
-        break;
-      case "confirm_password":
-        if (registerFormData.provider === "local") {
-          error = validatePasswordConfirmation(registerFormData.password, value);
-        }
-        break;
-      case "first_name":
-        error = validateName(value, "First name");
-        break;
-      case "last_name":
-        error = validateName(value, "Last name");
-        break;
-      default:
-        break;
-    }
-
-    // Update errors state
-    setRegisterErrors({
-      ...registerErrors,
-      [name]: error
-    });
-  }
-  const handleRegisterSubmit = async (e) => {
-      e.preventDefault();
-      setIsRegistering(true);
-
-      try {
-          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-          let endpoint = "";
-
-          switch (selectedRole) {
-              case "entrepreneur":
-                  endpoint = "/api/register/entrepreneur";
-                  break;
-              case "property-manager":
-                  endpoint = "/api/register/manager";
-                  break;
-              case "resident":
-                  endpoint = "/api/register/resident";
-                  break;
-              case "supplier":
-                  endpoint = "/api/register/supplier";
-                  break;
-              default: {
-                  setIsRegistering(false);
-                  throw new Error(`Invalid role selected: ${selectedRole}`);
-              }
-          }
-          
-          // 1. Prepare the full payload
-          // Convert role format: "property-manager" -> "property_manager"
-          const roleForBackend = selectedRole.replace(/-/g, '_');
-          const payload = {
-              ...registerFormData,
-              role: roleForBackend
-          };
-
-          // 2. Clean the payload before sending
-          delete payload.confirm_password; 
-          
-          // CRITICAL: Remove password if registration was via Google, as the backend shouldn't
-          // try to hash an empty password or validate it.
-          if (payload.provider === 'google') {
-              delete payload.password;
-          }
-          
-          // 3. Convert specializations string to an array (for entrepreneur)
-          if (selectedRole === "entrepreneur" && payload.specializations && typeof payload.specializations === "string") {
-              payload.specializations = payload.specializations
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean); // Filter out empty strings
-          } else if (selectedRole === "entrepreneur") {
-              // Ensure it's an empty array if not provided, matching your DB schema (text[])
-              payload.specializations = []; 
-          }
-
-          console.log("Payload being sent:", payload);
-
-          // 4. Send to backend
-          const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload),
-          });
-
-          const data = await response.json();
-
-          // 5. Check response status and handle errors
-          if (!response.ok) {
-              // Check if backend returned field-specific errors
-              if (data.errors && typeof data.errors === 'object') {
-                  // Set field-specific errors
-                  setRegisterErrors({
-                      submit: data.message || "Please check your input and try again",
-                      ...data.errors
-                  });
-              } else {
-                  // Generic error (e.g., "Email already registered")
-                  setRegisterErrors({ submit: data.message || "Registration failed" });
-              }
-              return;
-          }
-
-          // 6. Success handling - move to step 3 (verification)
-          setRegisteredEmail(registerFormData.email); // Store email for verification step
-          setRegistrationStep(3); // Move to success/verification step
-
-      } catch (error) {
-          console.error("Registration error:", error);
-          // Display the specific error message to the user
-          setRegisterErrors({ submit: error.message || "Registration failed due to a server error." });
-      } finally {
-          setIsRegistering(false);
-      }
-  };
-
-  const [registerErrors, setRegisterErrors] = useState({
-    submit: ''
-  })
-
-  const [isRegistering, setIsRegistering] = useState(false)
-  const [isResendingVerification, setIsResendingVerification] = useState(false)
-
-  // Resend verification email (works for both registration and login)
-  const handleResendVerification = async (emailOverride = null) => {
-    // Determine which email to use
-    let emailToUse;
-
-    // If emailOverride is provided and is a string, use it
-    if (emailOverride && typeof emailOverride === 'string') {
-      emailToUse = emailOverride;
-    }
-    // Otherwise use registeredEmail (from registration success)
-    else if (registeredEmail) {
-      emailToUse = registeredEmail;
-    }
-    // Fallback to loginErrors.email (from login error)
-    else if (loginErrors.email && typeof loginErrors.email === 'string') {
-      emailToUse = loginErrors.email;
-    }
-
-    if (!emailToUse) {
-      console.error("No email found for resend verification");
-      return;
-    }
-
-    setIsResendingVerification(true);
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/resend-verification`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailToUse }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        alert(data.message || "Failed to resend verification email");
-        return;
-      }
-
-      alert("Verification email has been resent! Please check your inbox.");
-    } catch (error) {
-      console.error("Resend verification error:", error);
-      alert("Failed to resend verification email. Please try again.");
-    } finally {
-      setIsResendingVerification(false);
-    }
-  };
-
-  // Revalidate confirm_password when password changes
-  useEffect(() => {
-    if (registerFormData.confirm_password && registerFormData.provider === "local") {
-      const error = validatePasswordConfirmation(
-        registerFormData.password,
-        registerFormData.confirm_password
-      );
-      setRegisterErrors(prev => ({
-        ...prev,
-        confirm_password: error
-      }));
-    }
-  }, [registerFormData.password])
-
-
-// Add provider_id to the payload sent to your backend
-  const handleSuccess = async (credentialResponse) => {
-      const token = credentialResponse.credential;
-      const userData = jwtDecode(token);
-
-      console.log("Google user:", userData);
-      
-      // 1. Get the Google provider_id (sub is the standard unique Google ID)
-      const providerId = userData.sub; 
-
-      // 2. Pre-fill the registerFormData state
-      setRegisterFormData((prev) => ({
-        ...prev,
-        // Pre-fill fields from Google
-        first_name: userData.given_name || "",
-        last_name: userData.family_name || "",
-        email: userData.email || "",
-        // Set provider details
-        provider: "google",
-        provider_id: providerId, // Store the Google ID
-        // Clear password fields for Google sign-in (backend should ignore these for provider: 'google')
-        password: "",
-        confirm_password: "",
-        // Other fields remain as they were, allowing the user to fill them on the form
-      }));
-
-      // 3. Notify the user to complete the form
-      alert("Google details pre-filled! Please complete the remaining fields to finalize your registration.");
-
-      // The user remains on registrationStep=2 and submits via handleRegisterSubmit.
-  };
-
-
-  const handleError = () => {
-    console.error("Google Sign-In failed");
-  };
-
-  const handleLoginSuccess = async (credentialResponse) => {
-    const token = credentialResponse.credential;
-    const userData = jwtDecode(token);
-    
-    setIsLoggingIn(true);
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-    try {
-        // 1. Send Google data to your backend's specialized Google login endpoint
-        const response = await fetch(`${API_BASE_URL}/api/auth/google-login`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                email: userData.email,
-                provider_id: userData.sub,
-            }),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            // Catches "User not found" (404) or any other errors
-            throw new Error(data.message || "Google login failed.");
-        }
-
-        // 2. Replication of your existing local login success logic
-        let entrepProfile = {}
-        let subscription = null
-
-        if(data.user.role === 'entrepreneur') {
-            const getEntreProfile = await fetch(`${API_BASE_URL}/api/users/entrepreneur/user/${data.user.id}`, {
-                method: "GET",
-                headers: {
-                    'Authorization': `Bearer ${data.accessToken}`
-                }
-            })
-
-            const getSubsscription = await fetch(`${API_BASE_URL}/api/payments/subscription`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${data.accessToken}`
-                }
-            })
-
-            if(!getEntreProfile.ok || !getSubsscription.ok) {
-                // Use the error message from the response if available
-                const entrepError = await getEntreProfile.json()
-                const subscriptionError = await getSubsscription.json()
-                throw new Error(entrepError.message || subscriptionError.message || `Error getting profile/subscription data`)
-            }
-
-            const subs = await getSubsscription.json()
-            const entrep = await getEntreProfile.json()
-            entrepProfile = entrep.profile
-            subscription = subs
-        }
-
-        const userProfile = {
-            id: data.user.id,
-            name: `${data.user.first_name || ""} ${data.user.last_name || ""}`.trim(),
-            email: data.user.email,
-            role: data.user.role,
-            token: data.accessToken || null,
-            entrepProfile: data.user.role === 'entrepreneur' ? {entrepProfile, subscription} : null
-        }
-
-        localStorage.setItem("userId", userProfile.id);
-        localStorage.setItem("userProfile", JSON.stringify(userProfile))
-        console.log(userProfile)
-        setShowLoginModal(false)
-        navigate(`/homepage/${userProfile.role}`)
-
-    } catch (error) {
-        console.error("Google Login error:", error);
-        setLoginErrors({ 
-            submit: error.message || "Login failed. Please try again." 
-        });
-    } finally {
-        setIsLoggingIn(false);
-    }
-  }
-
+  // ===== RENDER =====
   return (
     <div className="lp-landing-page">
       {/* Navigation Bar */}
@@ -676,7 +766,7 @@ export default function LandingPage() {
           <div className="lp-hero-badge">Connecting Construction Professionals</div>
           <h1 className="lp-hero-title">Build Smarter with INTERVOS</h1>
           <p className="lp-hero-subtitle">
-            The all-in-one platform connecting property managers, contractors, residents, and suppliers. 
+            The all-in-one platform connecting property managers, contractors, residents, and suppliers.
             From posting jobs to winning bids — streamline your entire construction workflow.
           </p>
           <div className="lp-hero-buttons">
@@ -697,12 +787,12 @@ export default function LandingPage() {
             <div className="lp-about-text">
               <h2>One Platform. Every Role. Seamless Collaboration.</h2>
               <p>
-                INTERVOS revolutionizes property maintenance and construction project management by bringing 
+                INTERVOS revolutionizes property maintenance and construction project management by bringing
                 everyone together in one intelligent ecosystem.
               </p>
               <p>
-                Property managers post jobs and repairs for their buildings. Nearby entrepreneurs and contractors 
-                see these opportunities, place competitive bids, and deliver quality work. Residents stay informed 
+                Property managers post jobs and repairs for their buildings. Nearby entrepreneurs and contractors
+                see these opportunities, place competitive bids, and deliver quality work. Residents stay informed
                 with real-time updates, while suppliers provide the materials and services needed to complete projects.
               </p>
               <p className="lp-about-highlight">
@@ -780,13 +870,13 @@ export default function LandingPage() {
                   ))}
                 </ul>
                 <div className="lp-role-actions">
-                  <button 
+                  <button
                     className="lp-btn-role-primary"
                     onClick={() => openRegisterModal(role.id)}
                   >
                     Sign Up as {role.title.split(" ")[0]}
                   </button>
-                  <button 
+                  <button
                     className="lp-btn-role-secondary"
                     onClick={() => setShowLoginModal(true)}
                   >
@@ -902,19 +992,19 @@ export default function LandingPage() {
               <p>Log in to your INTERVOS account</p>
             </div>
 
-            {/* 💡 NEW GOOGLE LOGIN BUTTON 💡 */}
             <div className="lp-google-login-container">
               <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-                <GoogleLogin 
-                  onSuccess={handleLoginSuccess} // Use the new login handler
-                  onError={handleError} 
-                  text="signin_with" 
+                <GoogleLogin
+                  onSuccess={handleLoginSuccess}
+                  onError={handleError}
+                  text="signin_with"
                   width="100%"
                 />
               </GoogleOAuthProvider>
             </div>
-            
+
             <div className="lp-modal-divider"><span>OR</span></div>
+
             <form className="lp-modal-form" onSubmit={handleLoginSubmit}>
               {loginErrors.submit && (
                 <div className="lp-form-error-banner">
@@ -933,7 +1023,7 @@ export default function LandingPage() {
                   )}
                 </div>
               )}
-              
+
               <div className="lp-form-group">
                 <label htmlFor="login-email">Email Address</label>
                 <input
@@ -1000,14 +1090,15 @@ export default function LandingPage() {
                 </button>
               </div>
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="lp-btn-primary lp-btn-full"
                 disabled={isLoggingIn}
               >
                 {isLoggingIn ? "Logging in..." : "Log In"}
               </button>
             </form>
+
             <div className="lp-modal-footer">
               Don't have an account?{" "}
               <button
@@ -1029,7 +1120,8 @@ export default function LandingPage() {
         <div className="lp-modal-overlay" onClick={closeModals}>
           <div className="lp-modal lp-modal-register" onClick={(e) => e.stopPropagation()}>
             <button className="lp-modal-close" onClick={closeModals}>×</button>
-            
+
+            {/* Step 1: Role Selection */}
             {registrationStep === 1 && (
               <>
                 <div className="lp-modal-header">
@@ -1048,7 +1140,7 @@ export default function LandingPage() {
                     </button>
                   ))}
                 </div>
-                <button 
+                <button
                   className="lp-btn-primary lp-btn-full"
                   disabled={!selectedRole}
                   onClick={() => setRegistrationStep(2)}
@@ -1070,6 +1162,7 @@ export default function LandingPage() {
               </>
             )}
 
+            {/* Step 2: Registration Form */}
             {registrationStep === 2 && (
               <>
                 <div className="lp-modal-header">
@@ -1079,10 +1172,10 @@ export default function LandingPage() {
                   <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
                     <GoogleLogin onSuccess={handleSuccess} onError={handleError} />
                   </GoogleOAuthProvider>
-                  {/* <hr /> */}
                   <h2>Create Your Account</h2>
                   <p>Tell us about yourself</p>
                 </div>
+
                 <form className="lp-modal-form" onSubmit={handleRegisterSubmit}>
                   {registerErrors.submit && (
                     <div className="lp-form-error-banner">
@@ -1156,49 +1249,45 @@ export default function LandingPage() {
                       <span className="lp-field-error">{registerErrors.phone}</span>
                     )}
                   </div>
+                  {registerFormData.provider == 'local' && (
+                      <>
+                      <div className="lp-form-group">
+                        <label>Password</label>
+                        <input
+                          type="password"
+                          name="password"
+                          placeholder="Create a strong password"
+                          value={registerFormData.password}
+                          onChange={handleRegisterChange}
+                          required={registerFormData.provider === 'local'} // Only required for local
+                          className={registerErrors.password ? 'error' : ''}
+                        />
+                        {registerErrors.password && (
+                          <span className="lp-field-error">{registerErrors.password}</span>
+                        )}
+                      </div>
+                      <div className="lp-form-group">
+                        <label>Confirm Password</label>
+                        <input
+                          type="password"
+                          name="confirm_password"
+                          placeholder="Re-enter your password"
+                          value={registerFormData.confirm_password}
+                          onChange={handleRegisterChange}
+                          required={registerFormData.provider === 'local'} // Only required for local
+                          className={registerErrors.confirm_password ? 'error' : ''}
+                        />
+                        {registerErrors.confirm_password && (
+                          <span className="lp-field-error">{registerErrors.confirm_password}</span>
+                        )}
+                      </div>
+                      </>
+                  )}
 
-                  {
-                    registerFormData.provider == 'local' &&
-                    <>
-                    <div className="lp-form-group">
-                      <label>Password</label>
-                      <input
-                        type="password"
-                        name="password"
-                        placeholder="Create a strong password"
-                        value={registerFormData.password}
-                        onChange={handleRegisterChange}
-                        required
-                        className={registerErrors.password ? 'error' : ''}
-                      />
-                      {registerErrors.password && (
-                        <span className="lp-field-error">{registerErrors.password}</span>
-                      )}
-                    </div>
-
-                    <div className="lp-form-group">
-                      <label>Confirm Password</label>
-                      <input
-                        type="password"
-                        name="confirm_password"
-                        placeholder="Re-enter your password"
-                        value={registerFormData.confirm_password}
-                        onChange={handleRegisterChange}
-                        required
-                        className={registerErrors.confirm_password ? 'error' : ''}
-                      />
-                      {registerErrors.confirm_password && (
-                        <span className="lp-field-error">{registerErrors.confirm_password}</span>
-                      )}
-                    </div>
-                    </>
-                  }
-
-                  {/* ===== Property Manager Fields ===== */}
+                  {/* Property Manager Fields */}
                   {selectedRole === "property-manager" && (
                     <>
                       <div className="lp-form-divider">Property Manager Details</div>
-
                       <div className="lp-form-group">
                         <label>Company Name</label>
                         <input
@@ -1210,7 +1299,6 @@ export default function LandingPage() {
                           required
                         />
                       </div>
-
                       <div className="lp-form-group">
                         <label>Business Address</label>
                         <input
@@ -1222,7 +1310,6 @@ export default function LandingPage() {
                           required
                         />
                       </div>
-
                       <div className="lp-form-group">
                         <label>Number of Properties</label>
                         <input
@@ -1236,11 +1323,10 @@ export default function LandingPage() {
                     </>
                   )}
 
-                  {/* ===== Entrepreneur Fields ===== */}
+                  {/* Entrepreneur Fields */}
                   {selectedRole === "entrepreneur" && (
                     <>
                       <div className="lp-form-divider">Contractor Details</div>
-
                       <div className="lp-form-group">
                         <label>Company Name</label>
                         <input
@@ -1252,7 +1338,6 @@ export default function LandingPage() {
                           required
                         />
                       </div>
-
                       <div className="lp-form-group">
                         <label>Business Address</label>
                         <input
@@ -1264,7 +1349,6 @@ export default function LandingPage() {
                           required
                         />
                       </div>
-
                       <div className="lp-form-group">
                         <label>License Number</label>
                         <input
@@ -1275,7 +1359,6 @@ export default function LandingPage() {
                           onChange={handleRegisterChange}
                         />
                       </div>
-
                       <div className="lp-form-row">
                         <div className="lp-form-group">
                           <label>Years in Business</label>
@@ -1298,7 +1381,6 @@ export default function LandingPage() {
                           />
                         </div>
                       </div>
-
                       <div className="lp-form-group">
                         <label>Specializations</label>
                         <input
@@ -1312,23 +1394,59 @@ export default function LandingPage() {
                     </>
                   )}
 
-                  {/* ===== Resident Fields ===== */}
+                  {/* Resident Fields */}
                   {selectedRole === "resident" && (
                     <>
                       <div className="lp-form-divider">Resident Details</div>
-
                       <div className="lp-form-group">
-                        <label>Property Name</label>
-                        <input
-                          type="text"
-                          name="property_name"
-                          placeholder="Your building or property name"
-                          value={registerFormData.property_name}
-                          onChange={handleRegisterChange}
-                          required
-                        />
+                        <label htmlFor="property_id" className="form-label">
+                          Building/Property <span className="required">*</span>
+                        </label>
+                        {isLoadingProperties ? (
+                          <div className="loading-text">Loading properties...</div>
+                        ) : properties.length === 0 ? (
+                          <div className="info-message">
+                            No properties found. Please add a property first.
+                          </div>
+                        ) : (
+                          <div className="searchable-dropdown-container">
+                            <input
+                              type="text"
+                              className="lp-form-input"
+                              placeholder="Search by building name, address, or city..."
+                              value={propertySearchTerm}
+                              onChange={handlePropertySearchChange}
+                              onFocus={() => setShowPropertyDropdown(true)}
+                              required
+                            />
+                            {showPropertyDropdown && filteredProperties.length > 0 && (
+                              <div className="property-dropdown-list">
+                                {filteredProperties.map((property) => (
+                                  <div
+                                    key={property.id}
+                                    className="property-dropdown-item"
+                                    onClick={() => handlePropertySelect(property)}
+                                  >
+                                    <div className="property-name">
+                                      {property.building_name || property.address}
+                                    </div>
+                                    <div className="property-details">
+                                      {property.city}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {showPropertyDropdown && filteredProperties.length === 0 && propertySearchTerm && (
+                              <div className="property-dropdown-list">
+                                <div className="property-dropdown-item no-results">
+                                  No properties found matching "{propertySearchTerm}"
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-
                       <div className="lp-form-group">
                         <label>Unit Number</label>
                         <input
@@ -1340,7 +1458,6 @@ export default function LandingPage() {
                           required
                         />
                       </div>
-
                       <div className="lp-form-group">
                         <label>Move-in Date</label>
                         <input
@@ -1353,11 +1470,10 @@ export default function LandingPage() {
                     </>
                   )}
 
-                  {/* ===== Supplier Fields ===== */}
+                  {/* Supplier Fields */}
                   {selectedRole === "supplier" && (
                     <>
                       <div className="lp-form-divider">Supplier Details</div>
-
                       <div className="lp-form-group">
                         <label>Company Name</label>
                         <input
@@ -1369,7 +1485,6 @@ export default function LandingPage() {
                           required
                         />
                       </div>
-
                       <div className="lp-form-group">
                         <label>Business Address</label>
                         <input
@@ -1381,7 +1496,6 @@ export default function LandingPage() {
                           required
                         />
                       </div>
-
                       <div className="lp-form-group">
                         <label>Website</label>
                         <input
@@ -1392,7 +1506,6 @@ export default function LandingPage() {
                           onChange={handleRegisterChange}
                         />
                       </div>
-
                       <div className="lp-form-group">
                         <label>Years in Business</label>
                         <input
@@ -1403,7 +1516,6 @@ export default function LandingPage() {
                           onChange={handleRegisterChange}
                         />
                       </div>
-
                       <div className="lp-form-group">
                         <label>Delivery Areas</label>
                         <input
@@ -1435,7 +1547,50 @@ export default function LandingPage() {
                     {isRegistering ? "Creating Account..." : "Create Account"}
                   </button>
                 </form>
+              </>
+            )}
 
+            {/* Step 3: Email Verification Success */}
+            {registrationStep === 3 && (
+              <>
+                <div className="lp-modal-header">
+                  <h2>Registration Successful!</h2>
+                  <p>Please verify your email to continue</p>
+                </div>
+                <div className="lp-verification-content">
+                  <div className="lp-success-icon">✓</div>
+                  <div className="lp-verification-message">
+                    <p className="lp-verification-title">Check your inbox</p>
+                    <p className="lp-verification-text">
+                      We've sent a verification email to:
+                    </p>
+                    <p className="lp-verification-email">{registeredEmail}</p>
+                    <p className="lp-verification-text">
+                      Please click the verification link in the email to activate your account.
+                    </p>
+                  </div>
+                  <div className="lp-verification-actions">
+                    <p className="lp-resend-text">Didn't receive the email?</p>
+                    <button
+                      type="button"
+                      className="lp-btn-link"
+                      onClick={() => handleResendVerification()}
+                      disabled={isResendingVerification}
+                    >
+                      {isResendingVerification ? "Sending..." : "Resend verification email"}
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    className="lp-btn-primary lp-btn-full"
+                    onClick={() => {
+                      closeModals();
+                      setShowLoginModal(true);
+                    }}
+                  >
+                    Go to Login
+                  </button>
+                </div>
               </>
             )}
 

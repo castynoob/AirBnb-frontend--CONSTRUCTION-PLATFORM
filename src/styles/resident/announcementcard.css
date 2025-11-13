@@ -1,0 +1,241 @@
+/* Announcement Card Styles */
+.announcement-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-left: 4px solid #3b82f6;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.announcement-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Pinned Badge */
+.announcement-pinned-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Header Section */
+.announcement-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.announcement-type-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #f3f4f6;
+}
+
+.announcement-icon {
+  font-size: 16px;
+}
+
+.announcement-type-text {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Type-specific colors */
+.announcement-maintenance {
+  border-left-color: #f59e0b;
+}
+
+.announcement-maintenance .announcement-type-badge {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.announcement-event {
+  border-left-color: #0060fb;
+}
+
+.announcement-event .announcement-type-badge {
+  background: #ced1d6;
+  color: #1e40af;
+}
+
+.announcement-notice {
+  border-left-color: #8b5cf6;
+}
+
+.announcement-notice .announcement-type-badge {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.announcement-emergency {
+  border-left-color: #ef4444;
+  background: #fef2f2;
+}
+
+.announcement-emergency .announcement-type-badge {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Meta Information */
+.announcement-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.announcement-date {
+  font-weight: 500;
+}
+
+.announcement-time {
+  opacity: 0.8;
+}
+
+/* Title */
+.announcement-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin: 12px 0;
+  line-height: 1.4;
+}
+
+/* Content */
+.announcement-content {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #4b5563;
+  margin-bottom: 16px;
+  white-space: pre-line;
+}
+
+/* Footer */
+.announcement-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.announcement-author {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.author-label {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.author-name {
+  color: #374151;
+  font-weight: 600;
+}
+
+/* Priority Badge */
+.announcement-priority {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.priority-urgent {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.priority-high {
+  background: #fed7aa;
+  color: #9a3412;
+}
+
+.priority-normal {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.priority-low {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.priority-text {
+  font-size: 10px;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .announcement-card {
+    padding: 16px;
+  }
+
+  .announcement-title {
+    font-size: 16px;
+  }
+
+  .announcement-content {
+    font-size: 13px;
+  }
+
+  .announcement-pinned-badge {
+    position: static;
+    margin-bottom: 12px;
+    width: fit-content;
+  }
+
+  .announcement-footer {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+/* Animation for new announcements */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.announcement-card.new-announcement {
+  animation: slideIn 0.5s ease-out;
+}

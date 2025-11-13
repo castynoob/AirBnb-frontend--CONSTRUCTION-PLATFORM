@@ -847,7 +847,7 @@
   }
 
   .subs-controls-bar {
-    flex-direction: column;
+    /* flex-direction: column; */
     gap: 0.5rem;
     margin-bottom: 1rem;
   }
@@ -880,7 +880,7 @@
   }
 
   .subs-card-header {
-    flex-direction: column;
+    /* flex-direction: column; */
     align-items: flex-start;
   }
 
