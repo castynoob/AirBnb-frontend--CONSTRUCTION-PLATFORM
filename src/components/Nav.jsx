@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Home, MessageSquare, User, LogOut, Heart, FileText, Crown, Wrench, ShoppingCart } from "lucide-react";
+import { Home, MessageSquare, User, LogOut, Heart, FileText, Crown, Wrench, ShoppingCart, Users } from "lucide-react";
 import logo from '../assets/logo-light.png'
 import '../styles/nav.css'
 import { getUnreadCount } from '../utils/api';
@@ -143,6 +143,21 @@ function Nav() {
                       <FileText size={20} />
                     </div>
                     <span className="nav-text">Biddings</span>
+                  </NavLink>
+                </li>
+              }
+
+              {
+                role == 'resident' &&
+                <li>
+                  <NavLink
+                    to={'/members/'+role}
+                    className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+                  >
+                    <div className="nav-icon">
+                      <Users size={20} />
+                    </div>
+                    <span className="nav-text">Members</span>
                   </NavLink>
                 </li>
               }

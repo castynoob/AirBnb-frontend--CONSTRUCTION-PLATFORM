@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { io } from 'socket.io-client';
+import { useSocket } from '../../contexts/SocketContext';
 import Nav from '../../components/Nav';
 import '../../styles/resident/messagesresident.css';
 
@@ -48,8 +48,8 @@ async function fetchWithAuth(url, options = {}) {
 
   let response = await fetch(url, options);
 
-  // If 403 (Invalid token), refresh and retry
-  if (response.status === 403) {
+  // If 401 or 403 (Invalid/expired token), refresh and retry
+  if (response.status === 401 || response.status === 403) {
     try {
       const newToken = await refreshToken();
       options.headers['Authorization'] = `Bearer ${newToken}`;
@@ -65,7 +65,9 @@ async function fetchWithAuth(url, options = {}) {
 const MessagesResident = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [socket, setSocket] = useState(null);
+  // defensive: useSocket() may return null if context not available during refresh
+  const socketContext = useSocket();
+  const socket = socketContext?.socket;
   const [activeTab, setActiveTab] = useState('group'); // 'group' or 'dm'
   const [groupChats, setGroupChats] = useState([]);
   const [directMessages, setDirectMessages] = useState([]);
@@ -79,27 +81,196 @@ const MessagesResident = () => {
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupDescription, setNewGroupDescription] = useState('');
+  const [showMobileChat, setShowMobileChat] = useState(false);
+  const messagesContainerRef = useRef(null);
+
+  const scrollToBottom = (smooth = false) => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    // wait a tick for DOM to update then scroll
+    setTimeout(() => {
+      try {
+        if (smooth && 'scrollTo' in el) {
+          el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+        } else {
+          el.scrollTop = el.scrollHeight;
+        }
+      } catch (e) {
+        el.scrollTop = el.scrollHeight;
+      }
+    }, 40);
+  };
+
+  // Robust current user id resolver: handles different stored shapes
+  const getCurrentUserId = () => {
+    try {
+      const raw = localStorage.getItem('userProfile');
+      if (raw) {
+        const up = JSON.parse(raw);
+        if (up?.user?.id) return up.user.id;
+        if (up?.id) return up.id;
+        if (up?.user_id) return up.user_id;
+        if (up?.userId) return up.userId;
+        // token may be present on top-level
+        const token = up?.token || localStorage.getItem('token');
+        if (token) {
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload?.id || payload?.sub || payload?.userId;
+          } catch (e) {
+            // ignore
+          }
+        }
+      }
+
+      // fallback to separate userId key
+      const storedId = localStorage.getItem('userId');
+      if (storedId) return storedId;
+    } catch (e) {
+      console.warn('Could not resolve current user id', e);
+    }
+    return undefined;
+  };
 
   useEffect(() => {
-    fetchGroupChats();
-    fetchDirectMessages();
-    setupSocket();
-
-    return () => {
-      if (socket) {
-        socket.close();
+    const initializeChat = async () => {
+      console.log('🔌 Socket status:', socket ? '✅ Connected' : '❌ Not connected');
+      console.log('🚀 Initializing chat - fetching data...');
+      setLoading(true);
+      setError(null);
+      
+      try {
+        await fetchGroupChats();
+        await fetchDirectMessages();
+      } catch (error) {
+        console.error('❌ Error during initialization:', error);
+      } finally {
+        console.log('✅ Initialization complete, setting loading to false');
+        setLoading(false);
       }
     };
+
+    // Fetch chats immediately, don't wait for socket
+    initializeChat();
   }, []);
 
-  // Handle URL parameters for opening DM from Members page
+  const fetchGroupChats = async () => {
+    try {
+      const userProfile = JSON.parse(localStorage.getItem('userProfile'));
+      if (!userProfile?.token) {
+        setError('Please log in to view messages');
+        return;
+      }
+
+      console.log('🔄 Fetching group chats from:', `${API_BASE_URL}/api/residents/group-chats`);
+      const response = await fetchWithAuth(`${API_BASE_URL}/api/residents/group-chats`);
+
+      if (!response.ok) {
+        console.error('❌ Response not ok:', response.status, response.statusText);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to fetch group chats: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('📥 Group chats response:', data);
+
+      if (data.success) {
+        const chats = data.group_chats || data.groupChats || [];
+        console.log(`✅ Setting ${chats.length} group chat(s)`, chats);
+        setGroupChats(chats);
+
+        // Auto-select first chat if available and socket is connected
+        if (chats.length > 0 && !activeChat && activeTab === 'group' && socket) {
+          console.log('🎯 Auto-selecting first chat:', chats[0].name);
+          await selectChatInternal(chats[0]);
+        }
+      } else {
+        console.warn('⚠️ API returned success: false', data);
+        setGroupChats([]);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching group chats:', error);
+      setError(error.message || 'Failed to load chats');
+    } finally {
+      console.log('✅ Finished fetching group chats');
+    }
+  };
+
+  const fetchDirectMessages = async () => {
+    try {
+      const userProfile = JSON.parse(localStorage.getItem('userProfile'));
+      if (!userProfile?.token) return;
+
+      console.log('🔄 Fetching direct messages...');
+      const response = await fetchWithAuth(`${API_BASE_URL}/api/residents/direct-messages`);
+
+      if (!response.ok) throw new Error('Failed to fetch direct messages');
+
+      const data = await response.json();
+      console.log('📥 Direct messages response:', data);
+      if (data.success) {
+        setDirectMessages(data.conversations || []);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching direct messages:', error);
+      // Don't set error state for DMs since it's not critical
+    }
+  };
+
+  const selectChatInternal = async (chat) => {
+    console.log('💬 Selecting chat:', chat.name, 'ID:', chat.id);
+    setActiveChat(chat);
+    setActiveDM(null); // Clear DM when selecting group chat
+    await fetchChatMessages(chat.id);
+
+    // Join the chat room via socket
+    if (socket) {
+      console.log('🔗 Joining group chat room:', chat.id);
+      socket.emit('join_group_chat', chat.id);
+    } else {
+      console.warn('⚠️ Socket not connected');
+    }
+
+    // Mark as read
+    await markChatAsRead(chat.id);
+  };
+
+  // Public wrapper used by JSX handlers
+  const selectChat = (chat) => {
+    // Defensive: ensure chat exists
+    if (!chat) return;
+
+    // On mobile, show the chat window
+    if (window && window.innerWidth && window.innerWidth <= 768) {
+      setShowMobileChat(true);
+    }
+
+    selectChatInternal(chat).catch(err => console.error('Error selecting chat:', err));
+  };
+
+  // Handle URL parameters for opening DM or group chat from mobile navigation
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
     const recipientId = params.get('recipient');
+    const chatId = params.get('chat');
 
-    console.log('🔗 URL params:', { tab, recipientId });
+    console.log('🔗 URL params:', { tab, recipientId, chatId });
     console.log('🔗 Navigation state:', location.state);
+
+    // Handle group chat from URL param (mobile navigation)
+    if (chatId && !tab) {
+      console.log('✅ Opening group chat from mobile:', chatId);
+      setActiveTab('group');
+      const chat = groupChats.find(c => c.id === chatId);
+      if (chat) {
+        console.log('🎯 Found chat in list, loading:', chat.name);
+        selectChatInternal(chat).catch(err => console.error('Error selecting chat:', err));
+      } else {
+        console.warn('⚠️ Chat not found in list, may need to wait for groupChats to load');
+      }
+      return;
+    }
 
     if (tab === 'dm' && recipientId) {
       console.log('✅ Switching to DM tab');
@@ -131,76 +302,54 @@ const MessagesResident = () => {
         console.warn('⚠️ No recipient data found in either state or localStorage');
       }
     }
-  }, [location.search, location.state]);
+  }, [location.search, location.state, groupChats]);
 
-  const setupSocket = () => {
-    const userProfile = JSON.parse(localStorage.getItem('userProfile'));
-    if (!userProfile?.token) return;
+  // Setup socket event listeners
+  useEffect(() => {
+    if (!socket) return;
 
-    const newSocket = io(API_BASE_URL, {
-      auth: { token: userProfile.token }
-    });
+    console.log('✅ Socket connected, setting up listeners...');
 
-    setSocket(newSocket);
-
-    // ============================================
-    // CONNECTION EVENTS
-    // ============================================
-    newSocket.on('connect', () => {
-      console.log('✅ Socket connected:', newSocket.id);
-    });
-
-    newSocket.on('disconnect', (reason) => {
-      console.log('❌ Socket disconnected:', reason);
-    });
-
-    newSocket.on('error', (error) => {
-      console.error('⚠️ Socket error:', error);
-    });
-
-    // ============================================
-    // GROUP CHAT EVENTS
-    // ============================================
+    // Auto-select first chat when socket connects
+    if (groupChats.length > 0 && !activeChat && activeTab === 'group') {
+      console.log('🎯 Auto-selecting first chat after socket connection:', groupChats[0].name);
+      selectChatInternal(groupChats[0]);
+    }
 
     // Listen for new group messages
-    newSocket.on('new_group_message', (message) => {
+    socket.on('new_group_message', (message) => {
       console.log('📨 Received new group message:', message);
       setMessages(prev => [...prev, message]);
 
-      // Update group chat list with latest message
+      // Update group chat list with latest message (use content fallback)
+      const lastText = message.message_text || message.content || message.message || '';
       setGroupChats(prev => prev.map(chat =>
-        chat.id === message.group_chat_id
-          ? { ...chat, last_message: message.message_text, unread_count: 0 }
+        chat.id === (message.group_chat_id || message.group_chat_id || chat.id)
+          ? { ...chat, last_message: lastText, unread_count: 0 }
           : chat
       ));
     });
 
     // Listen for typing indicators in group chats
-    newSocket.on('group_user_typing', ({ userId, groupChatId }) => {
+    socket.on('group_user_typing', ({ userId, groupChatId }) => {
       console.log('✏️ User typing in group:', userId, groupChatId);
-      if (activeChat && groupChatId === activeChat.id && userId !== userProfile.user.id) {
-        setTypingUsers(prev => {
-          const userName = `User ${userId}`;
-          if (!prev.includes(userName)) {
-            return [...prev, userName];
-          }
-          return prev;
-        });
+      setTypingUsers(prev => {
+        const userName = `User ${userId}`;
+        if (!prev.includes(userName)) {
+          return [...prev, userName];
+        }
+        return prev;
+      });
 
-        // Remove typing indicator after 3 seconds
-        setTimeout(() => {
-          setTypingUsers(prev => prev.filter(name => name !== `User ${userId}`));
-        }, 3000);
-      }
+      // Remove typing indicator after 3 seconds
+      setTimeout(() => {
+        setTypingUsers(prev => prev.filter(name => name !== `User ${userId}`));
+      }, 3000);
     });
 
-    newSocket.on('group_user_stopped_typing', ({ userId }) => {
+    socket.on('group_user_stopped_typing', ({ userId }) => {
       setTypingUsers(prev => prev.filter(name => name !== `User ${userId}`));
     });
-
-    // ============================================
-    // DIRECT MESSAGE EVENTS
-    // ============================================
 
     // Listen for new direct messages (both event names for compatibility)
     const handleNewDirectMessage = (data) => {
@@ -208,20 +357,26 @@ const MessagesResident = () => {
       const message = data.message || data;
 
       // Add to messages if this is the active conversation
-      if (activeDM && (message.sender_id === activeDM.user_id || message.recipient_id === activeDM.user_id)) {
-        setMessages(prev => [...prev, message]);
-      }
+      setActiveDM(current => {
+        if (current && (String(message.sender_id) === String(current.user_id) || String(message.recipient_id) === String(current.user_id))) {
+          setMessages(prev => {
+            if (prev.find(m => String(m.id) === String(message.id))) return prev;
+            return [...prev, message];
+          });
+        }
+        return current;
+      });
 
       // Update DM list with latest message
       setDirectMessages(prev => {
         const updatedList = prev.map(dm =>
-          dm.user_id === message.sender_id || dm.user_id === message.recipient_id
-            ? { ...dm, last_message: message.message_text, unread_count: dm.unread_count + 1 }
+          (String(dm.user_id) === String(message.sender_id) || String(dm.user_id) === String(message.recipient_id))
+            ? { ...dm, last_message: message.message_text, unread_count: (dm.unread_count || 0) + 1 }
             : dm
         );
 
         // If sender not in list, add them
-        if (!prev.find(dm => dm.user_id === message.sender_id)) {
+        if (!prev.find(dm => String(dm.user_id) === String(message.sender_id))) {
           return [...updatedList, {
             user_id: message.sender_id,
             first_name: message.sender_name?.split(' ')[0] || 'Unknown',
@@ -235,84 +390,17 @@ const MessagesResident = () => {
       });
     };
 
-    newSocket.on('new_dm_message', handleNewDirectMessage);
-    newSocket.on('new_direct_message', handleNewDirectMessage);
-  };
+    socket.on('new_dm_message', handleNewDirectMessage);
+    socket.on('new_direct_message', handleNewDirectMessage);
 
-  const fetchGroupChats = async () => {
-    try {
-      setLoading(true);
-      const userProfile = JSON.parse(localStorage.getItem('userProfile'));
-      if (!userProfile?.token) {
-        setError('Please log in to view messages');
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetchWithAuth(`${API_BASE_URL}/api/residents/group-chats`);
-
-      if (!response.ok) throw new Error('Failed to fetch group chats');
-
-      const data = await response.json();
-      console.log('📥 Group chats response:', data);
-
-      if (data.success) {
-        const chats = data.group_chats || data.groupChats || [];
-        console.log(`✅ Setting ${chats.length} group chat(s)`, chats);
-        setGroupChats(chats);
-
-        // Auto-select first chat if available
-        if (chats.length > 0 && !activeChat && activeTab === 'group') {
-          selectChat(chats[0]);
-        }
-      } else {
-        console.warn('⚠️ API returned success: false', data);
-        setGroupChats([]);
-      }
-    } catch (error) {
-      console.error('❌ Error fetching group chats:', error);
-      setError(error.message || 'Failed to load chats');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchDirectMessages = async () => {
-    try {
-      const userProfile = JSON.parse(localStorage.getItem('userProfile'));
-      if (!userProfile?.token) return;
-
-      const response = await fetchWithAuth(`${API_BASE_URL}/api/residents/direct-messages`);
-
-      if (!response.ok) throw new Error('Failed to fetch direct messages');
-
-      const data = await response.json();
-      if (data.success) {
-        setDirectMessages(data.conversations || []);
-      }
-    } catch (error) {
-      console.error('❌ Error fetching direct messages:', error);
-      // Don't set error state for DMs since it's not critical
-    }
-  };
-
-  const selectChat = async (chat) => {
-    console.log('💬 Selecting chat:', chat.name, 'ID:', chat.id);
-    setActiveChat(chat);
-    setActiveDM(null); // Clear DM when selecting group chat
-    await fetchChatMessages(chat.id);
-
-    // Join the chat room via socket
-    if (socket) {
-      console.log('🔗 Joining group chat room:', chat.id);
-      socket.emit('join_group_chat', chat.id);
-    } else {
-      console.warn('⚠️ Socket not connected');
-    }
-
-    // Mark as read
-    await markChatAsRead(chat.id);
-  };
+    return () => {
+      socket.off('new_group_message');
+      socket.off('group_user_typing');
+      socket.off('group_user_stopped_typing');
+      socket.off('new_dm_message');
+      socket.off('new_direct_message');
+    };
+  }, [socket]);
 
   const fetchChatMessages = async (chatId) => {
     try {
@@ -373,7 +461,29 @@ const MessagesResident = () => {
       if (data.success) {
         console.log('✅ Message sent successfully');
         setMessageInput('');
-        // Message will be added via socket event
+
+        // Optimistically append the sent group message when socket is not connected
+        const userId = getCurrentUserId();
+        const serverMsg = data.message || data;
+        const newMsg = {
+          id: serverMsg?.id || `temp-${Date.now()}`,
+          group_chat_id: activeChat.id,
+          sender_id: serverMsg?.sender_id ?? userId,
+          content: serverMsg?.content ?? messageInput,
+          created_at: serverMsg?.created_at || new Date().toISOString(),
+          sender_name: serverMsg?.sender_name || null
+        };
+
+        setMessages(prev => {
+          if (prev.find(m => String(m.id) === String(newMsg.id))) return prev;
+          return [...prev, newMsg];
+        });
+
+        // Update group chat preview
+        setGroupChats(prev => prev.map(gc => gc.id === activeChat.id ? { ...gc, last_message: newMsg.content } : gc));
+
+        // ensure view scrolls to the new message
+        scrollToBottom(true);
       }
     } catch (error) {
       console.error('❌ Error sending message:', error);
@@ -389,6 +499,13 @@ const MessagesResident = () => {
 
   const selectDM = async (conversation) => {
     console.log('💬 Selecting DM with:', conversation.first_name, conversation.last_name);
+
+    // On mobile, show the chat window
+    if (window && window.innerWidth && window.innerWidth <= 768) {
+      setShowMobileChat(true);
+    }
+
+    // Show inline
     setActiveChat(null); // Clear group chat when selecting DM
     setActiveDM(conversation);
     await fetchDMMessages(conversation.user_id);
@@ -435,7 +552,31 @@ const MessagesResident = () => {
       const data = await response.json();
       if (data.success) {
         setMessageInput('');
-        // Message will be added via socket event
+
+        // Build a normalized optimistic message object to ensure sender detection
+        const currentUserId = getCurrentUserId();
+        const serverMsg = data.message || data;
+
+        const newMsg = {
+          id: serverMsg?.id || `temp-${Date.now()}`,
+          sender_id: serverMsg?.sender_id ?? currentUserId,
+          recipient_id: serverMsg?.recipient_id ?? activeDM.user_id,
+          message_text: serverMsg?.message_text ?? serverMsg?.content ?? messageInput,
+          created_at: serverMsg?.created_at || new Date().toISOString(),
+          ...serverMsg
+        };
+
+        setMessages(prev => {
+          // avoid duplicating if socket also pushes the same message later
+          if (prev.find(m => String(m.id) === String(newMsg.id))) return prev;
+          return [...prev, newMsg];
+        });
+
+        // Update the DM list preview
+        setDirectMessages(prev => prev.map(dm => String(dm.user_id) === String(activeDM.user_id) ? { ...dm, last_message: newMsg.message_text || dm.last_message } : dm));
+
+        // scroll to newly appended DM
+        scrollToBottom(true);
       }
     } catch (error) {
       console.error('❌ Error sending DM:', error);
@@ -485,7 +626,7 @@ const MessagesResident = () => {
       <Nav />
       <div className="messages-resident-container-fullscreen">
         {/* Header Bar */}
-        <div className="messages-resident-header-bar">
+        <div className={`messages-resident-header-bar ${showMobileChat ? 'hide-mobile' : ''}`}>
           <h1>Messages</h1>
 
           {/* Tab Navigation */}
@@ -536,7 +677,7 @@ const MessagesResident = () => {
             ) : (
               <div className="messages-resident-layout">
                 {/* Chat Sidebar */}
-                <div className="chat-sidebar-resident">
+                  <div className={`chat-sidebar-resident ${showMobileChat ? 'hide-mobile' : ''}`}>
                   <div className="sidebar-header-resident">
                     <button
                       className="create-group-btn-sidebar"
@@ -572,10 +713,18 @@ const MessagesResident = () => {
                 </div>
 
                 {/* Chat Window */}
-                <div className="chat-window-resident">
+                <div className={`chat-window-resident ${showMobileChat ? 'show-mobile' : ''}`}>
                   {activeChat ? (
                     <>
                       <div className="chat-header-resident">
+                        <button
+                          className="mobile-back-btn"
+                          onClick={() => setShowMobileChat(false)}
+                          style={{ display: 'none' }}
+                          title="Back to conversations"
+                        >
+                          ←
+                        </button>
                         <div className="header-info-resident">
                           <div className="header-avatar-wrapper">
                             <div className="header-avatar-resident">🏢</div>
@@ -587,33 +736,38 @@ const MessagesResident = () => {
                         </div>
                       </div>
 
-                      <div className="chat-messages-resident">
-                        {messages.map((msg) => {
-                          const userProfile = JSON.parse(localStorage.getItem('userProfile'));
-                          const isOwn = msg.sender_id === userProfile.user.id;
+                      <div className="chat-messages-resident" ref={messagesContainerRef}>
+                        {Array.isArray(messages) ? messages.filter(msg => msg && msg.id).map((msg) => {
+                          try {
+                            const currentUserId = getCurrentUserId();
+                            const isOwn = currentUserId && String(msg.sender_id) === String(currentUserId);
 
-                          return (
-                            <div key={msg.id} className={`message-wrapper-resident ${isOwn ? 'sent' : 'received'}`}>
-                              {!isOwn && (
-                                <div className="group-message-avatar">
-                                  <div className="avatar-circle-small">{msg.sender_name?.[0] || '?'}</div>
-                                </div>
-                              )}
-                              <div className="group-message-content">
-                                {!isOwn && <div className="group-sender-name">{msg.sender_name}</div>}
-                                <div className="message-bubble-resident">
-                                  <p className="message-text-resident">{msg.message_text}</p>
-                                  <span className="message-time-resident">
-                                    {new Date(msg.created_at).toLocaleTimeString([], {
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
-                                  </span>
+                            return (
+                              <div key={msg.id} className={`message-wrapper-resident ${isOwn ? 'sent' : 'received'}`}>
+                                {!isOwn && (
+                                  <div className="group-message-avatar">
+                                    <div className="avatar-circle-small">{msg.sender_name?.[0] || '?'}</div>
+                                  </div>
+                                )}
+                                <div className="group-message-content">
+                                  {!isOwn && <div className="group-sender-name">{msg.sender_name}</div>}
+                                  <div className="message-bubble-resident">
+                                    <p className="message-text-resident">{msg.message_text || msg.content || msg.message}</p>
+                                    <span className="message-time-resident">
+                                      {new Date(msg.created_at).toLocaleTimeString([], {
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          } catch (error) {
+                            console.error('Error rendering message:', error, msg);
+                            return null;
+                          }
+                        }) : null}
 
                         {typingUsers.length > 0 && (
                           <div className="typing-indicator-wrapper">
@@ -676,7 +830,7 @@ const MessagesResident = () => {
             ) : (
               <div className="messages-resident-layout">
                 {/* DM Sidebar */}
-                <div className="chat-sidebar-resident">
+                <div className={`chat-sidebar-resident ${showMobileChat ? 'hide-mobile' : ''}`}>
                   {/* DM List */}
                   <div className="chat-list-resident">
                     {directMessages.map((dm) => (
@@ -703,10 +857,18 @@ const MessagesResident = () => {
                 </div>
 
                 {/* DM Chat Window */}
-                <div className="chat-window-resident">
+                <div className={`chat-window-resident ${showMobileChat ? 'show-mobile' : ''}`}>
                   {activeDM ? (
                     <>
                       <div className="chat-header-resident">
+                        <button
+                          className="mobile-back-btn"
+                          onClick={() => setShowMobileChat(false)}
+                          style={{ display: 'none' }}
+                          title="Back to conversations"
+                        >
+                          ←
+                        </button>
                         <div className="header-info-resident">
                           <div className="header-avatar-wrapper">
                             <div className="header-avatar-resident">{activeDM.first_name?.[0] || '?'}</div>
@@ -718,30 +880,39 @@ const MessagesResident = () => {
                         </div>
                       </div>
 
-                      <div className="chat-messages-resident">
-                        {messages.map((msg) => {
-                          const userProfile = JSON.parse(localStorage.getItem('userProfile'));
-                          const isOwn = msg.sender_id === userProfile.user.id;
+                      <div className="chat-messages-resident" ref={messagesContainerRef}>
+                        {Array.isArray(messages) ? messages.filter(msg => msg && msg.id).map((msg) => {
+                          try {
+                            const currentUserId = getCurrentUserId();
+                            const isOwn = currentUserId && String(msg.sender_id) === String(currentUserId);
 
-                          return (
-                            <div key={msg.id} className={`message-wrapper-resident ${isOwn ? 'sent' : 'received'}`}>
-                              {!isOwn && (
-                                <div className="chat-avatar-resident">
-                                  <div className="avatar-circle-small">{activeDM.first_name?.[0] || '?'}</div>
+                            // Temporary debug log to diagnose sender detection
+                            // Remove this log after verification
+                            console.log('DM_RENDER_DEBUG', { msgId: msg.id, sender_id: msg.sender_id, currentUserId, isOwn });
+
+                            return (
+                              <div key={msg.id} className={`message-wrapper-resident ${isOwn ? 'sent' : 'received'}`}>
+                                {!isOwn && (
+                                  <div className="chat-avatar-resident">
+                                    <div className="avatar-circle-small">{activeDM.first_name?.[0] || '?'}</div>
+                                  </div>
+                                )}
+                                <div className="message-bubble-resident">
+                                  <p className="message-text-resident">{msg.message_text || msg.content || msg.message}</p>
+                                  <span className="message-time-resident">
+                                    {new Date(msg.created_at).toLocaleTimeString([], {
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </span>
                                 </div>
-                              )}
-                              <div className="message-bubble-resident">
-                                <p className="message-text-resident">{msg.message_text}</p>
-                                <span className="message-time-resident">
-                                  {new Date(msg.created_at).toLocaleTimeString([], {
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })}
-                                </span>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          } catch (error) {
+                            console.error('Error rendering DM message:', error, msg);
+                            return null;
+                          }
+                        }) : null}
                       </div>
 
                       <div className="chat-input-area-resident">

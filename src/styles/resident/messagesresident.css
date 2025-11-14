@@ -254,6 +254,17 @@
   gap: 0.875rem;
 }
 
+/* Tweak header alignment for tighter spacing on mobile and desktop */
+.chat-header-resident .header-info-resident {
+  align-items: center;
+}
+
+.chat-header-resident .header-info-resident > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .header-avatar-wrapper {
   position: relative;
   flex-shrink: 0;
@@ -809,14 +820,50 @@
 
   .messages-resident-layout {
     grid-template-columns: 1fr;
+    position: relative;
   }
 
+  /* Mobile: sidebar visible by default */
   .chat-sidebar-resident {
+    display: flex;
+  }
+
+  /* Mobile: hide sidebar when chat is shown */
+  .chat-sidebar-resident.hide-mobile {
     display: none;
   }
 
-  .chat-sidebar-resident.mobile-show {
+  /* Mobile: hide header bar when chat is shown */
+  .messages-resident-header-bar.hide-mobile {
+    display: none;
+  }
+
+  /* Mobile: chat window hidden by default */
+  .chat-window-resident {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 100;
+  }
+
+  /* Mobile: show chat window when active */
+  .chat-window-resident.show-mobile {
     display: flex;
+  }
+
+  /* Show back button on mobile */
+  .mobile-back-btn {
+    display: inline-block !important;
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    color: var(--color-primary);
+    margin-right: 0.5rem;
   }
 
   .group-message-content {
