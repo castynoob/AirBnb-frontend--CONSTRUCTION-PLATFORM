@@ -1,13 +1,14 @@
 "use client"
 
 import { useCallback, useState, useEffect, useRef } from "react"
-import { Bell, Wrench, Search, Plus, X, FileText, CheckCircle, LoaderIcon  } from "lucide-react"
+import { Bell, Wrench, Search, Plus, X, FileText, CheckCircle, LoaderIcon, Megaphone  } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import "../../styles/manager/homepage.css"
 import Nav from "../../components/Nav"
 import RepairList from "../../components/RepairList"
 import SummarySection from "../../components/SummarySection"
 import RepairDetails from "../works/RepairDetails"
+import AddAnnouncementModal from "../../components/modal/AddAnnouncementModal"
 
 // Skeleton Loader Component
 function SkeletonCard() {
@@ -89,6 +90,7 @@ function HomePage() {
 
   const [notifications] = useState([])
   const [uProfile, setUProfile] = useState({})
+  const [showAnnouncementModal, setShowAnnouncementModal] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -542,6 +544,10 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                   <Wrench size={18} />
                   <span>Urgent</span>
                 </button>
+                <button className="pm-btn pm-btn-secondary" disabled>
+                  <Megaphone size={18} />
+                  <span>Announcement</span>
+                </button>
                 <button className="pm-btn pm-btn-primary" disabled>
                   <Plus size={18} />
                   <span>New Project</span>
@@ -619,6 +625,14 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                 >
                   {isSending ? <LoaderIcon size={18} /> : <Wrench size={18} />}
                   <span>Urgent</span>
+                </button>
+                <button
+                  onClick={() => setShowAnnouncementModal(true)}
+                  className="pm-btn pm-btn-secondary"
+                  title="Create announcement"
+                >
+                  <Megaphone size={18} />
+                  <span>Announcement</span>
                 </button>
                 <button
                   onClick={handleAddWork}
@@ -740,6 +754,16 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
       ) : (
         <RepairDetails handleRepairClicked={handleRepairClicked} repair={repair} />
       )}
+
+      {/* Add Announcement Modal */}
+      <AddAnnouncementModal 
+        isOpen={showAnnouncementModal} 
+        onClose={() => setShowAnnouncementModal(false)}
+        onSuccess={() => {
+          // Optionally refresh data or show success message
+          console.log('Announcement created successfully');
+        }}
+      />
     </div>
   )
 }
