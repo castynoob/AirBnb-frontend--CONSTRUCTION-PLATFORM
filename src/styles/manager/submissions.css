@@ -2293,3 +2293,253 @@
     width: 100%;
   }
 }
+
+/* Mobile-specific adjustments for tabs & controls to improve appearance on small screens */
+@media (max-width: 768px) {
+  /* Content should span full width on mobile */
+  .subs-submissions-content {
+    margin-left: 0;
+    width: 100%;
+    padding: 1rem;
+  }
+
+  /* Make tabs horizontally scrollable and compact */
+  .subs-tabs-container {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 1rem;
+    padding: 0.125rem 0.25rem;
+    border-radius: 8px;
+    background: transparent;
+    border: none;
+    overflow: visible;
+    align-items: center;
+  }
+
+  /* Make each tab share available width so all tabs fit on one row */
+  .subs-tab-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .subs-tab-count {
+    margin-left: 0.4rem;
+    padding: 0.06rem 0.35rem;
+    font-size: 0.65rem;
+  }
+
+  .subs-tab-btn.active {
+    box-shadow: 0 6px 16px rgba(12, 24, 40, 0.06);
+    transform: translateY(-1px);
+    border-radius: 10px;
+  }
+
+  /* If layout needs to wrap (fallback), allow it but prefer single-row by default */
+  .subs-tabs-container.wrap-tabs {
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  /* Stack controls under tabs for narrow screens */
+  .subs-controls-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .subs-search-box {
+    width: 100%;
+  }
+
+  .subs-filter-btn {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Make cards take full width on mobile for readability */
+  .subs-bids-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.875rem;
+  }
+
+  /* Prevent last items from being obscured by mobile UI or safe-area insets */
+  .subs-submissions-content {
+    /* leave extra space for bottom nav / safe-area */
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 3.25rem);
+  }
+
+  /* Make sure cards have breathing room at the bottom */
+  .subs-bid-card {
+    margin-bottom: 0.75rem;
+  }
+
+  /* Small visual tweak: give tabs a little horizontal padding */
+  .subs-tabs-container {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  /* If users still can't reach the last item because of some fixed footer, add a small spacer utility */
+  .subs-bottom-spacer {
+    height: calc(env(safe-area-inset-bottom, 0px) + 2.25rem);
+    display: block;
+  }
+}
+
+
+/* ----------------------
+   Modern redesign overrides
+   Applies a cohesive, cleaner look for tabs, header, controls, and cards
+   ---------------------- */
+.subs-submissions-content {
+  --subs-card-bg: var(--color-white);
+  --subs-card-radius: 12px;
+  --subs-card-shadow: 0 6px 18px rgba(12,24,40,0.06);
+}
+
+/* Page header: tighter, aligned center on narrow screens */
+
+.subs-page-title {
+  font-size: 1.25rem;
+  letter-spacing: -0.2px;
+}
+.subs-page-subtitle {
+  color: var(--color-text-muted);
+  margin-top: 0.15rem;
+}
+
+
+
+
+/* Tabs: pill-shaped, subtle shadow, even width distribution */
+.subs-tabs-container {
+  background: transparent;
+  padding: 6px;
+  border-radius: 999px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: stretch;
+}
+.subs-tab-btn {
+  background: rgba(12,24,40,0.03);
+  border-radius: 999px;
+  padding: 0.45rem 0.6rem;
+  font-weight: 600;
+  color: var(--color-text-dark);
+  border: 1px solid transparent;
+  box-shadow: none;
+  transition: all 180ms ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.subs-tab-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(12,24,40,0.06);
+}
+.subs-tab-btn.active {
+  background: var(--color-secondary);
+  color: var(--color-white);
+  border-color: rgba(255,255,255,0.06);
+  box-shadow: 0 8px 24px rgba(37,99,235,0.12);
+}
+.subs-tab-count {
+  margin-left: 0.45rem;
+  background: rgba(255,255,255,0.12);
+  padding: 0.06rem 0.35rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.7rem;
+}
+
+/* Controls: search pill + compact filter button */
+.subs-controls-bar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+.subs-search-box {
+  background: var(--color-white);
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--color-border-divider);
+  box-shadow: 0 6px 18px rgba(12,24,40,0.04);
+}
+.subs-search-box input {
+  font-size: 0.9rem;
+}
+.subs-filter-btn {
+  padding: 0.45rem 0.6rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Card design: soft elevated cards with clear hierarchy */
+.subs-bid-card {
+  background: var(--subs-card-bg);
+  border-radius: var(--subs-card-radius);
+  box-shadow: var(--subs-card-shadow);
+  padding: 1rem;
+  border: 1px solid rgba(12,24,40,0.03);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+.subs-bid-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px rgba(12,24,40,0.08);
+}
+.subs-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.subs-status-badge-subs {
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+}
+.subs-job-title {
+  margin-top: 0.6rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.05rem;
+  color: var(--color-text-dark);
+}
+.subs-contractor-info {
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+.subs-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.subs-action-buttons button {
+  padding: 0.45rem 0.6rem;
+  border-radius: 8px;
+  border: none;
+  background: rgba(12,24,40,0.03);
+  cursor: pointer;
+}
+.subs-details-btn { font-weight: 600 }
+
+/* Responsive adjustments: keep a single row of tabs on small screens */
+@media (max-width: 480px) {
+  .subs-tab-btn { font-size: 0.65rem; padding: 0.3rem 0.35rem }
+  .subs-tab-count { font-size: 0.6rem; padding: 0.05rem 0.3rem }
+  .subs-search-box input { font-size: 0.86rem }
+  .subs-page-title { font-size: 1.1rem }
+}
+
+/* Utility spacer class (optional) */
+.subs-bottom-spacer { display:block }

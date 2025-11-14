@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Megaphone } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import '../../styles/manager/addannouncementmodal.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -101,6 +102,12 @@ const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
       });
 
       if (onSuccess) onSuccess(data.announcement);
+      // show a quick success toast then close
+      try {
+        toast.success('Announcement created successfully');
+      } catch (e) {
+        // ignore if toast fails
+      }
       onClose();
     } catch (error) {
       console.error('❌ Error creating announcement:', error);
@@ -127,7 +134,10 @@ const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
         <div className="modal-header">
           <div className="modal-title-wrapper">
             <Megaphone size={24} className="modal-icon" />
-            <h2>Create Announcement</h2>
+            <div>
+              <h2>Create Announcement</h2>
+              <p className="modal-subtitle">Post a concise announcement to residents of the selected building</p>
+            </div>
           </div>
           <button className="modal-close-btn" onClick={onClose} aria-label="Close">
             <X size={20} />
