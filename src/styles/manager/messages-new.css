@@ -497,18 +497,33 @@
    ======================================== */
 
 @media (max-width: 768px) {
+  .messages-page-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
   .messages-container {
     margin-left: 0; /* Remove Nav offset on mobile */
+    width: 100%;
+    max-width: 100vw;
+    overflow: hidden;
   }
 
   .messages-sidebar {
     width: 100%;
+    max-width: 100vw;
     display: flex;
   }
 
   .messages-chat {
     display: none;
     width: 100%;
+    max-width: 100vw;
+    position: relative;
   }
 
   /* Show chat and hide sidebar when chat is active on mobile */
@@ -518,6 +533,12 @@
 
   .messages-chat.show-mobile {
     display: flex !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 10;
   }
 
   /* Show back button on mobile */
