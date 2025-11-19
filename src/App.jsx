@@ -27,7 +27,6 @@ import ProfilePageResident from "./pages/profile/ProfilePageResident";
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
-import { SocketProvider } from "./contexts/SocketContext"
 
 function App() {
   return (
@@ -56,14 +55,10 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
-          {/* ===== SOCKET-PROTECTED ROUTES ===== */}
+          {/* ===== PROTECTED ROUTES ===== */}
           <Route
             path="/*"
-            element={
-              <SocketProvider>
-                <ProtectedRoutes />
-              </SocketProvider>
-            }
+            element={<ProtectedRoutes />}
           />
         </Routes>
       </div>

@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
 
 export const useNotifications = () => {
-  const [permission, setPermission] = useState(Notification.permission);
+  // Check if Notification API is supported (not available on iOS Safari)
+  const isSupported = typeof window !== 'undefined' && 'Notification' in window;
+  const [permission, setPermission] = useState(isSupported ? Notification.permission : 'denied');
 
   useEffect(() => {
-    // Update permission state if it changes
-    setPermission(Notification.permission);
-  }, []);
+    // Update permission state if it changes (only if supported)
+    if (isSupported) {
+      setPermission(Notification.permission);
+    }
+  }, [isSupported]);
 
   // Request notification permission
   const requestPermission = async () => {
