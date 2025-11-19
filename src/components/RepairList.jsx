@@ -2,15 +2,20 @@ import React, { useState } from 'react';
 import { Building2, Home, DollarSign, Users, Grid3x3, List } from 'lucide-react';
 
 function RepairList({ repairs, handleRepairClicked }) {
-  const PLACEHOLDER_IMAGE = "https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=";
+  const PLACEHOLDER_IMAGE = "/defaultjobs.png";
   const [imagesLoaded, setImagesLoaded] = useState({});
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
   const handleImageError = (e) => {
+    console.log("Image failed to load:", e.target.src);
+    console.log("Fallback to:", PLACEHOLDER_IMAGE);
     e.target.src = PLACEHOLDER_IMAGE;
+    // Force show the image even on error
+    e.target.style.display = 'block';
   };
 
-  const handleImageLoad = (repairId) => {
+  const handleImageLoad = (repairId, imageSrc) => {
+    console.log("Image loaded successfully:", imageSrc, "for repair:", repairId);
     setImagesLoaded(prev => ({ ...prev, [repairId]: true }));
   };
 
@@ -40,7 +45,9 @@ function RepairList({ repairs, handleRepairClicked }) {
       </div>
 
       <div className={viewMode === 'grid' ? 'hp-repair-cards-grid' : 'hp-repair-cards-list'}>
-        {repairs.map((repair) => (
+        {repairs.map((repair) => {
+          console.log(`Repair ${repair.id} - Image URL:`, repair.images[0]);
+          return (
           <div
             className="hp-repair-card-modern"
             key={repair.id}
@@ -55,10 +62,14 @@ function RepairList({ repairs, handleRepairClicked }) {
               <img
                 src={repair.images[0]}
                 alt={repair.property}
-                loading="lazy"
                 onError={handleImageError}
-                onLoad={() => handleImageLoad(repair.id)}
-                style={{ display: imagesLoaded[repair.id] ? 'block' : 'none' }}
+                onLoad={(e) => handleImageLoad(repair.id, e.target.src)}
+                style={{
+                  display: imagesLoaded[repair.id] ? 'block' : 'none',
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover'
+                }}
               />
               <span
                 className={`hp-category-badge ${
@@ -103,7 +114,8 @@ function RepairList({ repairs, handleRepairClicked }) {
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

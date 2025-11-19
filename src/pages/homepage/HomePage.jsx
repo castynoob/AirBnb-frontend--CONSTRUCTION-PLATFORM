@@ -162,8 +162,8 @@ function HomePage() {
 
               // Fetch images for this job
               let jobImages = []
-              const placeholderImage = "https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM="
-              
+              const placeholderImage = "/defaultjobs.png"
+
               try {
                 const imagesResponse = await fetch(`${API_BASE_URL}/api/jobs/${job.id}/images`, {
                   method: "GET",
