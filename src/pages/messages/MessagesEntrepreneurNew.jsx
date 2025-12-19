@@ -28,7 +28,7 @@ import {
 } from "../../utils/api";
 
 function MessagesEntrepreneurNew() {
-  const socket = useSocket();
+  const { socket } = useSocket();
   const [selectedChat, setSelectedChat] = useState(null);
   const [message, setMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");

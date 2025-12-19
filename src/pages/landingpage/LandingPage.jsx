@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react"
 import "../../styles/landinpage.css"
 import logo from '../../assets/logo.png'
+import mockupImage from '../../assets/images/mockup.png'
+import phoneImage from '../../assets/images/phone.png'
 import { useNavigate } from "react-router-dom"
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
@@ -479,6 +481,8 @@ export default function LandingPage() {
         
         const data = await response.json();
 
+        console.log("Backend response data:", data);
+
         if (!response.ok) {
             console.error("Backend response error:", data);
             if (data.errors && typeof data.errors === 'object') {
@@ -492,8 +496,67 @@ export default function LandingPage() {
             return;
         }
 
-        setRegisteredEmail(registerFormData.email);
-        setRegistrationStep(3);
+        // ✅ Google users are already verified - redirect to dashboard
+        if (registerFormData.provider === 'google') {
+            // Backend doesn't return token on registration - need to login to get token
+            try {
+                const loginResponse = await fetch(`${API_BASE_URL}/api/auth/google-login`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        email: data.user.email,
+                        provider_id: registerFormData.provider_id
+                    }),
+                });
+
+                const loginData = await loginResponse.json();
+
+                if (!loginResponse.ok) {
+                    console.error("Login after registration failed:", loginData);
+                    setRegisterErrors({ submit: "Registration successful but login failed. Please try logging in manually." });
+                    return;
+                }
+
+                // Get entrepreneur profile if needed (same as handleLoginSuccess)
+                let entrepProfile = {};
+                if (loginData.user.role === 'entrepreneur') {
+                    const getEntreProfile = await fetch(`${API_BASE_URL}/api/users/entrepreneur/user/${loginData.user.id}`, {
+                        method: "GET",
+                        headers: {
+                            'Authorization': `Bearer ${loginData.accessToken}`
+                        }
+                    });
+                    const entreData = await getEntreProfile.json();
+                    entrepProfile = entreData || {};
+                }
+
+                // Create userProfile object matching login format
+                const userProfile = {
+                    id: loginData.user.id,
+                    name: loginData.user.name || `${loginData.user.first_name || ""} ${loginData.user.last_name || ""}`.trim(),
+                    email: loginData.user.email,
+                    role: loginData.user.role,
+                    token: loginData.accessToken || null,
+                    entrepProfile: loginData.user.role === 'entrepreneur' ? entrepProfile : null
+                };
+
+                // Store user data in localStorage (same format as login)
+                localStorage.setItem('token', userProfile.token);
+                localStorage.setItem('refreshToken', loginData.refreshToken);
+                localStorage.setItem('userId', userProfile.id);
+                localStorage.setItem('userProfile', JSON.stringify(userProfile));
+
+                // Redirect to role-specific homepage
+                navigate(`/homepage/${userProfile.role}`);
+            } catch (loginError) {
+                console.error("Error logging in after registration:", loginError);
+                setRegisterErrors({ submit: "Registration successful but automatic login failed. Please try logging in manually." });
+            }
+        } else {
+            // Local users need email verification
+            setRegisteredEmail(registerFormData.email);
+            setRegistrationStep(4); // Success screen
+        }
     } catch (error) {
         console.error("Registration error:", error);
         setRegisterErrors({ submit: error.message || "Registration failed due to a server error." });
@@ -526,11 +589,65 @@ export default function LandingPage() {
         // ... other fields
     }));
 
-    alert("Google details pre-filled! Please complete the remaining fields to finalize your registration.");
+    // ✅ Advance to Step 3 (Profile Completion) after Google OAuth
+    setRegistrationStep(3);
   };
 
   const handleError = () => {
     console.error("Google Sign-In failed");
+  };
+
+  // Handle Step 2: Authentication (Email/Password entry)
+  const handleAuthenticationSubmit = (e) => {
+    e.preventDefault();
+    const errors = {};
+
+    // Validate first name
+    if (!registerFormData.first_name) {
+      errors.first_name = "First name is required";
+    }
+
+    // Validate last name (only required for local registration, optional for Google)
+    if (registerFormData.provider !== 'google' && !registerFormData.last_name) {
+      errors.last_name = "Last name is required";
+    }
+
+    // Validate email
+    if (!registerFormData.email) {
+      errors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(registerFormData.email)) {
+      errors.email = "Please enter a valid email address";
+    }
+
+    // Validate password (only for local registration, not needed for Google)
+    if (registerFormData.provider !== 'google') {
+      if (!registerFormData.password) {
+        errors.password = "Password is required";
+      } else if (registerFormData.password.length < 8) {
+        errors.password = "Password must be at least 8 characters";
+      }
+
+      // Validate confirm password
+      if (!registerFormData.confirm_password) {
+        errors.confirm_password = "Please confirm your password";
+      } else if (registerFormData.password !== registerFormData.confirm_password) {
+        errors.confirm_password = "Passwords do not match";
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setRegisterErrors(errors);
+      return;
+    }
+
+    // Clear errors and set provider to local (if not already Google)
+    setRegisterErrors({});
+    if (registerFormData.provider !== 'google') {
+      setRegisterFormData((prev) => ({ ...prev, provider: "local" }));
+    }
+
+    // Advance to Step 3 (Profile Completion)
+    setRegistrationStep(3);
   };
 
   // ===== PROPERTY HANDLERS =====
@@ -635,60 +752,78 @@ export default function LandingPage() {
   const roles = [
     {
       id: "property-manager",
-      title: "Property Managers",
-      icon: "🧱",
-      headline: "Upload & Manage Properties Effortlessly",
-      description: "Post maintenance jobs, review competitive bids, and manage multiple properties from one intelligent dashboard.",
+      title: "Property Manager",
+      icon: (
+        <svg viewBox="0 0 24 24">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+      ),
+      headline: "Take Back Control",
+      description: "Drowning in maintenance requests? Chasing contractors for updates? Managing properties shouldn't feel like chaos.",
       benefits: [
-        "Post jobs with detailed requirements",
-        "Review and compare contractor bids",
-        "Track project progress in real-time",
-        "Manage multiple properties seamlessly"
+        "Full visibility: Every property, every job, every contractor — in one dashboard",
+        "No more chasing: Automated updates and real-time project tracking",
+        "You decide: Review bids, approve work, and control every decision"
       ],
       color: "primary",
       gradient: "linear-gradient(135deg, #0f223d 0%, #1a3a5c 100%)"
     },
     {
       id: "entrepreneur",
-      title: "Entrepreneurs & Contractors",
-      icon: "⚒️",
-      headline: "Find Jobs, Submit Bids, Grow Your Business",
-      description: "Access a steady stream of verified construction projects. Submit competitive bids and build your reputation.",
+      title: "Entrepreneur",
+      icon: (
+        <svg viewBox="0 0 24 24">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+        </svg>
+      ),
+      headline: "Get Paid Faster, Work Smarter",
+      description: "Tired of hunting for jobs? Waiting weeks for payment? Competing on price alone?",
       benefits: [
-        "Discover jobs matching your expertise",
-        "Submit bids with transparent pricing",
-        "Build your professional portfolio",
-        "Grow through verified opportunities"
+        "Steady work pipeline: Verified jobs delivered to your inbox daily",
+        "Faster payments: Milestone-based invoicing with escrow protection",
+        "Win on value: Showcase your expertise, not just your bid price"
       ],
       color: "secondary",
       gradient: "linear-gradient(135deg, #00a5a9 0%, #008b8f 100%)"
     },
     {
       id: "resident",
-      title: "Residents",
-      icon: "🏘️",
-      headline: "Stay Informed About Your Property",
-      description: "Get real-time updates on maintenance work, repairs, and improvements happening in your building or unit.",
+      title: "Resident",
+      icon: (
+        <svg viewBox="0 0 24 24">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      ),
+      headline: "Finally Know What's Happening in Your Building",
+      description: "No more wondering when that leak will get fixed or why there's construction noise at 7 AM.",
       benefits: [
-        "Track repair status for your unit",
-        "Receive timely maintenance updates",
-        "Transparent communication channel",
-        "Submit maintenance requests easily"
+        "Real-time updates: Track repairs affecting your unit",
+        "Direct communication: Message property managers instantly",
+        "Request repairs: Submit maintenance tickets in seconds"
       ],
       color: "success",
       gradient: "linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)"
     },
     {
       id: "supplier",
-      title: "Suppliers & Vendors",
-      icon: "🧰",
-      headline: "Connect With Active Projects",
-      description: "Supply materials and services to property managers and contractors. Expand your network and grow your business.",
+      title: "Supplier",
+      icon: (
+        <svg viewBox="0 0 24 24">
+          <path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z" />
+          <path d="M2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z" />
+          <path d="M7 21h10" />
+          <path d="M12 3v18" />
+          <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" />
+        </svg>
+      ),
+      headline: "Supply the Projects That Matter",
+      description: "Stop cold-calling. Connect directly with active construction projects needing your materials.",
       benefits: [
-        "Connect with verified projects",
-        "Showcase your product catalog",
-        "Direct access to decision makers",
-        "Streamlined order management"
+        "Direct access: Connect with active projects needing materials",
+        "Expand your network: Reach property managers and contractors",
+        "Streamlined ordering: From quote to delivery in one platform"
       ],
       color: "info",
       gradient: "linear-gradient(135deg, #3498db 0%, #2980b9 100%)"
@@ -697,36 +832,74 @@ export default function LandingPage() {
 
   const features = [
     {
-      title: "Smart Bidding System",
-      description: "Transparent, competitive bidding process that ensures fair pricing and quality work for every project.",
-      icon: "⚡",
+      title: "Smart Bidding Engine",
+      description: "Stop overpaying. Get competitive bids from vetted contractors automatically.",
+      iconType: "zap",
     },
     {
       title: "Verified Professionals",
-      description: "All contractors are vetted and rated by the community, ensuring you work with trusted professionals.",
-      icon: "✓",
+      description: "No more bad hires. Every contractor is background-checked and community-rated.",
+      iconType: "check-circle",
     },
     {
-      title: "Real-Time Updates",
-      description: "Track job status, communications, and project milestones instantly from any device.",
-      icon: "📊",
+      title: "Live Project Dashboard",
+      description: "Know exactly what's happening — always. No phone calls required.",
+      iconType: "bar-chart",
     },
     {
-      title: "Multi-Property Management",
-      description: "Manage multiple buildings, units, and projects from a single, unified dashboard.",
-      icon: "🏢",
+      title: "Multi-Property Command Center",
+      description: "Manage 10 buildings or 100. One login. Complete control.",
+      iconType: "building",
     },
     {
-      title: "Transparent Communication",
-      description: "Built-in messaging keeps property managers, contractors, and residents connected throughout projects.",
-      icon: "💬",
+      title: "Built-In Messaging",
+      description: "Stop chasing people. Instant communication with everyone on your project.",
+      iconType: "message",
     },
     {
-      title: "Secure Payments",
-      description: "Protected payment processing with escrow options for peace of mind on every transaction.",
-      icon: "🔒",
+      title: "Protected Payments",
+      description: "Get paid faster with escrow protection and milestone-based billing.",
+      iconType: "shield",
     },
   ]
+
+  // Professional SVG Icon Component
+  const FeatureIcon = ({ type }) => {
+    const icons = {
+      'zap': (
+        <svg className="lp-feature-icon-svg" viewBox="0 0 24 24">
+          <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z" />
+        </svg>
+      ),
+      'check-circle': (
+        <svg className="lp-feature-icon-svg" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M9 12l2 2 4-4" />
+        </svg>
+      ),
+      'bar-chart': (
+        <svg className="lp-feature-icon-svg" viewBox="0 0 24 24">
+          <path d="M18 20V10M12 20V4M6 20v-6" />
+        </svg>
+      ),
+      'building': (
+        <svg className="lp-feature-icon-svg" viewBox="0 0 24 24">
+          <path d="M3 21h18M9 8h1m-1 4h1m-1 4h1M14 8h1m-1 4h1m-1 4h1M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+        </svg>
+      ),
+      'message': (
+        <svg className="lp-feature-icon-svg" viewBox="0 0 24 24">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+        </svg>
+      ),
+      'shield': (
+        <svg className="lp-feature-icon-svg" viewBox="0 0 24 24">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+        </svg>
+      ),
+    };
+    return <div className="lp-feature-icon-wrapper">{icons[type]}</div>;
+  }
 
   // ===== RENDER =====
   return (
@@ -748,10 +921,10 @@ export default function LandingPage() {
           </ul>
           <div className="lp-navbar-actions">
             <button className="lp-btn-login" onClick={() => setShowLoginModal(true)}>
-              Log In
+              Login
             </button>
             <button className="lp-btn-register" onClick={() => setShowRegisterModal(true)}>
-              Get Started
+              Start Your First Project
             </button>
           </div>
         </div>
@@ -763,62 +936,180 @@ export default function LandingPage() {
           <div className="lp-hero-gradient"></div>
         </div>
         <div className="lp-hero-content">
-          <div className="lp-hero-badge">Connecting Construction Professionals</div>
-          <h1 className="lp-hero-title">Build Smarter with INTERVOS</h1>
+          <div className="lp-hero-badge">
+            Trusted by 1,000+ Property Managers & Contractors
+          </div>
+          <h1 className="lp-hero-title">
+            Property Maintenance, Managed <span className="lp-highlight-teal">Smarter</span>
+          </h1>
           <p className="lp-hero-subtitle">
-            The all-in-one platform connecting property managers, contractors, residents, and suppliers.
-            From posting jobs to winning bids — streamline your entire construction workflow.
+            INTERVOS automates your entire construction workflow — from emergency repairs to major renovations.
+            One platform. Zero stress. Full control from day one.
           </p>
           <div className="lp-hero-buttons">
             <button className="lp-btn-primary lp-btn-large" onClick={() => setShowRegisterModal(true)}>
-              Get Started Free
+              Start Your First Project
             </button>
-            <button className="lp-btn-secondary lp-btn-large" onClick={() => setShowLoginModal(true)}>
-              Sign In
+            <button className="lp-btn-ghost lp-btn-large" onClick={() => document.getElementById('how-it-works').scrollIntoView({ behavior: 'smooth' })}>
+              See How It Works
             </button>
+          </div>
+
+          
+        </div>
+
+        {/* Laptop Mockup with Dashboard */}
+        <div className="lp-hero-dashboard">
+          <div className="lp-devices-wrapper">
+            {/* Phone Mockup */}
+            <div className="lp-phone-mockup">
+              <div className="lp-phone-frame">
+                <div className="lp-phone-notch"></div>
+                <div className="lp-phone-screen">
+                  <div className="lp-phone-content">
+                    <img src={phoneImage} alt="INTERVOS Mobile App" className="lp-phone-image" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Laptop Mockup */}
+            <div className="lp-laptop-mockup">
+              {/* Laptop Screen */}
+              <div className="lp-laptop-screen">
+                <div className="lp-laptop-screen-inner">
+                  {/* Browser Chrome */}
+                  <div className="lp-browser-chrome">
+                    <div className="lp-browser-dots">
+                      <span className="lp-dot lp-dot-red"></span>
+                      <span className="lp-dot lp-dot-yellow"></span>
+                      <span className="lp-dot lp-dot-green"></span>
+                    </div>
+                    <div className="lp-browser-url">intervos.ca/dashboard</div>
+                  </div>
+
+                  {/* Dashboard Content */}
+                  <div className="lp-dashboard-content">
+                    <img src={mockupImage} alt="INTERVOS Dashboard" className="lp-dashboard-image" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Laptop Base */}
+              <div className="lp-laptop-base">
+                <div className="lp-laptop-notch"></div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
+
+      
 
       {/* About Section */}
       <section id="about" className="lp-about">
         <div className="lp-section-container">
           <div className="lp-about-content">
             <div className="lp-about-text">
-              <h2>One Platform. Every Role. Seamless Collaboration.</h2>
-              <p>
-                INTERVOS revolutionizes property maintenance and construction project management by bringing
-                everyone together in one intelligent ecosystem.
+              <div className="lp-founder-note">
+                <div className="lp-quote-mark">"</div>
+                <h2>After managing 50+ buildings, I realized the system wasn't just slow—it was broken.</h2>
+              </div>
+
+              <div className="lp-pain-points">
+                <div className="lp-pain-item">
+                  <span className="lp-pain-icon">⚠</span>
+                  <span>Entrepreneurs not showing up</span>
+                </div>
+                <div className="lp-pain-item">
+                  <span className="lp-pain-icon">⚠</span>
+                  <span>Surprise costs eating into budgets</span>
+                </div>
+                <div className="lp-pain-item">
+                  <span className="lp-pain-icon">⚠</span>
+                  <span>Residents calling at 2am about leaks</span>
+                </div>
+                <div className="lp-pain-item">
+                  <span className="lp-pain-icon">⚠</span>
+                  <span>Invoices lost in email chains</span>
+                </div>
+              </div>
+
+              <p className="lp-story-text">
+                So we asked ourselves: what if there was one place where everything just... worked?
               </p>
-              <p>
-                Property managers post jobs and repairs for their buildings. Nearby entrepreneurs and contractors
-                see these opportunities, place competitive bids, and deliver quality work. Residents stay informed
-                with real-time updates, while suppliers provide the materials and services needed to complete projects.
+              <p className="lp-story-text">
+                That's INTERVOS. Property managers post jobs. Entrepreneurs bid. Everyone sees what's happening.
+                Money moves when work gets done. Simple.
               </p>
-              <p className="lp-about-highlight">
-                All through one smart, transparent system designed for efficiency and trust.
-              </p>
+
+              <div className="lp-about-stats">
+                <div className="lp-stat-item">
+                  <div className="lp-stat-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                  </div>
+                  <div className="lp-stat-number">1,000+</div>
+                  <div className="lp-stat-label">Active users</div>
+                </div>
+                <div className="lp-stat-item">
+                  <div className="lp-stat-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                  </div>
+                  <div className="lp-stat-number">$2.5M+</div>
+                  <div className="lp-stat-label">Projects completed</div>
+                </div>
+                <div className="lp-stat-item">
+                  <div className="lp-stat-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                  </div>
+                  <div className="lp-stat-number">24hrs</div>
+                  <div className="lp-stat-label">Avg. response time</div>
+                </div>
+              </div>
             </div>
             <div className="lp-about-visual">
-              <div className="lp-connection-diagram">
-                <div className="lp-connection-node lp-node-manager">
-                  <span className="lp-node-icon">🧱</span>
-                  <span className="lp-node-label">Managers</span>
+              <div className="lp-success-dashboard">
+                <div className="lp-dashboard-header">
+                  <div className="lp-dashboard-title">Recent Activity</div>
+                  <div className="lp-dashboard-status">
+                    <span className="lp-status-dot"></span>
+                    Live
+                  </div>
                 </div>
-                <div className="lp-connection-center">
-                  <div className="lp-center-logo">INTERVOS</div>
-                </div>
-                <div className="lp-connection-node lp-node-contractor">
-                  <span className="lp-node-icon">⚒️</span>
-                  <span className="lp-node-label">Contractors</span>
-                </div>
-                <div className="lp-connection-node lp-node-resident">
-                  <span className="lp-node-icon">🏘️</span>
-                  <span className="lp-node-label">Residents</span>
-                </div>
-                <div className="lp-connection-node lp-node-supplier">
-                  <span className="lp-node-icon">🧰</span>
-                  <span className="lp-node-label">Suppliers</span>
+                <div className="lp-dashboard-body">
+                  <div className="lp-success-card">
+                    <div className="lp-success-icon">✓</div>
+                    <div className="lp-success-content">
+                      <div className="lp-success-title">Project Successfully Completed</div>
+                      <div className="lp-success-detail">Plumbing repair - Building 24A</div>
+                      <div className="lp-success-time">2 hours ago</div>
+                    </div>
+                  </div>
+                  <div className="lp-metric-card">
+                    <div className="lp-metric-label">Fastest Response Time</div>
+                    <div className="lp-metric-value">12 mins</div>
+                    <div className="lp-metric-trend">↑ 40% faster than average</div>
+                  </div>
+                  <div className="lp-activity-graph">
+                    <div className="lp-graph-label">Project Volume</div>
+                    <div className="lp-graph-bars">
+                      <div className="lp-graph-bar" style={{height: '45%'}}></div>
+                      <div className="lp-graph-bar" style={{height: '60%'}}></div>
+                      <div className="lp-graph-bar" style={{height: '75%'}}></div>
+                      <div className="lp-graph-bar active" style={{height: '95%'}}></div>
+                      <div className="lp-graph-bar" style={{height: '85%'}}></div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -829,13 +1120,13 @@ export default function LandingPage() {
       {/* Features Section */}
       <section id="features" className="lp-features">
         <div className="lp-section-header">
-          <h2>Everything You Need to Succeed</h2>
-          <p>Powerful features designed for modern construction and property management</p>
+          <h2>Everything You Need. Nothing You Don't.</h2>
+          <p>Built for modern property management — no complexity, just results</p>
         </div>
         <div className="lp-features-grid">
           {features.map((feature, index) => (
             <div key={index} className="lp-feature-card">
-              <div className="lp-feature-icon">{feature.icon}</div>
+              <FeatureIcon type={feature.iconType} />
               <h3>{feature.title}</h3>
               <p>{feature.description}</p>
             </div>
@@ -845,79 +1136,199 @@ export default function LandingPage() {
 
       {/* Role-Based Sections */}
       <section id="roles" className="lp-roles">
-        <div className="lp-section-header">
-          <h2>Built Specifically For You</h2>
-          <p>Tailored experiences for every user in the construction ecosystem</p>
+        <div className="lp-roles-intro">
+          <h2>Who uses INTERVOS?</h2>
+          <p>Everyone involved in getting work done on buildings.</p>
         </div>
-        <div className="lp-roles-container">
-          {roles.map((role, index) => (
-            <div key={index} className={`lp-role-section lp-role-${role.color}`}>
-              <div className="lp-role-content">
-                <div className="lp-role-header">
-                  <span className="lp-role-icon-large">{role.icon}</span>
-                  <div>
-                    <h3 className="lp-role-title">{role.title}</h3>
-                    <p className="lp-role-headline">{role.headline}</p>
-                  </div>
+
+        {/* Property Managers */}
+        <div className="lp-role-block lp-role-manager">
+          <div className="lp-role-grid">
+            <div className="lp-role-text">
+              <span className="lp-role-label">Property Managers</span>
+              <h3>Stop chasing. Start managing.</h3>
+              <p className="lp-role-story">
+                "I used to spend 10+ hours a week just tracking down contractors. Did they start the job?
+                When will they finish? Why hasn't the invoice come through? Now I just open the dashboard.
+                Everything's there."
+              </p>
+              <p className="lp-role-attribution">— Sarah M., manages 8 buildings in Toronto</p>
+
+              <div className="lp-role-features">
+                <div className="lp-feature-item">
+                  <strong>Post a job in 60 seconds</strong>
+                  <span>Building address, issue description, photos. Done.</span>
                 </div>
-                <p className="lp-role-description">{role.description}</p>
-                <ul className="lp-role-benefits">
-                  {role.benefits.map((benefit, idx) => (
-                    <li key={idx}>
-                      <span className="lp-benefit-icon">✓</span>
-                      {benefit}
-                    </li>
-                  ))}
-                </ul>
-                <div className="lp-role-actions">
-                  <button
-                    className="lp-btn-role-primary"
-                    onClick={() => openRegisterModal(role.id)}
-                  >
-                    Sign Up as {role.title.split(" ")[0]}
-                  </button>
-                  <button
-                    className="lp-btn-role-secondary"
-                    onClick={() => setShowLoginModal(true)}
-                  >
-                    Log In
-                  </button>
+                <div className="lp-feature-item">
+                  <strong>Get bids from verified entrepreneurs</strong>
+                  <span>No more calling around. They come to you.</span>
+                </div>
+                <div className="lp-feature-item">
+                  <strong>Track everything in one place</strong>
+                  <span>Who's working where. What's done. What's pending.</span>
+                </div>
+              </div>
+
+              <button className="lp-btn-role" onClick={() => openRegisterModal("property-manager")}>
+                Start managing smarter
+              </button>
+            </div>
+            <div className="lp-role-visual">
+              <div className="lp-visual-card">
+                <div className="lp-card-tag">Active Projects</div>
+                <div className="lp-project-list">
+                  <div className="lp-project-item">
+                    <div className="lp-project-name">Plumbing - Unit 204</div>
+                    <div className="lp-project-status in-progress">In Progress</div>
+                  </div>
+                  <div className="lp-project-item">
+                    <div className="lp-project-name">HVAC Repair - Building A</div>
+                    <div className="lp-project-status completed">Completed</div>
+                  </div>
+                  <div className="lp-project-item">
+                    <div className="lp-project-name">Roof Leak - Unit 312</div>
+                    <div className="lp-project-status bidding">Receiving Bids (3)</div>
+                  </div>
                 </div>
               </div>
             </div>
-          ))}
+          </div>
+        </div>
+
+        {/* Entrepreneurs */}
+        <div className="lp-role-block lp-role-entrepreneur">
+          <div className="lp-role-grid reverse">
+            <div className="lp-role-visual">
+              <div className="lp-visual-card">
+                <div className="lp-card-tag">Available Jobs Near You</div>
+                <div className="lp-job-list">
+                  <div className="lp-job-item">
+                    <div className="lp-job-title">Kitchen Renovation</div>
+                    <div className="lp-job-meta">$8,500 • Yonge & Eglinton • Posted 2h ago</div>
+                  </div>
+                  <div className="lp-job-item">
+                    <div className="lp-job-title">Emergency Electrical Repair</div>
+                    <div className="lp-job-meta">$1,200 • Downtown • Posted 4h ago</div>
+                  </div>
+                  <div className="lp-job-item">
+                    <div className="lp-job-title">Bathroom Plumbing Fix</div>
+                    <div className="lp-job-meta">$650 • North York • Posted 1d ago</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="lp-role-text">
+              <span className="lp-role-label">Entrepreneurs & Contractors</span>
+              <h3>Bid on real jobs. Get paid faster.</h3>
+              <p className="lp-role-story">
+                "Most platforms take 20% and you're competing with 50 other people who undercut you. Here,
+                property managers see your profile, your past work, your ratings. I've closed 4 jobs this month
+                without a single phone call."
+              </p>
+              <p className="lp-role-attribution">— Mike T., general contractor, 6 years experience</p>
+
+              <div className="lp-role-features">
+                <div className="lp-feature-item">
+                  <strong>Jobs sent to your inbox</strong>
+                  <span>Filter by location, budget, and trade. Only see what matters.</span>
+                </div>
+                <div className="lp-feature-item">
+                  <strong>Milestone payments</strong>
+                  <span>Get paid as you complete work. No more waiting 60 days.</span>
+                </div>
+                <div className="lp-feature-item">
+                  <strong>Build your reputation</strong>
+                  <span>Every completed job adds to your profile.</span>
+                </div>
+              </div>
+
+              <button className="lp-btn-role" onClick={() => openRegisterModal("entrepreneur")}>
+                Find work today
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Residents */}
+        <div className="lp-role-block lp-role-resident">
+          <div className="lp-role-grid">
+            <div className="lp-role-text">
+              <span className="lp-role-label">Residents</span>
+              <h3>Know what's happening in your building.</h3>
+              <p className="lp-role-story">
+                "I submitted a maintenance request about a leaky faucet. Got a notification when the plumber
+                was assigned. Another when they were on their way. Another when it was fixed. Felt like magic
+                compared to the old 'we'll get to it' approach."
+              </p>
+              <p className="lp-role-attribution">— James L., resident since 2019</p>
+
+              <div className="lp-role-features">
+                <div className="lp-feature-item">
+                  <strong>Submit requests instantly</strong>
+                  <span>Broken appliance? Maintenance issue? Submit it from your phone.</span>
+                </div>
+                <div className="lp-feature-item">
+                  <strong>Get real updates</strong>
+                  <span>No more "we're working on it." See actual progress.</span>
+                </div>
+                <div className="lp-feature-item">
+                  <strong>Message your property manager</strong>
+                  <span>Direct line. No phone tag.</span>
+                </div>
+              </div>
+
+              <button className="lp-btn-role" onClick={() => openRegisterModal("resident")}>
+                Connect to your building
+              </button>
+            </div>
+            <div className="lp-role-visual">
+              <div className="lp-visual-card">
+                <div className="lp-card-tag">Your Requests</div>
+                <div className="lp-request-list">
+                  <div className="lp-request-item">
+                    <div className="lp-request-title">Leaky faucet</div>
+                    <div className="lp-request-status fixed">Fixed yesterday</div>
+                  </div>
+                  <div className="lp-request-item">
+                    <div className="lp-request-title">Heating not working</div>
+                    <div className="lp-request-status scheduled">Scheduled for tomorrow</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* How It Works Section */}
       <section id="how-it-works" className="lp-how-it-works">
         <div className="lp-section-header">
-          <h2>Getting Started Is Simple</h2>
-          <p>From registration to project completion in four easy steps</p>
+          <h2>From Problem to Solution in 4 Simple Steps</h2>
+          <p>Start controlling your projects today — no complexity, just results</p>
         </div>
         <div className="lp-steps-container">
           <div className="lp-step">
             <div className="lp-step-number">1</div>
-            <h3>Choose Your Role</h3>
-            <p>Select whether you're a property manager, contractor, resident, or supplier</p>
+            <h3>Post Your Project</h3>
+            <p>Describe what needs fixing. Set your budget. Define your timeline.</p>
           </div>
           <div className="lp-step-connector"></div>
           <div className="lp-step">
             <div className="lp-step-number">2</div>
-            <h3>Complete Your Profile</h3>
-            <p>Add your details, qualifications, and areas of expertise</p>
+            <h3>Review Smart Bids</h3>
+            <p>Vetted contractors compete for your work. Compare proposals side-by-side.</p>
           </div>
           <div className="lp-step-connector"></div>
           <div className="lp-step">
             <div className="lp-step-number">3</div>
-            <h3>Start Collaborating</h3>
-            <p>Post jobs, submit bids, or track projects based on your role</p>
+            <h3>Track in Real-Time</h3>
+            <p>Know exactly where your project stands — from first nail to final invoice.</p>
           </div>
           <div className="lp-step-connector"></div>
           <div className="lp-step">
             <div className="lp-step-number">4</div>
-            <h3>Grow Together</h3>
-            <p>Build your reputation and expand your network on the platform</p>
+            <h3>Pay with Confidence</h3>
+            <p>Release payments only when milestones are complete. Everyone stays protected.</p>
           </div>
         </div>
       </section>
@@ -925,11 +1336,17 @@ export default function LandingPage() {
       {/* CTA Section */}
       <section className="lp-cta-section">
         <div className="lp-cta-content">
-          <h2>Ready to Transform Your Construction Projects?</h2>
-          <p>Join thousands of professionals already using INTERVOS to streamline their workflow</p>
+          <h2>Stop Wasting Time. Start Building Smarter.</h2>
+          <p>
+            Every day you wait is another day of chasing contractors, dealing with cost overruns,
+            and frustrated residents. INTERVOS eliminates all of it.
+          </p>
           <button className="lp-btn-cta" onClick={() => setShowRegisterModal(true)}>
-            Get Started Today — It's Free
+            Start Your First Project — Free
           </button>
+          <p style={{ marginTop: '1rem', fontSize: '0.9rem', opacity: 0.8 }}>
+            No credit card required. Cancel anytime. Full control from day one.
+          </p>
         </div>
       </section>
 
@@ -987,23 +1404,11 @@ export default function LandingPage() {
         <div className="lp-modal-overlay" onClick={closeModals}>
           <div className="lp-modal lp-modal-login" onClick={(e) => e.stopPropagation()}>
             <button className="lp-modal-close" onClick={closeModals}>×</button>
+
             <div className="lp-modal-header">
               <h2>Welcome Back</h2>
-              <p>Log in to your INTERVOS account</p>
+              <p>Sign in to continue to INTERVOS</p>
             </div>
-
-            <div className="lp-google-login-container">
-              <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-                <GoogleLogin
-                  onSuccess={handleLoginSuccess}
-                  onError={handleError}
-                  text="signin_with"
-                  width="100%"
-                />
-              </GoogleOAuthProvider>
-            </div>
-
-            <div className="lp-modal-divider"><span>OR</span></div>
 
             <form className="lp-modal-form" onSubmit={handleLoginSubmit}>
               {loginErrors.submit && (
@@ -1095,9 +1500,22 @@ export default function LandingPage() {
                 className="lp-btn-primary lp-btn-full"
                 disabled={isLoggingIn}
               >
-                {isLoggingIn ? "Logging in..." : "Log In"}
+                {isLoggingIn ? "Signing you in..." : "Sign In"}
               </button>
             </form>
+
+            <div className="lp-modal-divider"><span>OR</span></div>
+
+            <div className="lp-google-login-container">
+              <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+                <GoogleLogin
+                  onSuccess={handleLoginSuccess}
+                  onError={handleError}
+                  text="signin_with"
+                  width="100%"
+                />
+              </GoogleOAuthProvider>
+            </div>
 
             <div className="lp-modal-footer">
               Don't have an account?{" "}
@@ -1108,7 +1526,7 @@ export default function LandingPage() {
                   setShowRegisterModal(true)
                 }}
               >
-                Sign up for free
+                Create account
               </button>
             </div>
           </div>
@@ -1156,24 +1574,192 @@ export default function LandingPage() {
                       setShowLoginModal(true)
                     }}
                   >
-                    Log in here
+                    Login
                   </button>
                 </div>
               </>
             )}
 
-            {/* Step 2: Registration Form */}
+            {/* Step 2: Authentication */}
             {registrationStep === 2 && (
               <>
+                <button className="lp-back-button" onClick={() => setRegistrationStep(1)}>
+                  <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" strokeWidth="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                  </svg>
+                  Back
+                </button>
                 <div className="lp-modal-header">
-                  <button className="lp-back-button" onClick={() => setRegistrationStep(1)}>
-                    ← Back
-                  </button>
+                  <h2>Create Your Account</h2>
+                  <p>
+                    {selectedRole === 'property-manager' && 'Join as a Property Manager'}
+                    {selectedRole === 'entrepreneur' && 'Join as an Entrepreneur'}
+                    {selectedRole === 'resident' && 'Join as a Resident'}
+                    {selectedRole === 'supplier' && 'Join as a Supplier'}
+                  </p>
+                </div>
+
+                <div className="lp-google-login-section">
                   <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
                     <GoogleLogin onSuccess={handleSuccess} onError={handleError} />
                   </GoogleOAuthProvider>
-                  <h2>Create Your Account</h2>
-                  <p>Tell us about yourself</p>
+                </div>
+
+                <div className="lp-modal-divider"><span>OR</span></div>
+
+                <form className="lp-modal-form" onSubmit={handleAuthenticationSubmit}>
+                  {registerErrors.submit && (
+                    <div className="lp-form-error-banner">
+                      {registerErrors.submit}
+                    </div>
+                  )}
+
+                  <div className="lp-form-row">
+                    <div className="lp-form-group">
+                      <label>First Name</label>
+                      <div className="lp-input-wrapper">
+                        <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                          <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <input
+                          type="text"
+                          name="first_name"
+                          placeholder="John"
+                          value={registerFormData.first_name}
+                          onChange={handleRegisterChange}
+                          required
+                          className={registerErrors.first_name ? 'error' : ''}
+                          disabled={registerFormData.provider === 'google' && registerFormData.first_name}
+                        />
+                      </div>
+                      {registerErrors.first_name && (
+                        <span className="lp-field-error">{registerErrors.first_name}</span>
+                      )}
+                    </div>
+                    <div className="lp-form-group">
+                      <label>Last Name {registerFormData.provider === 'google' && '(Optional)'}</label>
+                      <div className="lp-input-wrapper">
+                        <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                          <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <input
+                          type="text"
+                          name="last_name"
+                          placeholder="Doe"
+                          value={registerFormData.last_name}
+                          onChange={handleRegisterChange}
+                          required={registerFormData.provider !== 'google'}
+                          className={registerErrors.last_name ? 'error' : ''}
+                          disabled={registerFormData.provider === 'google' && registerFormData.last_name}
+                        />
+                      </div>
+                      {registerErrors.last_name && (
+                        <span className="lp-field-error">{registerErrors.last_name}</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="lp-form-group">
+                    <label>Email Address</label>
+                    <div className="lp-input-wrapper">
+                      <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                        <polyline points="22,6 12,13 2,6"/>
+                      </svg>
+                      <input
+                        type="email"
+                        name="email"
+                        placeholder="john@example.com"
+                        value={registerFormData.email}
+                        onChange={handleRegisterChange}
+                        required
+                        className={registerErrors.email ? 'error' : ''}
+                        disabled={registerFormData.provider === 'google' && registerFormData.email}
+                      />
+                    </div>
+                    {registerErrors.email && (
+                      <span className="lp-field-error">{registerErrors.email}</span>
+                    )}
+                  </div>
+
+                  {/* Password fields - only show for local registration */}
+                  {registerFormData.provider !== 'google' && (
+                    <>
+                      <div className="lp-form-group">
+                        <label>Password</label>
+                        <div className="lp-input-wrapper">
+                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                          </svg>
+                          <input
+                            type="password"
+                            name="password"
+                            placeholder="Create a strong password"
+                            value={registerFormData.password}
+                            onChange={handleRegisterChange}
+                            required
+                            className={registerErrors.password ? 'error' : ''}
+                          />
+                        </div>
+                        {registerErrors.password && (
+                          <span className="lp-field-error">{registerErrors.password}</span>
+                        )}
+                      </div>
+
+                      <div className="lp-form-group">
+                        <label>Confirm Password</label>
+                        <div className="lp-input-wrapper">
+                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                          </svg>
+                          <input
+                            type="password"
+                            name="confirm_password"
+                            placeholder="Re-enter your password"
+                            value={registerFormData.confirm_password}
+                            onChange={handleRegisterChange}
+                            required
+                            className={registerErrors.confirm_password ? 'error' : ''}
+                          />
+                        </div>
+                        {registerErrors.confirm_password && (
+                          <span className="lp-field-error">{registerErrors.confirm_password}</span>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="lp-btn-primary lp-btn-full"
+                  >
+                    Continue
+                  </button>
+                </form>
+              </>
+            )}
+
+            {/* Step 3: Profile Completion */}
+            {registrationStep === 3 && (
+              <>
+                <button className="lp-back-button" onClick={() => setRegistrationStep(2)}>
+                  <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" strokeWidth="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                  </svg>
+                  Back
+                </button>
+                <div className="lp-modal-header">
+                  <h2>Complete Your Profile</h2>
+                  <p>
+                    {selectedRole === 'property-manager' && 'Just a few more details to get started'}
+                    {selectedRole === 'entrepreneur' && 'Tell us about your business'}
+                    {selectedRole === 'resident' && 'Help us connect you to your building'}
+                    {selectedRole === 'supplier' && 'Share your business information'}
+                  </p>
                 </div>
 
                 <form className="lp-modal-form" onSubmit={handleRegisterSubmit}>
@@ -1185,104 +1771,26 @@ export default function LandingPage() {
 
                   <input type="hidden" value={registerFormData.provider} name="provider" />
 
-                  <div className="lp-form-row">
-                    <div className="lp-form-group">
-                      <label>First Name</label>
-                      <input
-                        type="text"
-                        name="first_name"
-                        placeholder="John"
-                        value={registerFormData.first_name}
-                        onChange={handleRegisterChange}
-                        required
-                        className={registerErrors.first_name ? 'error' : ''}
-                      />
-                      {registerErrors.first_name && (
-                        <span className="lp-field-error">{registerErrors.first_name}</span>
-                      )}
-                    </div>
-                    <div className="lp-form-group">
-                      <label>Last Name</label>
-                      <input
-                        type="text"
-                        name="last_name"
-                        placeholder="Doe"
-                        value={registerFormData.last_name}
-                        onChange={handleRegisterChange}
-                        required
-                        className={registerErrors.last_name ? 'error' : ''}
-                      />
-                      {registerErrors.last_name && (
-                        <span className="lp-field-error">{registerErrors.last_name}</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="lp-form-group">
-                    <label>Email Address</label>
-                    <input
-                      type="email"
-                      name="email"
-                      placeholder="john@example.com"
-                      value={registerFormData.email}
-                      onChange={handleRegisterChange}
-                      required
-                      className={registerErrors.email ? 'error' : ''}
-                    />
-                    {registerErrors.email && (
-                      <span className="lp-field-error">{registerErrors.email}</span>
-                    )}
-                  </div>
-
                   <div className="lp-form-group">
                     <label>Phone Number</label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      placeholder="+1 (555) 000-0000"
-                      value={registerFormData.phone}
-                      onChange={handleRegisterChange}
-                      required
-                      className={registerErrors.phone ? 'error' : ''}
-                    />
+                    <div className="lp-input-wrapper">
+                      <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                      </svg>
+                      <input
+                        type="tel"
+                        name="phone"
+                        placeholder="+1 (555) 000-0000"
+                        value={registerFormData.phone}
+                        onChange={handleRegisterChange}
+                        required
+                        className={registerErrors.phone ? 'error' : ''}
+                      />
+                    </div>
                     {registerErrors.phone && (
                       <span className="lp-field-error">{registerErrors.phone}</span>
                     )}
                   </div>
-                  {registerFormData.provider == 'local' && (
-                      <>
-                      <div className="lp-form-group">
-                        <label>Password</label>
-                        <input
-                          type="password"
-                          name="password"
-                          placeholder="Create a strong password"
-                          value={registerFormData.password}
-                          onChange={handleRegisterChange}
-                          required={registerFormData.provider === 'local'} // Only required for local
-                          className={registerErrors.password ? 'error' : ''}
-                        />
-                        {registerErrors.password && (
-                          <span className="lp-field-error">{registerErrors.password}</span>
-                        )}
-                      </div>
-                      <div className="lp-form-group">
-                        <label>Confirm Password</label>
-                        <input
-                          type="password"
-                          name="confirm_password"
-                          placeholder="Re-enter your password"
-                          value={registerFormData.confirm_password}
-                          onChange={handleRegisterChange}
-                          required={registerFormData.provider === 'local'} // Only required for local
-                          className={registerErrors.confirm_password ? 'error' : ''}
-                        />
-                        {registerErrors.confirm_password && (
-                          <span className="lp-field-error">{registerErrors.confirm_password}</span>
-                        )}
-                      </div>
-                      </>
-                  )}
 
                   {/* Property Manager Fields */}
                   {selectedRole === "property-manager" && (
@@ -1290,35 +1798,52 @@ export default function LandingPage() {
                       <div className="lp-form-divider">Property Manager Details</div>
                       <div className="lp-form-group">
                         <label>Company Name</label>
-                        <input
-                          type="text"
-                          name="company_name"
-                          placeholder="Your property management company"
-                          value={registerFormData.company_name}
-                          onChange={handleRegisterChange}
-                          required
-                        />
+                        <div className="lp-input-wrapper">
+                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            <polyline points="9 22 9 12 15 12 15 22"/>
+                          </svg>
+                          <input
+                            type="text"
+                            name="company_name"
+                            placeholder="Your property management company"
+                            value={registerFormData.company_name}
+                            onChange={handleRegisterChange}
+                            required
+                          />
+                        </div>
                       </div>
                       <div className="lp-form-group">
                         <label>Business Address</label>
-                        <input
-                          type="text"
-                          name="address"
-                          placeholder="Street address"
-                          value={registerFormData.address}
-                          onChange={handleRegisterChange}
-                          required
-                        />
+                        <div className="lp-input-wrapper">
+                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                          </svg>
+                          <input
+                            type="text"
+                            name="address"
+                            placeholder="Street address"
+                            value={registerFormData.address}
+                            onChange={handleRegisterChange}
+                            required
+                          />
+                        </div>
                       </div>
                       <div className="lp-form-group">
                         <label>Number of Properties</label>
-                        <input
-                          type="number"
-                          name="num_properties"
-                          placeholder="How many properties do you manage?"
-                          value={registerFormData.num_properties || ""}
-                          onChange={handleRegisterChange}
-                        />
+                        <div className="lp-input-wrapper">
+                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 21h18M9 8h1m-1 4h1m-1 4h1M14 8h1m-1 4h1m-1 4h1M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                          </svg>
+                          <input
+                            type="number"
+                            name="num_properties"
+                            placeholder="How many properties do you manage?"
+                            value={registerFormData.num_properties || ""}
+                            onChange={handleRegisterChange}
+                          />
+                        </div>
                       </div>
                     </>
                   )}
@@ -1326,70 +1851,108 @@ export default function LandingPage() {
                   {/* Entrepreneur Fields */}
                   {selectedRole === "entrepreneur" && (
                     <>
-                      <div className="lp-form-divider">Contractor Details</div>
+                      <div className="lp-form-divider">Entrepreneur Details</div>
                       <div className="lp-form-group">
                         <label>Company Name</label>
-                        <input
-                          type="text"
-                          name="company_name"
-                          placeholder="Your construction company"
-                          value={registerFormData.company_name}
-                          onChange={handleRegisterChange}
-                          required
-                        />
+                        <div className="lp-input-wrapper">
+                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                          </svg>
+                          <input
+                            type="text"
+                            name="company_name"
+                            placeholder="Your construction company"
+                            value={registerFormData.company_name}
+                            onChange={handleRegisterChange}
+                            required
+                          />
+                        </div>
                       </div>
                       <div className="lp-form-group">
                         <label>Business Address</label>
-                        <input
-                          type="text"
-                          name="address"
-                          placeholder="Street address"
-                          value={registerFormData.address}
-                          onChange={handleRegisterChange}
-                          required
-                        />
+                        <div className="lp-input-wrapper">
+                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                          </svg>
+                          <input
+                            type="text"
+                            name="address"
+                            placeholder="Street address"
+                            value={registerFormData.address}
+                            onChange={handleRegisterChange}
+                            required
+                          />
+                        </div>
                       </div>
                       <div className="lp-form-group">
                         <label>License Number</label>
-                        <input
-                          type="text"
-                          name="license_number"
-                          placeholder="Professional license number"
-                          value={registerFormData.license_number}
-                          onChange={handleRegisterChange}
-                        />
+                        <div className="lp-input-wrapper">
+                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                          </svg>
+                          <input
+                            type="text"
+                            name="license_number"
+                            placeholder="Professional license number"
+                            value={registerFormData.license_number}
+                            onChange={handleRegisterChange}
+                          />
+                        </div>
                       </div>
                       <div className="lp-form-row">
                         <div className="lp-form-group">
                           <label>Years in Business</label>
-                          <input
-                            type="number"
-                            name="years_in_business"
-                            placeholder="5"
-                            value={registerFormData.years_in_business}
-                            onChange={handleRegisterChange}
-                          />
+                          <div className="lp-input-wrapper">
+                            <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10"/>
+                              <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                            <input
+                              type="number"
+                              name="years_in_business"
+                              placeholder="5"
+                              value={registerFormData.years_in_business}
+                              onChange={handleRegisterChange}
+                            />
+                          </div>
                         </div>
                         <div className="lp-form-group">
                           <label>Number of Employees</label>
-                          <input
-                            type="number"
-                            name="num_employees"
-                            placeholder="10"
-                            value={registerFormData.num_employees}
-                            onChange={handleRegisterChange}
-                          />
+                          <div className="lp-input-wrapper">
+                            <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                              <circle cx="9" cy="7" r="4"/>
+                              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                            <input
+                              type="number"
+                              name="num_employees"
+                              placeholder="10"
+                              value={registerFormData.num_employees}
+                              onChange={handleRegisterChange}
+                            />
+                          </div>
                         </div>
                       </div>
                       <div className="lp-form-group">
                         <label>Specializations</label>
-                        <input
-                          type="text"
-                          name="specializations"
-                          placeholder="e.g., Plumbing, Electrical, HVAC"
-                          value={registerFormData.specializations}
-                          onChange={handleRegisterChange}
-                        />
+                        <div className="lp-input-wrapper">
+                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                          </svg>
+                          <input
+                            type="text"
+                            name="specializations"
+                            placeholder="e.g., Plumbing, Electrical, HVAC"
+                            value={registerFormData.specializations}
+                            onChange={handleRegisterChange}
+                          />
+                        </div>
                       </div>
                     </>
                   )}
@@ -1449,23 +2012,37 @@ export default function LandingPage() {
                       </div>
                       <div className="lp-form-group">
                         <label>Unit Number</label>
-                        <input
-                          type="text"
-                          name="unit_number"
-                          placeholder="e.g., Apt 4A"
-                          value={registerFormData.unit_number}
-                          onChange={handleRegisterChange}
-                          required
-                        />
+                        <div className="lp-input-wrapper">
+                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            <polyline points="9 22 9 12 15 12 15 22"/>
+                          </svg>
+                          <input
+                            type="text"
+                            name="unit_number"
+                            placeholder="e.g., Apt 4A"
+                            value={registerFormData.unit_number}
+                            onChange={handleRegisterChange}
+                            required
+                          />
+                        </div>
                       </div>
                       <div className="lp-form-group">
                         <label>Move-in Date</label>
-                        <input
-                          type="date"
-                          name="move_in_date"
-                          value={registerFormData.move_in_date}
-                          onChange={handleRegisterChange}
-                        />
+                        <div className="lp-input-wrapper">
+                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6"/>
+                            <line x1="8" y1="2" x2="8" y2="6"/>
+                            <line x1="3" y1="10" x2="21" y2="10"/>
+                          </svg>
+                          <input
+                            type="date"
+                            name="move_in_date"
+                            value={registerFormData.move_in_date}
+                            onChange={handleRegisterChange}
+                          />
+                        </div>
                       </div>
                     </>
                   )}
@@ -1476,55 +2053,91 @@ export default function LandingPage() {
                       <div className="lp-form-divider">Supplier Details</div>
                       <div className="lp-form-group">
                         <label>Company Name</label>
-                        <input
-                          type="text"
-                          name="company_name"
-                          placeholder="Your supply company"
-                          value={registerFormData.company_name}
-                          onChange={handleRegisterChange}
-                          required
-                        />
+                        <div className="lp-input-wrapper">
+                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/>
+                            <path d="M2 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/>
+                            <path d="M7 21h10"/>
+                            <path d="M12 3v18"/>
+                            <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>
+                          </svg>
+                          <input
+                            type="text"
+                            name="company_name"
+                            placeholder="Your supply company"
+                            value={registerFormData.company_name}
+                            onChange={handleRegisterChange}
+                            required
+                          />
+                        </div>
                       </div>
                       <div className="lp-form-group">
                         <label>Business Address</label>
-                        <input
-                          type="text"
-                          name="address"
-                          placeholder="Street address"
-                          value={registerFormData.address}
-                          onChange={handleRegisterChange}
-                          required
-                        />
+                        <div className="lp-input-wrapper">
+                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                          </svg>
+                          <input
+                            type="text"
+                            name="address"
+                            placeholder="Street address"
+                            value={registerFormData.address}
+                            onChange={handleRegisterChange}
+                            required
+                          />
+                        </div>
                       </div>
                       <div className="lp-form-group">
                         <label>Website</label>
-                        <input
-                          type="url"
-                          name="website"
-                          placeholder="https://yourwebsite.com"
-                          value={registerFormData.website}
-                          onChange={handleRegisterChange}
-                        />
+                        <div className="lp-input-wrapper">
+                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <line x1="2" y1="12" x2="22" y2="12"/>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                          </svg>
+                          <input
+                            type="url"
+                            name="website"
+                            placeholder="https://yourwebsite.com"
+                            value={registerFormData.website}
+                            onChange={handleRegisterChange}
+                          />
+                        </div>
                       </div>
                       <div className="lp-form-group">
                         <label>Years in Business</label>
-                        <input
-                          type="number"
-                          name="years_in_business"
-                          placeholder="10"
-                          value={registerFormData.years_in_business}
-                          onChange={handleRegisterChange}
-                        />
+                        <div className="lp-input-wrapper">
+                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                          </svg>
+                          <input
+                            type="number"
+                            name="years_in_business"
+                            placeholder="10"
+                            value={registerFormData.years_in_business}
+                            onChange={handleRegisterChange}
+                          />
+                        </div>
                       </div>
                       <div className="lp-form-group">
                         <label>Delivery Areas</label>
-                        <input
-                          type="text"
-                          name="delivery_areas"
-                          placeholder="Cities or regions you serve"
-                          value={registerFormData.delivery_areas}
-                          onChange={handleRegisterChange}
-                        />
+                        <div className="lp-input-wrapper">
+                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="1" y="3" width="15" height="13"/>
+                            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                            <circle cx="5.5" cy="18.5" r="2.5"/>
+                            <circle cx="18.5" cy="18.5" r="2.5"/>
+                          </svg>
+                          <input
+                            type="text"
+                            name="delivery_areas"
+                            placeholder="Cities or regions you serve"
+                            value={registerFormData.delivery_areas}
+                            onChange={handleRegisterChange}
+                          />
+                        </div>
                       </div>
                     </>
                   )}
@@ -1544,14 +2157,14 @@ export default function LandingPage() {
                     className="lp-btn-primary lp-btn-full"
                     disabled={isRegistering}
                   >
-                    {isRegistering ? "Creating Account..." : "Create Account"}
+                    {isRegistering ? "Setting up your account..." : "Start Your First Project"}
                   </button>
                 </form>
               </>
             )}
 
-            {/* ===== STEP 3: SUCCESS & EMAIL VERIFICATION ===== */}
-            {registrationStep === 3 && (
+            {/* ===== STEP 4: SUCCESS & EMAIL VERIFICATION ===== */}
+            {registrationStep === 4 && (
               <>
                 <div className="lp-modal-header">
                   <h2>Registration Successful!</h2>

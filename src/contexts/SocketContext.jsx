@@ -21,6 +21,7 @@ export const useSocket = () => {
 
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
   const { showNotification, requestPermission } = useNotifications();
 
   // Request notification permission on mount
@@ -33,7 +34,9 @@ export const SocketProvider = ({ children }) => {
 
     // ✅ Skip socket setup if no profile or no token
     if (!userProfile) {
-      console.log("🚫 No userProfile found — socket not initialized");
+      console.log("�� No userProfile found — socket not initialized");
+      setSocket(null);
+      setIsConnected(false);
       return;
     }
 
@@ -42,28 +45,38 @@ export const SocketProvider = ({ children }) => {
 
     if (!token) {
       console.log("⚠️ No token found — socket not initialized");
+      setSocket(null);
+      setIsConnected(false);
       return;
     }
 
+    // Get API URL
+    const apiUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:5000";
+    console.log("🔌 Initializing socket connection to:", apiUrl);
+
     // ✅ Initialize Socket.io connection
-    const newSocket = io(import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:5000", {
+    const newSocket = io(apiUrl, {
       auth: { token },
       transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
+      timeout: 10000,
     });
 
     newSocket.on("connect", () => {
       console.log("✅ Socket connected:", newSocket.id);
+      setIsConnected(true);
     });
 
     newSocket.on("connect_error", (error) => {
       console.error("❌ Socket connection error:", error.message);
+      setIsConnected(false);
     });
 
     newSocket.on("disconnect", (reason) => {
       console.log("🔌 Socket disconnected:", reason);
+      setIsConnected(false);
     });
 
     // Listen for message notifications
@@ -106,11 +119,12 @@ export const SocketProvider = ({ children }) => {
     return () => {
       console.log("🧹 Cleaning up socket connection...");
       newSocket.disconnect();
+      setIsConnected(false);
     };
   }, []);
 
   return (
-    <SocketContext.Provider value={socket}>
+    <SocketContext.Provider value={{ socket, isConnected }}>
       {children}
     </SocketContext.Provider>
   );

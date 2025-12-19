@@ -126,6 +126,12 @@ function HomePage() {
         const propertiesData = await Promise.all(
           (jobsData.jobs || []).map(async (job) => {
             try {
+              // Skip if property_id is null or invalid
+              if (!job.property_id || job.property_id === 'null' || job.property_id === 'undefined') {
+                console.warn(`Job ${job.id} has invalid property_id:`, job.property_id);
+                return null;
+              }
+
               // Fetch property details
               const propertyResponse = await fetch(`${API_BASE_URL}/api/properties/${job.property_id}`, {
                 method: "GET",

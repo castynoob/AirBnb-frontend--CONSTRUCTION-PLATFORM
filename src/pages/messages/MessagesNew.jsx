@@ -28,7 +28,7 @@ import {
 } from "../../utils/api";
 
 function MessagesNew() {
-  const socket = useSocket();
+  const { socket, isConnected } = useSocket();
   const [selectedChat, setSelectedChat] = useState(null);
   const [message, setMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -343,7 +343,8 @@ function MessagesNew() {
     // Check socket connection
     if (!socket || !socket.connected) {
       console.error("❌ Socket not connected");
-      alert("Connection lost. Please refresh the page.");
+      console.log("Socket status:", { socket: !!socket, isConnected, connected: socket?.connected });
+      alert("Connection lost. Please check your internet connection and refresh the page.");
       return;
     }
 

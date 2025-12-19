@@ -12,7 +12,7 @@ function Nav() {
   const [userProfile, setUserProfile] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
-  const socket = useSocket();
+  const { socket } = useSocket();
 
   useEffect(() => {
     const profileString = localStorage.getItem('userProfile');
