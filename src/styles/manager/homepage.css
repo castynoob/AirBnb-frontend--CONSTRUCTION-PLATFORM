@@ -274,6 +274,21 @@
   box-shadow: 0 1px 3px rgba(0, 165, 169, 0.2);
 }
 
+.pm-btn-property {
+  background-color: #0F223D;
+  box-shadow: 0 1px 2px rgba(15, 34, 61, 0.15);
+}
+
+.pm-btn-property:hover:not(:disabled) {
+  background-color: #0a1829;
+  box-shadow: 0 2px 6px rgba(15, 34, 61, 0.25);
+}
+
+.pm-btn-property:active:not(:disabled) {
+  transform: translateY(0.5px);
+  box-shadow: 0 1px 3px rgba(15, 34, 61, 0.2);
+}
+
 .pm-btn-secondary {
   background-color: var(--color-white);
   color: var(--color-text-dark);

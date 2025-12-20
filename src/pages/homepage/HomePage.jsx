@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useState, useEffect, useRef } from "react"
-import { Bell, Wrench, Search, Plus, X, FileText, CheckCircle, LoaderIcon, Megaphone  } from "lucide-react"
+import { Bell, Wrench, Search, Plus, X, FileText, CheckCircle, LoaderIcon, Megaphone, Building2  } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import "../../styles/manager/homepage.css"
 import Nav from "../../components/Nav"
@@ -9,6 +9,7 @@ import RepairList from "../../components/RepairList"
 import SummarySection from "../../components/SummarySection"
 import RepairDetails from "../works/RepairDetails"
 import AddAnnouncementModal from "../../components/modal/AddAnnouncementModal"
+import AddPropertyModal from "../../components/modal/AddPropertyModal"
 
 // Skeleton Loader Component
 function SkeletonCard() {
@@ -91,6 +92,7 @@ function HomePage() {
   const [notifications] = useState([])
   const [uProfile, setUProfile] = useState({})
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false)
+  const [showAddPropertyModal, setShowAddPropertyModal] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -514,10 +516,10 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
 
   const filteredRepairs = properties.filter(
     (repair) =>
-      repair.property.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      repair.apartment.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      repair.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      repair.category.toLowerCase().includes(searchTerm.toLowerCase()),
+      repair?.property?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      repair?.apartment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      repair?.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      repair?.category?.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   const unreadCount = notifications.filter((n) => !n.read).length
@@ -648,6 +650,14 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                   <Plus size={18} />
                   <span>New Jobs</span>
                 </button>
+                <button
+                  onClick={() => setShowAddPropertyModal(true)}
+                  className="pm-btn pm-btn-primary pm-btn-property"
+                  title="Add new property"
+                >
+                  <Building2 size={18} />
+                  <span>Add Property</span>
+                </button>
               </div>
 
               <div className="pm-notification-wrapper" ref={notificationRef}>
@@ -762,12 +772,23 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
       )}
 
       {/* Add Announcement Modal */}
-      <AddAnnouncementModal 
-        isOpen={showAnnouncementModal} 
+      <AddAnnouncementModal
+        isOpen={showAnnouncementModal}
         onClose={() => setShowAnnouncementModal(false)}
         onSuccess={() => {
           // Optionally refresh data or show success message
           console.log('Announcement created successfully');
+        }}
+      />
+
+      {/* Add Property Modal */}
+      <AddPropertyModal
+        isOpen={showAddPropertyModal}
+        onClose={() => setShowAddPropertyModal(false)}
+        onSuccess={(property) => {
+          // Property added successfully - just log it
+          // The properties array in HomePage is for repairs/jobs, not properties
+          console.log('Property added successfully:', property);
         }}
       />
     </div>

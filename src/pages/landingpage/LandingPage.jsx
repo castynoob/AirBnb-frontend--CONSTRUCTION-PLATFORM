@@ -6,6 +6,9 @@ import phoneImage from '../../assets/images/phone.png'
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
+import PhoneInput from 'react-phone-number-input'
+import 'react-phone-number-input/style.css'
+import toast from 'react-hot-toast'
 import {
   validateEmail,
   validatePassword,
@@ -17,6 +20,7 @@ export default function LandingPage() {
   // ===== STATE MANAGEMENT =====
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showRegisterModal, setShowRegisterModal] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [selectedRole, setSelectedRole] = useState("")
   const [scrolled, setScrolled] = useState(false)
   const [registrationStep, setRegistrationStep] = useState(1)
@@ -41,6 +45,7 @@ export default function LandingPage() {
     last_name: "",
     email: "",
     phone: "",
+    country_code: "+1",
     password: "",
     confirm_password: "",
     company_name: "",
@@ -62,12 +67,28 @@ export default function LandingPage() {
   const [isRegistering, setIsRegistering] = useState(false)
   const [isResendingVerification, setIsResendingVerification] = useState(false)
 
+  // Password validation state
+  const [passwordValidation, setPasswordValidation] = useState({
+    length: false,
+    uppercase: false,
+    lowercase: false,
+    number: false,
+    special: false
+  })
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
   // Property selection state (for residents)
   const [properties, setProperties] = useState([])
   const [isLoadingProperties, setIsLoadingProperties] = useState(false)
   const [propertySearchTerm, setPropertySearchTerm] = useState("")
   const [showPropertyDropdown, setShowPropertyDropdown] = useState(false)
   const [filteredProperties, setFilteredProperties] = useState([])
+
+  // Address autocomplete state
+  const [addressSuggestions, setAddressSuggestions] = useState([])
+  const [showAddressSuggestions, setShowAddressSuggestions] = useState(false)
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(false)
 
   // ===== EMAIL VERIFICATION CHECK =====
   useEffect(() => {
@@ -390,9 +411,20 @@ export default function LandingPage() {
         [name]: value,
     })
 
+    // Live password strength validation
+    if (name === "password") {
+        setPasswordValidation({
+            length: value.length >= 8,
+            uppercase: /[A-Z]/.test(value),
+            lowercase: /[a-z]/.test(value),
+            number: /[0-9]/.test(value),
+            special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value)
+        });
+    }
+
     // Live validation - validate as user types
     let error = "";
-    
+
     // Skip password validation if using Google OAuth
     if (registerFormData.provider === "google" && (name === "password" || name === "confirm_password")) {
         setRegisterErrors({
@@ -418,6 +450,14 @@ export default function LandingPage() {
         case "last_name":
             error = validateName(value, "Last name");
             break;
+        case "phone":
+            // Validate phone number (digits, spaces, dashes, parentheses only)
+            if (value && !/^[\d\s\-()]+$/.test(value)) {
+                error = "Phone number can only contain digits, spaces, dashes, and parentheses";
+            } else if (value && value.replace(/[\s\-()]/g, '').length < 10) {
+                error = "Phone number must be at least 10 digits";
+            }
+            break;
         default:
             break;
     }
@@ -428,6 +468,51 @@ export default function LandingPage() {
         [name]: error
     });
   }
+
+  // Address autocomplete handler
+  const handleAddressChange = async (e) => {
+    const value = e.target.value;
+    setRegisterFormData({
+      ...registerFormData,
+      address: value
+    });
+
+    if (value.length > 2) {
+      setIsLoadingAddresses(true);
+      setShowAddressSuggestions(true);
+
+      try {
+        // Using Nominatim (OpenStreetMap) API - completely free, no API key needed
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&limit=5&addressdetails=1`,
+          {
+            headers: {
+              'User-Agent': 'INTERVOS Construction Platform' // Required by Nominatim
+            }
+          }
+        );
+        const data = await response.json();
+        setAddressSuggestions(data);
+      } catch (error) {
+        console.error('Error fetching address suggestions:', error);
+        setAddressSuggestions([]);
+      } finally {
+        setIsLoadingAddresses(false);
+      }
+    } else {
+      setShowAddressSuggestions(false);
+      setAddressSuggestions([]);
+    }
+  };
+
+  const selectAddress = (suggestion) => {
+    setRegisterFormData({
+      ...registerFormData,
+      address: suggestion.display_name
+    });
+    setShowAddressSuggestions(false);
+    setAddressSuggestions([]);
+  };
 
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
@@ -752,13 +837,49 @@ export default function LandingPage() {
       });
       const data = await response.json();
       if (!response.ok) {
-        alert(data.message || "Failed to resend verification email");
+        toast.error(data.message || "Failed to resend verification email", {
+          duration: 4000,
+          style: {
+            borderRadius: '4px',
+            background: '#fff',
+            color: '#1f2937',
+            border: '1px solid #ef4444',
+            padding: '16px',
+            fontSize: '14px',
+            fontWeight: '500',
+            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          },
+        });
         return;
       }
-      alert("Verification email has been resent! Please check your inbox.");
+      toast.success("Verification email has been resent. Please check your inbox.", {
+        duration: 5000,
+        style: {
+          borderRadius: '4px',
+          background: '#fff',
+          color: '#1f2937',
+          border: '1px solid #14919b',
+          padding: '16px',
+          fontSize: '14px',
+          fontWeight: '500',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        },
+      });
     } catch (error) {
       console.error("Resend verification error:", error);
-      alert("Failed to resend verification email. Please try again.");
+      toast.error("Failed to resend verification email. Please try again.", {
+        duration: 4000,
+        style: {
+          borderRadius: '4px',
+          background: '#fff',
+          color: '#1f2937',
+          border: '1px solid #ef4444',
+          padding: '16px',
+          fontSize: '14px',
+          fontWeight: '500',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        },
+      });
     } finally {
       setIsResendingVerification(false);
     }
@@ -941,7 +1062,7 @@ export default function LandingPage() {
       {/* Email Verification Message */}
       {verificationMessage && (
         <div className={`lp-verification-banner ${verificationMessage.type}`}>
-          <div className="lp-verification-content">
+          <div className="lp-verification-banner-content">
             {verificationMessage.type === 'success' ? '✅' : '❌'} {verificationMessage.message}
             <button
               className="lp-verification-close"
@@ -973,11 +1094,50 @@ export default function LandingPage() {
               Login
             </button>
             <button className="lp-btn-register" onClick={() => setShowRegisterModal(true)}>
-              Start Your First Project
+              Get Started
+            </button>
+            {/* Hamburger Menu Icon - Mobile Only */}
+            <button className="lp-hamburger-menu" onClick={() => setShowMobileMenu(!showMobileMenu)} aria-label="Toggle menu">
+              <span></span>
+              <span></span>
+              <span></span>
             </button>
           </div>
         </div>
       </nav>
+
+      {/* Mobile Menu Overlay */}
+      {showMobileMenu && (
+        <div className="lp-mobile-menu-overlay" onClick={() => setShowMobileMenu(false)}>
+          <div className="lp-mobile-menu" onClick={(e) => e.stopPropagation()}>
+            <div className="lp-mobile-menu-header">
+              <div className="lp-navbar-logo">
+                <span className="lp-logo-icon">
+                  <img src={logo} alt="INTERVOS" />
+                </span>
+                <span className="lp-logo-text">INTERVOS</span>
+              </div>
+              <button className="lp-close-menu" onClick={() => setShowMobileMenu(false)} aria-label="Close menu">
+                ×
+              </button>
+            </div>
+            <nav className="lp-mobile-nav">
+              <a href="#about" onClick={() => setShowMobileMenu(false)}>About</a>
+              <a href="#features" onClick={() => setShowMobileMenu(false)}>Features</a>
+              <a href="#roles" onClick={() => setShowMobileMenu(false)}>For You</a>
+              <a href="#how-it-works" onClick={() => setShowMobileMenu(false)}>How It Works</a>
+            </nav>
+            <div className="lp-mobile-menu-actions">
+              <button className="lp-btn-login lp-btn-full" onClick={() => { setShowLoginModal(true); setShowMobileMenu(false); }}>
+                Login
+              </button>
+              <button className="lp-btn-register lp-btn-full" onClick={() => { setShowRegisterModal(true); setShowMobileMenu(false); }}>
+                Get Started
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hero Section */}
       <section className="lp-hero">
@@ -1137,7 +1297,11 @@ export default function LandingPage() {
                 </div>
                 <div className="lp-dashboard-body">
                   <div className="lp-success-card">
-                    <div className="lp-success-icon">✓</div>
+                    <div className="lp-success-icon">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
                     <div className="lp-success-content">
                       <div className="lp-success-title">Project Successfully Completed</div>
                       <div className="lp-success-detail">Plumbing repair - Building 24A</div>
@@ -1151,12 +1315,26 @@ export default function LandingPage() {
                   </div>
                   <div className="lp-activity-graph">
                     <div className="lp-graph-label">Project Volume</div>
-                    <div className="lp-graph-bars">
-                      <div className="lp-graph-bar" style={{height: '45%'}}></div>
-                      <div className="lp-graph-bar" style={{height: '60%'}}></div>
-                      <div className="lp-graph-bar" style={{height: '75%'}}></div>
-                      <div className="lp-graph-bar active" style={{height: '95%'}}></div>
-                      <div className="lp-graph-bar" style={{height: '85%'}}></div>
+                    <div className="lp-graph-container">
+                      <div className="lp-graph-line">
+                        <svg viewBox="0 0 100 70" preserveAspectRatio="none">
+                          <defs>
+                            <linearGradient id="graph-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                              <stop offset="0%" stopColor="#14919b" stopOpacity="0.3" />
+                              <stop offset="100%" stopColor="#14919b" stopOpacity="0" />
+                            </linearGradient>
+                          </defs>
+                          <path className="lp-graph-area" d="M 0,70 L 0,38 L 25,28 L 50,14 L 75,7 L 100,11 L 100,70 Z" />
+                          <path d="M 0,38 L 25,28 L 50,14 L 75,7 L 100,11" />
+                        </svg>
+                      </div>
+                      <div className="lp-graph-dots">
+                        <div className="lp-graph-dot" style={{left: '0%', bottom: '38px'}}></div>
+                        <div className="lp-graph-dot" style={{left: '25%', bottom: '28px'}}></div>
+                        <div className="lp-graph-dot" style={{left: '50%', bottom: '14px'}}></div>
+                        <div className="lp-graph-dot active" style={{left: '75%', bottom: '7px'}}></div>
+                        <div className="lp-graph-dot" style={{left: '100%', bottom: '11px'}}></div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1744,17 +1922,72 @@ export default function LandingPage() {
                             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                           </svg>
                           <input
-                            type="password"
+                            type={showRegisterPassword ? "text" : "password"}
                             name="password"
                             placeholder="Create a strong password"
                             value={registerFormData.password}
                             onChange={handleRegisterChange}
                             required
-                            className={registerErrors.password ? 'error' : ''}
+                            className={
+                              registerErrors.password
+                                ? 'error'
+                                : (passwordValidation.length && passwordValidation.uppercase && passwordValidation.lowercase && passwordValidation.number && passwordValidation.special)
+                                  ? 'password-valid'
+                                  : ''
+                            }
                           />
+                          <button
+                            type="button"
+                            className="lp-password-toggle"
+                            onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                            tabIndex="-1"
+                          >
+                            {showRegisterPassword ? (
+                              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                                <line x1="1" y1="1" x2="23" y2="23"/>
+                              </svg>
+                            ) : (
+                              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                              </svg>
+                            )}
+                          </button>
                         </div>
-                        {registerErrors.password && (
-                          <span className="lp-field-error">{registerErrors.password}</span>
+                        {registerFormData.password && !(passwordValidation.length && passwordValidation.uppercase && passwordValidation.lowercase && passwordValidation.number && passwordValidation.special) && (
+                          <div className="lp-password-requirements">
+                            <div className={`lp-password-requirement ${passwordValidation.length ? 'valid' : ''}`}>
+                              <svg viewBox="0 0 16 16" width="14" height="14">
+                                <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                              </svg>
+                              At least 8 characters
+                            </div>
+                            <div className={`lp-password-requirement ${passwordValidation.uppercase ? 'valid' : ''}`}>
+                              <svg viewBox="0 0 16 16" width="14" height="14">
+                                <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                              </svg>
+                              One uppercase letter
+                            </div>
+                            <div className={`lp-password-requirement ${passwordValidation.lowercase ? 'valid' : ''}`}>
+                              <svg viewBox="0 0 16 16" width="14" height="14">
+                                <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                              </svg>
+                              One lowercase letter
+                            </div>
+                            <div className={`lp-password-requirement ${passwordValidation.number ? 'valid' : ''}`}>
+                              <svg viewBox="0 0 16 16" width="14" height="14">
+                                <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                              </svg>
+                              One number
+                            </div>
+                            <div className={`lp-password-requirement ${passwordValidation.special ? 'valid' : ''}`}>
+                              <svg viewBox="0 0 16 16" width="14" height="14">
+                                <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                              </svg>
+                              One special character
+                            </div>
+                          </div>
                         )}
                       </div>
 
@@ -1766,7 +1999,7 @@ export default function LandingPage() {
                             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                           </svg>
                           <input
-                            type="password"
+                            type={showConfirmPassword ? "text" : "password"}
                             name="confirm_password"
                             placeholder="Re-enter your password"
                             value={registerFormData.confirm_password}
@@ -1774,6 +2007,24 @@ export default function LandingPage() {
                             required
                             className={registerErrors.confirm_password ? 'error' : ''}
                           />
+                          <button
+                            type="button"
+                            className="lp-password-toggle"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            tabIndex="-1"
+                          >
+                            {showConfirmPassword ? (
+                              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                                <line x1="1" y1="1" x2="23" y2="23"/>
+                              </svg>
+                            ) : (
+                              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                              </svg>
+                            )}
+                          </button>
                         </div>
                         {registerErrors.confirm_password && (
                           <span className="lp-field-error">{registerErrors.confirm_password}</span>
@@ -1820,27 +2071,6 @@ export default function LandingPage() {
 
                   <input type="hidden" value={registerFormData.provider} name="provider" />
 
-                  <div className="lp-form-group">
-                    <label>Phone Number</label>
-                    <div className="lp-input-wrapper">
-                      <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-                      </svg>
-                      <input
-                        type="tel"
-                        name="phone"
-                        placeholder="+1 (555) 000-0000"
-                        value={registerFormData.phone}
-                        onChange={handleRegisterChange}
-                        required
-                        className={registerErrors.phone ? 'error' : ''}
-                      />
-                    </div>
-                    {registerErrors.phone && (
-                      <span className="lp-field-error">{registerErrors.phone}</span>
-                    )}
-                  </div>
-
                   {/* Property Manager Fields */}
                   {selectedRole === "property-manager" && (
                     <>
@@ -1863,20 +2093,66 @@ export default function LandingPage() {
                         </div>
                       </div>
                       <div className="lp-form-group">
+                        <label>Phone Number</label>
+                        <PhoneInput
+                          international
+                          defaultCountry="US"
+                          value={registerFormData.phone}
+                          onChange={(value) => {
+                            setRegisterFormData({
+                              ...registerFormData,
+                              phone: value || ""
+                            });
+                          }}
+                          className={`lp-phone-input-wrapper ${registerErrors.phone ? 'error' : ''}`}
+                          placeholder="Enter phone number"
+                        />
+                        {registerErrors.phone && (
+                          <span className="lp-field-error">{registerErrors.phone}</span>
+                        )}
+                      </div>
+                      <div className="lp-form-group">
                         <label>Business Address</label>
-                        <div className="lp-input-wrapper">
-                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                            <circle cx="12" cy="10" r="3"/>
-                          </svg>
-                          <input
-                            type="text"
-                            name="address"
-                            placeholder="Street address"
-                            value={registerFormData.address}
-                            onChange={handleRegisterChange}
-                            required
-                          />
+                        <div className="lp-address-autocomplete-wrapper">
+                          <div className="lp-input-wrapper">
+                            <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                              <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            <input
+                              type="text"
+                              name="address"
+                              placeholder="Start typing your address..."
+                              value={registerFormData.address}
+                              onChange={handleAddressChange}
+                              onFocus={() => registerFormData.address.length > 2 && setShowAddressSuggestions(true)}
+                              onBlur={() => setTimeout(() => setShowAddressSuggestions(false), 200)}
+                              required
+                              autoComplete="off"
+                            />
+                          </div>
+                          {showAddressSuggestions && addressSuggestions.length > 0 && (
+                            <div className="lp-address-suggestions">
+                              {isLoadingAddresses && (
+                                <div className="lp-address-suggestion-item loading">
+                                  Loading suggestions...
+                                </div>
+                              )}
+                              {!isLoadingAddresses && addressSuggestions.map((suggestion, index) => (
+                                <div
+                                  key={index}
+                                  className="lp-address-suggestion-item"
+                                  onClick={() => selectAddress(suggestion)}
+                                >
+                                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                    <circle cx="12" cy="10" r="3"/>
+                                  </svg>
+                                  <span>{suggestion.display_name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="lp-form-group">
@@ -1891,6 +2167,8 @@ export default function LandingPage() {
                             placeholder="How many properties do you manage?"
                             value={registerFormData.num_properties || ""}
                             onChange={handleRegisterChange}
+                            required
+                            min="1"
                           />
                         </div>
                       </div>
@@ -1918,20 +2196,66 @@ export default function LandingPage() {
                         </div>
                       </div>
                       <div className="lp-form-group">
+                        <label>Phone Number</label>
+                        <PhoneInput
+                          international
+                          defaultCountry="US"
+                          value={registerFormData.phone}
+                          onChange={(value) => {
+                            setRegisterFormData({
+                              ...registerFormData,
+                              phone: value || ""
+                            });
+                          }}
+                          className={`lp-phone-input-wrapper ${registerErrors.phone ? 'error' : ''}`}
+                          placeholder="Enter phone number"
+                        />
+                        {registerErrors.phone && (
+                          <span className="lp-field-error">{registerErrors.phone}</span>
+                        )}
+                      </div>
+                      <div className="lp-form-group">
                         <label>Business Address</label>
-                        <div className="lp-input-wrapper">
-                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                            <circle cx="12" cy="10" r="3"/>
-                          </svg>
-                          <input
-                            type="text"
-                            name="address"
-                            placeholder="Street address"
-                            value={registerFormData.address}
-                            onChange={handleRegisterChange}
-                            required
-                          />
+                        <div className="lp-address-autocomplete-wrapper">
+                          <div className="lp-input-wrapper">
+                            <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                              <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            <input
+                              type="text"
+                              name="address"
+                              placeholder="Start typing your address..."
+                              value={registerFormData.address}
+                              onChange={handleAddressChange}
+                              onFocus={() => registerFormData.address.length > 2 && setShowAddressSuggestions(true)}
+                              onBlur={() => setTimeout(() => setShowAddressSuggestions(false), 200)}
+                              required
+                              autoComplete="off"
+                            />
+                          </div>
+                          {showAddressSuggestions && addressSuggestions.length > 0 && (
+                            <div className="lp-address-suggestions">
+                              {isLoadingAddresses && (
+                                <div className="lp-address-suggestion-item loading">
+                                  Loading suggestions...
+                                </div>
+                              )}
+                              {!isLoadingAddresses && addressSuggestions.map((suggestion, index) => (
+                                <div
+                                  key={index}
+                                  className="lp-address-suggestion-item"
+                                  onClick={() => selectAddress(suggestion)}
+                                >
+                                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                    <circle cx="12" cy="10" r="3"/>
+                                  </svg>
+                                  <span>{suggestion.display_name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="lp-form-group">
@@ -1949,6 +2273,7 @@ export default function LandingPage() {
                             placeholder="Professional license number"
                             value={registerFormData.license_number}
                             onChange={handleRegisterChange}
+                            required
                           />
                         </div>
                       </div>
@@ -1966,6 +2291,8 @@ export default function LandingPage() {
                               placeholder="5"
                               value={registerFormData.years_in_business}
                               onChange={handleRegisterChange}
+                              required
+                              min="1"
                             />
                           </div>
                         </div>
@@ -1984,6 +2311,8 @@ export default function LandingPage() {
                               placeholder="10"
                               value={registerFormData.num_employees}
                               onChange={handleRegisterChange}
+                              required
+                              min="1"
                             />
                           </div>
                         </div>
@@ -2000,6 +2329,7 @@ export default function LandingPage() {
                             placeholder="e.g., Plumbing, Electrical, HVAC"
                             value={registerFormData.specializations}
                             onChange={handleRegisterChange}
+                            required
                           />
                         </div>
                       </div>
@@ -2010,6 +2340,25 @@ export default function LandingPage() {
                   {selectedRole === "resident" && (
                     <>
                       <div className="lp-form-divider">Resident Details</div>
+                      <div className="lp-form-group">
+                        <label>Phone Number</label>
+                        <PhoneInput
+                          international
+                          defaultCountry="US"
+                          value={registerFormData.phone}
+                          onChange={(value) => {
+                            setRegisterFormData({
+                              ...registerFormData,
+                              phone: value || ""
+                            });
+                          }}
+                          className={`lp-phone-input-wrapper ${registerErrors.phone ? 'error' : ''}`}
+                          placeholder="Enter phone number"
+                        />
+                        {registerErrors.phone && (
+                          <span className="lp-field-error">{registerErrors.phone}</span>
+                        )}
+                      </div>
                       <div className="lp-form-group">
                         <label htmlFor="property_id" className="form-label">
                           Building/Property <span className="required">*</span>
@@ -2090,6 +2439,7 @@ export default function LandingPage() {
                             name="move_in_date"
                             value={registerFormData.move_in_date}
                             onChange={handleRegisterChange}
+                            required
                           />
                         </div>
                       </div>
@@ -2121,20 +2471,66 @@ export default function LandingPage() {
                         </div>
                       </div>
                       <div className="lp-form-group">
+                        <label>Phone Number</label>
+                        <PhoneInput
+                          international
+                          defaultCountry="US"
+                          value={registerFormData.phone}
+                          onChange={(value) => {
+                            setRegisterFormData({
+                              ...registerFormData,
+                              phone: value || ""
+                            });
+                          }}
+                          className={`lp-phone-input-wrapper ${registerErrors.phone ? 'error' : ''}`}
+                          placeholder="Enter phone number"
+                        />
+                        {registerErrors.phone && (
+                          <span className="lp-field-error">{registerErrors.phone}</span>
+                        )}
+                      </div>
+                      <div className="lp-form-group">
                         <label>Business Address</label>
-                        <div className="lp-input-wrapper">
-                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                            <circle cx="12" cy="10" r="3"/>
-                          </svg>
-                          <input
-                            type="text"
-                            name="address"
-                            placeholder="Street address"
-                            value={registerFormData.address}
-                            onChange={handleRegisterChange}
-                            required
-                          />
+                        <div className="lp-address-autocomplete-wrapper">
+                          <div className="lp-input-wrapper">
+                            <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                              <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            <input
+                              type="text"
+                              name="address"
+                              placeholder="Start typing your address..."
+                              value={registerFormData.address}
+                              onChange={handleAddressChange}
+                              onFocus={() => registerFormData.address.length > 2 && setShowAddressSuggestions(true)}
+                              onBlur={() => setTimeout(() => setShowAddressSuggestions(false), 200)}
+                              required
+                              autoComplete="off"
+                            />
+                          </div>
+                          {showAddressSuggestions && addressSuggestions.length > 0 && (
+                            <div className="lp-address-suggestions">
+                              {isLoadingAddresses && (
+                                <div className="lp-address-suggestion-item loading">
+                                  Loading suggestions...
+                                </div>
+                              )}
+                              {!isLoadingAddresses && addressSuggestions.map((suggestion, index) => (
+                                <div
+                                  key={index}
+                                  className="lp-address-suggestion-item"
+                                  onClick={() => selectAddress(suggestion)}
+                                >
+                                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                    <circle cx="12" cy="10" r="3"/>
+                                  </svg>
+                                  <span>{suggestion.display_name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <div className="lp-form-group">
@@ -2151,6 +2547,7 @@ export default function LandingPage() {
                             placeholder="https://yourwebsite.com"
                             value={registerFormData.website}
                             onChange={handleRegisterChange}
+                            required
                           />
                         </div>
                       </div>
@@ -2167,6 +2564,8 @@ export default function LandingPage() {
                             placeholder="10"
                             value={registerFormData.years_in_business}
                             onChange={handleRegisterChange}
+                            required
+                            min="1"
                           />
                         </div>
                       </div>
@@ -2185,6 +2584,7 @@ export default function LandingPage() {
                             placeholder="Cities or regions you serve"
                             value={registerFormData.delivery_areas}
                             onChange={handleRegisterChange}
+                            required
                           />
                         </div>
                       </div>
@@ -2221,7 +2621,11 @@ export default function LandingPage() {
                 </div>
 
                 <div className="lp-verification-content">
-                  <div className="lp-success-icon">✓</div>
+                  <div className="lp-success-icon">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                      <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
 
                   <div className="lp-verification-message">
                     <p className="lp-verification-title">Check your inbox</p>
