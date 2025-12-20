@@ -3042,3 +3042,73 @@ body {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
+/* ============================================
+   EMAIL VERIFICATION BANNER
+   ============================================ */
+.lp-verification-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10000;
+  padding: 16px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 500;
+  animation: slideDown 0.3s ease-out;
+}
+
+.lp-verification-banner.success {
+  background-color: #10b981;
+  color: white;
+}
+
+.lp-verification-banner.error {
+  background-color: #ef4444;
+  color: white;
+}
+
+.lp-verification-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+}
+
+.lp-verification-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  position: absolute;
+  right: 0;
+}
+
+.lp-verification-close:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}

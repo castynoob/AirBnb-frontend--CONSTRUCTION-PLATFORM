@@ -3,7 +3,7 @@ import "../../styles/landinpage.css"
 import logo from '../../assets/logo.png'
 import mockupImage from '../../assets/images/mockup.png'
 import phoneImage from '../../assets/images/phone.png'
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 import {
@@ -21,7 +21,9 @@ export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false)
   const [registrationStep, setRegistrationStep] = useState(1)
   const [registeredEmail, setRegisteredEmail] = useState("")
+  const [verificationMessage, setVerificationMessage] = useState(null)
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
 
   // Login state
   const [loginFormData, setLoginFormData] = useState({
@@ -66,6 +68,38 @@ export default function LandingPage() {
   const [propertySearchTerm, setPropertySearchTerm] = useState("")
   const [showPropertyDropdown, setShowPropertyDropdown] = useState(false)
   const [filteredProperties, setFilteredProperties] = useState([])
+
+  // ===== EMAIL VERIFICATION CHECK =====
+  useEffect(() => {
+    const verification = searchParams.get('verification');
+    const reason = searchParams.get('reason');
+
+    if (verification === 'success') {
+      setVerificationMessage({
+        type: 'success',
+        message: 'Email verified successfully! You can now log in.'
+      });
+      setShowLoginModal(true);
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Auto-hide after 5 seconds
+      setTimeout(() => setVerificationMessage(null), 5000);
+    } else if (verification === 'failed') {
+      let message = 'Email verification failed.';
+      if (reason === 'missing_token') message = 'Verification link is invalid (missing token).';
+      if (reason === 'invalid_token') message = 'Verification link is invalid or expired.';
+      if (reason === 'server_error') message = 'Server error during verification. Please try again.';
+
+      setVerificationMessage({
+        type: 'error',
+        message
+      });
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Auto-hide after 10 seconds
+      setTimeout(() => setVerificationMessage(null), 10000);
+    }
+  }, [searchParams]);
 
   // ===== SCROLL EFFECT =====
   useEffect(() => {
@@ -904,6 +938,21 @@ export default function LandingPage() {
   // ===== RENDER =====
   return (
     <div className="lp-landing-page">
+      {/* Email Verification Message */}
+      {verificationMessage && (
+        <div className={`lp-verification-banner ${verificationMessage.type}`}>
+          <div className="lp-verification-content">
+            {verificationMessage.type === 'success' ? '✅' : '❌'} {verificationMessage.message}
+            <button
+              className="lp-verification-close"
+              onClick={() => setVerificationMessage(null)}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Navigation Bar */}
       <nav className={`lp-navbar ${scrolled ? "lp-scrolled" : ""}`}>
         <div className="lp-navbar-container">
