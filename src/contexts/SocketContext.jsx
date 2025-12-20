@@ -61,9 +61,10 @@ export const SocketProvider = ({ children }) => {
       auth: { token },
       transports: ["websocket", "polling"],
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      timeout: 10000,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 2000,
+      reconnectionDelayMax: 10000,
+      timeout: 120000, // 120 seconds to handle Render cold starts
     });
 
     newSocket.on("connect", () => {
