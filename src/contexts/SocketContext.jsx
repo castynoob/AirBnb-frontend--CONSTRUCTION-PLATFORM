@@ -53,6 +53,8 @@ export const SocketProvider = ({ children }) => {
     // Get API URL
     const apiUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:5000";
     console.log("🔌 Initializing socket connection to:", apiUrl);
+    console.log("🔑 Token present:", !!token);
+    console.log("📋 Environment:", import.meta.env.MODE);
 
     // ✅ Initialize Socket.io connection
     const newSocket = io(apiUrl, {
@@ -66,11 +68,15 @@ export const SocketProvider = ({ children }) => {
 
     newSocket.on("connect", () => {
       console.log("✅ Socket connected:", newSocket.id);
+      console.log("✅ Socket transport:", newSocket.io.engine.transport.name);
       setIsConnected(true);
     });
 
     newSocket.on("connect_error", (error) => {
       console.error("❌ Socket connection error:", error.message);
+      console.error("❌ Error type:", error.type);
+      console.error("❌ Error description:", error.description);
+      console.error("❌ Full error:", error);
       setIsConnected(false);
     });
 
