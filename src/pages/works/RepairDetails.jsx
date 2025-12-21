@@ -244,16 +244,19 @@ function RepairDetails({ handleRepairClicked, repair }) {
         throw new Error(data.message || `Failed to approve bid: ${response.status}`);
       }
 
+      // Update the approved bidder and decline all others
       setBidders((prevBidders) =>
         prevBidders.map((bidder) =>
           bidder.id === selectedBidder.id
             ? { ...bidder, bid_status: "approved" }
+            : bidder.bid_status === "pending"
+            ? { ...bidder, bid_status: "declined" }
             : bidder
         )
       );
 
       setSelectedBidder((prev) => ({ ...prev, bid_status: "approved" }));
-      
+
       showNotification(
         data.message || "Bid approved successfully! Messaging is now unlocked.",
         "success"
