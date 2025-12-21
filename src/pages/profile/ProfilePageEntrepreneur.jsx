@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
-import { Star, CheckCircle, Award, Briefcase, MapPin, Calendar, Mail, Phone, LogOut, MessageSquare, User, Upload, Camera, X, Crown, TrendingUp, Check, Zap, Shield, Activity, DollarSign, FileText } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Star, CheckCircle, Award, Briefcase, MapPin, Calendar, Mail, Phone, LogOut, MessageSquare, User, Upload, Camera, X, Crown, Check, Zap, Shield, Activity, DollarSign, FileText, ArrowUpCircle } from 'lucide-react';
 import Nav from "../../components/Nav";
 import '../../styles/entrepreneur/profilepageentrepreneur.css';
 import '../../styles/entrepreneur/subscriptionpage.css';
 import { useNavigate } from 'react-router-dom';
 import EntrepreneurProfileSkeleton from '../../components/loading/EntrepreneurProfileSkeleton'
-import logo from "../../assets/logo.png"
+import SubscriptionPaymentForm from '../../components/SubscriptionPaymentModal'
+import '../../styles/entrepreneur/subscriptionmodal.css'
 
 function ProfilePageEntrepreneur() {
-  const [activeTab, setActiveTab] = useState('specialization');
+  const [activeTab, setActiveTab] = useState('subscription');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [profile, setProfile] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -20,6 +21,9 @@ function ProfilePageEntrepreneur() {
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [subscription, setSubscription] = useState({})
   const [userProfile, setUserProfile] = useState(null)
+  const [showPlansModal, setShowPlansModal] = useState(false)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [selectedPlanType, setSelectedPlanType] = useState('')
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -242,27 +246,34 @@ function ProfilePageEntrepreneur() {
     setIsUpdating(true)
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
     const userProfile = localStorage.getItem('userProfile')
+    let imageUploadFailed = false
 
     try {
       if (userProfile) {
         const user = JSON.parse(userProfile)
 
-        // 1. Update profile picture if new image selected
+        // 1. Update profile picture if new image selected (non-blocking)
         if (profileImage) {
           setIsUploadingImage(true)
           const imageFormData = new FormData()
           imageFormData.append('image', profileImage)
 
-          const imageResponse = await fetch(`${API_BASE_URL}/api/users/entrepreneur/profile-picture`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${user.token}`
-            },
-            body: imageFormData
-          })
+          try {
+            const imageResponse = await fetch(`${API_BASE_URL}/api/users/entrepreneur/profile-picture`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${user.token}`
+              },
+              body: imageFormData
+            })
 
-          if (!imageResponse.ok) {
-            throw new Error('Failed to upload profile picture')
+            if (!imageResponse.ok) {
+              console.error('Failed to upload profile picture')
+              imageUploadFailed = true
+            }
+          } catch (imageError) {
+            console.error('Image upload error:', imageError)
+            imageUploadFailed = true
           }
 
           setIsUploadingImage(false)
@@ -311,7 +322,12 @@ function ProfilePageEntrepreneur() {
         setProfileImagePreview(null)
 
         setIsEditModalOpen(false)
-        alert('Profile updated successfully!')
+
+        if (imageUploadFailed) {
+          alert('Profile updated successfully, but the image upload failed. Please try uploading your image again later.')
+        } else {
+          alert('Profile updated successfully!')
+        }
       }
     } catch (error) {
       console.error('Error updating profile:', error)
@@ -326,6 +342,52 @@ function ProfilePageEntrepreneur() {
     localStorage.removeItem("userProfile");
     localStorage.removeItem("selectedPropertyId")
     navigate("/");
+  };
+
+  // Handle selecting a plan from the plans modal
+  const handleSelectPlan = (planType) => {
+    setSelectedPlanType(planType)
+    setShowPlansModal(false)
+    setShowPaymentModal(true)
+  }
+
+  // Handle payment modal close and refresh subscription data
+  const handlePaymentModalClose = async (success) => {
+    setShowPaymentModal(false)
+    setSelectedPlanType('')
+    if (success) {
+      // Refresh subscription data from API
+      const uProf = localStorage.getItem('userProfile')
+      if (uProf) {
+        const u = JSON.parse(uProf)
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/payments/subscription`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${u.token}`
+            }
+          })
+          if (response.ok) {
+            const subscriptionData = await response.json()
+            setSubscription(subscriptionData.subscription || {})
+
+            // Update localStorage with new subscription data
+            const updatedProfile = {
+              ...u,
+              entrepProfile: {
+                ...u.entrepProfile,
+                subscription: subscriptionData,
+              },
+            }
+            localStorage.setItem('userProfile', JSON.stringify(updatedProfile))
+            setUserProfile(updatedProfile)
+          }
+        } catch (error) {
+          console.error('Error refreshing subscription:', error)
+        }
+      }
+    }
   };
 
   if(isLoading) {
@@ -436,6 +498,13 @@ function ProfilePageEntrepreneur() {
           {/* Tab Navigation */}
           <div className="entrepreneur-tab-navigation">
             <button
+              className={`entrepreneur-tab-button ${activeTab === 'subscription' ? 'active' : ''}`}
+              onClick={() => setActiveTab('subscription')}
+            >
+              <Crown size={18} style={{marginRight: '8px'}} />
+              Subscription
+            </button>
+            <button
               className={`entrepreneur-tab-button ${activeTab === 'specialization' ? 'active' : ''}`}
               onClick={() => setActiveTab('specialization')}
             >
@@ -446,13 +515,6 @@ function ProfilePageEntrepreneur() {
               onClick={() => setActiveTab('metrics')}
             >
               Performance & Reviews
-            </button>
-            <button
-              className={`entrepreneur-tab-button ${activeTab === 'subscription' ? 'active' : ''}`}
-              onClick={() => setActiveTab('subscription')}
-            >
-              <Crown size={18} style={{marginRight: '8px'}} />
-              Subscription
             </button>
           </div>
 
@@ -694,6 +756,34 @@ function ProfilePageEntrepreneur() {
                     </div>
                   </div>
                 )}
+
+                {/* View Plans Button - Show for all users to view/change plans */}
+                <div className="upgrade-section">
+                  <div className="upgrade-card">
+                    <div className="upgrade-content">
+                      <div className="upgrade-icon">
+                        <ArrowUpCircle size={32} />
+                      </div>
+                      <div className="upgrade-info">
+                        <h3 className="upgrade-title">
+                          {subscription.plan_type === 'premium' ? 'You\'re on Premium' : 'View Subscription Plans'}
+                        </h3>
+                        <p className="upgrade-description">
+                          {subscription.plan_type === 'premium'
+                            ? 'You have access to unlimited bids and priority support'
+                            : 'Explore available plans and upgrade to get more features'}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      className="upgrade-btn"
+                      onClick={() => setShowPlansModal(true)}
+                    >
+                      <Crown size={18} />
+                      View Plans
+                    </button>
+                  </div>
+                </div>
 
                 {/* Usage Stats */}
                 <div className="dashboard-section">
@@ -1059,6 +1149,168 @@ function ProfilePageEntrepreneur() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* View Plans Modal */}
+      {showPlansModal && (
+        <div className="subscription-modal">
+          <div className="modal-overlay" onClick={() => setShowPlansModal(false)} />
+
+          <div className="modal-content subs">
+            <button
+              className="modal-close-btn"
+              onClick={() => setShowPlansModal(false)}
+            >
+              <X size={24} />
+            </button>
+
+            <div className="modal-header">
+              <div className="sub-message">
+                <h2>Subscription Plans</h2>
+                <p className="subtitle">
+                  {subscription.plan_type
+                    ? `You are currently on the ${subscription.plan_type === 'premium' ? 'Premium' : 'Basic'} plan`
+                    : 'Select the plan that fits your business needs'}
+                </p>
+              </div>
+            </div>
+
+            <div className="plans-container">
+              {/* Basic Plan */}
+              <div className={`plan-card ${subscription.plan_type === 'basic' ? 'current-plan' : ''}`}>
+                {subscription.plan_type === 'basic' && (
+                  <div className="current-plan-badge">Current Plan</div>
+                )}
+                <div className="plan-header">
+                  <div className="plan-label">Basic Plan</div>
+                  <div className="price">
+                    <span className="currency">$</span>
+                    <span className="amount">250</span>
+                    <span className="period">/month</span>
+                  </div>
+                  <div className="plan-description">
+                    Essential features for contractors
+                  </div>
+                </div>
+
+                <ul className="features-list">
+                  <li className="feature-item">
+                    <svg width="16" height="16" viewBox="0 0 20 20" className="feature-icon">
+                      <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
+                      <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span>Browse & view jobs</span>
+                  </li>
+                  <li className="feature-item">
+                    <svg width="16" height="16" viewBox="0 0 20 20" className="feature-icon">
+                      <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
+                      <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span>Submit up to 30 bids</span>
+                  </li>
+                  <li className="feature-item">
+                    <svg width="16" height="16" viewBox="0 0 20 20" className="feature-icon">
+                      <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
+                      <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span>Unlock budgets</span>
+                  </li>
+                  <li className="feature-item">
+                    <svg width="16" height="16" viewBox="0 0 20 20" className="feature-icon">
+                      <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
+                      <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span>Message approved contacts</span>
+                  </li>
+                </ul>
+
+                <button
+                  className="cta-btn btn-basic"
+                  onClick={() => handleSelectPlan('basic')}
+                  disabled={subscription.plan_type === 'basic'}
+                >
+                  {subscription.plan_type === 'basic' ? 'Current Plan' : 'Select Basic'}
+                </button>
+              </div>
+
+              {/* Premium Plan */}
+              <div className={`plan-card premium ${subscription.plan_type === 'premium' ? 'current-plan' : ''}`}>
+                {subscription.plan_type === 'premium' ? (
+                  <div className="current-plan-badge">Current Plan</div>
+                ) : (
+                  <div className="plan-badge">RECOMMENDED</div>
+                )}
+
+                <div className="plan-header">
+                  <div className="plan-label">Premium Plan</div>
+                  <div className="price">
+                    <span className="currency">$</span>
+                    <span className="amount">429</span>
+                    <span className="period">/month</span>
+                  </div>
+                  <div className="plan-description">
+                    Unlimited bidding for growing businesses
+                  </div>
+                </div>
+
+                <ul className="features-list">
+                  <li className="feature-item">
+                    <svg width="16" height="16" viewBox="0 0 20 20" className="feature-icon">
+                      <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
+                      <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span>Browse & view jobs</span>
+                  </li>
+                  <li className="feature-item highlight">
+                    <svg width="16" height="16" viewBox="0 0 20 20" className="feature-icon">
+                      <circle cx="10" cy="10" r="10" fill="#00A5A9"/>
+                      <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span>Submit unlimited bids</span>
+                  </li>
+                  <li className="feature-item">
+                    <svg width="16" height="16" viewBox="0 0 20 20" className="feature-icon">
+                      <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
+                      <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span>Unlock budgets</span>
+                  </li>
+                  <li className="feature-item">
+                    <svg width="16" height="16" viewBox="0 0 20 20" className="feature-icon">
+                      <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
+                      <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span>Message approved contacts</span>
+                  </li>
+                  <li className="feature-item highlight">
+                    <svg width="16" height="16" viewBox="0 0 20 20" className="feature-icon">
+                      <circle cx="10" cy="10" r="10" fill="#00A5A9"/>
+                      <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span>Priority support</span>
+                  </li>
+                </ul>
+
+                <button
+                  className="cta-btn btn-premium"
+                  onClick={() => handleSelectPlan('premium')}
+                  disabled={subscription.plan_type === 'premium'}
+                >
+                  {subscription.plan_type === 'premium' ? 'Current Plan' : 'Upgrade to Premium'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Modal */}
+      {showPaymentModal && userProfile && (
+        <SubscriptionPaymentForm
+          token={userProfile.token}
+          planType={selectedPlanType}
+          handleCloseModal={handlePaymentModalClose}
+        />
       )}
     </div>
   );

@@ -14,6 +14,200 @@
   background-color: var(--color-background-light);
 }
 
+/* Fullscreen Map Layout */
+.eh-homepage-container.eh-fullscreen-map-layout {
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+.eh-fullscreen-map {
+  position: fixed;
+  top: 0;
+  left: 220px;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  background-color: #e8e8e8; /* Match map edge color */
+}
+
+/* Prevent map from showing multiple world copies */
+.eh-fullscreen-map .leaflet-container {
+  background-color: #e8e8e8;
+}
+
+.eh-floating-header {
+  position: fixed;
+  top: 1.5rem;
+  left: calc(220px + 1.5rem);
+  right: calc(380px + 12rem);
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  padding: 0.5rem 0.75rem;
+  border-radius: 50px;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Full-width Search Box - Compact */
+.eh-search-box-fullwidth {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: rgba(247, 248, 250, 0.8);
+  border: 1px solid var(--color-border-divider);
+  border-radius: 50px;
+  padding: 0.375rem 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.eh-search-box-fullwidth:focus-within {
+  border-color: var(--color-secondary);
+  background-color: var(--color-white);
+  box-shadow: 0 0 0 2px rgba(0, 165, 169, 0.1);
+}
+
+.eh-search-box-fullwidth .eh-search-icon {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  margin-right: 0.5rem;
+  width: 18px;
+  height: 18px;
+}
+
+.eh-search-box-fullwidth:focus-within .eh-search-icon {
+  color: var(--color-secondary);
+}
+
+.eh-search-input-full {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 0.8125rem;
+  color: var(--color-text-dark);
+  outline: none;
+  min-width: 0;
+}
+
+.eh-search-input-full::placeholder {
+  color: var(--color-text-muted);
+}
+
+.eh-search-clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  padding: 0.125rem;
+  margin-left: 0.25rem;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.eh-search-clear-btn:hover {
+  background-color: rgba(0, 0, 0, 0.08);
+  color: var(--color-text-dark);
+}
+
+.eh-floating-panel {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  width: 380px;
+  z-index: 100;
+  background-color: var(--color-white);
+  border-radius: 16px;
+  padding: 1.25rem;
+  overflow-y: auto;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
+}
+
+/* Custom Scrollbar for Floating Panel */
+.eh-floating-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.eh-floating-panel::-webkit-scrollbar-track {
+  background: var(--color-background-light);
+  border-radius: 10px;
+}
+
+.eh-floating-panel::-webkit-scrollbar-thumb {
+  background: var(--color-secondary);
+  border-radius: 10px;
+}
+
+.eh-floating-panel::-webkit-scrollbar-thumb:hover {
+  background: #008C8F;
+}
+
+/* Panel Toggle Button - matches header height for visual consistency */
+.eh-panel-toggle-btn {
+  position: fixed;
+  top: 1.5rem;
+  right: calc(380px + 2rem);
+  z-index: 101;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  /* Match header height: header has 0.5rem padding + inner content (~0.375rem padding + line) */
+  /* Total vertical padding = 0.5rem (header) + 0.375rem (inner button) = 0.875rem each side */
+  padding: 0.875rem 1rem;
+  background: linear-gradient(135deg, var(--color-secondary), #008C8F);
+  color: var(--color-white);
+  border: 1px solid rgba(255, 255, 255, 0.6); /* Match header border */
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 12px rgba(0, 165, 169, 0.25);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.eh-panel-toggle-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 165, 169, 0.4);
+}
+
+.eh-panel-toggle-btn:active {
+  transform: scale(0.95);
+}
+
+.eh-panel-toggle-btn.eh-collapsed {
+  right: 1.5rem;
+}
+
+/* Collapsed Panel State */
+.eh-floating-panel.eh-panel-collapsed {
+  transform: translateX(calc(100% + 2rem));
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Mobile View Toggle for Fullscreen Layout */
+.eh-fullscreen-map-layout .eh-mobile-view-toggle {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: none;
+}
+
 .eh-main-content {
   margin-left: 220px;
   flex: 1;
@@ -259,43 +453,44 @@
 .eh-filters-btn {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  background-color: var(--color-background-light);
-  border: 2px solid transparent;
-  border-radius: 12px;
-  padding: 0.625rem 1rem;
+  gap: 0.375rem;
+  background-color: rgba(247, 248, 250, 0.8);
+  border: 1px solid var(--color-border-divider);
+  border-radius: 50px;
+  padding: 0.375rem 0.75rem;
   cursor: pointer;
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
   font-weight: var(--font-weight-md);
   color: var(--color-text-dark);
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   position: relative;
 }
 
 .eh-filters-btn:hover {
-  background-color: var(--color-border-divider);
+  background-color: var(--color-white);
+  border-color: var(--color-secondary);
 }
 
 .eh-filters-btn.eh-active {
   background: linear-gradient(135deg, var(--color-secondary), #008C8F);
   color: var(--color-white);
   border-color: var(--color-secondary);
-  box-shadow: 0 4px 12px rgba(0, 165, 169, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 165, 169, 0.25);
 }
 
 .eh-filter-btn-text {
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
   font-weight: var(--font-weight-md);
 }
 
 .eh-filter-count {
   background-color: var(--color-status-urgent);
   color: var(--color-white);
-  border-radius: 12px;
-  padding: 2px 8px;
-  font-size: 0.75rem;
+  border-radius: 50px;
+  padding: 1px 6px;
+  font-size: 0.6875rem;
   font-weight: var(--font-weight-lg);
-  min-width: 20px;
+  min-width: 16px;
   text-align: center;
 }
 
@@ -304,18 +499,21 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--color-background-light);
-  border: 2px solid transparent;
-  border-radius: 12px;
-  padding: 0.625rem;
+  background-color: rgba(247, 248, 250, 0.8);
+  border: 1px solid var(--color-border-divider);
+  border-radius: 50%;
+  padding: 0.375rem;
   cursor: pointer;
   color: var(--color-text-muted);
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  width: 32px;
+  height: 32px;
 }
 
 .eh-notification-btn:hover {
   background-color: var(--color-white);
-  color: var(--color-text-dark);
+  border-color: var(--color-secondary);
+  color: var(--color-secondary);
 }
 
 /* ============================================
@@ -458,7 +656,36 @@
 }
 
 .eh-property-details {
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Back to All Properties Button */
+.eh-back-to-properties-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  color: var(--color-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  margin-bottom: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.eh-back-to-properties-btn:hover {
+  color: #008C8F;
+  transform: translateX(-2px);
+}
+
+.eh-back-to-properties-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.eh-back-to-properties-btn:hover svg {
+  transform: translateX(-3px);
 }
 
 .eh-details-header {
@@ -570,7 +797,7 @@
 
 /* Section Tabs */
 .eh-section-tabs {
-  animation: slideUp 0.3s ease;
+  animation: fadeIn 0.2s ease-out;
 }
 
 .eh-section-header {
@@ -602,16 +829,17 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  animation: fadeIn 0.25s ease-out;
 }
 
 /* Job Card */
 .eh-job-card {
-  padding: 1.5rem;
+  padding: 1rem;
   background-color: var(--color-white);
-  border: 2px solid var(--color-border-divider);
-  border-radius: 14px;
-  transition: all 0.3s ease;
-  animation: slideUp 0.3s ease;
+  border: 1px solid var(--color-border-divider);
+  border-radius: 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  will-change: transform, opacity;
 }
 
 .eh-job-card:hover {
@@ -624,8 +852,8 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  gap: 0.75rem;
+  margin-bottom: 0.625rem;
 }
 
 .eh-job-title-section {
@@ -634,10 +862,10 @@
 }
 
 .eh-job-title {
-  font-size: 1.0625rem;
+  font-size: 0.9375rem;
   font-weight: var(--font-weight-lg);
   color: var(--color-text-dark);
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.25rem 0;
 }
 
 .eh-job-meta-row {
@@ -663,10 +891,10 @@
 }
 
 .eh-urgency-badge {
-  padding: 0.5rem 1rem;
+  padding: 0.3125rem 0.625rem;
   color: var(--color-white);
-  border-radius: 8px;
-  font-size: 0.8125rem;
+  border-radius: 6px;
+  font-size: 0.6875rem;
   font-weight: var(--font-weight-lg);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -674,26 +902,26 @@
 }
 
 .eh-job-description {
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
   color: var(--color-text-dark);
-  line-height: 1.6;
-  margin: 0 0 1.25rem 0;
+  line-height: 1.5;
+  margin: 0 0 0.75rem 0;
 }
 
 /* Job Details Grid */
 .eh-job-details-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 1rem;
-  padding: 1.125rem;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.625rem;
+  padding: 0.75rem;
   background-color: var(--color-background-light);
-  border-radius: 10px;
-  margin-bottom: 1.25rem;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
 }
 
 .eh-detail-item {
   display: flex;
-  gap: 0.625rem;
+  gap: 0.5rem;
   align-items: flex-start;
 }
 
@@ -710,7 +938,7 @@
 }
 
 .eh-detail-label {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   color: var(--color-text-muted);
   font-weight: var(--font-weight-md);
   text-transform: uppercase;
@@ -718,7 +946,7 @@
 }
 
 .eh-detail-value {
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
   color: var(--color-text-dark);
   font-weight: var(--font-weight-lg);
 }
@@ -846,6 +1074,7 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  animation: fadeIn 0.25s ease-out;
 }
 
 .eh-property-list-card {
@@ -854,8 +1083,8 @@
   border: 2px solid var(--color-border-divider);
   border-radius: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  animation: slideUp 0.3s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  will-change: transform, opacity;
 }
 
 .eh-property-list-card:hover {
@@ -942,6 +1171,48 @@
 .eh-view-jobs-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 165, 169, 0.3);
+}
+
+/* Property Card Actions Container */
+.eh-property-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* View Location Button - Icon Only */
+.eh-view-location-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background-color: var(--color-white);
+  color: var(--color-secondary);
+  border: 2px solid var(--color-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.eh-view-location-btn:hover {
+  background-color: var(--color-secondary);
+  color: var(--color-white);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 165, 169, 0.3);
+}
+
+.eh-view-location-btn svg {
+  flex-shrink: 0;
+}
+
+/* View Location Button in Mobile Modal - Icon Only */
+.eh-modal-location-btn {
+  width: 36px;
+  height: 36px;
+  margin-top: 0;
 }
 
 /* ============================================
@@ -1124,7 +1395,13 @@
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.3s ease;
+  animation: slideUp 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, opacity;
+}
+
+/* Filters Modal - Compact Design */
+.eh-modal-content.eh-filters-modal {
+  max-width: 680px;
 }
 
 .eh-modal-header {
@@ -1136,21 +1413,37 @@
   flex-shrink: 0;
 }
 
+/* Filters Modal Header - Compact */
+.eh-modal-header.eh-filters {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--color-border-divider);
+}
+
 .eh-filters-header-content {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.625rem;
 }
 
 .eh-header-icon-wrapper {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   background: linear-gradient(135deg, var(--color-secondary), #008C8F);
-  border-radius: 10px;
+  border-radius: 8px;
   color: var(--color-white);
+}
+
+.eh-modal-header.eh-filters .eh-header-icon-wrapper {
+  width: 32px;
+  height: 32px;
+}
+
+.eh-modal-header.eh-filters .eh-header-icon-wrapper svg {
+  width: 18px;
+  height: 18px;
 }
 
 .eh-modal-header h2 {
@@ -1158,6 +1451,10 @@
   font-weight: var(--font-weight-lg);
   color: var(--color-text-dark);
   margin: 0;
+}
+
+.eh-modal-header.eh-filters h2 {
+  font-size: 1.125rem;
 }
 
 .eh-modal-close {
@@ -1178,10 +1475,24 @@
   color: var(--color-text-dark);
 }
 
+.eh-modal-header.eh-filters .eh-modal-close {
+  padding: 0.375rem;
+}
+
+.eh-modal-header.eh-filters .eh-modal-close svg {
+  width: 20px;
+  height: 20px;
+}
+
 .eh-modal-body {
   padding: 2rem;
   overflow-y: auto;
   flex: 1;
+}
+
+/* Filters Modal Body - Compact */
+.eh-modal-content.eh-filters-modal .eh-modal-body {
+  padding: 1.25rem 1.5rem;
 }
 
 .eh-modal-body::-webkit-scrollbar {
@@ -1200,26 +1511,37 @@
 
 .eh-filters-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.75rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem 1.5rem;
 }
 
 .eh-filter-group {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.625rem;
+  padding: 0.875rem;
+  background-color: var(--color-background-light);
+  border-radius: 10px;
+  border: 1px solid var(--color-border-divider);
 }
 
 .eh-filter-group-header {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
+  gap: 0.5rem;
   color: var(--color-secondary);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border-divider);
+}
+
+.eh-filter-group-header svg {
+  width: 16px;
+  height: 16px;
 }
 
 .eh-filter-group-header h3 {
-  font-size: 1.0625rem;
+  font-size: 0.875rem;
   font-weight: var(--font-weight-lg);
   color: var(--color-text-dark);
   margin: 0;
@@ -1228,17 +1550,18 @@
 .eh-checkbox-group {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.375rem;
 }
 
 .eh-checkbox-label {
   display: flex;
   align-items: center;
-  gap: 0.625rem;
+  gap: 0.5rem;
   cursor: pointer;
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
   color: var(--color-text-dark);
   transition: color 0.2s ease;
+  padding: 0.25rem 0;
 }
 
 .eh-checkbox-label:hover {
@@ -1246,76 +1569,88 @@
 }
 
 .eh-checkbox-label input[type="checkbox"] {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   cursor: pointer;
   accent-color: var(--color-secondary);
 }
 
 .eh-checkbox-text {
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
   font-weight: var(--font-weight-md);
 }
 
 .eh-budget-inputs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+  gap: 0.625rem;
+}
+
+.eh-budget-inputs .eh-input-group input[type="number"] {
+  min-width: 90px;
 }
 
 .eh-input-group {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.25rem;
 }
 
 .eh-input-group label {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: var(--font-weight-md);
-  color: var(--color-text-dark);
+  color: var(--color-text-muted);
 }
 
 .eh-input-group input[type="number"] {
-  padding: 0.75rem 1rem;
-  border: 2px solid var(--color-border-divider);
-  border-radius: 10px;
-  font-size: 0.9375rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border-divider);
+  border-radius: 8px;
+  font-size: 0.8125rem;
   color: var(--color-text-dark);
   transition: all 0.2s ease;
   font-family: inherit;
+  background-color: var(--color-white);
+  width: 100%;
+  max-width: 100%;
 }
 
 .eh-input-group input[type="number"]:focus {
   outline: none;
   border-color: var(--color-secondary);
-  box-shadow: 0 0 0 4px rgba(0, 165, 169, 0.1);
+  box-shadow: 0 0 0 2px rgba(0, 165, 169, 0.1);
+}
+
+/* Duration input - make it not full width */
+.eh-filter-group .eh-input-group:only-child input[type="number"] {
+  max-width: 120px;
 }
 
 .eh-filter-section {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .eh-filter-subsection-title {
-  font-size: 0.875rem;
+  font-size: 0.6875rem;
   font-weight: var(--font-weight-md);
   color: var(--color-text-muted);
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.375rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .eh-clear-filters-btn {
   width: 100%;
-  padding: 0.875rem;
+  padding: 0.625rem;
   background-color: transparent;
-  border: 2px dashed var(--color-border-divider);
+  border: 1px dashed var(--color-border-divider);
   color: var(--color-text-muted);
-  border-radius: 10px;
-  font-size: 0.9375rem;
+  border-radius: 8px;
+  font-size: 0.8125rem;
   font-weight: var(--font-weight-md);
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-top: 1.5rem;
+  margin-top: 1rem;
 }
 
 .eh-clear-filters-btn:hover {
@@ -1327,19 +1662,20 @@
 .eh-filters-modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
-  padding: 1.5rem 2rem;
-  border-top: 2px solid var(--color-border-divider);
+  gap: 0.625rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--color-border-divider);
   flex-shrink: 0;
+  background-color: var(--color-background-light);
 }
 
 .eh-cancel-btn {
-  background-color: transparent;
-  border: 2px solid var(--color-border-divider);
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border-divider);
   color: var(--color-text-dark);
-  border-radius: 10px;
-  padding: 0.75rem 1.5rem;
-  font-size: 0.9375rem;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
   font-weight: var(--font-weight-md);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1347,27 +1683,33 @@
 
 .eh-cancel-btn:hover {
   background-color: var(--color-background-light);
+  border-color: var(--color-text-muted);
 }
 
 .eh-apply-filters-btn {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.375rem;
   background: linear-gradient(135deg, var(--color-secondary), #008C8F);
   color: var(--color-white);
   border: none;
-  border-radius: 10px;
-  padding: 0.75rem 1.5rem;
-  font-size: 0.9375rem;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
   font-weight: var(--font-weight-lg);
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 165, 169, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 165, 169, 0.25);
+}
+
+.eh-apply-filters-btn svg {
+  width: 16px;
+  height: 16px;
 }
 
 .eh-apply-filters-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 165, 169, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 165, 169, 0.35);
 }
 
 .eh-apply-filters-btn:active {
@@ -1376,9 +1718,9 @@
 
 .eh-footer-badge {
   background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  padding: 2px 8px;
-  font-size: 0.8125rem;
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: 0.6875rem;
   font-weight: var(--font-weight-lg);
 }
 
@@ -1387,54 +1729,66 @@
    ============================================ */
 
 .eh-modal-overlay.eh-property-modal {
-  align-items: flex-end;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  padding-bottom: 5rem; /* Account for bottom navigation bar */
 }
 
 .eh-property-modal-content {
   max-width: 100%;
-  max-height: 85vh;
-  border-radius: 20px 20px 0 0;
+  max-height: calc(100vh - 8rem); /* Account for padding + navbar */
+  border-radius: 16px; /* Rounded all corners like floating panel */
+  margin: 0;
+  width: calc(100% - 2rem);
 }
 
 .eh-modal-header.eh-property {
-  padding: 1.25rem 1.5rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--color-border-divider);
+}
+
+.eh-modal-header.eh-property h2 {
+  font-size: 1.125rem;
 }
 
 .eh-modal-body.eh-property-modal-body {
-  padding: 1.5rem;
+  padding: 1rem;
 }
 
 .eh-property-modal-info {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border-divider);
 }
 
 .eh-property-modal-address {
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
   color: var(--color-text-muted);
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.75rem 0;
 }
 
 .eh-property-modal-meta {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.5rem;
   align-items: center;
   flex-wrap: wrap;
 }
 
 .eh-jobs-count-meta {
-  padding: 0.375rem 0.75rem;
+  padding: 0.25rem 0.625rem;
   background-color: rgba(231, 76, 60, 0.1);
   color: var(--color-status-urgent);
-  border-radius: 8px;
-  font-size: 0.8125rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
   font-weight: var(--font-weight-lg);
 }
 
 .eh-modal-section-title {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: var(--font-weight-lg);
   color: var(--color-text-dark);
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.75rem 0;
 }
 
 /* ============================================
@@ -1585,11 +1939,31 @@
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translate3d(0, 20px, 0);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 
@@ -1600,6 +1974,23 @@
 @media (max-width: 1400px) {
   .eh-content-grid {
     grid-template-columns: 1fr 420px;
+  }
+
+  /* Fullscreen map layout */
+  .eh-floating-panel {
+    width: 340px;
+  }
+
+  .eh-floating-header {
+    right: calc(340px + 10rem);
+  }
+
+  .eh-panel-toggle-btn {
+    right: calc(340px + 2rem);
+  }
+
+  .eh-panel-toggle-btn.eh-collapsed {
+    right: 1.5rem;
   }
 }
 
@@ -1623,7 +2014,25 @@
   }
 
   .eh-filters-grid {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  /* Fullscreen map layout - smaller panel */
+  .eh-floating-panel {
+    width: 320px;
+  }
+
+  .eh-floating-header {
+    right: calc(320px + 10rem);
+  }
+
+  .eh-panel-toggle-btn {
+    right: calc(320px + 2rem);
+  }
+
+  .eh-panel-toggle-btn.eh-collapsed {
+    right: 1.5rem;
   }
 }
 
@@ -1634,6 +2043,15 @@
 
   .eh-page-title {
     font-size: 1.375rem;
+  }
+
+  /* Fullscreen map layout - collapsed nav */
+  .eh-fullscreen-map {
+    left: 80px;
+  }
+
+  .eh-floating-header {
+    left: calc(80px + 1.5rem);
   }
 }
 
@@ -1694,7 +2112,7 @@
   }
 
   .eh-job-card {
-    padding: 1.25rem;
+    padding: 0.875rem;
   }
 
   .eh-modal-content {
@@ -1708,8 +2126,39 @@
     transform: translateY(-50%);
   }
 
+  /* Filters modal on mobile */
+  .eh-modal-content.eh-filters-modal {
+    max-width: 100%;
+    max-height: 85vh;
+    top: auto;
+    transform: none;
+    border-radius: 16px 16px 0 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+  }
+
+  .eh-modal-overlay.eh-filters {
+    align-items: flex-end;
+  }
+
+  .eh-filters-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .eh-filter-group {
+    padding: 0.75rem;
+  }
+
   .eh-modal-body {
     padding: 1.5rem;
+  }
+
+  .eh-modal-content.eh-filters-modal .eh-modal-body {
+    padding: 1rem;
   }
 
   .eh-job-summary {
@@ -1726,6 +2175,108 @@
 
   .eh-search-box-entrep.eh-expanded {
     width: 100%;
+  }
+
+  /* Fullscreen map layout - mobile */
+  .eh-fullscreen-map {
+    left: 0;
+    top: 0;
+  }
+
+  .eh-floating-header {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    right: 1rem;
+    padding: 0.5rem 0.75rem;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .eh-search-box-fullwidth {
+    padding: 0.375rem 0.75rem;
+  }
+
+  .eh-search-input-full {
+    font-size: 0.875rem;
+  }
+
+  .eh-floating-panel {
+    position: fixed;
+    top: 8rem;
+    right: 1rem;
+    left: 1rem;
+    bottom: 5rem; /* Account for bottom navigation bar */
+    width: auto;
+    max-height: none;
+    border-radius: 16px;
+    padding: 1rem; /* Compact padding on mobile */
+  }
+
+  /* Compact list header on mobile */
+  .eh-floating-panel .eh-list-header {
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .eh-floating-panel .eh-list-title {
+    font-size: 1rem;
+  }
+
+  .eh-floating-panel .eh-list-subtitle {
+    font-size: 0.75rem;
+  }
+
+  /* Compact jobs list spacing */
+  .eh-floating-panel .eh-jobs-list {
+    gap: 0.75rem;
+  }
+
+  /* On mobile, ignore panel collapsed state - use mobile view toggle instead */
+  .eh-floating-panel.eh-panel-collapsed {
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .eh-fullscreen-map-layout .eh-mobile-view-toggle {
+    display: flex;
+    /* Move to top, below the floating header with proper gap */
+    top: 5rem;
+    bottom: auto;
+    transform: translateX(-50%);
+    /* Glass-morphism style */
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 50px;
+    padding: 0.25rem;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+  }
+
+  /* Update toggle buttons for top position */
+  .eh-fullscreen-map-layout .eh-view-toggle-btn {
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-size: 0.8125rem;
+    gap: 0.375rem;
+  }
+
+  .eh-fullscreen-map-layout .eh-view-toggle-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Adjust floating panel top position to account for toggle */
+  .eh-floating-panel {
+    top: 8rem;
+  }
+
+  /* Hide panel toggle on mobile - use mobile view toggle instead */
+  .eh-panel-toggle-btn {
+    display: none;
   }
 }
 
@@ -1772,20 +2323,60 @@
     align-items: stretch;
   }
 
+  .eh-property-card-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
   .eh-view-jobs-btn {
     width: 100%;
+    justify-content: center;
+  }
+
+  .eh-view-location-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Floating panel - smaller margins on very small screens */
+  .eh-floating-panel {
+    top: 7.5rem;
+    right: 0.75rem;
+    left: 0.75rem;
+    bottom: 5rem; /* Account for bottom navigation bar */
+  }
+
+  /* Adjust toggle position on very small screens */
+  .eh-fullscreen-map-layout .eh-mobile-view-toggle {
+    top: 4.5rem;
+  }
+
+  .eh-fullscreen-map-layout .eh-view-toggle-btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
   }
 }
 
 
 .unlock-budget-button {
-  padding: .5rem .7rem;
+  padding: 0.4375rem 0.875rem;
   background-color: var(--color-status-success);
   color: var(--color-white);
   border: none;
   outline: none;
-  border-radius: 1rem;
+  border-radius: 8px;
   cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  line-height: 1.3;
+}
+
+.unlock-budget-button:hover {
+  background-color: #2eac5e;
+  transform: scale(1.03);
+  box-shadow: 0 2px 6px rgba(46, 172, 94, 0.3);
 }
 
 /* Spinner animation for loading map */
@@ -2022,14 +2613,14 @@
   }
 
   .eh-job-card {
-    padding: 1rem;
+    padding: 0.75rem;
   }
 
   /* Job card improvements */
   .eh-job-card-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.75rem;
+    gap: 0.5rem;
   }
 
   .eh-urgency-badge {
@@ -2038,7 +2629,7 @@
 
   .eh-job-details-grid {
     grid-template-columns: 1fr;
-    gap: 0.875rem;
+    gap: 0.5rem;
   }
 
   .eh-bid-button {
@@ -2049,11 +2640,145 @@
   /* Property list improvements */
   .eh-properties-grid {
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: 0.75rem;
   }
 
   .eh-property-list-card {
+    padding: 0.875rem;
+    border-radius: 12px;
+    border-width: 1px;
+  }
+
+  .eh-property-card-header {
+    gap: 0.75rem;
+    margin-bottom: 0.625rem;
+  }
+
+  .eh-property-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+
+  .eh-property-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .eh-property-card-name {
+    font-size: 0.9375rem;
+  }
+
+  .eh-property-card-address {
+    font-size: 0.75rem;
+  }
+
+  .eh-property-card-footer {
+    flex-direction: column;
+    gap: 0.625rem;
+    align-items: stretch;
+  }
+
+  .eh-property-card-actions {
+    flex-direction: row;
+    width: 100%;
+  }
+
+  .eh-view-jobs-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .eh-view-location-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .eh-jobs-badge {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.6875rem;
+  }
+
+  /* Compact job cards in floating panel */
+  .eh-floating-panel .eh-job-card {
+    padding: 0.75rem;
+    border-radius: 10px;
+  }
+
+  .eh-floating-panel .eh-job-title {
+    font-size: 0.875rem;
+  }
+
+  .eh-floating-panel .eh-job-description {
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+  }
+
+  .eh-floating-panel .eh-job-details-grid {
+    padding: 0.5rem;
+    gap: 0.375rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .eh-floating-panel .eh-detail-label {
+    font-size: 0.625rem;
+  }
+
+  .eh-floating-panel .eh-detail-value {
+    font-size: 0.75rem;
+  }
+
+  .eh-floating-panel .eh-bid-button {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  /* Compact property modal body */
+  .eh-modal-body.eh-property-modal-body {
     padding: 1rem;
+  }
+
+  .eh-property-modal-info {
+    margin-bottom: 1rem;
+  }
+
+  .eh-property-modal-address {
+    font-size: 0.8125rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .eh-modal-section-title {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Compact job cards in property modal */
+  .eh-property-modal-body .eh-job-card {
+    padding: 0.75rem;
+    border-radius: 10px;
+  }
+
+  .eh-property-modal-body .eh-job-title {
+    font-size: 0.875rem;
+  }
+
+  .eh-property-modal-body .eh-job-description {
+    font-size: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .eh-property-modal-body .eh-job-details-grid {
+    padding: 0.5rem;
+    gap: 0.375rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .eh-property-modal-body .eh-urgency-badge {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.625rem;
   }
 }
 
@@ -2100,11 +2825,11 @@
 
   /* Smaller job cards */
   .eh-job-card {
-    padding: 0.875rem;
+    padding: 0.625rem;
   }
 
   .eh-job-title {
-    font-size: 1rem;
+    font-size: 0.875rem;
   }
 
   .eh-job-description {
@@ -2236,4 +2961,131 @@
 .eh-map-section,
 .eh-details-section {
   transition: all 0.3s ease;
+}
+
+/* ============================================
+   MAP ZOOM CONTROLS (Fixed Position)
+   ============================================ */
+
+.eh-map-zoom-controls {
+  position: fixed;
+  right: calc(380px + 2rem);
+  bottom: 1.5rem; /* Align with panel's bottom edge */
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background-color: var(--color-white);
+  border-radius: 12px;
+  padding: 0.5rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transition: right 0.3s ease;
+}
+
+/* Zoom controls position when panel is collapsed */
+.eh-map-zoom-controls.eh-panel-collapsed {
+  right: 1.5rem;
+}
+
+.eh-map-zoom-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background-color: var(--color-white);
+  border: 2px solid var(--color-border-divider);
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--color-text-dark);
+  transition: all 0.2s ease;
+}
+
+.eh-map-zoom-btn:hover {
+  background-color: var(--color-background-light);
+  border-color: var(--color-secondary);
+  color: var(--color-secondary);
+  transform: scale(1.05);
+}
+
+.eh-map-zoom-btn:active {
+  transform: scale(0.95);
+}
+
+.eh-map-zoom-btn:focus {
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 2px;
+}
+
+.eh-map-zoom-divider {
+  height: 1px;
+  background-color: var(--color-border-divider);
+  margin: 0.25rem 0;
+}
+
+/* Responsive adjustments for zoom controls */
+@media (max-width: 1400px) {
+  .eh-map-zoom-controls {
+    right: calc(340px + 2rem);
+  }
+
+  .eh-map-zoom-controls.eh-panel-collapsed {
+    right: 1.5rem;
+  }
+}
+
+@media (max-width: 1200px) {
+  .eh-map-zoom-controls {
+    right: calc(320px + 2rem);
+  }
+
+  .eh-map-zoom-controls.eh-panel-collapsed {
+    right: 1.5rem;
+  }
+}
+
+@media (max-width: 968px) {
+  .eh-map-zoom-controls {
+    right: calc(320px + 2rem);
+  }
+
+  .eh-map-zoom-controls.eh-panel-collapsed {
+    right: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .eh-map-zoom-controls {
+    right: 1rem;
+    bottom: 8rem;
+  }
+
+  .eh-map-zoom-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Hide zoom controls when list view is active on mobile */
+  .eh-map-zoom-controls.eh-mobile-hidden {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .eh-map-zoom-controls {
+    right: 0.75rem;
+    bottom: 7rem;
+    padding: 0.375rem;
+    gap: 0.375rem;
+  }
+
+  .eh-map-zoom-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .eh-map-zoom-btn svg {
+    width: 16px;
+    height: 16px;
+  }
 }

@@ -26,6 +26,10 @@ import {
   Maximize2,
   Navigation,
   Target,
+  ChevronLeft,
+  ChevronRight,
+  LocateFixed,
+  ArrowLeft,
 } from "lucide-react"
 import Nav from "../../components/Nav"
 import "../../styles/entrepreneur/homepageentrepreneur.css"
@@ -34,14 +38,46 @@ import UnlockBudgetForm from '../../components/UnlockBudgetForm'
 
 
 // Map Controller Component for programmatic map control
-function MapController({ center, zoom }) {
+function MapController({ center, zoom, triggerKey }) {
   const map = useMap()
 
   useEffect(() => {
-    if (center && zoom) {
-      map.setView(center, zoom, { animate: true, duration: 1 })
+    if (center) {
+      // Use flyTo for smoother animation when navigating to a location
+      const targetZoom = zoom || map.getZoom()
+      map.flyTo(center, targetZoom, { animate: true, duration: 1 })
     }
-  }, [center, zoom, map])
+  }, [center, zoom, triggerKey, map])
+
+  // Enforce single world view - prevent panning beyond world bounds
+  useEffect(() => {
+    const worldBounds = L.latLngBounds(
+      L.latLng(-85, -180),
+      L.latLng(85, 180)
+    )
+
+    // Set max bounds with high viscosity
+    map.setMaxBounds(worldBounds)
+    map.options.maxBoundsViscosity = 1.0
+
+    // Prevent world wrap by adjusting min zoom based on container size
+    const updateMinZoom = () => {
+      const containerWidth = map.getContainer().offsetWidth
+      // Calculate minimum zoom needed to prevent showing more than one world
+      // At zoom 0, the world is 256px wide. Each zoom level doubles the size.
+      // We need zoom where world width >= container width
+      const minZoomForContainer = Math.ceil(Math.log2(containerWidth / 256))
+      const safeMinZoom = Math.max(minZoomForContainer, 2)
+      map.setMinZoom(safeMinZoom)
+    }
+
+    updateMinZoom()
+    map.on('resize', updateMinZoom)
+
+    return () => {
+      map.off('resize', updateMinZoom)
+    }
+  }, [map])
 
   return null
 }
@@ -156,16 +192,22 @@ function HomePageEntrepreneur() {
   const [showSearchResults, setShowSearchResults] = useState(false)
   const [mapCenter, setMapCenter] = useState(null)
   const [mapZoom, setMapZoom] = useState(null)
+  const [mapTriggerKey, setMapTriggerKey] = useState(0)
   const searchInputRef = useRef(null)
   const searchContainerRef = useRef(null)
   const [userProfile, setUserProfile] = useState()
   const [isLoading, setIsLoading] = useState(true)
   const mapRef = useRef(null)
+  const floatingPanelRef = useRef(null)
+  const [savedScrollPosition, setSavedScrollPosition] = useState(0)
 
   // Mobile view states
   const [mobileView, setMobileView] = useState("map") // "map" or "list"
   const [propertyModalOpen, setPropertyModalOpen] = useState(false)
   const [isMapFullscreen, setIsMapFullscreen] = useState(false)
+
+  // Collapsible floating panel state (collapsed by default)
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(true)
 
   // data variables
   const [properties, setProperties] = useState([])
@@ -696,18 +738,89 @@ function HomePageEntrepreneur() {
     setShowSearchResults(value.length > 0)
   }
 
-  // Handle property click for mobile modal
+  // Handle property click for mobile modal (toggle selection)
   const handlePropertyClick = (property) => {
+    // If clicking the same property, deselect it (go back to all properties)
+    if (selectedProperty && selectedProperty.id === property.id) {
+      setSelectedProperty(null)
+      return
+    }
+    // Save current scroll position before navigating to property jobs
+    if (floatingPanelRef.current) {
+      setSavedScrollPosition(floatingPanelRef.current.scrollTop)
+    }
     setSelectedProperty(property)
+    // Expand panel if collapsed (for map marker clicks)
+    if (isPanelCollapsed) {
+      setIsPanelCollapsed(false)
+    }
     if (window.innerWidth <= 768) {
       setPropertyModalOpen(true)
     }
   }
 
-  // Save selected property to localStorage
+  // Clear selected property to show all properties list
+  const handleBackToAllProperties = () => {
+    setSelectedProperty(null)
+    // Restore scroll position after state update
+    setTimeout(() => {
+      if (floatingPanelRef.current) {
+        floatingPanelRef.current.scrollTop = savedScrollPosition
+      }
+    }, 0)
+  }
+
+  // Close mobile property modal - preserves scroll position in property list
+  const handleCloseMobileModal = () => {
+    setPropertyModalOpen(false)
+    setSelectedProperty(null)
+    // Restore scroll position after state update
+    setTimeout(() => {
+      if (floatingPanelRef.current) {
+        floatingPanelRef.current.scrollTop = savedScrollPosition
+      }
+    }, 0)
+  }
+
+  // Handle view location button click - navigate to property on map
+  const handleViewLocation = (property, e) => {
+    e.stopPropagation() // Prevent triggering card click
+
+    // Validate coordinates - must exist and not be 0,0 (invalid default)
+    const hasValidCoordinates =
+      property.latitude !== undefined &&
+      property.latitude !== null &&
+      property.longitude !== undefined &&
+      property.longitude !== null &&
+      !(property.latitude === 0 && property.longitude === 0)
+
+    if (hasValidCoordinates) {
+      // Center map on property location with zoom
+      setMapCenter([property.latitude, property.longitude])
+      setMapZoom(17)
+      // Increment trigger key to force map update even if same location
+      setMapTriggerKey(prev => prev + 1)
+    } else {
+      // Property has no valid coordinates - show alert to user
+      alert(`Location not available for "${property.name}". This property needs its coordinates to be set.`)
+      return
+    }
+
+    // On mobile, close modal and switch to map view
+    if (window.innerWidth <= 768) {
+      setPropertyModalOpen(false)
+      setMobileView("map")
+    }
+  }
+
+  // Save selected property to localStorage and scroll to top when viewing jobs
   useEffect(() => {
     if (selectedProperty) {
       localStorage.setItem("selectedPropertyId", selectedProperty.id)
+      // Scroll to top when viewing a property's jobs
+      if (floatingPanelRef.current) {
+        floatingPanelRef.current.scrollTop = 0
+      }
     }
   }, [selectedProperty])
 
@@ -791,15 +904,18 @@ function HomePageEntrepreneur() {
 
         const subscription = await getSubsscription.json()
 
-        setUserProfile({
+        const updatedProfile = {
           ...u,
           entrepProfile: {
             ...u.entrepProfile,
             subscription,
           },
-        });
-        
-        // console.log("NEW USER PROFILE", userProfile)
+        };
+
+        // Update localStorage so subscription persists across navigation
+        localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+
+        setUserProfile(updatedProfile);
       }
     }
     fetchSubscription()
@@ -831,6 +947,28 @@ function HomePageEntrepreneur() {
     }
   }
 
+  // Map zoom control handlers
+  const handleZoomIn = () => {
+    if (mapRef.current) {
+      const currentZoom = mapRef.current.getZoom()
+      mapRef.current.setZoom(currentZoom + 1)
+    }
+  }
+
+  const handleZoomOut = () => {
+    if (mapRef.current) {
+      const currentZoom = mapRef.current.getZoom()
+      mapRef.current.setZoom(currentZoom - 1)
+    }
+  }
+
+  const handleResetView = () => {
+    if (mapRef.current && userLocation) {
+      // Zoom out to show wider area while centering on user's location
+      mapRef.current.setView([userLocation.lat, userLocation.lng], 5, { animate: true })
+    }
+  }
+
   if (isLoading && isLoadingLocation) {
     return (
       <div className="eh-homepage-container">
@@ -854,181 +992,231 @@ function HomePageEntrepreneur() {
   }
 
   return (
-    <div className="eh-homepage-container">
+    <div className="eh-homepage-container eh-fullscreen-map-layout">
       <Nav user={userProfile} />
-      <main className="eh-main-content">
-        {userProfile && userProfile.entrepProfile && !userProfile.entrepProfile.subscription.hasSubscription && <SubscriptionModal token={userProfile.token} refresher={refresher} />}
-        <div className="eh-page-header">
-          <div className="eh-header-left">
-            <h1 className="eh-page-title">Available Jobs</h1>
-            <p className="eh-page-subtitle">Find and bid on construction projects in your area</p>
-          </div>
 
-          <div className="eh-header-actions">
-            <div
-              ref={searchContainerRef}
-              className={`eh-search-box-entrep ${searchExpanded ? "eh-expanded" : ""}`}
-            >
-              <button className="eh-search-trigger-btn eh-entrep" onClick={toggleSearch}>
-                <Search size={20} />
-              </button>
-              {searchExpanded && (
-                <>
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    className="eh-search-input eh-entrep"
-                    placeholder="Search properties..."
-                    value={searchTerm}
-                    onChange={handleSearchChange}
-                  />
-                  {searchTerm && (
-                    <button
-                      className="eh-search-close-btn"
-                      onClick={() => {
-                        setSearchTerm("")
-                        setShowSearchResults(false)
-                        setSearchExpanded(false)
-                      }}
-                    >
-                      <X size={16} />
-                    </button>
-                  )}
-                </>
-              )}
+      {/* Full Screen Map Background */}
+      <div className="eh-fullscreen-map">
+        {userLocation ? (
+          <MapContainer
+            ref={mapRef}
+            center={[userLocation.lat, userLocation.lng]}
+            zoom={6}
+            style={{ height: "100%", width: "100%" }}
+            zoomControl={false}
+            attributionControl={false}
+            worldCopyJump={false}
+            maxBoundsViscosity={1.0}
+            maxBounds={[[-85, -180], [85, 180]]}
+            minZoom={3}
+          >
+            {/* CartoDB Voyager - Clean map with English labels */}
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+              subdomains="abcd"
+              noWrap={true}
+              bounds={[[-85, -180], [85, 180]]}
+            />
 
-              {showSearchResults && searchExpanded && (
-                <div className="eh-search-results-dropdown">
-                  {searchResults.length > 0 ? (
-                    searchResults.map((property) => (
-                      <div
-                        key={property.id}
-                        className="eh-search-result-item"
-                        onClick={() => handleSearchResultClick(property)}
-                      >
-                        <div className="eh-search-result-icon">
-                          <Building2 size={20} />
-                        </div>
-                        <div className="eh-search-result-content">
-                          <div className="eh-search-result-name">{property.name}</div>
-                          <div className="eh-search-result-address">{property.address}</div>
-                        </div>
-                        <div className="eh-search-result-badge">
-                          {getPropertyOpenJobsCount(property.id)} Jobs
-                        </div>
+            <MapController center={mapCenter} zoom={mapZoom} triggerKey={mapTriggerKey} />
+
+            {/* Radius circle */}
+            {radiusFilter.enabled && radiusFilter.center && (
+              <Circle
+                center={[radiusFilter.center.lat, radiusFilter.center.lng]}
+                radius={radiusFilter.radius * 1000}
+                pathOptions={{
+                  color: '#00A5A9',
+                  fillColor: '#00A5A9',
+                  fillOpacity: 0.1
+                }}
+              />
+            )}
+
+            {filteredProperties.map((property) => {
+              const jobCount = getPropertyOpenJobsCount(property.id)
+              return (
+                <Marker
+                  key={property.id}
+                  position={[property.latitude, property.longitude]}
+                  icon={createBuildingIcon(jobCount)}
+                  eventHandlers={{
+                    click: () => handlePropertyClick(property),
+                  }}
+                >
+                  <Popup>
+                    <div className="eh-popup-content">
+                      <h3>{property.name}</h3>
+                      <p>{property.address}</p>
+                      <div className="eh-popup-stats">
+                        <span className="eh-popup-stat eh-highlight">{jobCount} Open Jobs</span>
                       </div>
-                    ))
-                  ) : (
-                    <div className="eh-no-results">
-                      <p>No properties found</p>
                     </div>
-                  )}
+                  </Popup>
+                </Marker>
+              )
+            })}
+          </MapContainer>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', background: '#f5f5f5', gap: '10px' }}>
+            <div style={{ width: '40px', height: '40px', border: '4px solid #e0e0e0', borderTop: '4px solid #00A5A9', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+            <p style={{ color: '#666', fontSize: '14px' }}>
+              {isLoadingLocation ? 'Getting your location...' : 'Loading map...'}
+            </p>
+            {error && <p style={{ color: '#999', fontSize: '12px' }}>Using default location</p>}
+          </div>
+        )}
+      </div>
+
+      {/* Map Zoom Controls */}
+      <div className={`eh-map-zoom-controls ${isPanelCollapsed ? "eh-panel-collapsed" : ""}`}>
+        <button
+          className="eh-map-zoom-btn"
+          onClick={handleZoomIn}
+          title="Zoom In"
+        >
+          <Plus size={20} />
+        </button>
+        <button
+          className="eh-map-zoom-btn"
+          onClick={handleZoomOut}
+          title="Zoom Out"
+        >
+          <Minus size={20} />
+        </button>
+        <div className="eh-map-zoom-divider" />
+        <button
+          className="eh-map-zoom-btn"
+          onClick={handleResetView}
+          title="Reset View"
+        >
+          <LocateFixed size={20} />
+        </button>
+      </div>
+
+      {userProfile && userProfile.entrepProfile && !userProfile.entrepProfile.subscription.hasSubscription && <SubscriptionModal token={userProfile.token} refresher={refresher} />}
+
+      {/* Floating Header */}
+      <div className="eh-floating-header">
+        <div className="eh-search-box-fullwidth" ref={searchContainerRef}>
+          <Search size={16} className="eh-search-icon" />
+          <input
+            ref={searchInputRef}
+            type="text"
+            className="eh-search-input-full"
+            placeholder="Search properties..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+          />
+          {searchTerm && (
+            <button
+              className="eh-search-clear-btn"
+              onClick={() => {
+                setSearchTerm("")
+                setShowSearchResults(false)
+              }}
+            >
+              <X size={14} />
+            </button>
+          )}
+
+          {showSearchResults && (
+            <div className="eh-search-results-dropdown">
+              {searchResults.length > 0 ? (
+                searchResults.map((property) => (
+                  <div
+                    key={property.id}
+                    className="eh-search-result-item"
+                    onClick={() => handleSearchResultClick(property)}
+                  >
+                    <div className="eh-search-result-icon">
+                      <Building2 size={20} />
+                    </div>
+                    <div className="eh-search-result-content">
+                      <div className="eh-search-result-name">{property.name}</div>
+                      <div className="eh-search-result-address">{property.address}</div>
+                    </div>
+                    <div className="eh-search-result-badge">
+                      {getPropertyOpenJobsCount(property.id)} Jobs
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="eh-no-results">
+                  <p>No properties found</p>
                 </div>
               )}
             </div>
-
-            <button
-              className={`eh-filters-btn ${hasActiveFilters ? "eh-active" : ""}`}
-              onClick={() => setFiltersPanelOpen(true)}
-            >
-              <Filter size={20} />
-              <span className="eh-filter-btn-text">Filters</span>
-              {activeFiltersCount > 0 && <span className="eh-filter-count">{activeFiltersCount}</span>}
-            </button>
-
-            <button className="eh-notification-btn">
-              <Bell size={20} />
-            </button>
-          </div>
+          )}
         </div>
 
-        {/* Mobile View Toggle */}
-        <div className="eh-mobile-view-toggle">
-          <button
-            className={`eh-view-toggle-btn ${mobileView === "map" ? "eh-active" : ""}`}
-            onClick={() => setMobileView("map")}
-          >
-            <Map size={18} />
-            <span>Map</span>
-          </button>
-          <button
-            className={`eh-view-toggle-btn ${mobileView === "list" ? "eh-active" : ""}`}
-            onClick={() => setMobileView("list")}
-          >
-            <List size={18} />
-            <span>List</span>
-          </button>
-        </div>
+        <button
+          className={`eh-filters-btn ${hasActiveFilters ? "eh-active" : ""}`}
+          onClick={() => setFiltersPanelOpen(true)}
+        >
+          <Filter size={16} />
+          <span className="eh-filter-btn-text">Filters</span>
+          {activeFiltersCount > 0 && <span className="eh-filter-count">{activeFiltersCount}</span>}
+        </button>
 
-        <div className={`eh-content-grid ${isMapFullscreen ? 'eh-map-fullscreen' : ''}`}>
-          <div className={`eh-map-section ${mobileView === "list" ? "eh-mobile-hidden" : ""}`}>
-            {userLocation ? (
-              <MapContainer
-                ref={mapRef}
-                center={[userLocation.lat, userLocation.lng]}
-                zoom={15}
-                style={{ height: "100%", width: "100%" }}
-                zoomControl={false}
-                attributionControl={false}
-              >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
+        <button className="eh-notification-btn">
+          <Bell size={16} />
+        </button>
+      </div>
 
-              <MapController center={mapCenter} zoom={mapZoom} />
+      {/* Mobile View Toggle */}
+      <div className="eh-mobile-view-toggle">
+        <button
+          className={`eh-view-toggle-btn ${mobileView === "map" ? "eh-active" : ""}`}
+          onClick={() => setMobileView("map")}
+        >
+          <Map size={18} />
+          <span>Map</span>
+        </button>
+        <button
+          className={`eh-view-toggle-btn ${mobileView === "list" ? "eh-active" : ""}`}
+          onClick={() => setMobileView("list")}
+        >
+          <List size={18} />
+          <span>List</span>
+        </button>
+      </div>
 
-              {/* Radius circle */}
-              {radiusFilter.enabled && radiusFilter.center && (
-                <Circle
-                  center={[radiusFilter.center.lat, radiusFilter.center.lng]}
-                  radius={radiusFilter.radius * 1000}
-                  pathOptions={{
-                    color: '#00A5A9',
-                    fillColor: '#00A5A9',
-                    fillOpacity: 0.1
-                  }}
-                />
-              )}
+      {/* Floating Panel Toggle Button */}
+      <button
+        className={`eh-panel-toggle-btn ${isPanelCollapsed ? "eh-collapsed" : ""}`}
+        onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
+      >
+        {isPanelCollapsed ? (
+          <>
+            <ChevronLeft size={16} />
+            <span>Show Panel</span>
+          </>
+        ) : (
+          <>
+            <ChevronRight size={16} />
+            <span>Hide Panel</span>
+          </>
+        )}
+      </button>
 
-              {filteredProperties.map((property) => {
-                const jobCount = getPropertyOpenJobsCount(property.id)
-                return (
-                  <Marker
-                    key={property.id}
-                    position={[property.latitude, property.longitude]}
-                    icon={createBuildingIcon(jobCount)}
-                    eventHandlers={{
-                      click: () => handlePropertyClick(property),
-                    }}
-                  >
-                    <Popup>
-                      <div className="eh-popup-content">
-                        <h3>{property.name}</h3>
-                        <p>{property.address}</p>
-                        <div className="eh-popup-stats">
-                          <span className="eh-popup-stat eh-highlight">{jobCount} Open Jobs</span>
-                        </div>
-                      </div>
-                    </Popup>
-                  </Marker>
-                )
-              })}
-            </MapContainer>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', background: '#f5f5f5', gap: '10px' }}>
-                <div style={{ width: '40px', height: '40px', border: '4px solid #e0e0e0', borderTop: '4px solid #00A5A9', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-                <p style={{ color: '#666', fontSize: '14px' }}>
-                  {isLoadingLocation ? 'Getting your location...' : 'Loading map...'}
-                </p>
-                {error && <p style={{ color: '#999', fontSize: '12px' }}>Using default location</p>}
-              </div>
-            )}
-          </div>
-
-          <div className={`eh-details-section ${mobileView === "map" ? "eh-mobile-hidden" : ""}`}>
+      {/* Floating Panel for Jobs/Properties on the Right */}
+      <div
+        ref={floatingPanelRef}
+        className={`eh-floating-panel ${mobileView === "map" ? "eh-mobile-hidden" : ""} ${isPanelCollapsed ? "eh-panel-collapsed" : ""}`}
+      >
             {selectedProperty ? (
               <div className="eh-property-details">
+                {/* Back to All Properties Button */}
+                <button
+                  className="eh-back-to-properties-btn"
+                  onClick={handleBackToAllProperties}
+                >
+                  <ArrowLeft size={16} />
+                  <span>Back to All Properties</span>
+                </button>
+
                 <div className="eh-details-header">
                   <div className="eh-details-header-content">
                     <div className="eh-header-icon">
@@ -1165,7 +1353,16 @@ function HomePageEntrepreneur() {
                             <Hammer size={16} />
                             <span>{jobCount} Open Jobs</span>
                           </div>
-                          <button className="eh-view-jobs-btn">View Jobs</button>
+                          <div className="eh-property-card-actions">
+                            <button
+                              className="eh-view-location-btn"
+                              onClick={(e) => handleViewLocation(property, e)}
+                              title="View Location"
+                            >
+                              <MapPin size={16} />
+                            </button>
+                            <button className="eh-view-jobs-btn">View Jobs</button>
+                          </div>
                         </div>
                       </div>
                     )
@@ -1173,9 +1370,7 @@ function HomePageEntrepreneur() {
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      </main>
+      </div>
 
       {
         showUnlockBudgetModal &&
@@ -1352,11 +1547,11 @@ function HomePageEntrepreneur() {
 
       {/* Mobile Property Modal */}
       {propertyModalOpen && selectedProperty && (
-        <div className="eh-modal-overlay eh-property-modal" onClick={() => setPropertyModalOpen(false)}>
+        <div className="eh-modal-overlay eh-property-modal" onClick={handleCloseMobileModal}>
           <div className="eh-modal-content eh-property-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="eh-modal-header eh-property">
               <h2>{selectedProperty.name}</h2>
-              <button className="eh-modal-close" onClick={() => setPropertyModalOpen(false)}>
+              <button className="eh-modal-close" onClick={handleCloseMobileModal}>
                 <X size={24} />
               </button>
             </div>
@@ -1368,6 +1563,12 @@ function HomePageEntrepreneur() {
                   <span className="eh-meta-badge">{selectedProperty.propertyType}</span>
                   <span className="eh-jobs-count-meta">{getPropertyOpenJobsCount(selectedProperty.id)} Open Jobs</span>
                 </div>
+                <button
+                  className="eh-view-location-btn eh-modal-location-btn"
+                  onClick={(e) => handleViewLocation(selectedProperty, e)}
+                >
+                  <MapPin size={16} />
+                </button>
               </div>
 
               <div className="eh-section-divider"></div>
