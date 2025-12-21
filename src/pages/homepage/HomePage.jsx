@@ -10,6 +10,8 @@ import SummarySection from "../../components/SummarySection"
 import RepairDetails from "../works/RepairDetails"
 import AddAnnouncementModal from "../../components/modal/AddAnnouncementModal"
 import AddPropertyModal from "../../components/modal/AddPropertyModal"
+import AddWorkModal from "../../components/modal/AddWorkModal"
+import InspectionReportUploadModal from "../../components/InspectionReportUploadModal"
 
 // Skeleton Loader Component
 function SkeletonCard() {
@@ -93,6 +95,14 @@ function HomePage() {
   const [uProfile, setUProfile] = useState({})
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false)
   const [showAddPropertyModal, setShowAddPropertyModal] = useState(false)
+  const [showAddWorkModal, setShowAddWorkModal] = useState(false)
+  const [showInspectionModal, setShowInspectionModal] = useState(false)
+  const [selectedPropertyForInspection, setSelectedPropertyForInspection] = useState('')
+
+  // Summary statistics
+  const [totalProperties, setTotalProperties] = useState(0)
+  const [totalBidsApproved, setTotalBidsApproved] = useState(0)
+  const [totalJobs, setTotalJobs] = useState(0)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -151,6 +161,7 @@ function HomePage() {
 
               // Fetch bids for this job
               let bidCount = 0
+              let hasApprovedBid = false
               try {
                 const bidsResponse = await fetch(`${API_BASE_URL}/api/bids/job/${job.id}`, {
                   method: "GET",
@@ -162,6 +173,12 @@ function HomePage() {
                 if (bidsResponse.ok) {
                   const bidsData = await bidsResponse.json()
                   bidCount = bidsData.total_bids || 0
+                  // Check if there's any approved bid
+                  const bids = bidsData.bids || []
+                  hasApprovedBid = bids.some(bid =>
+                    bid.status?.toLowerCase() === 'approved' ||
+                    bid.status?.toLowerCase() === 'accepted'
+                  )
                 }
               } catch (bidError) {
                 console.error("Error fetching bids:", bidError)
@@ -201,6 +218,7 @@ function HomePage() {
                 category: job.urgency,
                 description: job.description,
                 bids: bidCount,
+                hasApprovedBid: hasApprovedBid,
                 budget: `$${job.budget_min} - $${job.budget_max}`,
                 images: finalImages,
                 data: {
@@ -220,7 +238,55 @@ function HomePage() {
         )
 
         // Filter out null values from failed requests
-        setProperties(propertiesData.filter((p) => p !== null))
+        const validProperties = propertiesData.filter((p) => p !== null)
+        setProperties(validProperties)
+
+        // Calculate summary statistics
+        // 1. Total unique properties
+        const uniquePropertyIds = new Set(
+          (jobsData.jobs || [])
+            .filter(job => job.property_id && job.property_id !== 'null' && job.property_id !== 'undefined')
+            .map(job => job.property_id)
+        )
+        setTotalProperties(uniquePropertyIds.size)
+
+        // 2. Total jobs
+        setTotalJobs(jobsData.jobs?.length || 0)
+
+        // 3. Total approved bids - fetch all bids for all jobs
+        let approvedBidsCount = 0
+        try {
+          const bidsPromises = (jobsData.jobs || []).map(async (job) => {
+            try {
+              const bidsResponse = await fetch(`${API_BASE_URL}/api/bids/job/${job.id}`, {
+                method: "GET",
+                headers: {
+                  Authorization: `Bearer ${user.token}`,
+                },
+              })
+
+              if (bidsResponse.ok) {
+                const bidsData = await bidsResponse.json()
+                const bids = bidsData.bids || []
+                return bids.filter(bid =>
+                  bid.status?.toLowerCase() === 'approved' ||
+                  bid.status?.toLowerCase() === 'accepted'
+                ).length
+              }
+              return 0
+            } catch (error) {
+              console.error(`Error fetching bids for job ${job.id}:`, error)
+              return 0
+            }
+          })
+
+          const approvedBidsCounts = await Promise.all(bidsPromises)
+          approvedBidsCount = approvedBidsCounts.reduce((sum, count) => sum + count, 0)
+        } catch (error) {
+          console.error('Error calculating approved bids:', error)
+        }
+
+        setTotalBidsApproved(approvedBidsCount)
         setIsLoading(false)
       } catch (err) {
         console.error("Error fetching data:", err)
@@ -470,7 +536,7 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
   };
 
   const handleAddWork = () => {
-    navigate("/add-work/property_manager")
+    setShowAddWorkModal(true)
   }
 
   const handleRepairClicked = useCallback((value, repair) => {
@@ -757,7 +823,11 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
             </div>
           </header>
 
-          <SummarySection repairs={properties} />
+          <SummarySection
+            totalProperties={totalProperties}
+            totalBidsApproved={totalBidsApproved}
+            totalJobs={totalJobs}
+          />
 
           <RepairList repairs={filteredRepairs} handleRepairClicked={handleRepairClicked} />
 
@@ -790,6 +860,37 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
           // The properties array in HomePage is for repairs/jobs, not properties
           console.log('Property added successfully:', property);
         }}
+      />
+
+      {/* Add Work Modal */}
+      <AddWorkModal
+        isOpen={showAddWorkModal}
+        onClose={() => setShowAddWorkModal(false)}
+        onSuccess={(job) => {
+          // Refresh the page to show new job
+          window.location.reload();
+        }}
+        onOpenExcelUpload={(propertyId) => {
+          setSelectedPropertyForInspection(propertyId);
+          setShowAddWorkModal(false);
+          setShowInspectionModal(true);
+        }}
+      />
+
+      {/* Inspection Report Upload Modal */}
+      <InspectionReportUploadModal
+        isOpen={showInspectionModal}
+        onClose={() => {
+          setShowInspectionModal(false);
+          setShowAddWorkModal(true);
+        }}
+        onSubmit={(createdJobs) => {
+          console.log('Jobs created from inspection:', createdJobs);
+          setShowInspectionModal(false);
+          // Refresh the page to show new jobs
+          window.location.reload();
+        }}
+        propertyId={selectedPropertyForInspection}
       />
     </div>
   )
