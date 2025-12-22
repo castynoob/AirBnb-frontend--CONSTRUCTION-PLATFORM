@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react'
 import Nav from '../../components/Nav'
 import "../../styles/manager/profilepagemanager.css"
-import { FiUser, FiMail, FiShield, FiHome, FiPlus, FiMapPin, FiCalendar, FiEdit2, FiX, FiLogOut, FiPackage } from 'react-icons/fi'
+import { User, Mail, Shield, Home, Plus, MapPin, Calendar, X, LogOut, Package, Building2, ChevronRight, Briefcase, Phone, Camera } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import EditManagerProfileModal from '../../components/modal/EditManagerProfileModal'
 import ManagerProfileSkeleton from '../../components/loading/ManagerProfileSkeleton'
@@ -27,7 +27,7 @@ function ProfilePageManager() {
     if (userProfile) {
       const userData = JSON.parse(userProfile)
       setUser(userData)
-      
+
       try {
         const profileRes = await fetch(`${API_BASE_URL}/api/users/manager/${userData.id}`, {
           method: 'GET',
@@ -77,7 +77,7 @@ function ProfilePageManager() {
     setIsEditingProfile(false)
   }
 
-  const handleSaveProfile = async (updatedProfile) => {
+  const handleSaveProfile = async () => {
     await getProfileAndProperties()
     setIsEditingProfile(false)
   }
@@ -97,167 +97,279 @@ function ProfilePageManager() {
   return (
     <div className="mp-profile-page">
       <Nav />
-      
+
       <div className="mp-container">
-        {/* Profile Card */}
-        <div className="mp-profile-card">
-          <div className="mp-profile-header">
-            <div className="mp-avatar-section">
-              <div className="mp-avatar">
-                {uProfile?.profile?.image ? (
-                  <img src={uProfile.profile.image} alt="Profile" />
-                ) : (
-                  <FiUser size={32} />
-                )}
-              </div>
-              <button className="mp-avatar-edit" onClick={() => setIsEditingProfile(true)} aria-label="Edit profile picture">
-                <FiEdit2 size={12} />
-              </button>
-            </div>
-
-            <div className="mp-profile-info">
-              <h1 className="mp-name">
-                {uProfile?.profile?.first_name + ' ' + uProfile?.profile?.last_name || 'Property Manager'}
-              </h1>
-              <div className="mp-role">
-                <FiShield size={14} />
-                <span>{user?.role || 'Manager'}</span>
-              </div>
-            </div>
-
-            <div className="mp-actions">
-              <button className="mp-btn mp-btn-primary" onClick={() => setIsEditingProfile(true)}>
-                <FiEdit2 size={16} />
-                <span>Edit Profile</span>
-              </button>
-              <button className="mp-btn mp-btn-secondary" onClick={handelLogout}>
-                <FiLogOut size={16} />
-                <span>Logout</span>
-              </button>
+        {/* Page Header */}
+        <header className="mp-page-header">
+          <div className="mp-header-left">
+            <div className="mp-header-title-group">
+              <h1>PROFILE</h1>
+              <span className="mp-role-badge">
+                <Shield size={12} />
+                {user?.role || 'Manager'}
+              </span>
             </div>
           </div>
+          <div className="mp-header-actions">
+            <button className="mp-btn mp-btn-secondary" onClick={handelLogout}>
+              <LogOut size={18} />
+              <span>Logout</span>
+            </button>
+          </div>
+        </header>
 
-          <div className="mp-profile-details">
-            <div className="mp-detail-item">
-              <FiMail size={16} />
-              <span>{user?.email}</span>
+        {/* Profile Section - User Information */}
+        <div className="mp-section">
+          <div className="mp-section-header-bar">
+            <div className="mp-section-title">
+              <User size={18} />
+              <h2>Account Information</h2>
             </div>
-            <div className="mp-detail-item">
-              <FiUser size={16} />
-              <span>ID: {user?.id}</span>
+            <button className="mp-btn mp-btn-primary mp-btn-sm" onClick={() => setIsEditingProfile(true)}>
+              <Camera size={14} />
+              <span>Edit Photo</span>
+            </button>
+          </div>
+
+          <div className="mp-section-body">
+            {/* Profile Header with Avatar and Name */}
+            <div className="mp-profile-header-card">
+              <div className="mp-profile-avatar-section">
+                <div className="mp-avatar-large">
+                  {uProfile?.profile?.image ? (
+                    <img src={uProfile.profile.image} alt="Profile" />
+                  ) : (
+                    <User size={48} />
+                  )}
+                </div>
+                <button className="mp-avatar-edit-btn" onClick={() => setIsEditingProfile(true)}>
+                  <Camera size={14} />
+                </button>
+              </div>
+              <div className="mp-profile-header-info">
+                <h2 className="mp-profile-name-large">
+                  {uProfile?.profile?.first_name && uProfile?.profile?.last_name
+                    ? `${uProfile.profile.first_name} ${uProfile.profile.last_name}`
+                    : 'Property Manager'}
+                </h2>
+                <div className="mp-profile-role-tag">
+                  <Shield size={12} />
+                  <span>{user?.role || 'Property Manager'}</span>
+                </div>
+              </div>
             </div>
+
+            {/* User Information Grid */}
+            <div className="mp-user-info-grid">
+              <div className="mp-user-info-card">
+                <div className="mp-user-info-icon">
+                  <User size={18} />
+                </div>
+                <div className="mp-user-info-content">
+                  <label>First Name</label>
+                  <p>{uProfile?.profile?.first_name || '—'}</p>
+                </div>
+              </div>
+
+              <div className="mp-user-info-card">
+                <div className="mp-user-info-icon">
+                  <User size={18} />
+                </div>
+                <div className="mp-user-info-content">
+                  <label>Last Name</label>
+                  <p>{uProfile?.profile?.last_name || '—'}</p>
+                </div>
+              </div>
+
+              <div className="mp-user-info-card">
+                <div className="mp-user-info-icon">
+                  <Mail size={18} />
+                </div>
+                <div className="mp-user-info-content">
+                  <label>Email Address</label>
+                  <p>{uProfile?.profile?.email || user?.email || '—'}</p>
+                </div>
+              </div>
+
+              <div className="mp-user-info-card">
+                <div className="mp-user-info-icon">
+                  <Briefcase size={18} />
+                </div>
+                <div className="mp-user-info-content">
+                  <label>Company Name</label>
+                  <p>{uProfile?.profile?.company_name || '—'}</p>
+                </div>
+              </div>
+
+              <div className="mp-user-info-card">
+                <div className="mp-user-info-icon">
+                  <MapPin size={18} />
+                </div>
+                <div className="mp-user-info-content">
+                  <label>Address</label>
+                  <p>{uProfile?.profile?.address || '—'}</p>
+                </div>
+              </div>
+
+              <div className="mp-user-info-card">
+                <div className="mp-user-info-icon">
+                  <Phone size={18} />
+                </div>
+                <div className="mp-user-info-content">
+                  <label>Phone Number</label>
+                  <p>{uProfile?.profile?.phone || '—'}</p>
+                </div>
+              </div>
+
+              <div className="mp-user-info-card">
+                <div className="mp-user-info-icon">
+                  <Shield size={18} />
+                </div>
+                <div className="mp-user-info-content">
+                  <label>Account ID</label>
+                  <p>{user?.id || '—'}</p>
+                </div>
+              </div>
+
+              <div className="mp-user-info-card">
+                <div className="mp-user-info-icon">
+                  <Calendar size={18} />
+                </div>
+                <div className="mp-user-info-content">
+                  <label>Member Since</label>
+                  <p>{uProfile?.profile?.created_at
+                    ? new Date(uProfile.profile.created_at).toLocaleDateString('en-US', {
+                        month: 'long',
+                        year: 'numeric'
+                      })
+                    : '—'}</p>
+                </div>
+              </div>
+            </div>
+
+            <p className="mp-profile-edit-note">
+              To update your profile information, please contact support.
+            </p>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="mp-stats">
-          <div className="mp-stat-item">
-            <div className="mp-stat-icon">
-              <FiHome size={20} />
-            </div>
-            <div className="mp-stat-content">
-              <div className="mp-stat-value">{totalProperties}</div>
-              <div className="mp-stat-label">Properties</div>
+        {/* Stats Section */}
+        <div className="mp-section">
+          <div className="mp-section-header-bar">
+            <div className="mp-section-title">
+              <Building2 size={18} />
+              <h2>Overview</h2>
             </div>
           </div>
-          <div className="mp-stat-item">
-            <div className="mp-stat-icon">
-              <FiPackage size={20} />
-            </div>
-            <div className="mp-stat-content">
-              <div className="mp-stat-value">{totalUnits}</div>
-              <div className="mp-stat-label">Total Units</div>
-            </div>
-          </div>
-          <div className="mp-stat-item">
-            <div className="mp-stat-icon">
-              <FiCalendar size={20} />
-            </div>
-            <div className="mp-stat-content">
-              <div className="mp-stat-value">{totalProperties}</div>
-              <div className="mp-stat-label">Active</div>
+
+          <div className="mp-section-body">
+            <div className="mp-stats-grid">
+              <div className="mp-stat-card">
+                <div className="mp-stat-icon">
+                  <Home size={20} />
+                </div>
+                <div className="mp-stat-content">
+                  <div className="mp-stat-value">{totalProperties}</div>
+                  <div className="mp-stat-label">Properties</div>
+                </div>
+              </div>
+              <div className="mp-stat-card">
+                <div className="mp-stat-icon">
+                  <Package size={20} />
+                </div>
+                <div className="mp-stat-content">
+                  <div className="mp-stat-value">{totalUnits}</div>
+                  <div className="mp-stat-label">Total Units</div>
+                </div>
+              </div>
+              <div className="mp-stat-card">
+                <div className="mp-stat-icon">
+                  <Calendar size={20} />
+                </div>
+                <div className="mp-stat-content">
+                  <div className="mp-stat-value">{totalProperties}</div>
+                  <div className="mp-stat-label">Active</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Properties Section */}
-        <div className="mp-properties-section">
-          <div className="mp-section-header">
+        <div className="mp-section">
+          <div className="mp-section-header-bar">
             <div className="mp-section-title">
+              <Home size={18} />
               <h2>Properties</h2>
               <span className="mp-count-badge">{properties.length}</span>
             </div>
-            <button className="mp-btn mp-btn-primary" onClick={handleAddProperty}>
-              <FiPlus size={18} />
+            <button className="mp-btn mp-btn-primary mp-btn-sm" onClick={handleAddProperty}>
+              <Plus size={14} />
               <span>Add Property</span>
             </button>
           </div>
 
-          {properties.length > 0 ? (
-            <div className="mp-properties-list">
-              {properties.map((property) => (
-                <div key={property.id} className="mp-property-item" onClick={() => handlePropertyClick(property)}>
-                  <div className="mp-property-header">
-                    <h3 className="mp-property-address">{property.address}</h3>
-                    <span className="mp-badge">{property.num_units} {property.num_units === 1 ? 'Unit' : 'Units'}</span>
-                  </div>
-                  
-                  <div className="mp-property-info">
-                    <div className="mp-property-detail">
-                      <FiMapPin size={14} />
-                      <span>{property.city}, {property.province} {property.postal_code}</span>
+          <div className="mp-section-body">
+            {properties.length > 0 ? (
+              <div className="mp-properties-list">
+                {properties.map((property) => (
+                  <div key={property.id} className="mp-property-item" onClick={() => handlePropertyClick(property)}>
+                    <div className="mp-property-main">
+                      <h3 className="mp-property-address">{property.building_name || property.address}</h3>
+                      <div className="mp-property-meta">
+                        <span className="mp-property-tag">{property.building_type}</span>
+                        <span className="mp-property-units">{property.num_units} {property.num_units === 1 ? 'Unit' : 'Units'}</span>
+                      </div>
+                      <div className="mp-property-location">
+                        <MapPin size={12} />
+                        <span>{property.address}, {property.city}, {property.province}</span>
+                      </div>
                     </div>
-                    <div className="mp-property-detail">
-                      <FiHome size={14} />
-                      <span>{property.building_type}</span>
+                    <div className="mp-property-action">
+                      <ChevronRight size={18} />
                     </div>
                   </div>
-
-                  <div className="mp-property-footer">
-                    <div className="mp-property-date">
-                      <FiCalendar size={14} />
-                      <span>{new Date(property.created_at).toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        day: 'numeric', 
-                        year: 'numeric' 
-                      })}</span>
-                    </div>
-                    <button className="mp-link-btn">View Details →</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="mp-empty-state">
-              <div className="mp-empty-icon">
-                <FiHome size={40} />
+                ))}
               </div>
-              <h3>No properties yet</h3>
-              <p>Add your first property to get started</p>
-              <button className="mp-btn mp-btn-primary" onClick={handleAddProperty}>
-                <FiPlus size={18} />
-                <span>Add Property</span>
-              </button>
-            </div>
-          )}
+            ) : (
+              <div className="mp-empty-state">
+                <div className="mp-empty-icon">
+                  <Home size={32} />
+                </div>
+                <h3>No properties yet</h3>
+                <p>Add your first property to get started</p>
+                <button className="mp-btn mp-btn-primary" onClick={handleAddProperty}>
+                  <Plus size={16} />
+                  <span>Add Property</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Property Modal */}
+      {/* Property Details Modal */}
       {selectedProperty && (
         <div className="mp-modal-overlay" onClick={handleCloseModal}>
           <div className="mp-modal" onClick={(e) => e.stopPropagation()}>
             <div className="mp-modal-header">
-              <h2>Property Details</h2>
+              <div className="mp-modal-title">
+                <Building2 size={18} />
+                <h2>Property Details</h2>
+              </div>
               <button className="mp-modal-close" onClick={handleCloseModal}>
-                <FiX size={20} />
+                <X size={18} />
               </button>
             </div>
-            
+
             <div className="mp-modal-body">
               <div className="mp-modal-section">
                 <h3>Address Information</h3>
                 <div className="mp-modal-grid">
+                  <div className="mp-modal-field">
+                    <label>Building Name</label>
+                    <p>{selectedProperty.building_name || '—'}</p>
+                  </div>
                   <div className="mp-modal-field">
                     <label>Address</label>
                     <p>{selectedProperty.address}</p>
@@ -295,24 +407,29 @@ function ProfilePageManager() {
                   <div className="mp-modal-field">
                     <label>Created At</label>
                     <p>{new Date(selectedProperty.created_at).toLocaleDateString('en-US', {
-                      weekday: 'long',
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
                     })}</p>
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="mp-modal-footer">
+              <button className="mp-btn mp-btn-secondary" onClick={handleCloseModal}>
+                Close
+              </button>
             </div>
           </div>
         </div>
       )}
 
       {isEditingProfile && (
-        <EditManagerProfileModal 
-          userProfile={uProfile} 
-          onClose={closeEditModal} 
-          onSave={handleSaveProfile} 
+        <EditManagerProfileModal
+          userProfile={uProfile}
+          onClose={closeEditModal}
+          onSave={handleSaveProfile}
         />
       )}
     </div>

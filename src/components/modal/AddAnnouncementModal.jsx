@@ -47,13 +47,25 @@ const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
       }
 
       const data = await response.json();
-      setProperties(data.properties || []);
+
+      // Remove duplicate properties based on property ID
+      const uniqueProperties = [];
+      const seenIds = new Set();
+
+      (data.properties || []).forEach(property => {
+        if (!seenIds.has(property.id)) {
+          seenIds.add(property.id);
+          uniqueProperties.push(property);
+        }
+      });
+
+      setProperties(uniqueProperties);
 
       // Auto-select first property if available
-      if (data.properties && data.properties.length > 0) {
+      if (uniqueProperties.length > 0) {
         setFormData(prev => ({
           ...prev,
-          property_id: data.properties[0].id
+          property_id: uniqueProperties[0].id
         }));
       }
     } catch (error) {
@@ -128,24 +140,24 @@ const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content announcement-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="announcement-overlay" onClick={onClose}>
+      <div className="announcement-content" onClick={(e) => e.stopPropagation()}>
         {/* Modal Header */}
-        <div className="modal-header">
-          <div className="modal-title-wrapper">
-            <Megaphone size={24} className="modal-icon" />
+        <div className="announcement-header">
+          <div className="announcement-title-wrapper">
+            <Megaphone size={20} className="announcement-icon" />
             <div>
               <h2>Create Announcement</h2>
-              <p className="modal-subtitle">Post a concise announcement to residents of the selected building</p>
+              <p className="announcement-subtitle">Post a concise announcement to residents of the selected building</p>
             </div>
           </div>
-          <button className="modal-close-btn" onClick={onClose} aria-label="Close">
+          <button className="announcement-close-btn" onClick={onClose} aria-label="Close">
             <X size={20} />
           </button>
         </div>
 
         {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="modal-body">
+        <form onSubmit={handleSubmit} className="announcement-body">
           {error && (
             <div className="error-message-box">
               {error}
@@ -272,18 +284,18 @@ const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
           </div>
 
           {/* Modal Footer */}
-          <div className="modal-footer">
+          <div className="announcement-footer">
             <button
               type="button"
               onClick={onClose}
-              className="btn btn-secondary"
+              className="announcement-btn announcement-btn-secondary"
               disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="btn btn-primary"
+              className="announcement-btn announcement-btn-primary"
               disabled={isSubmitting || properties.length === 0 || isLoadingProperties}
             >
               {isSubmitting ? 'Creating...' : 'Create Announcement'}

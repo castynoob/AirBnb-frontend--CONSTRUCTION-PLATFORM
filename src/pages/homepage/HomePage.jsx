@@ -1,8 +1,9 @@
 "use client"
 
 import { useCallback, useState, useEffect, useRef } from "react"
-import { Bell, Wrench, Search, Plus, X, FileText, CheckCircle, LoaderIcon, Megaphone, Building2  } from "lucide-react"
+import { Bell, Wrench, Search, Plus, X, FileText, CheckCircle, Megaphone, Building2, AlertTriangle, Check } from "lucide-react"
 import { useNavigate } from "react-router-dom"
+import toast from "react-hot-toast"
 import "../../styles/manager/homepage.css"
 import Nav from "../../components/Nav"
 import RepairList from "../../components/RepairList"
@@ -10,7 +11,7 @@ import SummarySection from "../../components/SummarySection"
 import RepairDetails from "../works/RepairDetails"
 import AddAnnouncementModal from "../../components/modal/AddAnnouncementModal"
 import AddPropertyModal from "../../components/modal/AddPropertyModal"
-import AddWorkModal from "../../components/modal/AddWorkModal"
+import AddWorkModalCompact from "../../components/modal/AddWorkModalCompact"
 import InspectionReportUploadModal from "../../components/InspectionReportUploadModal"
 
 // Skeleton Loader Component
@@ -65,14 +66,22 @@ function SummarySkeleton() {
     <div className="pm-summary-section">
       {[1, 2, 3].map((i) => (
         <div key={i} className="pm-summary-card pm-skeleton">
-          <div className="pm-card-icon pm-skeleton-icon-small">
-            <div className="pm-shimmer"></div>
-          </div>
-          <div className="pm-card-content">
+          <div className="pm-card-left-content">
             <div className="pm-skeleton-line pm-skeleton-label">
               <div className="pm-shimmer"></div>
             </div>
             <div className="pm-skeleton-line pm-skeleton-value">
+              <div className="pm-shimmer"></div>
+            </div>
+            <div className="pm-skeleton-line pm-skeleton-sublabel">
+              <div className="pm-shimmer"></div>
+            </div>
+          </div>
+          <div className="pm-card-right-column">
+            <div className="pm-skeleton-icon-circle">
+              <div className="pm-shimmer"></div>
+            </div>
+            <div className="pm-skeleton-trend">
               <div className="pm-shimmer"></div>
             </div>
           </div>
@@ -104,20 +113,20 @@ function HomePage() {
   const [totalBidsApproved, setTotalBidsApproved] = useState(0)
   const [totalJobs, setTotalJobs] = useState(0)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true)
-        setError(null)
+  // Refetch function that can be called to update data
+  const fetchData = useCallback(async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
 
-        const userProfile = localStorage.getItem("userProfile")
-        if (!userProfile) {
-          throw new Error("User profile not found")
-        }
+      const userProfile = localStorage.getItem("userProfile")
+      if (!userProfile) {
+        throw new Error("User profile not found")
+      }
 
-        const user = JSON.parse(userProfile)
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-        setUProfile(user)
+      const user = JSON.parse(userProfile)
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+      setUProfile(user)
         
         // Fetch jobs
         const jobsResponse = await fetch(`${API_BASE_URL}/api/jobs/manager/${user.id}`, {
@@ -242,13 +251,41 @@ function HomePage() {
         setProperties(validProperties)
 
         // Calculate summary statistics
-        // 1. Total unique properties
-        const uniquePropertyIds = new Set(
-          (jobsData.jobs || [])
-            .filter(job => job.property_id && job.property_id !== 'null' && job.property_id !== 'undefined')
-            .map(job => job.property_id)
-        )
-        setTotalProperties(uniquePropertyIds.size)
+        // 1. Total properties - Fetch all properties owned by the manager
+        try {
+          const propertiesResponse = await fetch(`${API_BASE_URL}/api/properties/`, {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${user.token}`,
+            },
+          })
+
+          if (propertiesResponse.ok) {
+            const propertiesData = await propertiesResponse.json()
+            // Count unique properties by ID
+            const uniquePropertyIds = new Set(
+              (propertiesData.properties || []).map(p => p.id)
+            )
+            setTotalProperties(uniquePropertyIds.size)
+          } else {
+            // Fallback: count from jobs if properties fetch fails
+            const uniquePropertyIds = new Set(
+              (jobsData.jobs || [])
+                .filter(job => job.property_id && job.property_id !== 'null' && job.property_id !== 'undefined')
+                .map(job => job.property_id)
+            )
+            setTotalProperties(uniquePropertyIds.size)
+          }
+        } catch (error) {
+          console.error('Error fetching properties count:', error)
+          // Fallback: count from jobs
+          const uniquePropertyIds = new Set(
+            (jobsData.jobs || [])
+              .filter(job => job.property_id && job.property_id !== 'null' && job.property_id !== 'undefined')
+              .map(job => job.property_id)
+          )
+          setTotalProperties(uniquePropertyIds.size)
+        }
 
         // 2. Total jobs
         setTotalJobs(jobsData.jobs?.length || 0)
@@ -293,50 +330,92 @@ function HomePage() {
         setError(err.message)
         setIsLoading(false)
       }
-    }
+    }, [])
 
+  // Call fetchData on component mount
+  useEffect(() => {
     fetchData()
-  }, [])
+  }, [fetchData])
 
-  const [isHome, setIsHome] = useState(true)
-  const [repair, setRepair] = useState(null)
+  const [selectedRepair, setSelectedRepair] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [searchExpanded, setSearchExpanded] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const searchInputRef = useRef(null)
   const notificationRef = useRef(null)
 
-  // urgent
-  const [isSending, setIsSending] = useState(false)
+  // urgent modal
+  const [showUrgentModal, setShowUrgentModal] = useState(false)
+  const [selectedUrgentJobs, setSelectedUrgentJobs] = useState([])
+  const [urgentMessage, setUrgentMessage] = useState('')
+
+
+  // Generate default urgent message template
+  const getDefaultUrgentMessage = () => {
+    return `Dear Contractor,
+
+We have urgent job(s) that require immediate attention. These projects are time-sensitive and need experienced contractors.
+
+Please log in to your dashboard to review full details and submit your bid as soon as possible.
+
+Thank you for your prompt attention to this matter.
+
+Best regards,
+${uProfile?.name || 'Property Manager'}`
+  }
+
+  // Open urgent modal
+  const handleOpenUrgentModal = () => {
+    setSelectedUrgentJobs([])
+    setUrgentMessage(getDefaultUrgentMessage())
+    setShowUrgentModal(true)
+  }
+
+  // Toggle job selection
+  const toggleJobSelection = (jobId) => {
+    setSelectedUrgentJobs(prev =>
+      prev.includes(jobId)
+        ? prev.filter(id => id !== jobId)
+        : [...prev, jobId]
+    )
+  }
+
+  // Select all jobs
+  const selectAllJobs = () => {
+    if (selectedUrgentJobs.length === jobs.length) {
+      setSelectedUrgentJobs([])
+    } else {
+      setSelectedUrgentJobs(jobs.map(job => job.id))
+    }
+  }
 
   const handleUrgentRequest = async () => {
-    setIsSending(true)
+    if (selectedUrgentJobs.length === 0) {
+      return;
+    }
+
+    // Close modal immediately
+    const jobsToSend = [...selectedUrgentJobs]; // Copy the selected jobs
+    setShowUrgentModal(false);
+    setSelectedUrgentJobs([]);
+
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-    try {
-      // Filter urgent/emergency jobs
-      const urgentJobs = jobs.filter(job =>
-        job.is_emergency === true || job.urgency?.toLowerCase().includes('urgent')
-      );
+    // Get selected jobs
+    const urgentJobs = jobs.filter(job => jobsToSend.includes(job.id));
 
-      if (urgentJobs.length === 0) {
-        alert("No urgent or emergency jobs to send.");
-        setIsSending(false);
-        return;
+    // Group jobs by category
+    const jobsByCategory = urgentJobs.reduce((acc, job) => {
+      const category = job.category || 'General';
+      if (!acc[category]) {
+        acc[category] = [];
       }
+      acc[category].push(job);
+      return acc;
+    }, {});
 
-      // Group jobs by category
-      const jobsByCategory = urgentJobs.reduce((acc, job) => {
-        const category = job.category || 'General';
-        if (!acc[category]) {
-          acc[category] = [];
-        }
-        acc[category].push(job);
-        return acc;
-      }, {});
-
-      // Create professional HTML email
-      const htmlEmail = `
+    // Create professional HTML email
+    const htmlEmail = `
         <!DOCTYPE html>
         <html lang="en">
         <head>
@@ -505,8 +584,10 @@ Please log in to your dashboard to review full details and submit your bid.
 Visit: https://air-bnb-frontend-construction-platf.vercel.app/
 
 © ${new Date().getFullYear()} Intervos Construction Platform
-      `.trim();
+    `.trim();
 
+    // Send email with toast.promise for persistent loading state
+    const sendEmail = async () => {
       const emailResponse = await fetch(`${API_BASE_URL}/api/email/send-to-entrepreneurs`, {
         method: "POST",
         headers: {
@@ -526,22 +607,25 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
 
       const data = await emailResponse.json();
       console.log("✅ EMAIL RES:", data);
-      setIsSending(false)
-      alert(`✅ ${data.message}\n\nSent ${urgentJobs.length} urgent job${urgentJobs.length > 1 ? 's' : ''} notification to all entrepreneurs.`);
-    } catch (error) {
-      setIsSending(false)
-      console.error("❌ Email send error:", error);
-      alert("Failed to send urgent request emails. Please try again.");
-    }
+      return data;
+    };
+
+    toast.promise(
+      sendEmail(),
+      {
+        loading: `Sending urgent request for ${urgentJobs.length} job${urgentJobs.length !== 1 ? 's' : ''}...`,
+        success: `Urgent request sent for ${urgentJobs.length} job${urgentJobs.length !== 1 ? 's' : ''}!`,
+        error: 'Failed to send urgent request. Please try again.',
+      }
+    );
   };
 
   const handleAddWork = () => {
     setShowAddWorkModal(true)
   }
 
-  const handleRepairClicked = useCallback((value, repair) => {
-    setIsHome(value)
-    setRepair(repair)
+  const handleRepairClicked = useCallback((repair) => {
+    setSelectedRepair(repair)
   }, [])
 
   const handleSearchFocus = () => {
@@ -624,7 +708,11 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                 </button>
                 <button className="pm-btn pm-btn-primary" disabled>
                   <Plus size={18} />
-                  <span>New Project</span>
+                  <span>New Jobs</span>
+                </button>
+                <button className="pm-btn pm-btn-primary pm-btn-property" disabled>
+                  <Building2 size={18} />
+                  <span>Add Property</span>
                 </button>
               </div>
 
@@ -640,8 +728,15 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
 
           <section className="hp-repairs-section">
             <div className="hp-section-header">
-              <h2>All Repair Work</h2>
-              <p className="hp-section-subtitle">Loading repairs...</p>
+              <div className="hp-section-header-left">
+                <h2>All Repair Work</h2>
+                <p className="hp-section-subtitle">Loading repairs...</p>
+              </div>
+              <div className="hp-section-header-right">
+                <div className="pm-skeleton-filter">
+                  <div className="pm-shimmer"></div>
+                </div>
+              </div>
             </div>
             <div className="hp-repair-cards-grid">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
@@ -668,178 +763,180 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
   return (
     <div className="homepage">
       <Nav />
-      {isHome ? (
-        <div className="main-container">
-          <header className="pm-page-header">
-            <div className="pm-header-left">
-              <div className="pm-header-title-group">
-                <h1>TRAVAUX</h1>
-                <span className="pm-project-count">{properties.length} active</span>
-              </div>
+      <div className="main-container">
+        <header className="pm-page-header">
+          <div className="pm-header-left">
+            <div className="pm-header-title-group">
+              <h1>TRAVAUX</h1>
+              <span className="pm-project-count">{properties.length} active</span>
             </div>
-            <div className="pm-header-actions">
-              <div className="pm-search-wrapper">
-                <Search size={18} className="pm-search-icon" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder="Search jobs..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pm-search-input"
-                />
-              </div>
+          </div>
+          <div className="pm-header-actions">
+            <div className="pm-search-wrapper">
+              <Search size={18} className="pm-search-icon" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Search jobs..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pm-search-input"
+              />
+            </div>
 
-              <div className="pm-action-buttons">
-                <button
-                  onClick={handleUrgentRequest}
-                  className="pm-btn pm-btn-secondary"
-                  disabled={isSending}
-                  title="Send urgent requests"
-                >
-                  {isSending ? <LoaderIcon size={18} /> : <Wrench size={18} />}
-                  <span>Urgent</span>
-                </button>
-                <button
-                  onClick={() => setShowAnnouncementModal(true)}
-                  className="pm-btn pm-btn-secondary"
-                  title="Create announcement"
-                >
-                  <Megaphone size={18} />
-                  <span>Announcement</span>
-                </button>
-                <button
-                  onClick={handleAddWork}
-                  className="pm-btn pm-btn-primary"
-                  title="Create new project"
-                >
-                  <Plus size={18} />
-                  <span>New Jobs</span>
-                </button>
-                <button
-                  onClick={() => setShowAddPropertyModal(true)}
-                  className="pm-btn pm-btn-primary pm-btn-property"
-                  title="Add new property"
-                >
-                  <Building2 size={18} />
-                  <span>Add Property</span>
-                </button>
-              </div>
+            <div className="pm-action-buttons">
+              <button
+                onClick={handleOpenUrgentModal}
+                className="pm-btn pm-btn-secondary"
+                title="Send urgent requests"
+              >
+                <Wrench size={18} />
+                <span>Urgent</span>
+              </button>
+              <button
+                onClick={() => setShowAnnouncementModal(true)}
+                className="pm-btn pm-btn-secondary"
+                title="Create announcement"
+              >
+                <Megaphone size={18} />
+                <span>Announcement</span>
+              </button>
+              <button
+                onClick={handleAddWork}
+                className="pm-btn pm-btn-primary"
+                title="Create new project"
+              >
+                <Plus size={18} />
+                <span>New Jobs</span>
+              </button>
+              <button
+                onClick={() => setShowAddPropertyModal(true)}
+                className="pm-btn pm-btn-primary pm-btn-property"
+                title="Add new property"
+              >
+                <Building2 size={18} />
+                <span>Add Property</span>
+              </button>
+            </div>
 
-              <div className="pm-notification-wrapper" ref={notificationRef}>
-                <button className="pm-notification-btn" aria-label="Notifications" onClick={toggleNotifications}>
-                  <Bell size={18} />
-                  {unreadCount > 0 && <span className="pm-notification-badge">{unreadCount}</span>}
-                </button>
+            <div className="pm-notification-wrapper" ref={notificationRef}>
+              <button className="pm-notification-btn" aria-label="Notifications" onClick={toggleNotifications}>
+                <Bell size={18} />
+                {unreadCount > 0 && <span className="pm-notification-badge">{unreadCount}</span>}
+              </button>
 
-                {showNotifications && (
-                  <div className="pm-notification-modal">
-                    <div className="pm-notification-header">
-                      <h3>Notifications</h3>
-                      <button
-                        className="pm-close-notification-btn"
-                        onClick={toggleNotifications}
-                        aria-label="Close notifications"
-                      >
-                        <X size={18} />
-                      </button>
-                    </div>
-                    <div className="pm-notification-list">
-                      {notifications.length === 0 ? (
-                        <div className="pm-no-notifications">
-                          <Bell size={32} />
-                          <p>No notifications yet</p>
-                        </div>
-                      ) : (
-                        notifications.map((notification) => (
-                          <div
-                            key={notification.id}
-                            className={`pm-notification-item ${!notification.read ? "unread" : ""}`}
-                          >
-                            {notification.type === "bid" ? (
-                              <>
-                                <div className="pm-notification-icon pm-bid-icon">
-                                  <FileText size={20} />
-                                </div>
-                                <div className="pm-notification-content">
-                                  <div className="pm-notification-title">
-                                    New Bid Submission
-                                    {!notification.read && <span className="pm-unread-dot"></span>}
-                                  </div>
-                                  <div className="pm-notification-body">
-                                    <strong>{notification.bidder}</strong> submitted a bid for{" "}
-                                    <strong>{notification.property}</strong> - {notification.apartment}
-                                  </div>
-                                  <div className="pm-notification-meta">
-                                    <span>Budget: ${notification.budget.toLocaleString()}</span>
-                                    <span className="pm-notification-dot">•</span>
-                                    <span>License: {notification.licenseNumber}</span>
-                                  </div>
-                                  <div className="pm-notification-time">
-                                    {new Date(notification.submissionDate).toLocaleDateString("en-US", {
-                                      month: "short",
-                                      day: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })}
-                                  </div>
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <div className="pm-notification-icon pm-completed-icon">
-                                  <CheckCircle size={20} />
-                                </div>
-                                <div className="pm-notification-content">
-                                  <div className="pm-notification-title">
-                                    Work Completed
-                                    {!notification.read && <span className="pm-unread-dot"></span>}
-                                  </div>
-                                  <div className="pm-notification-body">
-                                    <strong>{notification.workTitle}</strong> at{" "}
-                                    <strong>{notification.property}</strong> - {notification.apartment}
-                                  </div>
-                                  <div className="pm-notification-meta">
-                                    <span>Contractor: {notification.contractor}</span>
-                                  </div>
-                                  <div className="pm-notification-time">
-                                    {new Date(notification.completionDate).toLocaleDateString("en-US", {
-                                      month: "short",
-                                      day: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })}
-                                  </div>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </div>
+              {showNotifications && (
+                <div className="pm-notification-modal">
+                  <div className="pm-notification-header">
+                    <h3>Notifications</h3>
+                    <button
+                      className="pm-close-notification-btn"
+                      onClick={toggleNotifications}
+                      aria-label="Close notifications"
+                    >
+                      <X size={18} />
+                    </button>
                   </div>
-                )}
-              </div>
+                  <div className="pm-notification-list">
+                    {notifications.length === 0 ? (
+                      <div className="pm-no-notifications">
+                        <Bell size={32} />
+                        <p>No notifications yet</p>
+                      </div>
+                    ) : (
+                      notifications.map((notification) => (
+                        <div
+                          key={notification.id}
+                          className={`pm-notification-item ${!notification.read ? "unread" : ""}`}
+                        >
+                          {notification.type === "bid" ? (
+                            <>
+                              <div className="pm-notification-icon pm-bid-icon">
+                                <FileText size={20} />
+                              </div>
+                              <div className="pm-notification-content">
+                                <div className="pm-notification-title">
+                                  New Bid Submission
+                                  {!notification.read && <span className="pm-unread-dot"></span>}
+                                </div>
+                                <div className="pm-notification-body">
+                                  <strong>{notification.bidder}</strong> submitted a bid for{" "}
+                                  <strong>{notification.property}</strong> - {notification.apartment}
+                                </div>
+                                <div className="pm-notification-meta">
+                                  <span>Budget: ${notification.budget.toLocaleString()}</span>
+                                  <span className="pm-notification-dot">•</span>
+                                  <span>License: {notification.licenseNumber}</span>
+                                </div>
+                                <div className="pm-notification-time">
+                                  {new Date(notification.submissionDate).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="pm-notification-icon pm-completed-icon">
+                                <CheckCircle size={20} />
+                              </div>
+                              <div className="pm-notification-content">
+                                <div className="pm-notification-title">
+                                  Work Completed
+                                  {!notification.read && <span className="pm-unread-dot"></span>}
+                                </div>
+                                <div className="pm-notification-body">
+                                  <strong>{notification.workTitle}</strong> at{" "}
+                                  <strong>{notification.property}</strong> - {notification.apartment}
+                                </div>
+                                <div className="pm-notification-meta">
+                                  <span>Contractor: {notification.contractor}</span>
+                                </div>
+                                <div className="pm-notification-time">
+                                  {new Date(notification.completionDate).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-          </header>
+          </div>
+        </header>
 
-          <SummarySection
-            totalProperties={totalProperties}
-            totalBidsApproved={totalBidsApproved}
-            totalJobs={totalJobs}
-          />
+        <SummarySection
+          totalProperties={totalProperties}
+          totalBidsApproved={totalBidsApproved}
+          totalJobs={totalJobs}
+        />
 
-          <RepairList repairs={filteredRepairs} handleRepairClicked={handleRepairClicked} />
+        <RepairList repairs={filteredRepairs} handleRepairClicked={handleRepairClicked} />
 
-          {filteredRepairs.length === 0 && (
-            <div className="pm-no-results-home">
-              <p>No repairs found matching your search.</p>
-            </div>
-          )}
-        </div>
-      ) : (
-        <RepairDetails handleRepairClicked={handleRepairClicked} repair={repair} />
-      )}
+        {filteredRepairs.length === 0 && (
+          <div className="pm-no-results-home">
+            <p>No repairs found matching your search.</p>
+          </div>
+        )}
+      </div>
+
+      {/* Repair Details Modal */}
+      <RepairDetails
+        isOpen={selectedRepair !== null}
+        onClose={() => setSelectedRepair(null)}
+        repair={selectedRepair}
+      />
 
       {/* Add Announcement Modal */}
       <AddAnnouncementModal
@@ -856,24 +953,21 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
         isOpen={showAddPropertyModal}
         onClose={() => setShowAddPropertyModal(false)}
         onSuccess={(property) => {
-          // Property added successfully - just log it
-          // The properties array in HomePage is for repairs/jobs, not properties
           console.log('Property added successfully:', property);
+          setShowAddPropertyModal(false);
+          // Refetch data to update property count
+          fetchData();
         }}
       />
 
-      {/* Add Work Modal */}
-      <AddWorkModal
+      {/* Add Work Modal - Compact Version */}
+      <AddWorkModalCompact
         isOpen={showAddWorkModal}
         onClose={() => setShowAddWorkModal(false)}
-        onSuccess={(job) => {
-          // Refresh the page to show new job
-          window.location.reload();
-        }}
-        onOpenExcelUpload={(propertyId) => {
-          setSelectedPropertyForInspection(propertyId);
+        onSuccess={(result) => {
           setShowAddWorkModal(false);
-          setShowInspectionModal(true);
+          // Refetch data to show new job(s)
+          fetchData();
         }}
       />
 
@@ -887,11 +981,117 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
         onSubmit={(createdJobs) => {
           console.log('Jobs created from inspection:', createdJobs);
           setShowInspectionModal(false);
-          // Refresh the page to show new jobs
-          window.location.reload();
+          // Refetch data to show new jobs
+          fetchData();
         }}
         propertyId={selectedPropertyForInspection}
       />
+
+      {/* Urgent Request Modal */}
+      {showUrgentModal && (
+        <div className="pm-urgent-modal-overlay" onClick={() => setShowUrgentModal(false)}>
+          <div className="pm-urgent-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="pm-urgent-modal-header">
+              <div className="pm-urgent-modal-title">
+                <AlertTriangle size={20} />
+                <h2>Send Urgent Request</h2>
+              </div>
+              <button
+                className="pm-urgent-modal-close"
+                onClick={() => setShowUrgentModal(false)}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="pm-urgent-modal-body">
+              {/* Job Selection Section */}
+              <div className="pm-urgent-section">
+                <div className="pm-urgent-section-header">
+                  <h3>Select Jobs to Send</h3>
+                  <button
+                    type="button"
+                    className="pm-urgent-select-all"
+                    onClick={selectAllJobs}
+                  >
+                    {selectedUrgentJobs.length === jobs.length ? 'Deselect All' : 'Select All'}
+                  </button>
+                </div>
+                <div className="pm-urgent-jobs-list">
+                  {jobs.length === 0 ? (
+                    <p className="pm-urgent-no-jobs">No jobs available</p>
+                  ) : (
+                    jobs.map(job => (
+                      <label
+                        key={job.id}
+                        className={`pm-urgent-job-item ${selectedUrgentJobs.includes(job.id) ? 'selected' : ''}`}
+                      >
+                        <div className="pm-urgent-job-checkbox">
+                          <input
+                            type="checkbox"
+                            checked={selectedUrgentJobs.includes(job.id)}
+                            onChange={() => toggleJobSelection(job.id)}
+                          />
+                          <span className="pm-urgent-checkmark">
+                            {selectedUrgentJobs.includes(job.id) && <Check size={14} />}
+                          </span>
+                        </div>
+                        <div className="pm-urgent-job-info">
+                          <span className="pm-urgent-job-title">{job.title}</span>
+                          <span className="pm-urgent-job-meta">
+                            <span className="pm-urgent-job-category">{job.category || 'General'}</span>
+                            {job.is_emergency && <span className="pm-urgent-job-emergency">Emergency</span>}
+                            <span className="pm-urgent-job-budget">${job.budget_min} - ${job.budget_max}</span>
+                          </span>
+                        </div>
+                      </label>
+                    ))
+                  )}
+                </div>
+                <p className="pm-urgent-selected-count">
+                  {selectedUrgentJobs.length} job{selectedUrgentJobs.length !== 1 ? 's' : ''} selected
+                </p>
+              </div>
+
+              {/* Message Section */}
+              <div className="pm-urgent-section">
+                <h3>Message to Contractors</h3>
+                <textarea
+                  className="pm-urgent-message-editor"
+                  value={urgentMessage}
+                  onChange={(e) => setUrgentMessage(e.target.value)}
+                  rows={8}
+                  placeholder="Enter your message to contractors..."
+                />
+                <button
+                  type="button"
+                  className="pm-urgent-reset-message"
+                  onClick={() => setUrgentMessage(getDefaultUrgentMessage())}
+                >
+                  Reset to Default Template
+                </button>
+              </div>
+            </div>
+
+            <div className="pm-urgent-modal-footer">
+              <button
+                className="pm-btn pm-btn-secondary"
+                onClick={() => setShowUrgentModal(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="pm-btn pm-btn-primary pm-urgent-send-btn"
+                onClick={handleUrgentRequest}
+                disabled={selectedUrgentJobs.length === 0}
+              >
+                <Wrench size={16} />
+                <span>Send Urgent Request</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -288,54 +288,88 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content property-modal-large" onClick={(e) => e.stopPropagation()}>
+    <div className="property-overlay" onClick={onClose}>
+      <div className="property-content" onClick={(e) => e.stopPropagation()}>
         {/* Modal Header */}
-        <div className="modal-header">
-          <div className="modal-title-wrapper">
-            <Building2 size={24} className="modal-icon" />
+        <div className="property-header">
+          <div className="property-title-wrapper">
+            <Building2 size={20} className="property-icon" />
             <div>
               <h2>Add New Property</h2>
-              <p className="modal-subtitle">Add a building or property to your portfolio</p>
+              <p className="property-subtitle">Add a building or property to your portfolio</p>
             </div>
           </div>
-          <button className="modal-close-btn" onClick={onClose} aria-label="Close">
+          <button className="property-close-btn" onClick={onClose} aria-label="Close">
             <X size={20} />
           </button>
         </div>
 
         {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="modal-body property-modal-body">
+        <form onSubmit={handleSubmit} className="property-body">
           {error && (
             <div className="error-message-box">
               {error}
             </div>
           )}
 
-          <div className="property-form-grid">
-            {/* Left Column - Form Fields */}
-            <div className="property-form-fields">
-              {/* Building Name */}
-              <div className="form-group">
-                <label htmlFor="building_name" className="form-label">
-                  Building Name <span className="required">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="building_name"
-                  name="building_name"
-                  value={formData.building_name}
-                  onChange={handleChange}
-                  className="form-input"
-                  placeholder="Enter building name"
-                  required
-                />
-              </div>
+          {/* Building Name - Full Width */}
+          <div className="form-group">
+            <label htmlFor="building_name" className="form-label">
+              <Building2 size={14} />
+              Building Name <span className="required">*</span>
+            </label>
+            <input
+              type="text"
+              id="building_name"
+              name="building_name"
+              value={formData.building_name}
+              onChange={handleChange}
+              className="form-input"
+              placeholder="e.g., Sunrise Apartments, Oak Tower, etc."
+              required
+            />
+          </div>
 
+          {/* Map Section - Full Width */}
+          <div className="property-map-section-large">
+            <h4 className="map-section-title">
+              <MapPin size={18} />
+              Pin Property Location on Map
+            </h4>
+            <p className="map-instruction">
+              📍 Click on the map or drag the marker to set location. Address fields will auto-fill based on your selection.
+            </p>
+            <div ref={mapRef} className="property-map-container-large" />
+
+            {/* Coordinates Display */}
+            <div className="coordinates-display">
+              <h4 className="coordinates-title">
+                <MapPin size={16} />
+                Selected Coordinates
+              </h4>
+              <div className="coordinates-row">
+                <div className="coordinate-item">
+                  <span className="coordinate-label">Latitude:</span>
+                  <span className="coordinate-value">{formData.latitude.toFixed(6)}</span>
+                </div>
+                <div className="coordinate-item">
+                  <span className="coordinate-label">Longitude:</span>
+                  <span className="coordinate-value">{formData.longitude.toFixed(6)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Address Fields Section */}
+          <div className="address-section">
+            <h4 className="section-title">Auto-Filled Address Information</h4>
+            <p className="section-description">These fields are automatically filled based on the map location. You can edit them if needed.</p>
+
+            <div className="property-form-grid">
               {/* Address */}
               <div className="form-group">
                 <label htmlFor="address" className="form-label">
-                  Address <span className="required">*</span>
+                  Street Address <span className="required">*</span>
                 </label>
                 <input
                   type="text"
@@ -344,7 +378,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
                   value={formData.address}
                   onChange={handleChange}
                   className="form-input"
-                  placeholder="Enter street address"
+                  placeholder="Will auto-fill from map"
                   required
                 />
               </div>
@@ -362,14 +396,14 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
                     value={formData.city}
                     onChange={handleChange}
                     className="form-input"
-                    placeholder="Enter city"
+                    placeholder="Will auto-fill from map"
                     required
                   />
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="province" className="form-label">
-                    Province <span className="required">*</span>
+                    Province/State <span className="required">*</span>
                   </label>
                   <input
                     type="text"
@@ -378,52 +412,55 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
                     value={formData.province}
                     onChange={handleChange}
                     className="form-input"
-                    placeholder="Enter province"
+                    placeholder="Will auto-fill from map"
                     required
                   />
                 </div>
               </div>
 
-              {/* Postal Code and Building Type Row */}
-              <div className="form-row">
-                <div className="form-group">
-                  <label htmlFor="postal_code" className="form-label">
-                    Postal Code <span className="required">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="postal_code"
-                    name="postal_code"
-                    value={formData.postal_code}
-                    onChange={handleChange}
-                    className="form-input"
-                    placeholder="Enter postal code"
-                    required
-                  />
-                </div>
+              {/* Postal Code */}
+              <div className="form-group">
+                <label htmlFor="postal_code" className="form-label">
+                  Postal/Zip Code
+                </label>
+                <input
+                  type="text"
+                  id="postal_code"
+                  name="postal_code"
+                  value={formData.postal_code}
+                  onChange={handleChange}
+                  className="form-input"
+                  placeholder="Will auto-fill from map"
+                />
+              </div>
+            </div>
+          </div>
 
-                <div className="form-group">
-                  <label htmlFor="building_type" className="form-label">
-                    Building Type <span className="required">*</span>
-                  </label>
-                  <select
-                    id="building_type"
-                    name="building_type"
-                    value={formData.building_type}
-                    onChange={handleChange}
-                    className="form-select"
-                    required
-                  >
-                    {buildingTypes.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+          {/* Building Details Section */}
+          <div className="building-details-section">
+            <h4 className="section-title">Building Details</h4>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="building_type" className="form-label">
+                  Building Type <span className="required">*</span>
+                </label>
+                <select
+                  id="building_type"
+                  name="building_type"
+                  value={formData.building_type}
+                  onChange={handleChange}
+                  className="form-select"
+                  required
+                >
+                  {buildingTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              {/* Number of Units */}
               <div className="form-group">
                 <label htmlFor="num_units" className="form-label">
                   Number of Units <span className="required">*</span>
@@ -435,57 +472,27 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
                   value={formData.num_units}
                   onChange={handleChange}
                   className="form-input"
-                  placeholder="Enter number of units"
+                  placeholder="e.g., 24"
                   min="1"
                   required
                 />
               </div>
-
-              {/* Coordinates Display */}
-              <div className="coordinates-display">
-                <h4 className="coordinates-title">
-                  <MapPin size={16} />
-                  Location Coordinates
-                </h4>
-                <div className="coordinates-row">
-                  <div className="coordinate-item">
-                    <span className="coordinate-label">Latitude:</span>
-                    <span className="coordinate-value">{formData.latitude.toFixed(6)}</span>
-                  </div>
-                  <div className="coordinate-item">
-                    <span className="coordinate-label">Longitude:</span>
-                    <span className="coordinate-value">{formData.longitude.toFixed(6)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column - Map */}
-            <div className="property-map-section">
-              <h4 className="map-section-title">
-                <MapPin size={18} />
-                Pin Property Location
-              </h4>
-              <p className="map-instruction">
-                Click on the map or drag the marker to set location
-              </p>
-              <div ref={mapRef} className="property-map-container" />
             </div>
           </div>
 
           {/* Modal Footer */}
-          <div className="modal-footer">
+          <div className="property-footer">
             <button
               type="button"
               onClick={onClose}
-              className="btn btn-secondary"
+              className="property-btn property-btn-secondary"
               disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="btn btn-primary"
+              className="property-btn property-btn-primary"
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Adding...' : 'Add Property'}
