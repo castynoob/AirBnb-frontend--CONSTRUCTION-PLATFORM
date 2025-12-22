@@ -240,13 +240,21 @@ const MembersResident = () => {
                   <div className='member-info'>
                     <h3 className="member-name">
                       {resident.first_name} {resident.last_name}
+                      {resident.is_owner && (
+                        <span className="owner-badge">Owner</span>
+                      )}
                     </h3>
 
-                    {resident.show_unit && resident.unit_number && (
+                    {resident.show_unit && resident.unit_number && !resident.is_owner && (
                       <div className="member-detail">
                         <MapPin size={16} />
                         <span>Unit {resident.unit_number}</span>
                         {resident.floor && <span className="member-floor">Floor {resident.floor}</span>}
+                      </div>
+                    )}
+                    {resident.is_owner && (
+                      <div className="member-detail owner-detail">
+                        <span>Property Manager</span>
                       </div>
                     )}
 
@@ -283,6 +291,7 @@ const MembersResident = () => {
                       </button>
                     )}
 
+                    {/* Show DM button for all members including property manager */}
                     {resident.contact_via_message && resident.allow_messages && (
                       <button
                         className="contact-btn"

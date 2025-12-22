@@ -260,6 +260,39 @@ export async function checkMessagingAccess(otherUserId) {
 }
 
 // ============================================
+// DIRECT MESSAGE ENDPOINTS (Resident-PM Communication)
+// ============================================
+
+/**
+ * Get all direct message conversations for the authenticated user
+ * GET /api/messages/direct-messages
+ */
+export async function getDirectMessageConversations() {
+  return apiRequest('/api/messages/direct-messages');
+}
+
+/**
+ * Get direct messages with a specific user
+ * GET /api/messages/direct-messages/:recipientId/messages
+ */
+export async function getDirectMessages(recipientId, limit = 50, offset = 0) {
+  return apiRequest(
+    `/api/messages/direct-messages/${recipientId}/messages?limit=${limit}&offset=${offset}`
+  );
+}
+
+/**
+ * Send a direct message to a specific user
+ * POST /api/messages/direct-messages/:recipientId
+ */
+export async function sendDirectMessage(recipientId, messageText) {
+  return apiRequest(`/api/messages/direct-messages/${recipientId}`, {
+    method: 'POST',
+    body: JSON.stringify({ message_text: messageText }),
+  });
+}
+
+// ============================================
 // FAVORITES ENDPOINTS
 // ============================================
 
@@ -402,6 +435,9 @@ export default {
   getUnreadCount,
   canMessageUser,
   checkMessagingAccess,
+  getDirectMessageConversations,
+  getDirectMessages,
+  sendDirectMessage,
   addFavorite,
   removeFavorite,
   getFavorites,
