@@ -1,0 +1,805 @@
+import { useState, useEffect } from 'react';
+import {
+  X,
+  Building2,
+  Tag,
+  FileText,
+  DollarSign,
+  Calendar,
+  Clock,
+  Upload,
+  AlertCircle,
+  Loader2,
+  CheckCircle,
+  Download,
+  File,
+  Edit3,
+  AlertTriangle
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+import JobsPreviewModal from './JobsPreviewModal';
+import '../../styles/manager/addworkmodalcompact.css';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [parsedJobsData, setParsedJobsData] = useState(null);
+  const [inspectionId, setInspectionId] = useState(null);
+  const [inputMethod, setInputMethod] = useState('manual'); // 'manual' or 'excel'
+  const [formData, setFormData] = useState({
+    property_id: '',
+    title: '',
+    description: '',
+    category: 'Roofing',
+    urgency: 'Urgent (Current Year)',
+    due_date: '',
+    estimated_duration_days: '',
+    budget_min: '',
+    budget_max: '',
+    is_budget_hidden: false,
+    is_emergency: false,
+  });
+
+  const [images, setImages] = useState([]);
+  const [excelFile, setExcelFile] = useState(null);
+  const [excelPreview, setExcelPreview] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [properties, setProperties] = useState([]);
+  const [isLoadingProperties, setIsLoadingProperties] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ stage: '', message: '' });
+
+  const categories = [
+    'Roofing',
+    'Plumbing',
+    'Electrical',
+    'Painting',
+    'HVAC',
+    'Flooring',
+    'Carpentry',
+    'Masonry',
+    'Landscaping',
+    'Other'
+  ];
+
+  const urgencyLevels = [
+    'Urgent (Current Year)',
+    'Next Year',
+    'Year After'
+  ];
+
+  // Fetch properties when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchProperties();
+      // Reset form
+      setInputMethod('manual');
+      setExcelFile(null);
+      setExcelPreview(null);
+      setImages([]);
+      setErrors({});
+    }
+  }, [isOpen]);
+
+  const fetchProperties = async () => {
+    try {
+      setIsLoadingProperties(true);
+      const userProfile = JSON.parse(localStorage.getItem('userProfile'));
+      if (!userProfile?.token) {
+        throw new Error('User not authenticated');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/properties/`, {
+        headers: {
+          'Authorization': `Bearer ${userProfile.token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch properties');
+      }
+
+      const data = await response.json();
+
+      // Remove duplicate properties based on property ID
+      const uniqueProperties = [];
+      const seenIds = new Set();
+
+      (data.properties || []).forEach(property => {
+        if (!seenIds.has(property.id)) {
+          seenIds.add(property.id);
+          uniqueProperties.push(property);
+        }
+      });
+
+      setProperties(uniqueProperties);
+
+      // Auto-select first property if available
+      if (uniqueProperties.length > 0) {
+        setFormData(prev => ({
+          ...prev,
+          property_id: uniqueProperties[0].id
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching properties:', error);
+      toast.error('Failed to load properties');
+    } finally {
+      setIsLoadingProperties(false);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    const newImages = files.filter(file =>
+      file.type.startsWith('image/') && file.size <= 5 * 1024 * 1024
+    );
+
+    if (newImages.length !== files.length) {
+      toast.error('Some files were skipped (max 5MB per image)');
+    }
+
+    setImages(prev => [...prev, ...newImages].slice(0, 5)); // Max 5 images
+  };
+
+  const removeImage = (index) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleExcelChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+      'text/csv'
+    ];
+
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please upload a valid Excel file (.xlsx, .xls, or .csv)');
+      return;
+    }
+
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('File size must be less than 10MB');
+      return;
+    }
+
+    setExcelFile(file);
+    setExcelPreview({
+      name: file.name,
+      size: (file.size / 1024).toFixed(2) + ' KB'
+    });
+  };
+
+  const downloadTemplate = async () => {
+    try {
+      const userProfile = JSON.parse(localStorage.getItem('userProfile'));
+      const response = await fetch(`${API_BASE_URL}/api/inspections/template`, {
+        headers: {
+          'Authorization': `Bearer ${userProfile.token}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Failed to download template');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'inspection-template.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success('Template downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading template:', error);
+      toast.error('Failed to download template');
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.property_id) newErrors.property_id = 'Property is required';
+    if (!formData.title.trim()) newErrors.title = 'Job title is required';
+    if (!formData.category) newErrors.category = 'Category is required';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleManualSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setUploadProgress({ stage: 'creating', message: 'Creating job...' });
+
+    try {
+      const userProfile = JSON.parse(localStorage.getItem('userProfile'));
+
+      // Create job first
+      const jobData = {
+        property_id: formData.property_id,
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        urgency: formData.urgency,
+        due_date: formData.due_date || null,
+        estimated_duration_days: formData.estimated_duration_days ? parseInt(formData.estimated_duration_days) : null,
+        budget_min: formData.budget_min ? parseFloat(formData.budget_min) : null,
+        budget_max: formData.budget_max ? parseFloat(formData.budget_max) : null,
+        budget_visible: !formData.is_budget_hidden,
+        is_emergency: formData.is_emergency
+      };
+
+      const response = await fetch(`${API_BASE_URL}/api/jobs`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${userProfile.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(jobData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create job');
+      }
+
+      const result = await response.json();
+      const jobId = result.job.id;
+
+      // Upload images if any
+      if (images.length > 0) {
+        setUploadProgress({ stage: 'uploading', message: `Uploading ${images.length} image(s)...` });
+
+        const formDataImages = new FormData();
+        images.forEach(image => {
+          formDataImages.append('images', image);
+        });
+
+        const imageResponse = await fetch(`${API_BASE_URL}/api/jobs/${jobId}/images`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${userProfile.token}`
+          },
+          body: formDataImages
+        });
+
+        if (!imageResponse.ok) {
+          console.warn('Image upload failed, but job was created');
+        }
+      }
+
+      setUploadProgress({ stage: 'complete', message: 'Job created successfully!' });
+
+      toast.success('Job created successfully!', {
+        duration: 3000,
+        icon: '✅'
+      });
+
+      setTimeout(() => {
+        onSuccess && onSuccess();
+        onClose();
+      }, 1000);
+
+    } catch (error) {
+      console.error('Error creating job:', error);
+      toast.error(error.message || 'Failed to create job');
+      setUploadProgress({ stage: '', message: '' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleExcelSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!formData.property_id) {
+      toast.error('Please select a property');
+      return;
+    }
+
+    if (!excelFile) {
+      toast.error('Please select an Excel file');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setUploadProgress({ stage: 'uploading', message: 'Uploading Excel file...' });
+
+    try {
+      const userProfile = JSON.parse(localStorage.getItem('userProfile'));
+
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', excelFile);
+      formDataUpload.append('property_id', formData.property_id);
+
+      const response = await fetch(`${API_BASE_URL}/api/inspections/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${userProfile.token}`
+        },
+        body: formDataUpload
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to upload Excel file');
+      }
+
+      const result = await response.json();
+
+      setUploadProgress({ stage: 'complete', message: `Found ${result.parsedData.successCount} jobs!` });
+
+      toast.success(`Successfully parsed ${result.parsedData.successCount} jobs from Excel`, {
+        duration: 2000,
+        icon: '✅'
+      });
+
+      // Store parsed data and show preview modal
+      setParsedJobsData(result.parsedData);
+      setInspectionId(result.inspection.id);
+
+      setTimeout(() => {
+        setShowPreviewModal(true);
+      }, 500);
+
+    } catch (error) {
+      console.error('Error uploading Excel:', error);
+      toast.error(error.message || 'Failed to upload Excel file');
+      setUploadProgress({ stage: '', message: '' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay-compact" onClick={onClose}>
+      <div className="modal-content-compact" onClick={(e) => e.stopPropagation()}>
+        {/* Loading Overlay */}
+        {isSubmitting && (
+          <div className="compact-loading-overlay">
+            <div className="compact-loading-content">
+              {uploadProgress.stage === 'complete' ? (
+                <CheckCircle size={48} className="success-icon-compact" />
+              ) : (
+                <Loader2 size={48} className="spinner-icon-compact" />
+              )}
+              <h3>{uploadProgress.message}</h3>
+            </div>
+          </div>
+        )}
+
+        {/* Header */}
+        <div className="compact-header">
+          <div className="compact-title-wrapper">
+            <Tag size={20} className="compact-icon" />
+            <h2>Add New Job</h2>
+          </div>
+          <button className="compact-close-btn" onClick={onClose} disabled={isSubmitting}>
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Global Property Selection */}
+        <div className="compact-body">
+          <div className="compact-property-section">
+            <label className="compact-label">
+              <Building2 size={14} />
+              {inputMethod === 'excel' ? 'Property for All Jobs' : 'Select Property'}
+              <span className="required">*</span>
+            </label>
+            {isLoadingProperties ? (
+              <div className="compact-loading-text">Loading...</div>
+            ) : properties.length === 0 ? (
+              <div className="compact-info-message">
+                <AlertCircle size={16} />
+                <span>No properties found. Please add a property first.</span>
+              </div>
+            ) : (
+              <>
+                <select
+                  name="property_id"
+                  value={formData.property_id}
+                  onChange={handleChange}
+                  className="compact-select"
+                  disabled={isSubmitting}
+                >
+                  {properties.map(property => (
+                    <option key={property.id} value={property.id}>
+                      {property.building_name || property.address}
+                    </option>
+                  ))}
+                </select>
+                {inputMethod === 'excel' && (
+                  <div className="compact-info-message" style={{ marginTop: '0.5rem' }}>
+                    <AlertCircle size={16} />
+                    <span>All jobs from the Excel file will be created for this property</span>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Method Selector - Segmented Control */}
+          <div className="compact-method-selector">
+            <button
+              type="button"
+              className={`compact-method-btn ${inputMethod === 'manual' ? 'active' : ''}`}
+              onClick={() => setInputMethod('manual')}
+              disabled={isSubmitting}
+            >
+              <Edit3 size={16} />
+              <span>Manual Entry</span>
+            </button>
+            <button
+              type="button"
+              className={`compact-method-btn ${inputMethod === 'excel' ? 'active' : ''}`}
+              onClick={() => setInputMethod('excel')}
+              disabled={isSubmitting}
+            >
+              <FileText size={16} />
+              <span>Upload Excel</span>
+            </button>
+          </div>
+
+          {/* Manual Entry Form */}
+          {inputMethod === 'manual' && (
+            <form onSubmit={handleManualSubmit} className="compact-form">
+              {/* Job Title */}
+              <div className="compact-form-group">
+                <label className="compact-label">
+                  Job Title <span className="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  className={`compact-input ${errors.title ? 'error' : ''}`}
+                  placeholder="e.g., Fix leaking roof"
+                  disabled={isSubmitting}
+                />
+                {errors.title && <span className="compact-error-text">{errors.title}</span>}
+              </div>
+
+              {/* Category & Urgency */}
+              <div className="compact-form-row">
+                <div className="compact-form-group">
+                  <label className="compact-label">Category</label>
+                  <select
+                    name="category"
+                    value={formData.category}
+                    onChange={handleChange}
+                    className="compact-select"
+                    disabled={isSubmitting}
+                  >
+                    {categories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="compact-form-group">
+                  <label className="compact-label">Urgency</label>
+                  <select
+                    name="urgency"
+                    value={formData.urgency}
+                    onChange={handleChange}
+                    className="compact-select"
+                    disabled={isSubmitting}
+                  >
+                    {urgencyLevels.map(level => (
+                      <option key={level} value={level}>{level}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Emergency Checkbox */}
+              <div className="compact-checkbox-group">
+                <input
+                  type="checkbox"
+                  id="is_emergency"
+                  name="is_emergency"
+                  checked={formData.is_emergency}
+                  onChange={handleChange}
+                  className="compact-checkbox"
+                  disabled={isSubmitting}
+                />
+                <label htmlFor="is_emergency" className="compact-checkbox-label">
+                  <AlertTriangle size={14} className="emergency-icon" />
+                  Mark as Emergency
+                </label>
+              </div>
+
+              {/* Due Date & Duration */}
+              <div className="compact-form-row">
+                <div className="compact-form-group">
+                  <label className="compact-label">
+                    <Calendar size={14} /> Due Date
+                  </label>
+                  <input
+                    type="date"
+                    name="due_date"
+                    value={formData.due_date}
+                    onChange={handleChange}
+                    className="compact-input"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div className="compact-form-group">
+                  <label className="compact-label">
+                    <Clock size={14} /> Duration (days)
+                  </label>
+                  <input
+                    type="number"
+                    name="estimated_duration_days"
+                    value={formData.estimated_duration_days}
+                    onChange={handleChange}
+                    className="compact-input"
+                    placeholder="e.g., 7"
+                    min="1"
+                    disabled={isSubmitting}
+                  />
+                </div>
+              </div>
+
+              {/* Budget Section */}
+              <div className="compact-budget-box">
+                <label className="compact-label">
+                  <DollarSign size={14} /> Budget Range
+                </label>
+                <div className="compact-form-row">
+                  <input
+                    type="number"
+                    name="budget_min"
+                    value={formData.budget_min}
+                    onChange={handleChange}
+                    className="compact-input"
+                    placeholder="Min"
+                    min="0"
+                    step="0.01"
+                    disabled={isSubmitting}
+                  />
+                  <input
+                    type="number"
+                    name="budget_max"
+                    value={formData.budget_max}
+                    onChange={handleChange}
+                    className="compact-input"
+                    placeholder="Max"
+                    min="0"
+                    step="0.01"
+                    disabled={isSubmitting}
+                  />
+                </div>
+                <div className="compact-checkbox-group">
+                  <input
+                    type="checkbox"
+                    id="is_budget_hidden"
+                    name="is_budget_hidden"
+                    checked={formData.is_budget_hidden}
+                    onChange={handleChange}
+                    className="compact-checkbox"
+                    disabled={isSubmitting}
+                  />
+                  <label htmlFor="is_budget_hidden" className="compact-checkbox-label">
+                    Hide budget from contractors
+                  </label>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="compact-form-group">
+                <label className="compact-label">Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  className="compact-textarea"
+                  rows="3"
+                  placeholder="Describe the work needed..."
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              {/* Image Upload */}
+              <div className="compact-form-group">
+                <label className="compact-label">
+                  <Upload size={14} /> Upload Images (Optional, max 5)
+                </label>
+                <div className="compact-upload-zone">
+                  <input
+                    type="file"
+                    id="job-images"
+                    multiple
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="compact-file-input"
+                    disabled={isSubmitting || images.length >= 5}
+                  />
+                  <label htmlFor="job-images" className="compact-upload-label">
+                    <Upload size={20} />
+                    <span>Click to upload images</span>
+                    <small>PNG, JPG up to 5MB each</small>
+                  </label>
+                </div>
+
+                {images.length > 0 && (
+                  <div className="compact-image-previews">
+                    {images.map((image, index) => (
+                      <div key={index} className="compact-image-preview">
+                        <img src={URL.createObjectURL(image)} alt={`Preview ${index + 1}`} />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="compact-remove-image"
+                          disabled={isSubmitting}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="compact-footer">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="compact-btn compact-btn-secondary"
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="compact-btn compact-btn-primary"
+                  disabled={isSubmitting || properties.length === 0}
+                >
+                  {isSubmitting ? 'Creating...' : 'Create Job'}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Excel Upload Form */}
+          {inputMethod === 'excel' && (
+            <form onSubmit={handleExcelSubmit} className="compact-form">
+              {/* Template Download */}
+              <div className="compact-template-section">
+                <div className="compact-template-info">
+                  <FileText size={20} className="template-icon" />
+                  <div>
+                    <h4>Excel Template</h4>
+                    <p>Download our template to ensure your data is formatted correctly</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={downloadTemplate}
+                  className="compact-btn compact-btn-outline"
+                  disabled={isSubmitting}
+                >
+                  <Download size={16} />
+                  Download Template
+                </button>
+              </div>
+
+              {/* Excel Upload Zone */}
+              <div className="compact-excel-upload-zone">
+                <input
+                  type="file"
+                  id="excel-file"
+                  accept=".xlsx,.xls,.csv"
+                  onChange={handleExcelChange}
+                  className="compact-file-input"
+                  disabled={isSubmitting}
+                />
+                <label htmlFor="excel-file" className="compact-excel-label">
+                  <File size={32} className="excel-icon" />
+                  <p>Drag & drop your Excel file here</p>
+                  <span>or click to browse</span>
+                  <small>Supported: .XLSX, .XLS, .CSV (max 10MB)</small>
+                </label>
+              </div>
+
+              {/* Excel Preview */}
+              {excelPreview && (
+                <div className="compact-excel-preview">
+                  <CheckCircle size={20} className="preview-icon" />
+                  <div className="preview-details">
+                    <strong>{excelPreview.name}</strong>
+                    <span>{excelPreview.size}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setExcelFile(null);
+                      setExcelPreview(null);
+                    }}
+                    className="preview-remove"
+                    disabled={isSubmitting}
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+
+              {/* Footer */}
+              <div className="compact-footer">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="compact-btn compact-btn-secondary"
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="compact-btn compact-btn-primary"
+                  disabled={isSubmitting || !excelFile || properties.length === 0}
+                >
+                  {isSubmitting ? 'Parsing...' : 'Preview Jobs'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+
+      {/* Jobs Preview Modal */}
+      <JobsPreviewModal
+        isOpen={showPreviewModal}
+        onClose={() => {
+          setShowPreviewModal(false);
+          setParsedJobsData(null);
+          setInspectionId(null);
+        }}
+        parsedData={parsedJobsData}
+        inspectionId={inspectionId}
+        onSuccess={(createdJobs) => {
+          setShowPreviewModal(false);
+          setParsedJobsData(null);
+          setInspectionId(null);
+          onSuccess && onSuccess(createdJobs);
+          onClose();
+        }}
+      />
+    </div>
+  );
+};
+
+export default AddWorkModalCompact;

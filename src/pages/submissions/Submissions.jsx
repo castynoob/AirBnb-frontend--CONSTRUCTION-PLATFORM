@@ -18,6 +18,8 @@ import {
   User,
   FolderOpen,
   Heart,
+  MapPin,
+  ChevronRight,
 } from "lucide-react"
 import Nav from "../../components/Nav"
 import "../../styles/manager/submissions.css"
@@ -59,6 +61,9 @@ function SubmissionsPage() {
 
   // Favorites state
   const [favorites, setFavorites] = useState([])
+
+  // Property filter state
+  const [selectedProperty, setSelectedProperty] = useState("all")
 
   useEffect(() => {
     fetchSubmissions()
@@ -226,6 +231,7 @@ function SubmissionsPage() {
 
             // Fetch property details
             let propertyAddress = "Unknown Location"
+            let propertyName = "Unknown Property"
             if (job.property_id) {
               try {
                 const propertyResponse = await fetch(`${API_BASE_URL}/api/properties/${job.property_id}`, {
@@ -238,6 +244,7 @@ function SubmissionsPage() {
                 if (propertyResponse.ok) {
                   const propertyData = await propertyResponse.json()
                   const property = propertyData.property
+                  propertyName = property.building_name || property.name || property.address || "Unknown Property"
                   propertyAddress = `${property.address}, ${property.city}, ${property.province}`
                 }
               } catch (err) {
@@ -316,6 +323,7 @@ function SubmissionsPage() {
                   last_name: bid.last_name,
                   email: bid.email,
                 },
+                property_name: propertyName,
                 property_address: propertyAddress,
                 review: reviewData, // ✅ Add review data
               })
@@ -666,10 +674,17 @@ function SubmissionsPage() {
     return statusMap[normalizedStatus]
   }
 
-  // Updated to count by job status
+  // Updated to count by job status (respects property filter)
   const getStatusCount = (status) => {
-    if (status === "all") return submissions.length
-    return submissions.filter((sub) => normalizeStatus(sub.job.status) === status).length
+    let filtered = submissions
+
+    // Apply property filter first (using property_id)
+    if (selectedProperty !== "all") {
+      filtered = filtered.filter((sub) => String(sub.job.property_id) === selectedProperty)
+    }
+
+    if (status === "all") return filtered.length
+    return filtered.filter((sub) => normalizeStatus(sub.job.status) === status).length
   }
 
   const formatDate = (dateString) => {
@@ -701,6 +716,15 @@ function SubmissionsPage() {
 
   const categories = [...new Set(submissions.map((sub) => sub.job.category))]
 
+  // Get unique properties for dropdown filter (using property_id as key for reliable filtering)
+  const uniqueProperties = submissions.reduce((acc, sub) => {
+    const propId = sub.job.property_id
+    if (propId && !acc.find(p => p.id === propId)) {
+      acc.push({ id: propId, name: sub.property_name })
+    }
+    return acc
+  }, [])
+
   // Updated tabs to match job status values
   const tabs = [
     { id: "all", label: "All Submissions" },
@@ -712,6 +736,11 @@ function SubmissionsPage() {
 
   useEffect(() => {
     let filtered = [...submissions]
+
+    // Filter by selected property (using property_id)
+    if (selectedProperty !== "all") {
+      filtered = filtered.filter((sub) => String(sub.job.property_id) === selectedProperty)
+    }
 
     // Updated to filter by job status (using normalized status)
     if (activeTab !== "all") {
@@ -749,7 +778,7 @@ function SubmissionsPage() {
     }
 
     setFilteredSubmissions(filtered)
-  }, [searchTerm, locationFilter, categoryFilter, amountRange, dateRange, submissions, activeTab])
+  }, [searchTerm, locationFilter, categoryFilter, amountRange, dateRange, submissions, activeTab, selectedProperty])
 
   return (
     <div className="subs-submissions-container">
@@ -776,24 +805,41 @@ function SubmissionsPage() {
       )}
 
       <div className="subs-submissions-content">
-        <div className="subs-page-header">
-          <div>
-            <h1 className="subs-page-title">Bid Submissions</h1>
-            <p className="subs-page-subtitle">Review and manage contractor bids</p>
+        <header className="subs-page-header">
+          <div className="subs-header-left">
+            <div className="subs-header-title-group">
+              <h1>SUBMISSIONS</h1>
+              <span className="subs-submission-count">{getStatusCount("all")} bids</span>
+            </div>
           </div>
-          <div className="subs-header-stats">
-            <button className="view-reviews-btn" onClick={handleViewReviews}>
+          <div className="subs-header-actions">
+            <button className="subs-btn subs-btn-secondary" onClick={handleViewReviews}>
               <Star size={18} />
-              My Reviews
+              <span>My Reviews</span>
             </button>
-            <div className="subs-stat-chip">
-              <span className="subs-stat-label">Total</span>
-              <span className="subs-stat-value">{submissions.length}</span>
-            </div>
-            <div className="subs-stat-chip subs-stat-pending">
-              <span className="subs-stat-label">Open</span>
-              <span className="subs-stat-value">{submissions.filter((s) => s.job.status === "open").length}</span>
-            </div>
+          </div>
+        </header>
+
+        {/* Property Filter Dropdown */}
+        <div className="subs-property-filter">
+          <div className="subs-property-filter-label">
+            <Building2 size={16} />
+            <span>Filter by Property:</span>
+          </div>
+          <div className="subs-property-select-wrapper">
+            <select
+              className="subs-property-select"
+              value={selectedProperty}
+              onChange={(e) => setSelectedProperty(e.target.value)}
+            >
+              <option value="all">All Properties ({uniqueProperties.length})</option>
+              {uniqueProperties.map((property) => (
+                <option key={property.id} value={String(property.id)}>
+                  {property.name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={16} className="subs-select-icon" />
           </div>
         </div>
 
@@ -1437,74 +1483,66 @@ function SubmissionsPage() {
               const StatusIcon = statusInfo.icon
 
               return (
-                <div key={submission.bid.id} className="subs-bid-card">
-                  <div className="subs-card-header">
+                <div key={submission.bid.id} className="subs-bid-card" onClick={() => handleViewDetails(submission)}>
+                  {/* Top Row: Status + Amount + Favorite */}
+                  <div className="subs-card-top">
                     <div className={`subs-status-badge-subs ${statusInfo.class}`}>
-                      <StatusIcon size={14} />
+                      <StatusIcon size={12} />
                       {statusInfo.label}
                     </div>
-                    <div className="subs-header-right">
+                    <div className="subs-card-top-right">
+                      {submission.job.is_emergency && (
+                        <span className="subs-urgency urgent">Urgent</span>
+                      )}
                       <span className="subs-bid-amount">{formatCurrency(submission.bid.amount)}</span>
                       <button
                         className="subs-favorite-btn"
                         onClick={(e) => toggleFavorite(submission, e)}
-                        aria-label="Add to favorites"
-                        title={favorites.includes(submission.bid.id) ? "Remove from favorites" : "Add to favorites"}
+                        aria-label={favorites.includes(submission.bid.id) ? "Remove from favorites" : "Add to favorites"}
                       >
                         <Heart
-                          size={18}
+                          size={16}
                           fill={favorites.includes(submission.bid.id) ? "#E74C3C" : "none"}
-                          stroke="#E74C3C"
+                          stroke={favorites.includes(submission.bid.id) ? "#E74C3C" : "#9ca3af"}
                         />
                       </button>
                     </div>
                   </div>
 
+                  {/* Job Title */}
                   <h3 className="subs-job-title">{submission.job.title}</h3>
 
-                  <div className="subs-contractor-info">
-                    <User size={14} />
-                    <span className="subs-contractor-name">{submission.entrepreneur_profile.company_name}</span>
-                    <span className="subs-contractor-rating">★ {submission.entrepreneur_profile.average_rating}</span>
-                  </div>
-
-                  <div className="subs-property-location">
-                    <FileText size={14} />
-                    <span>{submission.property_address}</span>
-                  </div>
-
-                  {submission.bid.status === "pending" && submission.bid.message && (
-                    <div className="subs-bid-message">
-                      <strong>Bid Message:</strong>
-                      <p>{submission.bid.message}</p>
+                  {/* Info Row: Contractor + Location */}
+                  <div className="subs-card-info">
+                    <div className="subs-info-item">
+                      <User size={12} />
+                      <span>{submission.entrepreneur_profile.company_name}</span>
+                      <span className="subs-rating">★ {submission.entrepreneur_profile.average_rating}</span>
                     </div>
-                  )}
+                    <div className="subs-info-item">
+                      <MapPin size={12} />
+                      <span>{submission.property_address}</span>
+                    </div>
+                  </div>
 
-                  <div className="subs-card-footer">
-                    <span className={`subs-urgency ${submission.job.is_emergency ? "urgent" : "normal"}`}>
-                      {submission.job.is_emergency ? "Urgent" : "Standard"}
-                    </span>
-                    <div className="subs-action-buttons">
-                      <button className="subs-details-btn" onClick={() => handleViewDetails(submission)}>
-                        View Details
+                  {/* Action Row */}
+                  <div className="subs-card-actions">
+                    <button className="subs-details-btn" onClick={(e) => { e.stopPropagation(); handleViewDetails(submission); }}>
+                      Details
+                      <ChevronRight size={14} />
+                    </button>
+
+                    {(submission.job.status === "accepted" || submission.job.status === "ongoing") && (
+                      <button className="subs-chat-btn" onClick={(e) => { e.stopPropagation(); handleChat(submission); }}>
+                        <MessageCircle size={14} />
                       </button>
+                    )}
 
-                      {/* Chat button: Show when job is accepted or ongoing */}
-                      {(submission.job.status === "accepted" || submission.job.status === "ongoing") && (
-                        <button className="subs-chat-btn" onClick={() => handleChat(submission)}>
-                          <MessageCircle size={14} />
-                          Chat
-                        </button>
-                      )}
-
-                      {/* Review button: Show for all completed jobs */}
-                      {submission.job.status === "completed" && (
-                        <button className="subs-review-btn" onClick={() => handleReview(submission)}>
-                          <Star size={14} />
-                          {submission.review ? "View Review" : "Add Review"}
-                        </button>
-                      )}
-                    </div>
+                    {submission.job.status === "completed" && (
+                      <button className="subs-review-btn" onClick={(e) => { e.stopPropagation(); handleReview(submission); }}>
+                        <Star size={14} />
+                      </button>
+                    )}
                   </div>
                 </div>
               )

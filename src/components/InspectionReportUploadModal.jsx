@@ -144,11 +144,17 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
         body: formData,
       });
 
-      const result = await response.json();
+      let result;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        // If response is not JSON, show status text
+        throw new Error(`Server error (${response.status}): ${response.statusText}`);
+      }
 
       if (!response.ok) {
         // Enhanced error message with detected columns
-        let errorMessage = result.message || result.error || 'Failed to upload inspection report';
+        let errorMessage = result.message || result.error || `Failed to upload inspection report (${response.status})`;
 
         if (errorMessage.includes('Could not find "Title"')) {
           errorMessage = `Could not find "Title" or "Job Title" column.\n\n`;

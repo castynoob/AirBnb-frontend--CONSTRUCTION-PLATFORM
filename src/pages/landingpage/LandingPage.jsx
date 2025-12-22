@@ -555,11 +555,15 @@ export default function LandingPage() {
             delete payload.password;
             // Ensure provider_id is included
             if (!payload.provider_id) {
-                setRegisterErrors({ 
-                    submit: "Google registration data missing. Please try again." 
+                setRegisterErrors({
+                    submit: "Google registration data missing. Please try again."
                 });
                 setIsRegistering(false);
                 return;
+            }
+            // ✅ FIX: If Google account doesn't have last_name, use first_name or a placeholder
+            if (!payload.last_name || payload.last_name.trim() === '') {
+                payload.last_name = payload.first_name || 'User';
             }
         } else {
             // For local registration, ensure password exists

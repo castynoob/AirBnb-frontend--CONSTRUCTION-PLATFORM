@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import Nav from "../../components/Nav";
 import {
   ArrowLeft,
   Building2,
@@ -7,32 +6,49 @@ import {
   DollarSign,
   Star,
   Heart,
-  Filter,
   X,
-  Mail,
   Calendar,
   Users,
   MapPin,
   CheckCircle,
   XCircle,
   AlertCircle,
+  Clock,
+  ChevronRight,
+  FileText,
 } from "lucide-react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
 import "../../styles/manager/repairdetails.css";
 
-function RepairDetails({ handleRepairClicked, repair }) {
+// Custom marker icon for the map
+const createPropertyIcon = () => {
+  return L.divIcon({
+    className: "rd-map-marker",
+    html: `<div class="rd-marker-pin">
+      <svg width="24" height="32" viewBox="0 0 24 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 20 12 20s12-11 12-20c0-6.6-5.4-12-12-12z" fill="#0F223D"/>
+        <circle cx="12" cy="12" r="5" fill="white"/>
+      </svg>
+    </div>`,
+    iconSize: [24, 32],
+    iconAnchor: [12, 32],
+    popupAnchor: [0, -32],
+  });
+};
+
+function RepairDetails({ isOpen, onClose, repair }) {
   const [favorites, setFavorites] = useState([]);
-  const [sortBy, setSortBy] = useState("rating");
   const [bidders, setBidders] = useState([]);
-  const [showModal, setShowModal] = useState(false);
+  const [showBidModal, setShowBidModal] = useState(false);
   const [selectedBidder, setSelectedBidder] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [notification, setNotification] = useState(null);
-  const [jobImages, setJobImages] = useState([]);
-  const [isLoadingImages, setIsLoadingImages] = useState(true);
   const [isLoadingBidders, setIsLoadingBidders] = useState(true);
+  const [propertyCoords, setPropertyCoords] = useState(null);
+  const [isLoadingCoords, setIsLoadingCoords] = useState(true);
 
-  const PLACEHOLDER_IMAGE = "https://media.istockphoto.com/id/1147544807/vector/thumbnail-image-vector-graphic.jpg?s=612x612&w=0&k=20&c=rnCKVbdxqkjlcs3xH87-9gocETqpspHFXu5dIGB4wuM=";
-  
   const showNotification = (message, type = "success") => {
     setNotification({ message, type });
     setTimeout(() => {
@@ -48,16 +64,16 @@ function RepairDetails({ handleRepairClicked, repair }) {
     );
   };
 
-  // Fetch job images
+  // Fetch property coordinates for map
   useEffect(() => {
-    if (!repair?.data?.jobId) {
-      setIsLoadingImages(false);
+    if (!repair?.data?.propertyId) {
+      setIsLoadingCoords(false);
       return;
     }
 
-    const fetchJobImages = async () => {
+    const fetchPropertyCoords = async () => {
       try {
-        setIsLoadingImages(true);
+        setIsLoadingCoords(true);
         const userProfile = localStorage.getItem("userProfile");
         if (!userProfile) return;
 
@@ -65,7 +81,7 @@ function RepairDetails({ handleRepairClicked, repair }) {
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
         const response = await fetch(
-          `${API_BASE_URL}/api/jobs/${repair.data.jobId}/images`,
+          `${API_BASE_URL}/api/properties/${repair.data.propertyId}`,
           {
             method: "GET",
             headers: {
@@ -75,21 +91,28 @@ function RepairDetails({ handleRepairClicked, repair }) {
         );
 
         if (!response.ok) {
-          throw new Error(`Failed to fetch images: ${response.status}`);
+          throw new Error(`Failed to fetch property: ${response.status}`);
         }
 
         const data = await response.json();
-        console.log("Fetched job images:", data.images);
-        setJobImages(data.images || []);
+        const property = data.property;
+
+        if (property.latitude && property.longitude) {
+          setPropertyCoords({
+            lat: Number(property.latitude),
+            lng: Number(property.longitude),
+            name: property.building_name || property.name || property.address,
+          });
+        }
       } catch (err) {
-        console.error("Error fetching job images:", err);
-        setJobImages([]);
+        console.error("Error fetching property coordinates:", err);
+        setPropertyCoords(null);
       } finally {
-        setIsLoadingImages(false);
+        setIsLoadingCoords(false);
       }
     };
 
-    fetchJobImages();
+    fetchPropertyCoords();
   }, [repair]);
 
   // Fetch bidders
@@ -124,7 +147,6 @@ function RepairDetails({ handleRepairClicked, repair }) {
           }
 
           const data = await response.json();
-          console.log(data.bids);
 
           if (data.bids.length === 0) {
             setIsLoadingBidders(false);
@@ -164,12 +186,11 @@ function RepairDetails({ handleRepairClicked, repair }) {
       }
 
       const data = await response.json();
-      console.log("CONTRACTOR:", data.profile);
-      
+
       setBidders((prevBidders) => {
         const exists = prevBidders.some((existing) => existing.id === bid.id);
         if (exists) return prevBidders;
-        
+
         return [
           ...prevBidders,
           {
@@ -192,7 +213,7 @@ function RepairDetails({ handleRepairClicked, repair }) {
 
   const handleBidderClick = (bidder) => {
     setSelectedBidder(bidder);
-    setShowModal(true);
+    setShowBidModal(true);
   };
 
   const handleAcceptBid = async () => {
@@ -215,12 +236,12 @@ function RepairDetails({ handleRepairClicked, repair }) {
       );
 
       if (!response.ok) {
-        throw new Error(data.message || `Failed to approve bid: ${response.status}`);
+        throw new Error(`Failed to approve bid: ${response.status}`);
       }
 
       const data = await response.json();
 
-      const jobResponse = await fetch(`${API_BASE_URL}/api/jobs/${repair.data.jobId}`, {
+      await fetch(`${API_BASE_URL}/api/jobs/${repair.data.jobId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${user.token}`,
@@ -229,22 +250,6 @@ function RepairDetails({ handleRepairClicked, repair }) {
         body: JSON.stringify({ status: 'accepted', entrepreneur_id: `${selectedBidder.profile.id}` })
       });
 
-      if (!jobResponse.ok) {
-        throw new Error(data.message || `Failed to approve bid: ${response.status}`);
-      }
-
-      const bidsOnJob = await fetch(`${API_BASE_URL}/api/bids/job/${repair.data.jobId}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${user.token}`
-        }
-      });
-
-      if (!bidsOnJob.ok) {
-        throw new Error(data.message || `Failed to approve bid: ${response.status}`);
-      }
-
-      // Update the approved bidder and decline all others
       setBidders((prevBidders) =>
         prevBidders.map((bidder) =>
           bidder.id === selectedBidder.id
@@ -256,19 +261,11 @@ function RepairDetails({ handleRepairClicked, repair }) {
       );
 
       setSelectedBidder((prev) => ({ ...prev, bid_status: "approved" }));
-
-      showNotification(
-        data.message || "Bid approved successfully! Messaging is now unlocked.",
-        "success"
-      );
-
-      setShowModal(false);
+      showNotification(data.message || "Bid approved successfully!", "success");
+      setShowBidModal(false);
     } catch (error) {
       console.error("Error accepting bid:", error);
-      showNotification(
-        error.message || "Failed to approve bid. Please try again.",
-        "error"
-      );
+      showNotification(error.message || "Failed to approve bid.", "error");
     } finally {
       setIsProcessing(false);
     }
@@ -296,7 +293,7 @@ function RepairDetails({ handleRepairClicked, repair }) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || `Failed to decline bid: ${response.status}`);
+        throw new Error(data.message || `Failed to decline bid`);
       }
 
       setBidders((prevBidders) =>
@@ -308,457 +305,332 @@ function RepairDetails({ handleRepairClicked, repair }) {
       );
 
       setSelectedBidder((prev) => ({ ...prev, bid_status: "declined" }));
-      showNotification(data.message || "Bid declined successfully", "info");
-      setShowModal(false);
+      showNotification(data.message || "Bid declined", "info");
+      setShowBidModal(false);
     } catch (error) {
       console.error("Error declining bid:", error);
-      showNotification(
-        error.message || "Failed to decline bid. Please try again.",
-        "error"
-      );
+      showNotification(error.message || "Failed to decline bid.", "error");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  // Sort bidders based on selected criteria
-  const sortedBidders = [...bidders].sort((a, b) => {
-    switch (sortBy) {
-      case "rating":
-        return b.average_rating - a.average_rating;
-      case "price-low":
-        return a.bid_amount - b.bid_amount;
-      case "price-high":
-        return b.bid_amount - a.bid_amount;
-      case "reviews":
-        return b.total_reviews - a.total_reviews;
-      default:
-        return 0;
-    }
-  });
+  const getDaysSincePosted = () => {
+    if (!repair?.created_at) return 0;
+    const posted = new Date(repair.created_at);
+    const now = new Date();
+    return Math.floor((now - posted) / (1000 * 60 * 60 * 24));
+  };
 
-  // Get the display image - first job image or placeholder
-  const displayImage = jobImages.length > 0 ? jobImages[0].image_url : PLACEHOLDER_IMAGE;
+  const getHighestBid = () => {
+    if (bidders.length === 0) return null;
+    return Math.max(...bidders.map(b => b.bid_amount));
+  };
 
-  // Handle null repair after hooks
-  if (!repair) return null;
+  if (!isOpen || !repair) return null;
 
   return (
-    <div className="homepage">
-      <Nav />
-      
+    <>
       {/* Notification Toast */}
       {notification && (
-        <div className={`notification-toast notification-${notification.type}`}>
-          <div className="notification-content">
-            <div className="notification-icon">
-              {notification.type === "success" && <CheckCircle size={24} />}
-              {notification.type === "error" && <XCircle size={24} />}
-              {notification.type === "info" && <AlertCircle size={24} />}
-            </div>
-            <div className="notification-message">{notification.message}</div>
-            <button
-              className="notification-close"
-              onClick={() => setNotification(null)}
-            >
-              <X size={18} />
-            </button>
+        <div className={`rd-notification rd-notification-${notification.type}`}>
+          <div className="rd-notification-content">
+            {notification.type === "success" && <CheckCircle size={18} />}
+            {notification.type === "error" && <XCircle size={18} />}
+            {notification.type === "info" && <AlertCircle size={18} />}
+            <span>{notification.message}</span>
+            <button onClick={() => setNotification(null)}><X size={16} /></button>
           </div>
         </div>
       )}
 
-      <div className="main-container">
-        {/* Header */}
-        <header className="rd-header">
-          <button
-            className="rd-back-btn"
-            onClick={() => handleRepairClicked(true, null)}
-          >
-            <ArrowLeft size={18} />
-            <span>Back</span>
-          </button>
-          <h1 className="rd-title">
-            {repair.property_type === "Residential"
-              ? "Residential"
-              : "Commercial"}{" "}
-            Repair Details
-          </h1>
-          <div className="rd-header-badge">
-            <span className={`rd-category-badge ${
-              repair.category?.includes("Urgent")
-                ? "urgent"
-                : repair.category?.includes("Next")
-                ? "warning"
-                : "info"
-            }`}>
-              {repair.category || repair.status || "Active"}
-            </span>
-          </div>
-        </header>
+      {/* Main Modal Overlay */}
+      <div className="rd-modal-overlay" onClick={onClose}>
+        <div className="rd-modal-compact" onClick={(e) => e.stopPropagation()}>
 
-        {/* Main Details Card */}
-        <div className="rd-details-card">
-          <div className="rd-image-container">
-            {isLoadingImages ? (
-              <div className="rd-image-loading">
-                <div className="loading-spinner"></div>
+          {/* Compact Header */}
+          <div className="rd-compact-header">
+            <div className="rd-compact-header-left">
+              <button className="rd-compact-back" onClick={onClose}>
+                <ArrowLeft size={18} />
+              </button>
+              <div className="rd-compact-title-group">
+                <h2>{repair.apartment}</h2>
+                <div className="rd-compact-meta">
+                  <span className="rd-compact-property">
+                    {repair.property === "Residential" ? <Home size={12} /> : <Building2 size={12} />}
+                    {repair.property}
+                  </span>
+                  <span className="rd-compact-divider">•</span>
+                  <span>{repair.category || "General"}</span>
+                </div>
               </div>
-            ) : (
-              <img
-                src={displayImage}
-                alt="Property repair"
-                className="rd-image"
-                loading="lazy"
-                onError={(e) => {
-                  e.target.src = PLACEHOLDER_IMAGE;
-                }}
-              />
-            )}
+            </div>
+            <div className="rd-compact-header-right">
+              <span className={`rd-compact-status ${
+                repair.category?.includes("Urgent") ? "urgent" :
+                repair.category?.includes("Next") ? "warning" : "active"
+              }`}>
+                {repair.status || "Open"}
+              </span>
+              <button className="rd-compact-close" onClick={onClose}>
+                <X size={18} />
+              </button>
+            </div>
           </div>
 
-          <div className="rd-info">
-            <h2 className="rd-apartment">{repair.apartment}</h2>
+          {/* Scrollable Body */}
+          <div className="rd-compact-body">
 
-            <div className="rd-info-grid">
-              <div className="rd-info-item">
-                <div className="rd-info-icon">
-                  {repair.property === "Residential" ? (
-                    <Home size={16} />
+            {/* Quick Stats */}
+            <div className="rd-compact-stats">
+              <div className="rd-compact-stat">
+                <Clock size={14} />
+                <span>{getDaysSincePosted()} days ago</span>
+              </div>
+              <div className="rd-compact-stat">
+                <Users size={14} />
+                <span>{bidders.length} {bidders.length === 1 ? 'bid' : 'bids'}</span>
+              </div>
+              {getHighestBid() && (
+                <div className="rd-compact-stat highlight">
+                  <DollarSign size={14} />
+                  <span>High: ${getHighestBid().toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Content Grid */}
+            <div className="rd-compact-grid">
+
+              {/* Left: Details */}
+              <div className="rd-compact-details">
+                <div className="rd-compact-section">
+                  <label className="rd-compact-label">Description</label>
+                  <p className="rd-compact-description">
+                    {repair.description || "No description provided."}
+                  </p>
+                </div>
+
+                <div className="rd-compact-info-list">
+                  <div className="rd-compact-info-item">
+                    <DollarSign size={14} />
+                    <span className="rd-info-key">Budget</span>
+                    <span className="rd-info-val">{repair.budget}</span>
+                  </div>
+                  <div className="rd-compact-info-item">
+                    <Building2 size={14} />
+                    <span className="rd-info-key">Type</span>
+                    <span className="rd-info-val">{repair.building_type || "N/A"}</span>
+                  </div>
+                  <div className="rd-compact-info-item">
+                    <Calendar size={14} />
+                    <span className="rd-info-key">Posted</span>
+                    <span className="rd-info-val">{new Date(repair.created_at).toLocaleDateString('en-US', {
+                      month: 'short', day: 'numeric', year: 'numeric'
+                    })}</span>
+                  </div>
+                  <div className="rd-compact-info-item">
+                    <MapPin size={14} />
+                    <span className="rd-info-key">Location</span>
+                    <span className="rd-info-val">{repair.address || repair.property}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Map */}
+              <div className="rd-compact-media">
+                <div className="rd-compact-map-wrapper">
+                  {isLoadingCoords ? (
+                    <div className="rd-compact-map-loading">
+                      <div className="rd-spinner"></div>
+                    </div>
+                  ) : propertyCoords ? (
+                    <MapContainer
+                      center={[propertyCoords.lat, propertyCoords.lng]}
+                      zoom={16}
+                      style={{ height: "100%", width: "100%" }}
+                      zoomControl={true}
+                      scrollWheelZoom={true}
+                      dragging={true}
+                      doubleClickZoom={true}
+                    >
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                        subdomains="abcd"
+                      />
+                      <Marker
+                        position={[propertyCoords.lat, propertyCoords.lng]}
+                        icon={createPropertyIcon()}
+                      >
+                        <Popup>
+                          <div className="rd-map-popup">
+                            <strong>{propertyCoords.name}</strong>
+                            <p>{repair.address || repair.property}</p>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    </MapContainer>
                   ) : (
-                    <Building2 size={16} />
+                    <div className="rd-compact-map-fallback">
+                      <MapPin size={32} />
+                      <p>Location not available</p>
+                    </div>
                   )}
-                </div>
-                <div className="rd-info-content">
-                  <label>Property</label>
-                  <p>{repair.property}</p>
-                </div>
-              </div>
-
-              <div className="rd-info-item">
-                <div className="rd-info-icon">
-                  <DollarSign size={16} />
-                </div>
-                <div className="rd-info-content">
-                  <label>Budget</label>
-                  <p>{repair.budget}</p>
-                </div>
-              </div>
-
-              <div className="rd-info-item">
-                <div className="rd-info-icon">
-                  <Building2 size={16} />
-                </div>
-                <div className="rd-info-content">
-                  <label>Building Type</label>
-                  <p>{repair.building_type}</p>
-                </div>
-              </div>
-
-              <div className="rd-info-item">
-                <div className="rd-info-icon">
-                  <Calendar size={16} />
-                </div>
-                <div className="rd-info-content">
-                  <label>Posted Date</label>
-                  <p>{new Date(repair.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
             </div>
 
-            <div className="rd-description">
-              <label>Description</label>
-              <p>{repair.description}</p>
+            {/* Bids Section */}
+            <div className="rd-compact-bids-section">
+              <div className="rd-compact-bids-header">
+                <h3>
+                  <FileText size={16} />
+                  Review Bids
+                  {bidders.length > 0 && <span className="rd-bids-badge">{bidders.length}</span>}
+                </h3>
+              </div>
+
+              <div className="rd-compact-bids-list">
+                {isLoadingBidders ? (
+                  <div className="rd-compact-bids-empty">
+                    <div className="rd-spinner"></div>
+                    <p>Loading bids...</p>
+                  </div>
+                ) : bidders.length === 0 ? (
+                  <div className="rd-compact-bids-empty">
+                    <Users size={32} />
+                    <p>No bids yet</p>
+                  </div>
+                ) : (
+                  [...bidders]
+                    .sort((a, b) => b.bid_amount - a.bid_amount)
+                    .map((bidder, index) => (
+                      <div
+                        key={bidder.id}
+                        className={`rd-compact-bid-card ${index === 0 ? 'top' : ''}`}
+                        onClick={() => handleBidderClick(bidder)}
+                      >
+                        <div className="rd-bid-avatar">
+                          {bidder.company_name?.charAt(0) || 'C'}
+                        </div>
+                        <div className="rd-bid-main">
+                          <div className="rd-bid-name">{bidder.company_name}</div>
+                          <div className="rd-bid-meta">
+                            <Star size={10} fill="#facc15" stroke="#facc15" />
+                            <span>{Number(bidder.average_rating || 0).toFixed(1)}</span>
+                            <span className="rd-bid-reviews">({bidder.total_reviews || 0})</span>
+                            <MapPin size={10} />
+                            <span>{bidder.address?.split(',')[0] || 'N/A'}</span>
+                          </div>
+                        </div>
+                        <div className="rd-bid-amount">${bidder.bid_amount.toLocaleString()}</div>
+                        <span className={`rd-bid-status ${bidder.bid_status || 'pending'}`}>
+                          {bidder.bid_status || 'Pending'}
+                        </span>
+                        <button
+                          className="rd-bid-fav"
+                          onClick={(e) => { e.stopPropagation(); toggleFavorite(bidder.company_name); }}
+                        >
+                          <Heart
+                            size={14}
+                            fill={favorites.includes(bidder.company_name) ? "#ef4444" : "none"}
+                            stroke={favorites.includes(bidder.company_name) ? "#ef4444" : "#94a3b8"}
+                          />
+                        </button>
+                        <ChevronRight size={16} className="rd-bid-arrow" />
+                      </div>
+                    ))
+                )}
+              </div>
             </div>
           </div>
         </div>
-
-        {/* Bidders Section */}
-        <section className="rd-bidders-section">
-          <div className="rd-bidders-header">
-            <h2>Bidders</h2>
-            <div className="rd-sort-controls">
-              <Filter size={16} />
-              <select
-                className="rd-sort-select"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                <option value="rating">Highest Rating</option>
-                <option value="price-low">Lowest Price</option>
-                <option value="price-high">Highest Price</option>
-                <option value="reviews">Most Reviews</option>
-              </select>
-            </div>
-          </div>
-
-          {isLoadingBidders ? (
-            <div className="rd-no-bidders">
-              <div className="loading-spinner"></div>
-              <p>Loading bidders...</p>
-            </div>
-          ) : sortedBidders.length === 0 ? (
-            <div className="rd-no-bidders">
-              <Users size={48} className="rd-no-bidders-icon" />
-              <h3>No Bidders Yet</h3>
-              <p>There are currently no bids for this job. Check back later for contractor submissions.</p>
-            </div>
-          ) : (
-            <div className="rd-bidders-table">
-              <div className="rd-table-header">
-                <div className="rd-th rd-th-company">Company</div>
-                <div className="rd-th rd-th-rating">Rating</div>
-                <div className="rd-th rd-th-amount">Bid Amount</div>
-                <div className="rd-th rd-th-status">Status</div>
-                <div className="rd-th rd-th-actions"></div>
-              </div>
-
-              {sortedBidders.map((bidder) => (
-                <div
-                  key={bidder.id}
-                  className="rd-table-row"
-                  onClick={() => handleBidderClick(bidder)}
-                >
-                  <div className="rd-td rd-td-company">
-                    <div className="rd-company-info">
-                      <h4>{bidder.company_name}</h4>
-                      <p>
-                        <MapPin size={12} />
-                        {bidder.address}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="rd-td rd-td-rating">
-                    <div className="rd-rating">
-                      <div className="rd-stars">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            size={14}
-                            fill={
-                              i < Math.round(bidder.average_rating)
-                                ? "#facc15"
-                                : "none"
-                            }
-                            stroke="#facc15"
-                          />
-                        ))}
-                      </div>
-                      <span className="rd-rating-text">
-                        {bidder.average_rating} ({bidder.total_reviews})
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="rd-td rd-td-amount">
-                    <span className="rd-amount">${bidder.bid_amount.toLocaleString()}</span>
-                  </div>
-
-                  <div className="rd-td rd-td-status">
-                    <span className={`rd-status-badge status-${bidder.bid_status}`}>
-                      {bidder.bid_status || "pending"}
-                    </span>
-                  </div>
-
-                  <div className="rd-td rd-td-actions">
-                    <button
-                      className="rd-favorite-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFavorite(bidder.company_name);
-                      }}
-                      aria-label="Add to favorites"
-                    >
-                      <Heart
-                        size={16}
-                        fill={
-                          favorites.includes(bidder.company_name)
-                            ? "#E74C3C"
-                            : "none"
-                        }
-                        stroke="#E74C3C"
-                      />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
       </div>
 
-      {/* Bid Details Modal */}
-      {showModal && selectedBidder && (
-        <div className="rd-modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="rd-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="rd-modal-header">
-              <h2>Bid Details</h2>
-              <button
-                className="rd-modal-close"
-                onClick={() => setShowModal(false)}
-              >
-                <X size={20} />
+      {/* Bid Details Sub-Modal */}
+      {showBidModal && selectedBidder && (
+        <div className="rd-submodal-overlay" onClick={() => setShowBidModal(false)}>
+          <div className="rd-submodal" onClick={(e) => e.stopPropagation()}>
+            <div className="rd-submodal-header">
+              <div className="rd-submodal-title">
+                <div className="rd-submodal-avatar">{selectedBidder.company_name?.charAt(0) || 'C'}</div>
+                <div>
+                  <h3>{selectedBidder.company_name}</h3>
+                  <div className="rd-submodal-rating">
+                    <Star size={12} fill="#facc15" stroke="#facc15" />
+                    <span>{Number(selectedBidder.average_rating || 0).toFixed(1)} ({selectedBidder.total_reviews || 0} reviews)</span>
+                  </div>
+                </div>
+              </div>
+              <button className="rd-submodal-close" onClick={() => setShowBidModal(false)}>
+                <X size={18} />
               </button>
             </div>
 
-            <div className="rd-modal-body">
-              {/* Company Information */}
-              <section className="rd-modal-section">
-                <h3 className="rd-section-title">
-                  <Building2 size={16} />
-                  Company Information
-                </h3>
-                <div className="rd-modal-grid">
-                  <div className="rd-modal-item">
-                    <label>Company Name</label>
-                    <p>{selectedBidder.profile.company_name}</p>
-                  </div>
-                  <div className="rd-modal-item">
-                    <label>License Number</label>
-                    <p>{selectedBidder.profile.license_number || "N/A"}</p>
-                  </div>
-                  <div className="rd-modal-item">
-                    <label>Employees</label>
-                    <p>{selectedBidder.profile.num_employees || "N/A"}</p>
-                  </div>
-                  <div className="rd-modal-item">
-                    <label>Years in Business</label>
-                    <p>{selectedBidder.profile.years_in_business || "N/A"}</p>
-                  </div>
-                </div>
-              </section>
+            <div className="rd-submodal-body">
+              {/* Bid Amount Highlight */}
+              <div className="rd-submodal-amount-box">
+                <span className="rd-amount-label">Bid Amount</span>
+                <span className="rd-amount-value">${selectedBidder.bid_amount.toLocaleString()}</span>
+                <span className={`rd-amount-status ${selectedBidder.bid_status || 'pending'}`}>
+                  {selectedBidder.bid_status || 'Pending'}
+                </span>
+              </div>
 
-              {/* Contact Information */}
-              <section className="rd-modal-section">
-                <h3 className="rd-section-title">
-                  <Mail size={16} />
-                  Contact Information
-                </h3>
-                <div className="rd-modal-grid">
-                  <div className="rd-modal-item">
-                    <label>Email</label>
-                    <p>{selectedBidder.profile.email}</p>
-                  </div>
-                  <div className="rd-modal-item">
-                    <label>Address</label>
-                    <p>{selectedBidder.profile.address}</p>
-                  </div>
+              {/* Message */}
+              {selectedBidder.bid_message && (
+                <div className="rd-submodal-section">
+                  <label>Message</label>
+                  <p className="rd-submodal-message">{selectedBidder.bid_message}</p>
                 </div>
-              </section>
+              )}
 
-              {/* Rating & Reviews */}
-              <section className="rd-modal-section">
-                <h3 className="rd-section-title">
-                  <Star size={16} />
-                  Rating & Reviews
-                </h3>
-                <div className="rd-modal-rating">
-                  <div className="rd-modal-stars">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        size={20}
-                        fill={
-                          i < Math.round(selectedBidder.average_rating)
-                            ? "#facc15"
-                            : "none"
-                        }
-                        stroke="#facc15"
-                      />
-                    ))}
-                  </div>
-                  <p className="rd-modal-rating-text">
-                    {selectedBidder.average_rating} out of 5 stars
-                  </p>
-                  <p className="rd-modal-review-count">
-                    Based on {selectedBidder.total_reviews} reviews
-                  </p>
+              {/* Company Info */}
+              <div className="rd-submodal-section">
+                <label>Company Details</label>
+                <div className="rd-submodal-grid">
+                  <div><span>License</span><strong>{selectedBidder.profile.license_number || "N/A"}</strong></div>
+                  <div><span>Employees</span><strong>{selectedBidder.profile.num_employees || "N/A"}</strong></div>
+                  <div><span>Years</span><strong>{selectedBidder.profile.years_in_business || "N/A"}</strong></div>
+                  <div><span>Email</span><strong>{selectedBidder.profile.email}</strong></div>
                 </div>
-              </section>
+              </div>
 
               {/* Specializations */}
-              {selectedBidder.profile.specializations &&
-                selectedBidder.profile.specializations.length > 0 && (
-                  <section className="rd-modal-section">
-                    <h3 className="rd-section-title">
-                      <Building2 size={16} />
-                      Specializations
-                    </h3>
-                    <div className="rd-modal-tags">
-                      {selectedBidder.profile.specializations.map(
-                        (spec, index) => (
-                          <span key={index} className="rd-modal-tag">
-                            {spec}
-                          </span>
-                        )
-                      )}
-                    </div>
-                  </section>
-                )}
-
-              {/* Bid Information */}
-              <section className="rd-modal-section rd-modal-highlight">
-                <h3 className="rd-section-title">
-                  <DollarSign size={16} />
-                  Bid Information
-                </h3>
-                <div className="rd-modal-bid-info">
-                  <div className="rd-modal-amount">
-                    <label>Bid Amount</label>
-                    <p className="rd-amount-value">
-                      ${selectedBidder.bid_amount.toLocaleString()}
-                    </p>
-                  </div>
-                  {selectedBidder.bid_message && (
-                    <div className="rd-modal-message">
-                      <label>Message from Contractor</label>
-                      <p>{selectedBidder.bid_message}</p>
-                    </div>
-                  )}
-                  <div className="rd-modal-status">
-                    <label>Current Status</label>
-                    <span
-                      className={`rd-status-badge status-${selectedBidder.bid_status}`}
-                    >
-                      {selectedBidder.bid_status || "pending"}
-                    </span>
+              {selectedBidder.profile.specializations?.length > 0 && (
+                <div className="rd-submodal-section">
+                  <label>Specializations</label>
+                  <div className="rd-submodal-tags">
+                    {selectedBidder.profile.specializations.map((s, i) => (
+                      <span key={i} className="rd-submodal-tag">{s}</span>
+                    ))}
                   </div>
                 </div>
-              </section>
+              )}
             </div>
 
-            {/* Modal Footer with Actions */}
-            <div className="rd-modal-footer">
-              {selectedBidder.bid_status !== "approved" &&
-                selectedBidder.bid_status !== "declined" && (
-                  <>
-                    <button
-                      className="rd-btn rd-btn-secondary"
-                      onClick={handleDeclineBid}
-                      disabled={isProcessing}
-                    >
-                      {isProcessing ? "Processing..." : "Decline Bid"}
-                    </button>
-                    <button
-                      className="rd-btn rd-btn-primary"
-                      onClick={handleAcceptBid}
-                      disabled={isProcessing}
-                    >
-                      {isProcessing ? "Processing..." : "Accept Bid"}
-                    </button>
-                  </>
-                )}
-              {(selectedBidder.bid_status === "approved" ||
-                selectedBidder.bid_status === "declined") && (
-                <p className="rd-modal-status-msg">
-                  This bid has been {selectedBidder.bid_status}
-                </p>
+            <div className="rd-submodal-footer">
+              {selectedBidder.bid_status !== "approved" && selectedBidder.bid_status !== "declined" ? (
+                <>
+                  <button className="rd-submodal-btn secondary" onClick={handleDeclineBid} disabled={isProcessing}>
+                    {isProcessing ? "..." : "Decline"}
+                  </button>
+                  <button className="rd-submodal-btn primary" onClick={handleAcceptBid} disabled={isProcessing}>
+                    {isProcessing ? "..." : "Accept Bid"}
+                  </button>
+                </>
+              ) : (
+                <div className="rd-submodal-decided">
+                  This bid has been <strong>{selectedBidder.bid_status}</strong>
+                </div>
               )}
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
