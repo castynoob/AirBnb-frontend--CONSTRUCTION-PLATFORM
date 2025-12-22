@@ -221,6 +221,7 @@ const MessagesResident = () => {
     console.log('💬 Selecting chat:', chat.name, 'ID:', chat.id);
     setActiveChat(chat);
     setActiveDM(null); // Clear DM when selecting group chat
+    setMessages([]); // Clear messages before fetching new ones
     await fetchChatMessages(chat.id);
 
     // Join the chat room via socket
@@ -296,8 +297,13 @@ const MessagesResident = () => {
 
       if (recipient) {
         console.log('➕ Creating conversation with:', recipient);
+        setActiveChat(null); // Clear any active group chat
         setActiveDM(recipient);
-        setMessages([]);
+        setMessages([]); // Clear messages before fetching
+        // Fetch existing messages for this conversation
+        fetchDMMessages(recipient.user_id).catch(err =>
+          console.error('Error fetching DM messages:', err)
+        );
       } else {
         console.warn('⚠️ No recipient data found in either state or localStorage');
       }
@@ -508,6 +514,7 @@ const MessagesResident = () => {
     // Show inline
     setActiveChat(null); // Clear group chat when selecting DM
     setActiveDM(conversation);
+    setMessages([]); // Clear messages before fetching new ones
     await fetchDMMessages(conversation.user_id);
 
     // Join DM room via socket
@@ -625,325 +632,296 @@ const MessagesResident = () => {
     <div className="messages-resident-page-fullscreen">
       <Nav />
       <div className="messages-resident-container-fullscreen">
-        {/* Header Bar */}
-        <div className={`messages-resident-header-bar ${showMobileChat ? 'hide-mobile' : ''}`}>
-          <h1>Messages</h1>
+        {/* SIDEBAR */}
+        <div className={`chat-sidebar-resident ${showMobileChat ? 'hide-mobile' : ''}`}>
+          <div className="sidebar-header-resident">
+            <h2>Messages</h2>
 
-          {/* Tab Navigation */}
-          <div className="tabs-section-resident">
-            <button
-              className={`tab-btn-resident ${activeTab === 'group' ? 'active' : ''}`}
-              onClick={() => switchTab('group')}
-            >
-              Group Chats
-            </button>
-            <button
-              className={`tab-btn-resident ${activeTab === 'dm' ? 'active' : ''}`}
-              onClick={() => switchTab('dm')}
-            >
-              Direct Messages
-            </button>
+            {/* Tab Navigation */}
+            <div className="tabs-section-resident">
+              <button
+                className={`tab-btn-resident ${activeTab === 'group' ? 'active' : ''}`}
+                onClick={() => switchTab('group')}
+              >
+                Group Chats
+              </button>
+              <button
+                className={`tab-btn-resident ${activeTab === 'dm' ? 'active' : ''}`}
+                onClick={() => switchTab('dm')}
+              >
+                Direct Messages
+              </button>
+            </div>
+
+            {/* Create Group Button - Only show on group tab */}
+            {activeTab === 'group' && (
+              <button
+                className="create-group-btn-sidebar"
+                onClick={() => setShowCreateGroupModal(true)}
+              >
+                + Create Group
+              </button>
+            )}
+          </div>
+
+          {/* Chat List */}
+          <div className="chat-list-resident">
+            {loading ? (
+              <div className="loading-container">
+                <div className="loading-spinner"></div>
+                <p>Loading...</p>
+              </div>
+            ) : error ? (
+              <div className="error-container">
+                <p className="error-message">{error}</p>
+              </div>
+            ) : activeTab === 'group' ? (
+              groupChats.length === 0 ? (
+                <div className="empty-list-message">No group chats yet</div>
+              ) : (
+                groupChats.map((chat) => (
+                  <div
+                    key={chat.id}
+                    className={`chat-item-resident ${activeChat?.id === chat.id ? 'active' : ''}`}
+                    onClick={() => selectChat(chat)}
+                  >
+                    <div className="chat-avatar-resident">
+                      <div className="avatar-circle-resident">🏢</div>
+                      {chat.unread_count > 0 && (
+                        <span className="unread-badge-resident">{chat.unread_count}</span>
+                      )}
+                    </div>
+                    <div className="chat-info-resident">
+                      <div className="chat-top-resident">
+                        <h4 className="chat-name-resident">{chat.name}</h4>
+                      </div>
+                      <p className="chat-preview-resident">{chat.description || 'Building group chat'}</p>
+                    </div>
+                  </div>
+                ))
+              )
+            ) : (
+              directMessages.length === 0 ? (
+                <div className="empty-list-message">No direct messages yet</div>
+              ) : (
+                directMessages.map((dm) => (
+                  <div
+                    key={dm.user_id}
+                    className={`chat-item-resident ${activeDM?.user_id === dm.user_id ? 'active' : ''}`}
+                    onClick={() => selectDM(dm)}
+                  >
+                    <div className="chat-avatar-resident">
+                      <div className="avatar-circle-resident">{dm.first_name?.[0] || '?'}</div>
+                      {dm.unread_count > 0 && (
+                        <span className="unread-badge-resident">{dm.unread_count}</span>
+                      )}
+                    </div>
+                    <div className="chat-info-resident">
+                      <div className="chat-top-resident">
+                        <h4 className="chat-name-resident">{dm.first_name} {dm.last_name}</h4>
+                      </div>
+                      <p className="chat-preview-resident">{dm.last_message || 'No messages yet'}</p>
+                    </div>
+                  </div>
+                ))
+              )
+            )}
           </div>
         </div>
 
-        {loading && (
-          <div className="loading-container">
-            <div className="loading-spinner"></div>
-            <p>Loading chats...</p>
-          </div>
-        )}
-
-        {error && !loading && (
-          <div className="error-container">
-            <p className="error-message">{error}</p>
-          </div>
-        )}
-
-        {/* Group Chats Tab */}
-        {!loading && !error && activeTab === 'group' && (
-          <>
-            {groupChats.length === 0 ? (
-              <div className="empty-chat-resident">
-                <div className="empty-icon">💬</div>
-                <h3>No group chats available</h3>
-                <p>Create a group chat or wait to be added to one</p>
+        {/* CHAT WINDOW */}
+        <div className={`chat-window-resident ${showMobileChat ? 'show-mobile' : ''}`}>
+          {!activeChat && !activeDM ? (
+            <div className="empty-chat-resident">
+              <div className="empty-icon">💬</div>
+              <h3>Select a chat to start messaging</h3>
+              <p>Choose a conversation from the list</p>
+            </div>
+          ) : activeTab === 'group' && activeChat ? (
+            <>
+              <div className="chat-header-resident">
                 <button
-                  className="create-group-btn-empty"
-                  onClick={() => setShowCreateGroupModal(true)}
+                  className="mobile-back-btn"
+                  onClick={() => setShowMobileChat(false)}
+                  title="Back to conversations"
                 >
-                  + Create Group Chat
+                  ←
                 </button>
+                <div className="header-info-resident">
+                  <div className="header-avatar-wrapper">
+                    <div className="header-avatar-resident">🏢</div>
+                  </div>
+                  <div>
+                    <h3 className="header-name-resident">{activeChat.name}</h3>
+                    <p className="user-status-text">{activeChat.member_count || 0} members</p>
+                  </div>
+                </div>
               </div>
-            ) : (
-              <div className="messages-resident-layout">
-                {/* Chat Sidebar */}
-                  <div className={`chat-sidebar-resident ${showMobileChat ? 'hide-mobile' : ''}`}>
-                  <div className="sidebar-header-resident">
-                    <button
-                      className="create-group-btn-sidebar"
-                      onClick={() => setShowCreateGroupModal(true)}
-                    >
-                      + Create Group
+
+              {/* Group Chat Messages */}
+              <div className="chat-messages-resident" ref={messagesContainerRef}>
+                {Array.isArray(messages) ? messages.filter(msg => msg && msg.id).map((msg) => {
+                  try {
+                    const currentUserId = getCurrentUserId();
+                    const isOwn = currentUserId && String(msg.sender_id) === String(currentUserId);
+
+                    return (
+                      <div key={msg.id} className={`message-wrapper-resident ${isOwn ? 'sent' : 'received'}`}>
+                        {!isOwn && msg.sender_name && (
+                          <span className="message-sender-name">{msg.sender_name}</span>
+                        )}
+                        <div className="message-bubble-resident">
+                          <p className="message-text-resident">{msg.message_text || msg.content || msg.message}</p>
+                        </div>
+                        <span className="message-time-resident">
+                          {new Date(msg.created_at).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                    );
+                  } catch (error) {
+                    console.error('Error rendering message:', error, msg);
+                    return null;
+                  }
+                }) : null}
+
+                {typingUsers.length > 0 && (
+                  <div className="typing-indicator-wrapper">
+                    <div className="typing-indicator">
+                      <div className="typing-dot"></div>
+                      <div className="typing-dot"></div>
+                      <div className="typing-dot"></div>
+                    </div>
+                    <span className="typing-text">{typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Group Chat Input */}
+              <div className="chat-input-area-resident">
+                <form className="message-input-form-resident" onSubmit={sendMessage}>
+                  <div className="input-actions-resident">
+                    <button type="button" className="input-action-btn" title="Send image">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                    </button>
+                    <button type="button" className="input-action-btn" title="Attach file">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                      </svg>
                     </button>
                   </div>
-
-                  {/* Chat List */}
-                  <div className="chat-list-resident">
-                    {groupChats.map((chat) => (
-                      <div
-                        key={chat.id}
-                        className={`chat-item-resident ${activeChat?.id === chat.id ? 'active' : ''}`}
-                        onClick={() => selectChat(chat)}
-                      >
-                        <div className="chat-avatar-resident">
-                          <div className="avatar-circle-resident">🏢</div>
-                          {chat.unread_count > 0 && (
-                            <span className="unread-badge-resident">{chat.unread_count}</span>
-                          )}
-                        </div>
-                        <div className="chat-info-resident">
-                          <div className="chat-top-resident">
-                            <h4 className="chat-name-resident">{chat.name}</h4>
-                          </div>
-                          <p className="chat-preview-resident">{chat.description || 'Building group chat'}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Chat Window */}
-                <div className={`chat-window-resident ${showMobileChat ? 'show-mobile' : ''}`}>
-                  {activeChat ? (
-                    <>
-                      <div className="chat-header-resident">
-                        <button
-                          className="mobile-back-btn"
-                          onClick={() => setShowMobileChat(false)}
-                          style={{ display: 'none' }}
-                          title="Back to conversations"
-                        >
-                          ←
-                        </button>
-                        <div className="header-info-resident">
-                          <div className="header-avatar-wrapper">
-                            <div className="header-avatar-resident">🏢</div>
-                          </div>
-                          <div>
-                            <h3 className="header-name-resident">{activeChat.name}</h3>
-                            <p className="user-status-text">{activeChat.member_count || 0} members</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="chat-messages-resident" ref={messagesContainerRef}>
-                        {Array.isArray(messages) ? messages.filter(msg => msg && msg.id).map((msg) => {
-                          try {
-                            const currentUserId = getCurrentUserId();
-                            const isOwn = currentUserId && String(msg.sender_id) === String(currentUserId);
-
-                            return (
-                              <div key={msg.id} className={`message-wrapper-resident ${isOwn ? 'sent' : 'received'}`}>
-                                {!isOwn && (
-                                  <div className="group-message-avatar">
-                                    <div className="avatar-circle-small">{msg.sender_name?.[0] || '?'}</div>
-                                  </div>
-                                )}
-                                <div className="group-message-content">
-                                  {!isOwn && <div className="group-sender-name">{msg.sender_name}</div>}
-                                  <div className="message-bubble-resident">
-                                    <p className="message-text-resident">{msg.message_text || msg.content || msg.message}</p>
-                                    <span className="message-time-resident">
-                                      {new Date(msg.created_at).toLocaleTimeString([], {
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                      })}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          } catch (error) {
-                            console.error('Error rendering message:', error, msg);
-                            return null;
-                          }
-                        }) : null}
-
-                        {typingUsers.length > 0 && (
-                          <div className="typing-indicator-wrapper">
-                            <div className="typing-indicator">
-                              <div className="typing-dot"></div>
-                              <div className="typing-dot"></div>
-                              <div className="typing-dot"></div>
-                            </div>
-                            <span className="typing-text">{typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="chat-input-area-resident">
-                        <form className="message-input-form-resident" onSubmit={sendMessage}>
-                          <input
-                            type="text"
-                            placeholder="Type a message..."
-                            value={messageInput}
-                            onChange={(e) => setMessageInput(e.target.value)}
-                            onKeyDown={handleTyping}
-                            className="message-input-resident"
-                          />
-                          <button type="submit" className="send-btn-resident" disabled={!messageInput.trim()}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-                            </svg>
-                          </button>
-                        </form>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="empty-chat-resident">
-                      <div className="empty-icon">💬</div>
-                      <h3>Select a chat to start messaging</h3>
-                      <p>Choose a conversation from the list</p>
-                    </div>
-                  )}
-                </div>
+                  <input
+                    type="text"
+                    placeholder="Type a message..."
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    onKeyDown={handleTyping}
+                    className="message-input-resident"
+                  />
+                  <button type="submit" className="send-btn-resident" disabled={!messageInput.trim()}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                  </button>
+                </form>
               </div>
-            )}
-          </>
-        )}
-
-        {/* Direct Messages Tab */}
-        {!loading && !error && activeTab === 'dm' && (
-          <>
-            {directMessages.length === 0 && !activeDM ? (
-              <div className="empty-chat-resident">
-                <div className="empty-icon">✉️</div>
-                <h3>No direct messages yet</h3>
-                <p>Start a conversation by messaging residents from the Members page</p>
+            </>
+          ) : activeTab === 'dm' && activeDM ? (
+            <>
+              {/* DM Header */}
+              <div className="chat-header-resident">
                 <button
-                  className="create-group-btn-empty"
-                  onClick={() => navigate('/members/resident')}
+                  className="mobile-back-btn"
+                  onClick={() => setShowMobileChat(false)}
+                  title="Back to conversations"
                 >
-                  Go to Members
+                  ←
                 </button>
-              </div>
-            ) : (
-              <div className="messages-resident-layout">
-                {/* DM Sidebar */}
-                <div className={`chat-sidebar-resident ${showMobileChat ? 'hide-mobile' : ''}`}>
-                  {/* DM List */}
-                  <div className="chat-list-resident">
-                    {directMessages.map((dm) => (
-                      <div
-                        key={dm.user_id}
-                        className={`chat-item-resident ${activeDM?.user_id === dm.user_id ? 'active' : ''}`}
-                        onClick={() => selectDM(dm)}
-                      >
-                        <div className="chat-avatar-resident">
-                          <div className="avatar-circle-resident">{dm.first_name?.[0] || '?'}</div>
-                          {dm.unread_count > 0 && (
-                            <span className="unread-badge-resident">{dm.unread_count}</span>
-                          )}
-                        </div>
-                        <div className="chat-info-resident">
-                          <div className="chat-top-resident">
-                            <h4 className="chat-name-resident">{dm.first_name} {dm.last_name}</h4>
-                          </div>
-                          <p className="chat-preview-resident">{dm.last_message || 'No messages yet'}</p>
-                        </div>
-                      </div>
-                    ))}
+                <div className="header-info-resident">
+                  <div className="header-avatar-wrapper">
+                    <div className="header-avatar-resident">{activeDM.first_name?.[0] || '?'}</div>
+                  </div>
+                  <div>
+                    <h3 className="header-name-resident">{activeDM.first_name} {activeDM.last_name}</h3>
+                    <p className="user-status-text">Resident</p>
                   </div>
                 </div>
-
-                {/* DM Chat Window */}
-                <div className={`chat-window-resident ${showMobileChat ? 'show-mobile' : ''}`}>
-                  {activeDM ? (
-                    <>
-                      <div className="chat-header-resident">
-                        <button
-                          className="mobile-back-btn"
-                          onClick={() => setShowMobileChat(false)}
-                          style={{ display: 'none' }}
-                          title="Back to conversations"
-                        >
-                          ←
-                        </button>
-                        <div className="header-info-resident">
-                          <div className="header-avatar-wrapper">
-                            <div className="header-avatar-resident">{activeDM.first_name?.[0] || '?'}</div>
-                          </div>
-                          <div>
-                            <h3 className="header-name-resident">{activeDM.first_name} {activeDM.last_name}</h3>
-                            <p className="user-status-text">Unit {activeDM.unit_number || 'N/A'}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="chat-messages-resident" ref={messagesContainerRef}>
-                        {Array.isArray(messages) ? messages.filter(msg => msg && msg.id).map((msg) => {
-                          try {
-                            const currentUserId = getCurrentUserId();
-                            const isOwn = currentUserId && String(msg.sender_id) === String(currentUserId);
-
-                            // Temporary debug log to diagnose sender detection
-                            // Remove this log after verification
-                            console.log('DM_RENDER_DEBUG', { msgId: msg.id, sender_id: msg.sender_id, currentUserId, isOwn });
-
-                            return (
-                              <div key={msg.id} className={`message-wrapper-resident ${isOwn ? 'sent' : 'received'}`}>
-                                {!isOwn && (
-                                  <div className="chat-avatar-resident">
-                                    <div className="avatar-circle-small">{activeDM.first_name?.[0] || '?'}</div>
-                                  </div>
-                                )}
-                                <div className="message-bubble-resident">
-                                  <p className="message-text-resident">{msg.message_text || msg.content || msg.message}</p>
-                                  <span className="message-time-resident">
-                                    {new Date(msg.created_at).toLocaleTimeString([], {
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
-                                  </span>
-                                </div>
-                              </div>
-                            );
-                          } catch (error) {
-                            console.error('Error rendering DM message:', error, msg);
-                            return null;
-                          }
-                        }) : null}
-                      </div>
-
-                      <div className="chat-input-area-resident">
-                        <form className="message-input-form-resident" onSubmit={sendDMMessage}>
-                          <input
-                            type="text"
-                            placeholder="Type a message..."
-                            value={messageInput}
-                            onChange={(e) => setMessageInput(e.target.value)}
-                            className="message-input-resident"
-                          />
-                          <button type="submit" className="send-btn-resident" disabled={!messageInput.trim()}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
-                            </svg>
-                          </button>
-                        </form>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="empty-chat-resident">
-                      <div className="empty-icon">✉️</div>
-                      <h3>Select a conversation</h3>
-                      <p>Choose a contact to start messaging</p>
-                    </div>
-                  )}
+                <div className="header-actions-resident">
+                  <button className="header-action-btn" title="Call">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                    </svg>
+                  </button>
                 </div>
               </div>
-            )}
-          </>
-        )}
+
+              {/* DM Messages */}
+              <div className="chat-messages-resident" ref={messagesContainerRef}>
+                {Array.isArray(messages) ? messages.filter(msg => msg && msg.id).map((msg) => {
+                  try {
+                    const currentUserId = getCurrentUserId();
+                    const isOwn = currentUserId && String(msg.sender_id) === String(currentUserId);
+
+                    return (
+                      <div key={msg.id} className={`message-wrapper-resident ${isOwn ? 'sent' : 'received'}`}>
+                        <div className="message-bubble-resident">
+                          <p className="message-text-resident">{msg.message_text || msg.content || msg.message}</p>
+                        </div>
+                        <span className="message-time-resident">
+                          {new Date(msg.created_at).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                    );
+                  } catch (error) {
+                    console.error('Error rendering DM message:', error, msg);
+                    return null;
+                  }
+                }) : null}
+              </div>
+
+              {/* DM Input */}
+              <div className="chat-input-area-resident">
+                <form className="message-input-form-resident" onSubmit={sendDMMessage}>
+                  <div className="input-actions-resident">
+                    <button type="button" className="input-action-btn" title="Send image">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                    </button>
+                    <button type="button" className="input-action-btn" title="Attach file">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Type a message..."
+                    value={messageInput}
+                    onChange={(e) => setMessageInput(e.target.value)}
+                    className="message-input-resident"
+                  />
+                  <button type="submit" className="send-btn-resident" disabled={!messageInput.trim()}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                  </button>
+                </form>
+              </div>
+            </>
+          ) : null}
+        </div>
 
         {/* Create Group Chat Modal */}
         {showCreateGroupModal && (

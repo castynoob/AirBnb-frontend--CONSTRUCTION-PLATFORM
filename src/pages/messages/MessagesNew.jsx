@@ -19,6 +19,7 @@ import {
   MapPin,
   Briefcase,
   Phone,
+  Users,
 } from "lucide-react";
 import { useSocket } from "../../contexts/SocketContext";
 import {
@@ -27,12 +28,17 @@ import {
   markConversationAsRead,
 } from "../../utils/api";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
 function MessagesNew() {
   const { socket, isConnected } = useSocket();
+  const [activeTab, setActiveTab] = useState("dm"); // "dm" or "group"
   const [selectedChat, setSelectedChat] = useState(null);
+  const [selectedGroupChat, setSelectedGroupChat] = useState(null);
   const [message, setMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [conversations, setConversations] = useState([]);
+  const [groupChats, setGroupChats] = useState([]);
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
@@ -49,13 +55,21 @@ function MessagesNew() {
   const imageInputRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  // Helper to get auth token
+  const getAuthToken = () => {
+    const userProfile = localStorage.getItem("userProfile");
+    if (!userProfile) return null;
+    return JSON.parse(userProfile)?.token;
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Load conversations
+  // Load conversations and group chats
   useEffect(() => {
     loadConversations();
+    loadGroupChats();
   }, []);
 
   // Handle initialization from Submissions page (when property manager clicks message button)
@@ -107,8 +121,12 @@ function MessagesNew() {
   const loadConversations = async () => {
     try {
       setIsLoading(true);
+
+      // All conversations (both resident and entrepreneur) are now in the unified conversations table
       const response = await getConversations();
+
       if (response.success) {
+        console.log(`📋 Loaded ${response.conversations?.length || 0} conversations`);
         setConversations(response.conversations || []);
       }
     } catch (error) {
@@ -118,10 +136,139 @@ function MessagesNew() {
     }
   };
 
+  // Load group chats for property manager
+  const loadGroupChats = async () => {
+    try {
+      const token = getAuthToken();
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}/api/residents/group-chats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          console.log(`🏢 Loaded ${data.group_chats?.length || 0} group chats`);
+          setGroupChats(data.group_chats || []);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading group chats:", error);
+    }
+  };
+
+  // Load group chat messages
+  const loadGroupChatMessages = async (chatId) => {
+    try {
+      const token = getAuthToken();
+      if (!token) return;
+
+      const response = await fetch(`${API_BASE_URL}/api/residents/group-chats/${chatId}/messages`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setMessages(data.messages || []);
+          setTimeout(scrollToBottom, 100);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading group chat messages:", error);
+    }
+  };
+
+  // Send group chat message
+  const sendGroupMessage = async () => {
+    if (!message.trim() || !selectedGroupChat) return;
+    if (isSending) return;
+
+    setIsSending(true);
+
+    try {
+      const token = getAuthToken();
+      if (!token) {
+        alert("Please log in to send messages");
+        return;
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/residents/group-chats/${selectedGroupChat.id}/messages`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            content: message.trim(),
+            message_type: 'text'
+          })
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          // Add message to list
+          const newMsg = data.message || {
+            id: `temp-${Date.now()}`,
+            content: message.trim(),
+            sender_id: currentUserId,
+            created_at: new Date().toISOString()
+          };
+          setMessages(prev => [...prev, newMsg]);
+          setMessage("");
+          setTimeout(scrollToBottom, 100);
+        }
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || "Failed to send message");
+      }
+    } catch (error) {
+      console.error("Error sending group message:", error);
+      alert("Failed to send message");
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // Handle group chat selection
+  const selectGroupChat = async (chat) => {
+    setSelectedGroupChat(chat);
+    setSelectedChat(null);
+    setMessages([]);
+    setShowMobileChat(true);
+
+    // Load messages
+    await loadGroupChatMessages(chat.id);
+
+    // Join socket room
+    if (socket) {
+      socket.emit('join_group_chat', chat.id);
+    }
+  };
+
+  // Switch between tabs
+  const switchTab = (tab) => {
+    setActiveTab(tab);
+    setSelectedChat(null);
+    setSelectedGroupChat(null);
+    setMessages([]);
+  };
+
   // Load messages when chat selected
   useEffect(() => {
     if (selectedChat) {
-      // Only load messages if conversation exists (id is not null)
+      // All conversations now use the unified messages table
       if (selectedChat.id) {
         loadMessages(selectedChat.id);
         markConversationAsRead(selectedChat.id);
@@ -159,13 +306,21 @@ function MessagesNew() {
     }
   };
 
-  // Socket listeners
+  // Socket listeners - All messages now use the unified new_message event
   useEffect(() => {
     if (!socket) return;
 
     const handleNewMessage = (data) => {
       console.log("📬 Received new_message event:", data);
       const { message: newMsg, conversationId } = data;
+
+      // Ignore messages sent by current user - they are already added via message_sent event
+      if (newMsg.sender_id === currentUserId) {
+        console.log("⚠️ Ignoring own message (already handled via message_sent)");
+        // Still reload conversations to update the list
+        loadConversations();
+        return;
+      }
 
       if (selectedChat?.id === conversationId) {
         console.log("✅ Adding message to current chat");
@@ -186,8 +341,31 @@ function MessagesNew() {
     };
 
     socket.on("new_message", handleNewMessage);
-    return () => socket.off("new_message", handleNewMessage);
-  }, [socket, selectedChat]);
+
+    // Handle new group messages
+    const handleNewGroupMessage = (msg) => {
+      console.log("📬 Received new_group_message:", msg);
+
+      if (selectedGroupChat?.id === (msg.group_chat_id || msg.groupChatId)) {
+        setMessages((prev) => {
+          const exists = prev.some(m => m.id === msg.id);
+          if (exists) return prev;
+          return [...prev, msg];
+        });
+        setTimeout(scrollToBottom, 100);
+      }
+
+      // Reload group chats to update unread count
+      loadGroupChats();
+    };
+
+    socket.on("new_group_message", handleNewGroupMessage);
+
+    return () => {
+      socket.off("new_message", handleNewMessage);
+      socket.off("new_group_message", handleNewGroupMessage);
+    };
+  }, [socket, selectedChat, selectedGroupChat]);
 
   // Handle image upload
   const handleImageUpload = async (e) => {
@@ -334,7 +512,7 @@ function MessagesNew() {
     }
   };
 
-  // Send message
+  // Send message - All messages now use the unified socket messaging
   const handleSend = async () => {
     if (!message.trim() && !uploadedImage && uploadedFiles.length === 0) return;
     if (!selectedChat) return;
@@ -377,6 +555,22 @@ function MessagesNew() {
       const successHandler = (data) => {
         console.log("✅ Message sent successfully:", data);
 
+        // Add the sent message to the messages list
+        if (data.message) {
+          const sentMessage = {
+            ...data.message,
+            sender_id: currentUserId,
+            receiver_id: selectedChat.other_user_id,
+          };
+          setMessages((prev) => {
+            // Avoid duplicates
+            const exists = prev.some(m => m.id === sentMessage.id);
+            if (exists) return prev;
+            return [...prev, sentMessage];
+          });
+          setTimeout(scrollToBottom, 100);
+        }
+
         // If this was a new conversation, update the selectedChat with the new conversation ID
         if (!selectedChat.id && data.message?.conversation_id) {
           console.log("🆕 Updating conversation ID:", data.message.conversation_id);
@@ -384,9 +578,10 @@ function MessagesNew() {
             ...prev,
             id: data.message.conversation_id
           }));
-          // Reload conversations to get the new one in the list
-          loadConversations();
         }
+
+        // Reload conversations to update the list with latest message
+        loadConversations();
 
         socket.off("error", errorHandler);
         socket.off("message_sent", successHandler);
@@ -467,89 +662,226 @@ function MessagesNew() {
         <div className={`messages-sidebar ${showMobileChat ? 'hide-mobile' : ''}`}>
           <div className="messages-sidebar-header">
             <h2>Messages</h2>
+
+            {/* Tab Buttons */}
+            <div className="messages-tab-buttons">
+              <button
+                className={`tab-btn ${activeTab === "dm" ? "active" : ""}`}
+                onClick={() => switchTab("dm")}
+              >
+                <MessageSquare size={16} />
+                Direct Messages
+              </button>
+              <button
+                className={`tab-btn ${activeTab === "group" ? "active" : ""}`}
+                onClick={() => switchTab("group")}
+              >
+                <Users size={16} />
+                Group Chats
+              </button>
+            </div>
+
             <div className="messages-search">
               <Search size={16} className="messages-search-icon" />
               <input
                 type="text"
-                placeholder="Search conversations..."
+                placeholder={activeTab === "dm" ? "Search conversations..." : "Search group chats..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
-            {/* Filter Buttons */}
-            <div className="messages-filter-buttons">
-              <button
-                className={`filter-bubble-btn ${userFilter === "all" ? "active" : ""}`}
-                onClick={() => setUserFilter("all")}
-              >
-                All
-              </button>
-              <button
-                className={`filter-bubble-btn ${userFilter === "resident" ? "active" : ""}`}
-                onClick={() => setUserFilter("resident")}
-              >
-                Resident
-              </button>
-              <button
-                className={`filter-bubble-btn ${userFilter === "entrepreneur" ? "active" : ""}`}
-                onClick={() => setUserFilter("entrepreneur")}
-              >
-                Entrepreneur
-              </button>
-            </div>
+            {/* Filter Buttons - Only show for DM tab */}
+            {activeTab === "dm" && (
+              <div className="messages-filter-buttons">
+                <button
+                  className={`filter-bubble-btn ${userFilter === "all" ? "active" : ""}`}
+                  onClick={() => setUserFilter("all")}
+                >
+                  All
+                </button>
+                <button
+                  className={`filter-bubble-btn ${userFilter === "resident" ? "active" : ""}`}
+                  onClick={() => setUserFilter("resident")}
+                >
+                  Resident
+                </button>
+                <button
+                  className={`filter-bubble-btn ${userFilter === "entrepreneur" ? "active" : ""}`}
+                  onClick={() => setUserFilter("entrepreneur")}
+                >
+                  Entrepreneur
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="messages-conversations">
             {isLoading ? (
               <div className="messages-loading">Loading...</div>
-            ) : filteredConversations.length === 0 ? (
-              <div style={{ padding: "20px", textAlign: "center", color: "#9ca3af" }}>
-                No conversations found
-              </div>
-            ) : (
-              filteredConversations.map((conv) => (
-                <div
-                  key={conv.id}
-                  className={`conversation-item ${selectedChat?.id === conv.id ? "active" : ""}`}
-                  onClick={() => {
-                    setSelectedChat(conv);
-                    setShowMobileChat(true);
-                  }}
-                >
-                  <div className="conversation-avatar">
-                    {getInitials(conv.other_user_name)}
-                  </div>
-                  <div className="conversation-info">
-                    <div className="conversation-header">
-                      <span className="conversation-name">{conv.other_user_name}</span>
-                      <span className="conversation-time">
-                        {formatTime(conv.last_message_at)}
-                      </span>
-                    </div>
-                    <p className="conversation-preview">
-                      {conv.last_message || "No messages yet"}
-                    </p>
-                  </div>
-                  {conv.unread_count > 0 && (
-                    <span className="conversation-unread">{conv.unread_count}</span>
-                  )}
+            ) : activeTab === "dm" ? (
+              /* Direct Messages List */
+              filteredConversations.length === 0 ? (
+                <div style={{ padding: "20px", textAlign: "center", color: "#9ca3af" }}>
+                  No conversations found
                 </div>
-              ))
+              ) : (
+                filteredConversations.map((conv) => (
+                  <div
+                    key={conv.id}
+                    className={`conversation-item ${selectedChat?.id === conv.id ? "active" : ""}`}
+                    onClick={() => {
+                      setSelectedChat(conv);
+                      setSelectedGroupChat(null);
+                      setShowMobileChat(true);
+                    }}
+                  >
+                    <div className="conversation-avatar">
+                      {getInitials(conv.other_user_name)}
+                    </div>
+                    <div className="conversation-info">
+                      <div className="conversation-header">
+                        <span className="conversation-name">{conv.other_user_name}</span>
+                        <span className="conversation-time">
+                          {formatTime(conv.last_message_at)}
+                        </span>
+                      </div>
+                      <p className="conversation-preview">
+                        {conv.last_message || "No messages yet"}
+                      </p>
+                    </div>
+                    {conv.unread_count > 0 && (
+                      <span className="conversation-unread">{conv.unread_count}</span>
+                    )}
+                  </div>
+                ))
+              )
+            ) : (
+              /* Group Chats List */
+              groupChats.length === 0 ? (
+                <div style={{ padding: "20px", textAlign: "center", color: "#9ca3af" }}>
+                  No group chats found
+                </div>
+              ) : (
+                groupChats
+                  .filter(chat => chat.name?.toLowerCase().includes(searchTerm.toLowerCase()))
+                  .map((chat) => (
+                    <div
+                      key={chat.id}
+                      className={`conversation-item ${selectedGroupChat?.id === chat.id ? "active" : ""}`}
+                      onClick={() => selectGroupChat(chat)}
+                    >
+                      <div className="conversation-avatar group-avatar">
+                        <Users size={20} />
+                      </div>
+                      <div className="conversation-info">
+                        <div className="conversation-header">
+                          <span className="conversation-name">{chat.name}</span>
+                          <span className="conversation-time">
+                            {chat.last_message_at ? formatTime(chat.last_message_at) : ""}
+                          </span>
+                        </div>
+                        <p className="conversation-preview">
+                          {chat.description || `${chat.member_count || 0} members`}
+                        </p>
+                      </div>
+                      {chat.unread_count > 0 && (
+                        <span className="conversation-unread">{chat.unread_count}</span>
+                      )}
+                    </div>
+                  ))
+              )
             )}
           </div>
         </div>
 
         {/* CHAT WINDOW */}
         <div className={`messages-chat ${showMobileChat ? 'show-mobile' : ''}`}>
-          {!selectedChat ? (
+          {!selectedChat && !selectedGroupChat ? (
             <div className="messages-chat-empty">
               <div className="messages-chat-empty-icon">
-                <MessageSquare size={40} />
+                {activeTab === "dm" ? <MessageSquare size={40} /> : <Users size={40} />}
               </div>
-              <h3>Select a conversation</h3>
-              <p>Choose a conversation from the sidebar to start messaging</p>
+              <h3>Select a {activeTab === "dm" ? "conversation" : "group chat"}</h3>
+              <p>Choose a {activeTab === "dm" ? "conversation" : "group chat"} from the sidebar to start messaging</p>
             </div>
+          ) : selectedGroupChat ? (
+            /* GROUP CHAT VIEW */
+            <>
+              {/* Group Chat Header */}
+              <div className="messages-chat-header">
+                <button
+                  className="mobile-back-btn"
+                  onClick={() => {
+                    setShowMobileChat(false);
+                    setSelectedGroupChat(null);
+                  }}
+                  title="Back to group chats"
+                >
+                  <ArrowLeft size={24} />
+                </button>
+                <div className="chat-header-avatar group-avatar">
+                  <Users size={24} />
+                </div>
+                <div className="chat-header-info">
+                  <h3 className="chat-header-name">{selectedGroupChat.name}</h3>
+                  <p className="chat-header-role">
+                    {selectedGroupChat.member_count || 0} members
+                  </p>
+                </div>
+              </div>
+
+              {/* Group Chat Messages */}
+              <div className="messages-chat-messages">
+                {messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`message-group ${msg.sender_id === currentUserId ? "sent" : "received"}`}
+                  >
+                    {msg.sender_id !== currentUserId && (
+                      <div className="message-sender-name">{msg.sender_name || "Unknown"}</div>
+                    )}
+                    <div className="message-bubble">
+                      {(msg.content || msg.message_text) && (
+                        <p className="message-text">{msg.content || msg.message_text}</p>
+                      )}
+                    </div>
+                    <div className="message-time">{formatTime(msg.created_at)}</div>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Group Chat Input */}
+              <div className="messages-chat-input">
+                <div className="chat-input-container">
+                  <div className="chat-input-wrapper">
+                    <div className="chat-input-main">
+                      <textarea
+                        className="chat-input-field"
+                        placeholder="Type a message..."
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            sendGroupMessage();
+                          }
+                        }}
+                        rows={1}
+                      />
+                      <button
+                        className="chat-input-btn chat-send-btn"
+                        onClick={sendGroupMessage}
+                        disabled={isSending || !message.trim()}
+                      >
+                        <Send size={20} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
           ) : (
             <>
               {/* Chat Header */}
