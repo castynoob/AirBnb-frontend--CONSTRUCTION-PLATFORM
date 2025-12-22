@@ -3,10 +3,18 @@ import '../styles/entrepreneur/subscriptionmodal.css'
 import logo from '../assets/logo.png'
 import SubscriptionPaymentForm from '../components/SubscriptionPaymentModal'
 
-export default function SubscriptionModal({token, refresher}) {
+export default function SubscriptionModal({token, refresher, onClose, showCloseButton = true}) {
   const [isOpen, setIsOpen] = useState(true);
   const [showPayment, setShowPayment] = useState(false)
   const [planType, setPlanType] = useState('')
+
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      setIsOpen(false);
+    }
+  };
 
   const features = [
     { name: 'Browse jobs', noSub: false, trialBasic: true, trialPremium: true, activeBasic: true, activePremium: true },
@@ -46,9 +54,16 @@ export default function SubscriptionModal({token, refresher}) {
       }
 
       <div className="subscription-modal">
-        <div className="modal-overlay"/>
-        
+        <div className="modal-overlay" onClick={showCloseButton ? handleClose : undefined}/>
+
         <div className="modal-content subs">
+          {showCloseButton && (
+            <button className="subs-close-btn" onClick={handleClose} aria-label="Close modal">
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          )}
           <div className="modal-header">
             <img src={logo} alt="INTERVOS Logo" className="logo" />
             <div className="sub-message">

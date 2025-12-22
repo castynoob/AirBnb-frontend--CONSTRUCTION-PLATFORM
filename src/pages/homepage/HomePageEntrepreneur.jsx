@@ -30,11 +30,15 @@ import {
   ChevronRight,
   LocateFixed,
   ArrowLeft,
+  Lock,
+  Crown,
+  Check,
 } from "lucide-react"
 import Nav from "../../components/Nav"
 import "../../styles/entrepreneur/homepageentrepreneur.css"
 import SubscriptionModal from "../../components/SubcriptionModal"
 import UnlockBudgetForm from '../../components/UnlockBudgetForm'
+import logo from "../../assets/logo.png"
 
 
 // Map Controller Component for programmatic map control
@@ -215,6 +219,7 @@ function HomePageEntrepreneur() {
   const [submittedBids, setSubmittedBids] = useState([])
   const [showUnlockBudgetModal, setShowUnlockBudgetModal] = useState(false)
   const [budgetJobId, setBudgetJobId] = useState('')
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
 
   // Radius filter states
   const [radiusFilter, setRadiusFilter] = useState({
@@ -600,10 +605,32 @@ function HomePageEntrepreneur() {
   }
 
   const handleBidClick = (job) => {
+    // Subscription is already checked at property level - users without subscription
+    // cannot see job details, so they cannot reach this point
+
+    // Check bid limit for basic plan users
+    const subscription = userProfile?.entrepProfile?.subscription?.subscription
+    const planType = subscription?.plan_type
+    const bidsInfo = subscription?.bids
+
+    // For basic plan, check if bid limit is reached
+    if (planType === 'basic' && bidsInfo) {
+      const remaining = bidsInfo.remaining ?? (bidsInfo.limit - bidsInfo.used)
+      if (remaining <= 0) {
+        alert(`You have used all ${bidsInfo.limit} bids for this month. Upgrade to Premium for unlimited bids.`)
+        setShowSubscriptionModal(true)
+        return
+      }
+    }
+
     setSelectedJob(job)
     setBidAmount("")
     setBidMessage("")
     setBidModalOpen(true)
+  }
+
+  const handleCloseSubscriptionModal = () => {
+    setShowSubscriptionModal(false)
   }
 
   const handleSubmitBid = async () => {
@@ -612,10 +639,10 @@ function HomePageEntrepreneur() {
       return
     }
 
-    const userProfile = localStorage.getItem('userProfile')
+    const storedProfile = localStorage.getItem('userProfile')
 
-    if(userProfile) {
-      const user = JSON.parse(userProfile)
+    if(storedProfile) {
+      const user = JSON.parse(storedProfile)
       try {
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
         const response = await fetch(`${API_BASE_URL}/api/bids`, {
@@ -631,13 +658,49 @@ function HomePageEntrepreneur() {
           })
         });
 
-        if(!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+        // Handle bid limit error (403)
+        if (response.status === 403) {
+          const errorData = await response.json()
+          if (errorData.error === 'Bid limit reached') {
+            alert(`${errorData.message}\n\nUpgrade to Premium for unlimited bids.`)
+            setBidModalOpen(false)
+            setShowSubscriptionModal(true)
+            return
+          }
+          throw new Error(errorData.message || 'Access denied')
         }
 
-        await response.json()
+        if(!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.message || `HTTP error! Status: ${response.status}`);
+        }
+
+        const result = await response.json()
         fetchBids()
-        
+
+        // Update local subscription data with new bids_remaining for basic plan
+        if (result.subscription && result.subscription.plan_type === 'basic') {
+          const updatedProfile = {
+            ...user,
+            entrepProfile: {
+              ...user.entrepProfile,
+              subscription: {
+                ...user.entrepProfile.subscription,
+                subscription: {
+                  ...user.entrepProfile.subscription.subscription,
+                  bids: {
+                    ...user.entrepProfile.subscription.subscription.bids,
+                    used: (user.entrepProfile.subscription.subscription.bids?.used || 0) + 1,
+                    remaining: result.subscription.bids_remaining
+                  }
+                }
+              }
+            }
+          }
+          localStorage.setItem('userProfile', JSON.stringify(updatedProfile))
+          setUserProfile(updatedProfile)
+        }
+
         alert("Bid submitted successfully!")
         setBidModalOpen(false)
         setBidAmount("")
@@ -645,7 +708,7 @@ function HomePageEntrepreneur() {
         setSelectedJob(null)
       } catch(err) {
         console.log(err)
-        alert("Failed to submit bid. Please try again.")
+        alert(err.message || "Failed to submit bid. Please try again.")
       }
     }
   }
@@ -989,6 +1052,8 @@ function HomePageEntrepreneur() {
     // Refresh data instead of reloading page
     await refreshData()
     await getProfileAfterSubs(userProfile)
+    // Close subscription modal after successful subscription
+    setShowSubscriptionModal(false)
   }
 
   return (
@@ -1095,7 +1160,14 @@ function HomePageEntrepreneur() {
         </button>
       </div>
 
-      {userProfile && userProfile.entrepProfile && !userProfile.entrepProfile.subscription.hasSubscription && <SubscriptionModal token={userProfile.token} refresher={refresher} />}
+      {showSubscriptionModal && userProfile && (
+        <SubscriptionModal
+          token={userProfile.token}
+          refresher={refresher}
+          onClose={handleCloseSubscriptionModal}
+          showCloseButton={true}
+        />
+      )}
 
       {/* Floating Header */}
       <div className="eh-floating-header">
@@ -1241,87 +1313,139 @@ function HomePageEntrepreneur() {
 
                 <div className="eh-section-divider"></div>
 
-                <div className="eh-section-tabs">
-                  <div className="eh-section-header">
-                    <h3>Available Jobs for Bidding</h3>
-                    <span className="eh-job-count-badge">{getPropertyOpenJobs(selectedProperty.id).length} Jobs</span>
-                  </div>
-                  <div className="eh-jobs-list">
-                    {getPropertyOpenJobs(selectedProperty.id).length > 0 ? (
-                      getPropertyOpenJobs(selectedProperty.id).map((job) => {
-                        return (
-                          <div key={job.id} className="eh-job-card">
-                            <div className="eh-job-card-header">
-                              <div className="eh-job-title-section">
-                                <h4 className="eh-job-title">{job.title}</h4>
-                                <div className="eh-job-meta-row">
-                                  <span className="eh-job-category">{job.category}</span>
-                                </div>
-                              </div>
-                              <span className="eh-urgency-badge" style={{ backgroundColor: getUrgencyColor(job.urgency) }}>
-                                {job.urgency}
-                              </span>
-                            </div>
-
-                            <p className="eh-job-description">{job.description}</p>
-
-                            <div className="eh-job-details-grid">
-                              <div className="eh-detail-item">
-                                <DollarSign size={16} />
-                                <div>
-                                  {/* unlock */}
-                                  <span className="eh-detail-label">Budget Range</span>
-                                  <span className="eh-detail-value">
-                                    {
-                                      job.budgetData.unlocked?
-                                    `$${Number.parseFloat(job.budget_min).toLocaleString()} - 
-                                     $${Number.parseFloat(job.budget_max).toLocaleString()}` :
-                                     <>
-                                      <button className="unlock-budget-button" onClick={() => {
-                                        setBudgetJobId(job.id)
-                                        setShowUnlockBudgetModal(true)
-                                      }}>Show budget</button>
-                                     </>
-                                    }
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="eh-detail-item">
-                                <Clock size={16} />
-                                <div>
-                                  <span className="eh-detail-label">Duration</span>
-                                  <span className="eh-detail-value">{job.estimated_duration_days} days</span>
-                                </div>
-                              </div>
-                              <div className="eh-detail-item">
-                                <AlertCircle size={16} />
-                                <div>
-                                  <span className="eh-detail-label">Needed In</span>
-                                  <span className="eh-detail-value">{job.daysUntilNeeded} days</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            <button className={(submittedBids.includes(job.id)? 'eh-bid-button eh-submitted-bid': 'eh-bid-button')} onClick={() => {
-                              if(!submittedBids.includes(job.id)) {
-                                handleBidClick(job)
-                              }
-                            }}>
-                              <Hammer size={18} />
-                              {submittedBids.includes(job.id)? 'Bid Submitted' : 'Submit Your Bid'}
-                            </button>
-                          </div>
-                        )
-                      })
-                    ) : (
-                      <div className="eh-no-jobs">
-                        <Hammer size={48} color="var(--color-border-divider)" />
-                        <p className="eh-no-jobs-title">No Open Jobs</p>
-                        <p className="eh-no-jobs-text">This property has no available jobs for bidding at the moment.</p>
+                {/* Check subscription before showing jobs */}
+                {!userProfile?.entrepProfile?.subscription?.hasSubscription ? (
+                  <div className="eh-subscribe-prompt">
+                    <div className="eh-subscribe-prompt-content">
+                      <div className="eh-subscribe-brand">
+                        <img src={logo} alt="Intervos" className="eh-subscribe-logo" />
+                        <span className="eh-subscribe-brand-text">INTERVOS</span>
                       </div>
-                    )}
+                      <div className="eh-subscribe-icon">
+                        <Lock size={48} />
+                      </div>
+                      <h3 className="eh-subscribe-title">Subscribe to View Jobs</h3>
+                      <p className="eh-subscribe-description">
+                        Unlock access to <strong>{getPropertyOpenJobsCount(selectedProperty.id)} available jobs</strong> on this property. Subscribe now to start bidding and grow your business.
+                      </p>
+
+                      <div className="eh-subscribe-features">
+                        <div className="eh-subscribe-feature">
+                          <Check size={16} />
+                          <span>View detailed job information</span>
+                        </div>
+                        <div className="eh-subscribe-feature">
+                          <Check size={16} />
+                          <span>Submit competitive bids</span>
+                        </div>
+                        <div className="eh-subscribe-feature">
+                          <Check size={16} />
+                          <span>Unlock project budgets</span>
+                        </div>
+                        <div className="eh-subscribe-feature">
+                          <Check size={16} />
+                          <span>Message on approved projects</span>
+                        </div>
+                      </div>
+
+                      <button
+                        className="eh-subscribe-cta-btn"
+                        onClick={() => setShowSubscriptionModal(true)}
+                      >
+                        <Crown size={18} />
+                        View Subscription Plans
+                      </button>
+
+                      <p className="eh-subscribe-trial-text">
+                        Start with a 14-day free trial • No credit card required
+                      </p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="eh-section-tabs">
+                    <div className="eh-section-header">
+                      <h3>Available Jobs for Bidding</h3>
+                      <span className="eh-job-count-badge">{getPropertyOpenJobs(selectedProperty.id).length} Jobs</span>
+                    </div>
+                    <div className="eh-jobs-list">
+                      {getPropertyOpenJobs(selectedProperty.id).length > 0 ? (
+                        getPropertyOpenJobs(selectedProperty.id).map((job) => {
+                          return (
+                            <div key={job.id} className="eh-job-card">
+                              <div className="eh-job-card-header">
+                                <div className="eh-job-title-section">
+                                  <h4 className="eh-job-title">{job.title}</h4>
+                                  <div className="eh-job-meta-row">
+                                    <span className="eh-job-category">{job.category}</span>
+                                  </div>
+                                </div>
+                                <span className="eh-urgency-badge" style={{ backgroundColor: getUrgencyColor(job.urgency) }}>
+                                  {job.urgency}
+                                </span>
+                              </div>
+
+                              <p className="eh-job-description">{job.description}</p>
+
+                              <div className="eh-job-details-grid">
+                                <div className="eh-detail-item">
+                                  <DollarSign size={16} />
+                                  <div>
+                                    {/* unlock */}
+                                    <span className="eh-detail-label">Budget Range</span>
+                                    <span className="eh-detail-value">
+                                      {
+                                        job.budgetData.unlocked?
+                                      `$${Number.parseFloat(job.budget_min).toLocaleString()} -
+                                       $${Number.parseFloat(job.budget_max).toLocaleString()}` :
+                                       <>
+                                        <button className="unlock-budget-button" onClick={() => {
+                                          setBudgetJobId(job.id)
+                                          setShowUnlockBudgetModal(true)
+                                        }}>Show budget</button>
+                                       </>
+                                      }
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="eh-detail-item">
+                                  <Clock size={16} />
+                                  <div>
+                                    <span className="eh-detail-label">Duration</span>
+                                    <span className="eh-detail-value">{job.estimated_duration_days} days</span>
+                                  </div>
+                                </div>
+                                <div className="eh-detail-item">
+                                  <AlertCircle size={16} />
+                                  <div>
+                                    <span className="eh-detail-label">Needed In</span>
+                                    <span className={`eh-detail-value ${job.daysUntilNeeded <= 0 ? 'eh-urgent-value' : ''}`}>
+                                      {job.daysUntilNeeded <= 0 ? 'Urgent' : `${job.daysUntilNeeded} days`}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <button className={(submittedBids.includes(job.id)? 'eh-bid-button eh-submitted-bid': 'eh-bid-button')} onClick={() => {
+                                if(!submittedBids.includes(job.id)) {
+                                  handleBidClick(job)
+                                }
+                              }}>
+                                <Hammer size={18} />
+                                {submittedBids.includes(job.id)? 'Bid Submitted' : 'Submit Your Bid'}
+                              </button>
+                            </div>
+                          )
+                        })
+                      ) : (
+                        <div className="eh-no-jobs">
+                          <Hammer size={48} color="var(--color-border-divider)" />
+                          <p className="eh-no-jobs-title">No Open Jobs</p>
+                          <p className="eh-no-jobs-text">This property has no available jobs for bidding at the moment.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="eh-all-properties-list">
@@ -1573,83 +1697,134 @@ function HomePageEntrepreneur() {
 
               <div className="eh-section-divider"></div>
 
-              <div className="eh-section-tabs">
-                <h3 className="eh-modal-section-title">Available Jobs</h3>
-                <div className="eh-jobs-list">
-                  {getPropertyOpenJobs(selectedProperty.id).length > 0 ? (
-                    getPropertyOpenJobs(selectedProperty.id).map((job) => {
-                      return (
-                        <div key={job.id} className="eh-job-card">
-                          <div className="eh-job-card-header">
-                            <div className="eh-job-title-section">
-                              <h4 className="eh-job-title">{job.title}</h4>
-                              <div className="eh-job-meta-row">
-                                <span className="eh-job-category">{job.category}</span>
-                                <span className="eh-bid-count-badge">{job.bidCount} bids</span>
-                              </div>
-                            </div>
-                            <span className="eh-urgency-badge" style={{ backgroundColor: getUrgencyColor(job.urgency) }}>
-                              {job.urgency}
-                            </span>
-                          </div>
-
-                          <p className="eh-job-description">{job.description}</p>
-
-                          <div className="eh-job-details-grid">
-                            <div className="eh-detail-item">
-                              <DollarSign size={16} />
-                              <div>
-                                <span className="eh-detail-label">Budget Range</span>
-                                <span className="eh-detail-value">
-                                  {
-                                      job.budgetData.unlocked?
-                                    `$${Number.parseFloat(job.budget_min).toLocaleString()} - 
-                                     $${Number.parseFloat(job.budget_max).toLocaleString()}` :
-                                     <>
-                                      <button className="unlock-budget-button" onClick={() => {
-                                        setBudgetJobId(job.id)
-                                        setShowUnlockBudgetModal(true)
-                                      }}>Show budget</button>
-                                     </>
-                                    }
-                                </span>
-                              </div>
-                            </div>
-                            <div className="eh-detail-item">
-                              <Clock size={16} />
-                              <div>
-                                <span className="eh-detail-label">Duration</span>
-                                <span className="eh-detail-value">{job.estimated_duration_days} days</span>
-                              </div>
-                            </div>
-                            <div className="eh-detail-item">
-                              <AlertCircle size={16} />
-                              <div>
-                                <span className="eh-detail-label">Needed In</span>
-                                <span className="eh-detail-value">{job.daysUntilNeeded} days</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <button className={(submittedBids.includes(job.id)? 'eh-bid-button eh-submitted-bid': 'eh-bid-button')} onClick={() => {
-                            setPropertyModalOpen(false)
-                            handleBidClick(job)
-                          }}>
-                            <Hammer size={18} />
-                            {submittedBids.includes(job.id)? 'Bid Submitted' : 'Submit Your Bid'}
-                          </button>
-                        </div>
-                      )
-                    })
-                  ) : (
-                    <div className="eh-no-jobs">
-                      <Hammer size={48} color="var(--color-border-divider)" />
-                      <p className="eh-no-jobs-title">No Open Jobs</p>
-                      <p className="eh-no-jobs-text">This property has no available jobs for bidding at the moment.</p>
+              {/* Check subscription before showing jobs in mobile modal */}
+              {!userProfile?.entrepProfile?.subscription?.hasSubscription ? (
+                <div className="eh-subscribe-prompt">
+                  <div className="eh-subscribe-prompt-content">
+                    <div className="eh-subscribe-brand">
+                      <img src={logo} alt="Intervos" className="eh-subscribe-logo" />
+                      <span className="eh-subscribe-brand-text">INTERVOS</span>
                     </div>
-                  )}
+                    <div className="eh-subscribe-icon">
+                      <Lock size={40} />
+                    </div>
+                    <h3 className="eh-subscribe-title">Subscribe to View Jobs</h3>
+                    <p className="eh-subscribe-description">
+                      Unlock access to <strong>{getPropertyOpenJobsCount(selectedProperty.id)} available jobs</strong> on this property.
+                    </p>
+
+                    <div className="eh-subscribe-features eh-mobile-features">
+                      <div className="eh-subscribe-feature">
+                        <Check size={14} />
+                        <span>View job details</span>
+                      </div>
+                      <div className="eh-subscribe-feature">
+                        <Check size={14} />
+                        <span>Submit bids</span>
+                      </div>
+                      <div className="eh-subscribe-feature">
+                        <Check size={14} />
+                        <span>Unlock budgets</span>
+                      </div>
+                    </div>
+
+                    <button
+                      className="eh-subscribe-cta-btn"
+                      onClick={() => {
+                        setPropertyModalOpen(false)
+                        setShowSubscriptionModal(true)
+                      }}
+                    >
+                      <Crown size={16} />
+                      View Plans
+                    </button>
+
+                    <p className="eh-subscribe-trial-text">
+                      14-day free trial
+                    </p>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="eh-section-tabs">
+                  <h3 className="eh-modal-section-title">Available Jobs</h3>
+                  <div className="eh-jobs-list">
+                    {getPropertyOpenJobs(selectedProperty.id).length > 0 ? (
+                      getPropertyOpenJobs(selectedProperty.id).map((job) => {
+                        return (
+                          <div key={job.id} className="eh-job-card">
+                            <div className="eh-job-card-header">
+                              <div className="eh-job-title-section">
+                                <h4 className="eh-job-title">{job.title}</h4>
+                                <div className="eh-job-meta-row">
+                                  <span className="eh-job-category">{job.category}</span>
+                                  <span className="eh-bid-count-badge">{job.bidCount} bids</span>
+                                </div>
+                              </div>
+                              <span className="eh-urgency-badge" style={{ backgroundColor: getUrgencyColor(job.urgency) }}>
+                                {job.urgency}
+                              </span>
+                            </div>
+
+                            <p className="eh-job-description">{job.description}</p>
+
+                            <div className="eh-job-details-grid">
+                              <div className="eh-detail-item">
+                                <DollarSign size={16} />
+                                <div>
+                                  <span className="eh-detail-label">Budget Range</span>
+                                  <span className="eh-detail-value">
+                                    {
+                                        job.budgetData.unlocked?
+                                      `$${Number.parseFloat(job.budget_min).toLocaleString()} -
+                                       $${Number.parseFloat(job.budget_max).toLocaleString()}` :
+                                       <>
+                                        <button className="unlock-budget-button" onClick={() => {
+                                          setBudgetJobId(job.id)
+                                          setShowUnlockBudgetModal(true)
+                                        }}>Show budget</button>
+                                       </>
+                                      }
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="eh-detail-item">
+                                <Clock size={16} />
+                                <div>
+                                  <span className="eh-detail-label">Duration</span>
+                                  <span className="eh-detail-value">{job.estimated_duration_days} days</span>
+                                </div>
+                              </div>
+                              <div className="eh-detail-item">
+                                <AlertCircle size={16} />
+                                <div>
+                                  <span className="eh-detail-label">Needed In</span>
+                                  <span className={`eh-detail-value ${job.daysUntilNeeded <= 0 ? 'eh-urgent-value' : ''}`}>
+                                    {job.daysUntilNeeded <= 0 ? 'Urgent' : `${job.daysUntilNeeded} days`}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <button className={(submittedBids.includes(job.id)? 'eh-bid-button eh-submitted-bid': 'eh-bid-button')} onClick={() => {
+                              setPropertyModalOpen(false)
+                              handleBidClick(job)
+                            }}>
+                              <Hammer size={18} />
+                              {submittedBids.includes(job.id)? 'Bid Submitted' : 'Submit Your Bid'}
+                            </button>
+                          </div>
+                        )
+                      })
+                    ) : (
+                      <div className="eh-no-jobs">
+                        <Hammer size={48} color="var(--color-border-divider)" />
+                        <p className="eh-no-jobs-title">No Open Jobs</p>
+                        <p className="eh-no-jobs-text">This property has no available jobs for bidding at the moment.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1673,7 +1848,7 @@ function HomePageEntrepreneur() {
                 <p className="eh-job-summary-budget">
                   Budget Range: {
                     selectedJob.budgetData.unlocked ?
-                    `$${Number.parseFloat(selectedJob.budget_min).toLocaleString()} - 
+                    `$${Number.parseFloat(selectedJob.budget_min).toLocaleString()} -
                      $${Number.parseFloat(selectedJob.budget_max).toLocaleString()}` :
                     <>
                     <button className="unlock-budget-button" onClick={() => {
@@ -1684,6 +1859,39 @@ function HomePageEntrepreneur() {
                   }
                 </p>
               </div>
+
+              {/* Bid Count Indicator for Basic Plan */}
+              {userProfile?.entrepProfile?.subscription?.subscription?.plan_type === 'basic' &&
+               userProfile?.entrepProfile?.subscription?.subscription?.bids && (
+                <div className="eh-bid-count-indicator">
+                  <div className="eh-bid-count-info">
+                    <span className="eh-bid-count-label">Bids Remaining:</span>
+                    <span className="eh-bid-count-value">
+                      {userProfile.entrepProfile.subscription.subscription.bids.remaining ??
+                       (userProfile.entrepProfile.subscription.subscription.bids.limit -
+                        userProfile.entrepProfile.subscription.subscription.bids.used)} / {userProfile.entrepProfile.subscription.subscription.bids.limit}
+                    </span>
+                  </div>
+                  <div className="eh-bid-count-bar">
+                    <div
+                      className="eh-bid-count-fill"
+                      style={{
+                        width: `${((userProfile.entrepProfile.subscription.subscription.bids.remaining ??
+                                  (userProfile.entrepProfile.subscription.subscription.bids.limit -
+                                   userProfile.entrepProfile.subscription.subscription.bids.used)) /
+                                 userProfile.entrepProfile.subscription.subscription.bids.limit) * 100}%`
+                      }}
+                    ></div>
+                  </div>
+                  {(userProfile.entrepProfile.subscription.subscription.bids.remaining ??
+                   (userProfile.entrepProfile.subscription.subscription.bids.limit -
+                    userProfile.entrepProfile.subscription.subscription.bids.used)) <= 5 && (
+                    <p className="eh-bid-count-warning">
+                      Running low on bids! Upgrade to Premium for unlimited bids.
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="eh-bid-form">
                 <div className="eh-form-group">

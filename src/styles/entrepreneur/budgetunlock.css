@@ -1,42 +1,29 @@
+/* ========================================
+   UNLOCK BUDGET MODAL - IMPROVED UI
+   ======================================== */
+
 /* ===== Overlay ===== */
 .ub-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10, 15, 25, 0.55);
-  backdrop-filter: blur(7px);
+  background: rgba(15, 34, 61, 0.75);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10000;
   animation: ub-fadeIn 0.3s ease;
-}
-
-/* ===== Modal ===== */
-.ub-modal {
-  background: #fff;
-  border-radius: 18px;
-  padding: 2rem;
-  width: 100%;
-  max-width: 460px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-  position: relative;
-  animation: ub-slideUp 0.3s ease;
-  text-align: left;
-  border-top: 6px solid #007bff;
+  padding: 1rem;
 }
 
 @keyframes ub-fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes ub-slideUp {
   from {
-    transform: translateY(25px);
+    transform: translateY(30px);
     opacity: 0;
   }
   to {
@@ -45,136 +32,1233 @@
   }
 }
 
-/* ===== Header Branding ===== */
-.ub-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.4rem;
+@keyframes ub-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
 }
 
-.ub-logo {
+@keyframes ub-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ===== Main Modal ===== */
+.ub-modal {
+  background: #fff;
+  border-radius: 20px;
+  padding: 0;
+  width: 100%;
+  max-width: 440px;
+  box-shadow:
+    0 25px 60px -12px rgba(15, 34, 61, 0.35),
+    0 0 0 1px rgba(15, 34, 61, 0.05);
+  position: relative;
+  animation: ub-slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+/* Two Column Modal Layout */
+.ub-modal.ub-two-column {
+  max-width: 800px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ub-columns {
+  display: flex;
+  flex-direction: row;
+}
+
+/* ===== Left Column - Benefits ===== */
+.ub-left-column {
+  flex: 1;
+  background: linear-gradient(135deg, #0F223D 0%, #1a3a5c 50%, #0F223D 100%);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  min-height: 420px;
+}
+
+.ub-left-decoration {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.ub-left-decoration .ub-decoration-circle:nth-child(1) {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: rgba(0, 165, 169, 0.1);
+  top: -60px;
+  left: -60px;
+  animation: ub-float 8s ease-in-out infinite;
+}
+
+.ub-left-decoration .ub-decoration-circle:nth-child(2) {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: rgba(46, 204, 113, 0.08);
+  bottom: -30px;
+  right: -30px;
+  animation: ub-float 6s ease-in-out infinite reverse;
+}
+
+.ub-left-decoration .ub-decoration-circle:nth-child(3) {
+  position: absolute;
   width: 60px;
   height: 60px;
+  border-radius: 50%;
+  background: rgba(0, 165, 169, 0.12);
+  top: 40%;
+  right: 10%;
+  animation: ub-float 10s ease-in-out infinite;
+}
+
+.ub-left-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.ub-left-logo {
+  width: 32px;
+  height: 32px;
   object-fit: contain;
+  filter: brightness(0) invert(1);
 }
 
-.ub-title {
-  font-size: 1.35rem;
+.ub-left-brand-text {
+  font-size: 1rem;
   font-weight: 700;
-  color: #111;
-  margin: 0;
+  color: #fff;
+  letter-spacing: 1.5px;
 }
 
-.ub-subtitle {
+.ub-left-icon {
+  width: 70px;
+  height: 70px;
+  background: linear-gradient(135deg, #00A5A9 0%, #008b8f 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+  box-shadow:
+    0 10px 30px rgba(0, 165, 169, 0.4),
+    0 0 0 5px rgba(0, 165, 169, 0.15);
+  position: relative;
+  z-index: 1;
+  animation: ub-pulse 2s ease-in-out infinite;
+}
+
+.ub-left-icon svg {
+  width: 32px;
+  height: 32px;
+  color: #fff;
+}
+
+.ub-left-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.5rem 0;
+  position: relative;
+  z-index: 1;
+}
+
+.ub-left-subtitle {
   font-size: 0.9rem;
-  color: #555;
-  margin-top: 0.2rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0 0 1.5rem 0;
+  position: relative;
+  z-index: 1;
+  line-height: 1.5;
+  max-width: 260px;
+}
+
+.ub-left-benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  position: relative;
+  z-index: 1;
+}
+
+.ub-left-benefit {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 0.85rem;
+  text-align: left;
+  transition: all 0.25s ease;
+}
+
+.ub-left-benefit:hover {
+  background: rgba(255, 255, 255, 0.12);
+  transform: translateX(4px);
+}
+
+.ub-left-benefit-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(0, 165, 169, 0.25);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ub-left-benefit-icon svg {
+  width: 18px;
+  height: 18px;
+  color: #00A5A9;
+}
+
+.ub-left-benefit-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.ub-left-benefit-text strong {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.ub-left-benefit-text span {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+}
+
+/* ===== Right Column - Checkout ===== */
+.ub-right-column {
+  flex: 1;
+  background: #fff;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.ub-right-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0F223D;
+  margin: 0 0 0.35rem 0;
+}
+
+.ub-right-subtitle {
+  font-size: 0.85rem;
+  color: #6B7280;
+  margin: 0 0 1.25rem 0;
 }
 
 /* ===== Close Button ===== */
 .ub-close-btn {
   position: absolute;
-  top: 12px;
+  top: 16px;
   right: 16px;
-  background: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
   border: none;
-  font-size: 1.6rem;
-  color: #888;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: color 0.25s ease;
-}
-.ub-close-btn:hover {
-  color: #000;
+  transition: all 0.25s ease;
+  z-index: 10;
 }
 
-/* ===== Description ===== */
-.ub-description {
-  color: #333;
-  font-size: 0.95rem;
-  line-height: 1.55;
-  margin-bottom: 1.5rem;
+.ub-close-btn svg {
+  width: 18px;
+  height: 18px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.ub-close-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: rotate(90deg);
+}
+
+.ub-close-btn:hover svg {
+  color: #fff;
+}
+
+/* ===== Header with Branding ===== */
+.ub-header {
+  background: linear-gradient(135deg, #0F223D 0%, #1a3a5c 100%);
+  padding: 1.5rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ub-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.ub-logo {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.ub-brand-name {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 1.5px;
+}
+
+.ub-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(0, 165, 169, 0.2);
+  border: 1px solid rgba(0, 165, 169, 0.3);
+  padding: 0.4rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #00A5A9;
+}
+
+.ub-badge svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ===== Title Section ===== */
+.ub-title-section {
+  padding: 1.5rem 2rem 0;
+  text-align: center;
+}
+
+.ub-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0F223D;
+  margin: 0 0 0.5rem 0;
+}
+
+.ub-subtitle {
+  font-size: 0.9rem;
+  color: #6B7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ===== Benefits ===== */
+.ub-benefits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  justify-content: center;
+}
+
+.ub-benefit {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: #059669;
+  background: rgba(5, 150, 105, 0.08);
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+}
+
+.ub-benefit svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 
 /* ===== Payment Summary ===== */
 .ub-summary {
-  background: #f3f6fb;
-  border-radius: 10px;
-  padding: 1rem;
-  margin-bottom: 1.4rem;
+  margin: 0 0 1rem 0;
+  background: #F7F8FA;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #E5E7EB;
+}
+
+.ub-summary-header {
+  background: #0F223D;
+  padding: 0.6rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .ub-summary-row {
   display: flex;
   justify-content: space-between;
-  font-size: 0.95rem;
-  color: #333;
-  padding: 0.4rem 0;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  color: #4B5563;
+  border-bottom: 1px solid #E5E7EB;
 }
 
 .ub-summary-row strong {
+  color: #0F223D;
   font-weight: 600;
-  color: #000;
 }
 
-/* ===== Stripe Card Element ===== */
-.StripeElement {
-  background: #f9fafb;
-  padding: 0.9rem 1rem;
-  border-radius: 10px;
-  border: 1px solid #d2d6dc;
+.ub-summary-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  background: #fff;
+}
+
+.ub-summary-total span {
+  font-weight: 600;
+  color: #0F223D;
+}
+
+.ub-summary-total strong {
+  font-size: 1.1rem;
+  color: #00A5A9;
+  font-weight: 700;
+}
+
+/* ===== Form ===== */
+.ub-form {
+  padding: 0;
+}
+
+.ub-card-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.ub-card-wrapper {
+  background: #F9FAFB;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid #D1D5DB;
   transition: all 0.25s ease;
   margin-bottom: 1rem;
 }
-.StripeElement--focus {
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+
+.ub-card-wrapper:focus-within {
+  border-color: #00A5A9;
+  box-shadow: 0 0 0 3px rgba(0, 165, 169, 0.1);
 }
-.StripeElement--invalid {
-  border-color: #fa755a;
+
+/* ===== Error Message ===== */
+.ub-error-message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(231, 76, 60, 0.1);
+  border: 1px solid rgba(231, 76, 60, 0.2);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  color: #E74C3C;
+  font-size: 0.85rem;
+}
+
+.ub-error-message svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 /* ===== Submit Button ===== */
-.ub-form button {
-  background: linear-gradient(90deg, #007bff, #0056b3);
+.ub-submit-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #00A5A9 0%, #008b8f 100%);
   color: #fff;
   border: none;
-  border-radius: 10px;
-  padding: 0.9rem;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.ub-submit-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
   width: 100%;
-  transition: all 0.25s ease;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
 }
-.ub-form button:hover:not(:disabled) {
-  background: linear-gradient(90deg, #006ae1, #004c9c);
-  transform: translateY(-1px);
+
+.ub-submit-btn:hover:not(:disabled)::before {
+  left: 100%;
 }
-.ub-form button:disabled {
+
+.ub-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #00b5b9 0%, #009a9e 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 165, 169, 0.35);
+}
+
+.ub-submit-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
 }
 
-/* ===== Messages ===== */
-.ub-message {
-  margin-top: 1rem;
-  color: #444;
-  font-size: 0.95rem;
-}
-.ub-secure-text {
-  font-size: 0.8rem;
-  color: #777;
-  margin-top: 0.8rem;
-  text-align: center;
+.ub-submit-btn svg {
+  width: 20px;
+  height: 20px;
 }
 
-@media (max-width: 1400px) {
+.ub-btn-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: ub-spin 0.8s linear infinite;
+}
+
+/* ===== Security Footer ===== */
+.ub-security-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem 2rem 1.5rem;
+  border-top: 1px solid #E5E7EB;
+  background: #F9FAFB;
+}
+
+.ub-security-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: #6B7280;
+}
+
+.ub-security-item svg {
+  width: 14px;
+  height: 14px;
+  color: #059669;
+}
+
+.ub-security-divider {
+  width: 1px;
+  height: 16px;
+  background: #D1D5DB;
+}
+
+.ub-stripe-badge {
+  font-size: 0.75rem;
+  color: #6B7280;
+}
+
+.ub-stripe-badge strong {
+  color: #0F223D;
+  font-weight: 700;
+}
+
+/* ========================================
+   CLOSING/LOADING SCREEN
+   ======================================== */
+
+.ub-closing-overlay {
+  background: rgba(15, 34, 61, 0.9);
+}
+
+.ub-closing-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+}
+
+.ub-closing-spinner {
+  width: 80px;
+  height: 80px;
+  border: 4px solid rgba(0, 165, 169, 0.2);
+  border-top-color: #00A5A9;
+  border-radius: 50%;
+  animation: ub-spin 1s linear infinite;
+  position: absolute;
+}
+
+.ub-closing-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #2ECC71 0%, #27ae60 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 30px rgba(46, 204, 113, 0.4);
+  animation: ub-pulse 1.5s ease-in-out infinite;
+}
+
+.ub-closing-icon svg {
+  width: 40px;
+  height: 40px;
+  color: #fff;
+}
+
+.ub-closing-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 1.5rem 0 0.5rem 0;
+}
+
+.ub-closing-text {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+}
+
+/* ========================================
+   SUCCESS/THANK YOU MODAL
+   ======================================== */
+
+.ub-success-modal {
+  display: flex;
+  flex-direction: row;
+  max-width: 750px;
+  width: 100%;
+  border-radius: 24px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow:
+    0 25px 60px -12px rgba(15, 34, 61, 0.35),
+    0 0 0 1px rgba(15, 34, 61, 0.05);
+  animation: ub-slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+/* Close Button */
+.ub-success-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ub-success-close svg {
+  width: 20px;
+  height: 20px;
+  color: #6B7280;
+}
+
+.ub-success-close:hover {
+  background: #0F223D;
+  transform: rotate(90deg);
+}
+
+.ub-success-close:hover svg {
+  color: #fff;
+}
+
+/* Left Column */
+.ub-success-left {
+  flex: 1;
+  background: linear-gradient(135deg, #0F223D 0%, #1a3a5c 50%, #0F223D 100%);
+  padding: 2.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  min-height: 380px;
+}
+
+/* Decorative circles */
+.ub-success-decoration {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.ub-decoration-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(0, 165, 169, 0.1);
+}
+
+.ub-decoration-circle:nth-child(1) {
+  width: 250px;
+  height: 250px;
+  top: -80px;
+  left: -80px;
+  animation: ub-float 8s ease-in-out infinite;
+}
+
+.ub-decoration-circle:nth-child(2) {
+  width: 180px;
+  height: 180px;
+  bottom: -40px;
+  right: -40px;
+  background: rgba(46, 204, 113, 0.08);
+  animation: ub-float 6s ease-in-out infinite reverse;
+}
+
+.ub-decoration-circle:nth-child(3) {
+  width: 80px;
+  height: 80px;
+  top: 50%;
+  right: 15%;
+  background: rgba(46, 204, 113, 0.1);
+  animation: ub-float 10s ease-in-out infinite;
+}
+
+@keyframes ub-float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-15px) scale(1.03); }
+}
+
+/* Success Icon */
+.ub-success-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #2ECC71 0%, #27ae60 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+  box-shadow:
+    0 12px 35px rgba(46, 204, 113, 0.4),
+    0 0 0 6px rgba(46, 204, 113, 0.15);
+  position: relative;
+  z-index: 1;
+}
+
+.ub-success-icon svg {
+  width: 40px;
+  height: 40px;
+  color: #fff;
+}
+
+/* Branding */
+.ub-success-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  position: relative;
+  z-index: 1;
+}
+
+.ub-success-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.ub-brand-text {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 1.5px;
+}
+
+/* Messages */
+.ub-success-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 0.6rem 0;
+  position: relative;
+  z-index: 1;
+  line-height: 1.2;
+}
+
+.ub-success-subtitle {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0 0 1.5rem 0;
+  position: relative;
+  z-index: 1;
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+/* Notice */
+.ub-success-notice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 25px;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.9);
+  position: relative;
+  z-index: 1;
+  backdrop-filter: blur(10px);
+}
+
+.ub-success-notice svg {
+  width: 16px;
+  height: 16px;
+  color: #00A5A9;
+}
+
+/* Right Column */
+.ub-success-right {
+  flex: 1;
+  background: #fff;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.ub-benefits-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0F223D;
+  margin: 0 0 1.25rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Benefits List */
+.ub-success-benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+.ub-benefit-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  padding: 0.85rem;
+  background: #F7F8FA;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  transition: all 0.25s ease;
+}
+
+.ub-benefit-item:hover {
+  background: #fff;
+  border-color: #E5E7EB;
+  box-shadow: 0 4px 12px rgba(15, 34, 61, 0.08);
+  transform: translateX(4px);
+}
+
+.ub-benefit-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #00A5A9 0%, #008b8f 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ub-benefit-icon svg {
+  width: 20px;
+  height: 20px;
+  color: #fff;
+}
+
+.ub-benefit-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.ub-benefit-content strong {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0F223D;
+}
+
+.ub-benefit-content span {
+  font-size: 0.75rem;
+  color: #6B7280;
+  line-height: 1.4;
+}
+
+/* Success Button */
+.ub-success-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  background: linear-gradient(135deg, #00A5A9 0%, #008b8f 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.ub-success-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.ub-success-btn:hover::before {
+  left: 100%;
+}
+
+.ub-success-btn:hover {
+  background: linear-gradient(135deg, #00b5b9 0%, #009a9e 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 165, 169, 0.35);
+}
+
+.ub-success-btn svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.3s ease;
+}
+
+.ub-success-btn:hover svg {
+  transform: translateX(4px);
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+@media (max-width: 768px) {
+  /* Two Column Modal - Stack on mobile */
+  .ub-modal.ub-two-column {
+    max-width: 100%;
+    max-height: 95vh;
+    border-radius: 20px 20px 0 0;
+    overflow-y: auto;
+  }
+
+  .ub-columns {
+    flex-direction: column;
+  }
+
+  .ub-left-column {
+    padding: 1.5rem;
+    min-height: auto;
+  }
+
+  .ub-left-icon {
+    width: 60px;
+    height: 60px;
+  }
+
+  .ub-left-icon svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .ub-left-title {
+    font-size: 1.25rem;
+  }
+
+  .ub-left-subtitle {
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
+
+  .ub-left-benefits {
+    gap: 0.5rem;
+  }
+
+  .ub-left-benefit {
+    padding: 0.7rem;
+  }
+
+  .ub-left-benefit-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .ub-left-benefit-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .ub-right-column {
+    padding: 1.5rem;
+  }
+
+  .ub-right-title {
+    font-size: 1.1rem;
+  }
+
+  /* Success Modal */
+  .ub-success-modal {
+    flex-direction: column;
+    max-width: 100%;
+    max-height: 95vh;
+    border-radius: 20px 20px 0 0;
+    overflow-y: auto;
+  }
+
+  .ub-success-left {
+    padding: 1.75rem 1.5rem;
+    min-height: auto;
+  }
+
+  .ub-success-icon {
+    width: 65px;
+    height: 65px;
+    margin-bottom: 1rem;
+  }
+
+  .ub-success-icon svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .ub-success-title {
+    font-size: 1.4rem;
+  }
+
+  .ub-success-subtitle {
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
+
+  .ub-success-right {
+    padding: 1.5rem;
+  }
+
+  .ub-benefits-title {
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+
+  .ub-success-benefits {
+    gap: 0.6rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .ub-benefit-item {
+    padding: 0.75rem;
+  }
+
+  .ub-benefit-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .ub-benefit-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .ub-success-close {
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .ub-success-close svg {
+    color: #fff;
+  }
+
+  .ub-success-close:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  .ub-success-close:hover svg {
+    color: #fff;
+  }
+
+  .ub-close-btn {
+    background: rgba(255, 255, 255, 0.15);
+  }
+
+  .ub-close-btn svg {
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .ub-close-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+}
+
+@media (max-width: 520px) {
+  .ub-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
   .ub-modal {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    z-index: 10000;
-    transform: translate(-50%, -50%);
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .ub-modal.ub-two-column {
+    max-height: 90vh;
+  }
+
+  .ub-left-column {
+    padding: 1.25rem;
+  }
+
+  .ub-left-brand {
+    margin-bottom: 0.75rem;
+  }
+
+  .ub-left-logo {
+    width: 26px;
+    height: 26px;
+  }
+
+  .ub-left-brand-text {
+    font-size: 0.85rem;
+  }
+
+  .ub-left-icon {
+    width: 50px;
+    height: 50px;
+  }
+
+  .ub-left-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .ub-left-title {
+    font-size: 1.1rem;
+  }
+
+  .ub-left-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .ub-left-benefit-text strong {
+    font-size: 0.8rem;
+  }
+
+  .ub-left-benefit-text span {
+    font-size: 0.7rem;
+  }
+
+  .ub-right-column {
+    padding: 1.25rem;
+  }
+
+  .ub-right-title {
+    font-size: 1rem;
+  }
+
+  .ub-right-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .ub-security-footer {
+    padding: 0.85rem 1.25rem;
+    gap: 0.75rem;
+  }
+
+  .ub-close-btn {
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .ub-close-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .ub-submit-btn {
+    padding: 0.85rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .ub-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+
+  .ub-security-divider {
+    display: none;
+  }
+
+  .ub-security-footer {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 }

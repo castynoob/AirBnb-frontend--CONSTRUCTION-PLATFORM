@@ -653,6 +653,98 @@ function ProfilePageEntrepreneur() {
               <div className="entrepreneur-tab-panel">
                 <h2 className="entrepreneur-section-title">Subscription Management</h2>
 
+                {/* No Subscription State */}
+                {!userProfile?.entrepProfile?.subscription?.hasSubscription ? (
+                  <div className="no-subscription-state">
+                    <div className="no-sub-content">
+                      <div className="no-sub-icon">
+                        <Crown size={48} />
+                      </div>
+                      <h3 className="no-sub-title">No Active Subscription</h3>
+                      <p className="no-sub-description">
+                        Subscribe to unlock powerful features like submitting bids, unlocking project budgets, and messaging on approved projects.
+                      </p>
+                      <button
+                        className="subscribe-now-btn"
+                        onClick={() => setShowPlansModal(true)}
+                      >
+                        <Crown size={18} />
+                        View Subscription Plans
+                      </button>
+                    </div>
+
+                    {/* Feature Comparison Table for non-subscribers */}
+                    <div className="comparison-section">
+                      <div className="section-header">
+                        <div className="section-icon">
+                          <Crown size={24} />
+                        </div>
+                        <div className="section-text">
+                          <h2 className="section-title">Feature Comparison</h2>
+                          <p className="section-subtitle">See what you can unlock with a subscription</p>
+                        </div>
+                      </div>
+
+                      <div className="comparison-table-wrapper">
+                        <table className="comparison-table">
+                          <thead>
+                            <tr>
+                              <th className="feature-col">Feature</th>
+                              <th className="tier-col">No Subscription</th>
+                              <th className="tier-col">Basic Plan</th>
+                              <th className="tier-col premium-col">Premium Plan</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td className="feature-name">Browse construction jobs</td>
+                              <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                              <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                              <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                            </tr>
+                            <tr>
+                              <td className="feature-name">View job details & specs</td>
+                              <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                              <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                              <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                            </tr>
+                            <tr>
+                              <td className="feature-name">Submit bids</td>
+                              <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                              <td className="tier-cell">
+                                <Check className="icon-yes" size={20} />
+                                <span className="feature-note">(30 max)</span>
+                              </td>
+                              <td className="tier-cell premium-cell">
+                                <Check className="icon-yes" size={20} />
+                                <span className="feature-note">(unlimited)</span>
+                              </td>
+                            </tr>
+                            <tr>
+                              <td className="feature-name">Unlock project budgets</td>
+                              <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                              <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                              <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                            </tr>
+                            <tr>
+                              <td className="feature-name">Message on approved projects</td>
+                              <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                              <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                              <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                            </tr>
+                            <tr>
+                              <td className="feature-name">Priority support</td>
+                              <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                              <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                              <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
                 {/* Trial Banner - Only show during trial */}
                 {subscription.is_trial && getTrialInfo() && (
                   <div className="status-banner trial-banner">
@@ -954,6 +1046,8 @@ function ProfilePageEntrepreneur() {
                     </table>
                   </div>
                 </div>
+                  </>
+                )}
               </div>
             )}
           </div>

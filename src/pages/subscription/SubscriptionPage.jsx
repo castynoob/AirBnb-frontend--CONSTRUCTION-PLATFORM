@@ -3,6 +3,8 @@ import { Crown, TrendingUp, Check, X, Zap, Shield, Star, ArrowRight, Building2, 
 import Nav from '../../components/Nav';
 import logo from "../../assets/logo.png"
 import '../../styles/entrepreneur/subscriptionpage.css';
+import '../../styles/entrepreneur/profilepageentrepreneur.css';
+import SubscriptionModal from '../../components/SubcriptionModal';
 
 function SubscriptionPage() {
   const [userProfile, setUserProfile] = useState({
@@ -27,13 +29,56 @@ function SubscriptionPage() {
   });
 
   const [subscription, setSubscription] = useState({})
+  const [hasSubscription, setHasSubscription] = useState(false)
+  const [showPlansModal, setShowPlansModal] = useState(false)
 
   useEffect(() => {
     const uProfile = localStorage.getItem('userProfile')
-    const u = JSON.parse(uProfile)
-    setUserProfile(u)
-    setSubscription(u.entrepProfile.subscription.subscription)
+    if (uProfile) {
+      const u = JSON.parse(uProfile)
+      setUserProfile(u)
+      if (u.entrepProfile && u.entrepProfile.subscription) {
+        setHasSubscription(u.entrepProfile.subscription.hasSubscription || false)
+        setSubscription(u.entrepProfile.subscription.subscription || {})
+      }
+    }
   }, [])
+
+  const refresher = async () => {
+    // Refresh subscription data after successful subscription
+    const uProf = localStorage.getItem('userProfile')
+    if (uProf) {
+      const u = JSON.parse(uProf)
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/payments/subscription`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${u.token}`
+          }
+        })
+        if (response.ok) {
+          const subscriptionData = await response.json()
+          setSubscription(subscriptionData.subscription || {})
+          setHasSubscription(subscriptionData.hasSubscription || false)
+
+          // Update localStorage with new subscription data
+          const updatedProfile = {
+            ...u,
+            entrepProfile: {
+              ...u.entrepProfile,
+              subscription: subscriptionData,
+            },
+          }
+          localStorage.setItem('userProfile', JSON.stringify(updatedProfile))
+          setUserProfile(updatedProfile)
+        }
+      } catch (error) {
+        console.error('Error refreshing subscription:', error)
+      }
+    }
+    setShowPlansModal(false)
+  }
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -141,6 +186,98 @@ function SubscriptionPage() {
           </div>
         </div>
 
+        {/* No Subscription State */}
+        {!hasSubscription ? (
+          <div className="no-subscription-state">
+            <div className="no-sub-content">
+              <div className="no-sub-icon">
+                <Crown size={48} />
+              </div>
+              <h3 className="no-sub-title">No Active Subscription</h3>
+              <p className="no-sub-description">
+                Subscribe to unlock powerful features like submitting bids, unlocking project budgets, and messaging on approved projects.
+              </p>
+              <button
+                className="subscribe-now-btn"
+                onClick={() => setShowPlansModal(true)}
+              >
+                <Crown size={18} />
+                View Subscription Plans
+              </button>
+            </div>
+
+            {/* Feature Comparison Table for non-subscribers */}
+            <div className="comparison-section">
+              <div className="section-header">
+                <div className="section-icon">
+                  <Crown size={24} />
+                </div>
+                <div className="section-text">
+                  <h2 className="section-title">Feature Comparison</h2>
+                  <p className="section-subtitle">See what you can unlock with a subscription</p>
+                </div>
+              </div>
+
+              <div className="comparison-table-wrapper">
+                <table className="comparison-table">
+                  <thead>
+                    <tr>
+                      <th className="feature-col">Feature</th>
+                      <th className="tier-col">No Subscription</th>
+                      <th className="tier-col">Basic Plan</th>
+                      <th className="tier-col premium-col">Premium Plan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="feature-name">Browse construction jobs</td>
+                      <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                      <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                      <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                    </tr>
+                    <tr>
+                      <td className="feature-name">View job details & specs</td>
+                      <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                      <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                      <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                    </tr>
+                    <tr>
+                      <td className="feature-name">Submit bids</td>
+                      <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                      <td className="tier-cell">
+                        <Check className="icon-yes" size={20} />
+                        <span className="feature-note">(30 max)</span>
+                      </td>
+                      <td className="tier-cell premium-cell">
+                        <Check className="icon-yes" size={20} />
+                        <span className="feature-note">(unlimited)</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="feature-name">Unlock project budgets</td>
+                      <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                      <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                      <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                    </tr>
+                    <tr>
+                      <td className="feature-name">Message on approved projects</td>
+                      <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                      <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                      <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                    </tr>
+                    <tr>
+                      <td className="feature-name">Priority support</td>
+                      <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                      <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                      <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
         {/* Trial Banner - Only show during trial */}
         {subscription.is_trial && trialInfo && (
           <div className="status-banner trial-banner">
@@ -428,7 +565,19 @@ function SubscriptionPage() {
             </table>
           </div>
         </div>
+          </>
+        )}
       </main>
+
+      {/* Subscription Plans Modal */}
+      {showPlansModal && userProfile && (
+        <SubscriptionModal
+          token={userProfile.token}
+          refresher={refresher}
+          onClose={() => setShowPlansModal(false)}
+          showCloseButton={true}
+        />
+      )}
     </div>
   );
 }

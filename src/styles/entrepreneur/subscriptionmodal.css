@@ -653,6 +653,52 @@
           transform: rotate(90deg);
         }
 
+        /* Subscription Modal Close Button */
+        .subs-close-btn {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          background: #F7F8FA;
+          border: 1px solid #D9E1E7;
+          border-radius: 8px;
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.25s ease;
+          z-index: 10;
+          color: #7F8C8D;
+          padding: 0;
+        }
+
+        .subs-close-btn svg {
+          width: 18px;
+          height: 18px;
+        }
+
+        .subs-close-btn:hover {
+          background: #0F223D;
+          border-color: #0F223D;
+          color: #fff;
+          transform: rotate(90deg);
+        }
+
+        @media (max-width: 550px) {
+          .subs-close-btn {
+            width: 32px;
+            height: 32px;
+            top: 10px;
+            right: 10px;
+          }
+
+          .subs-close-btn svg {
+            width: 16px;
+            height: 16px;
+          }
+        }
+
         /* Current Plan Badge */
         .current-plan-badge {
           position: absolute;

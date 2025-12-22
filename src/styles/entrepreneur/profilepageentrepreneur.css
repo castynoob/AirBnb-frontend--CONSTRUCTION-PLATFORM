@@ -1469,3 +1469,104 @@
     font-size: 0.875rem;
   }
 }
+
+/* =====================================================
+   NO SUBSCRIPTION STATE
+   ===================================================== */
+.no-subscription-state {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.no-sub-content {
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  text-align: center;
+  border: 2px dashed #d1d9e6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.no-sub-icon {
+  width: 90px;
+  height: 90px;
+  background: linear-gradient(135deg, #0F223D 0%, #1a3a5c 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  margin-bottom: 0.5rem;
+  box-shadow: 0 10px 30px rgba(15, 34, 61, 0.2);
+}
+
+.no-sub-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0F223D;
+  margin: 0;
+}
+
+.no-sub-description {
+  font-size: 1rem;
+  color: #7F8C8D;
+  max-width: 500px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.subscribe-now-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #00A5A9 0%, #008b8f 100%);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 0.5rem;
+  box-shadow: 0 8px 20px rgba(0, 165, 169, 0.25);
+}
+
+.subscribe-now-btn:hover {
+  background: linear-gradient(135deg, #00b5b9 0%, #009a9e 100%);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 25px rgba(0, 165, 169, 0.35);
+}
+
+@media (max-width: 768px) {
+  .no-sub-content {
+    padding: 2rem 1.5rem;
+  }
+
+  .no-sub-icon {
+    width: 70px;
+    height: 70px;
+  }
+
+  .no-sub-icon svg {
+    width: 36px;
+    height: 36px;
+  }
+
+  .no-sub-title {
+    font-size: 1.25rem;
+  }
+
+  .no-sub-description {
+    font-size: 0.9rem;
+  }
+
+  .subscribe-now-btn {
+    padding: 0.875rem 1.5rem;
+    font-size: 0.9rem;
+  }
+}
