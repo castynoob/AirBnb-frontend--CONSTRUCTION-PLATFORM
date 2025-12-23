@@ -2921,10 +2921,18 @@
 
 /* Extra small screens */
 @media (max-width: 480px) {
+  .subs-tabs-container {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+  }
+
   .subs-tab-btn {
-    padding: 0.5rem 0.25rem !important;
+    flex: 0 0 auto !important;
+    min-width: fit-content !important;
+    padding: 0.5rem 0.625rem !important;
     font-size: 0.625rem !important;
-    letter-spacing: -0.02em !important;
+    letter-spacing: -0.01em !important;
+    white-space: nowrap !important;
   }
 }
 

@@ -349,15 +349,28 @@
 }
 
 @media (max-width: 768px) {
+  .modal-overlay {
+    padding: 0 !important;
+  }
+
   .work-modal-large {
     max-width: 100vw !important;
-    max-height: 100vh;
+    max-height: 100vh !important;
+    height: 100vh !important;
     border-radius: 0 !important;
   }
 
+  .work-modal-large .modal-header {
+    padding: 0.875rem 1rem !important;
+  }
+
+  .work-modal-large .modal-title {
+    font-size: 0.9375rem !important;
+  }
+
   .work-modal-body {
-    max-height: calc(100vh - 180px);
-    padding: 16px !important;
+    max-height: calc(100vh - 140px);
+    padding: 1rem !important;
   }
 
   .work-logistics-grid,
@@ -368,13 +381,18 @@
   .work-image-previews {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   }
+
+  .work-modal-large .modal-footer {
+    flex-direction: column-reverse !important;
+    padding: 1rem !important;
+  }
+
+  .work-modal-large .modal-footer button {
+    width: 100% !important;
+  }
 }
 
 @media (max-width: 480px) {
-  .modal-overlay {
-    padding: 0;
-  }
-
   .work-modal-body {
     gap: 16px;
   }

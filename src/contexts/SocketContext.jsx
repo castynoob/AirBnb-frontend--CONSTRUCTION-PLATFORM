@@ -1,9 +1,10 @@
 // ============================================
 // UPDATED SocketContext.jsx
 // Avoids crashing when no userProfile/token
+// Supports multiple notification types: message, bid, job_started, work_completed
 // ============================================
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import io from "socket.io-client";
 import toast from 'react-hot-toast';
 import { useNotifications } from '../hooks/useNotifications';
@@ -22,12 +23,56 @@ export const useSocket = () => {
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [notifications, setNotifications] = useState([]);
   const { showNotification, requestPermission } = useNotifications();
+
+  // Use refs to avoid stale closures in socket listeners
+  const showNotificationRef = useRef(showNotification);
+  useEffect(() => {
+    showNotificationRef.current = showNotification;
+  }, [showNotification]);
 
   // Request notification permission on mount
   useEffect(() => {
     requestPermission();
   }, []);
+
+  // Add a new notification to the list - using direct setState to avoid stale closure
+  const addNotificationDirect = (notification) => {
+    const newNotification = {
+      id: Date.now(),
+      read: false,
+      timestamp: new Date().toISOString(),
+      ...notification,
+    };
+    setNotifications(prev => [newNotification, ...prev]);
+    return newNotification;
+  };
+
+  // Wrapped version for external use
+  const addNotification = useCallback((notification) => {
+    return addNotificationDirect(notification);
+  }, []);
+
+  // Mark notification as read
+  const markAsRead = useCallback((notificationId) => {
+    setNotifications(prev =>
+      prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+    );
+  }, []);
+
+  // Mark all notifications as read
+  const markAllAsRead = useCallback(() => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+  }, []);
+
+  // Clear all notifications
+  const clearNotifications = useCallback(() => {
+    setNotifications([]);
+  }, []);
+
+  // Get unread count
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   useEffect(() => {
     const userProfile = localStorage.getItem("userProfile");
@@ -93,6 +138,18 @@ export const SocketProvider = ({ children }) => {
       const senderName = data.senderName || 'Someone';
       const messagePreview = data.content ? data.content.substring(0, 50) + (data.content.length > 50 ? '...' : '') : 'New message';
 
+      // Add to notifications list (using direct setState)
+      setNotifications(prev => [{
+        id: Date.now(),
+        read: false,
+        timestamp: new Date().toISOString(),
+        type: 'message',
+        senderName,
+        senderId: data.senderId,
+        content: messagePreview,
+        conversationId: data.conversationId,
+      }, ...prev]);
+
       // Play notification sound
       playNotificationSound();
 
@@ -111,14 +168,175 @@ export const SocketProvider = ({ children }) => {
       );
 
       // Show desktop notification (if permission granted)
-      showNotification(
-        `New message from ${senderName}`,
+      if (showNotificationRef.current) {
+        showNotificationRef.current(
+          `New message from ${senderName}`,
+          {
+            body: messagePreview,
+            tag: 'message-notification',
+            requireInteraction: false,
+          }
+        );
+      }
+    });
+
+    // Listen for new bid notifications
+    newSocket.on("new_bid", (data) => {
+      console.log("📋 New bid notification:", data);
+
+      const bidderName = data.bidderName || 'A contractor';
+      const jobTitle = data.jobTitle || 'your job';
+      const bidAmount = data.bidAmount ? `$${data.bidAmount.toLocaleString()}` : '';
+
+      // Add to notifications list (using direct setState)
+      setNotifications(prev => [{
+        id: Date.now(),
+        read: false,
+        timestamp: new Date().toISOString(),
+        type: 'bid',
+        bidder: bidderName,
+        bidderId: data.bidderId,
+        jobId: data.jobId,
+        jobTitle,
+        property: data.propertyName || '',
+        apartment: data.unitName || '',
+        budget: data.bidAmount,
+        licenseNumber: data.licenseNumber || 'N/A',
+        submissionDate: new Date().toISOString(),
+      }, ...prev]);
+
+      // Play notification sound
+      playNotificationSound();
+
+      // Show toast notification
+      toast.success(
+        `New bid from ${bidderName}`,
         {
-          body: messagePreview,
-          tag: 'message-notification',
-          requireInteraction: false,
+          duration: 5000,
+          icon: '📋',
+          style: {
+            borderRadius: '10px',
+            background: '#333',
+            color: '#fff',
+          },
         }
       );
+
+      // Show desktop notification
+      if (showNotificationRef.current) {
+        showNotificationRef.current(
+          `New Bid Received`,
+          {
+            body: `${bidderName} submitted a bid ${bidAmount ? `of ${bidAmount}` : ''} for ${jobTitle}`,
+            tag: 'bid-notification',
+            requireInteraction: false,
+          }
+        );
+      }
+    });
+
+    // Listen for job started notifications (entrepreneur started work)
+    newSocket.on("job_started", (data) => {
+      console.log("🔨 Job started notification:", data);
+
+      const contractorName = data.contractorName || 'Contractor';
+      const jobTitle = data.jobTitle || 'the job';
+
+      // Add to notifications list (using direct setState)
+      setNotifications(prev => [{
+        id: Date.now(),
+        read: false,
+        timestamp: new Date().toISOString(),
+        type: 'started',
+        contractor: contractorName,
+        contractorId: data.contractorId,
+        jobId: data.jobId,
+        jobTitle,
+        property: data.propertyName || '',
+        apartment: data.unitName || '',
+        startDate: new Date().toISOString(),
+      }, ...prev]);
+
+      // Play notification sound
+      playNotificationSound();
+
+      // Show toast notification
+      toast.success(
+        `${contractorName} started work`,
+        {
+          duration: 5000,
+          icon: '🔨',
+          style: {
+            borderRadius: '10px',
+            background: '#333',
+            color: '#fff',
+          },
+        }
+      );
+
+      // Show desktop notification
+      if (showNotificationRef.current) {
+        showNotificationRef.current(
+          `Work Started`,
+          {
+            body: `${contractorName} has started working on ${jobTitle}`,
+            tag: 'job-started-notification',
+            requireInteraction: false,
+          }
+        );
+      }
+    });
+
+    // Listen for work completed notifications
+    newSocket.on("work_completed", (data) => {
+      console.log("✅ Work completed notification:", data);
+
+      const contractorName = data.contractorName || 'Contractor';
+      const jobTitle = data.jobTitle || 'the job';
+
+      // Add to notifications list (using direct setState)
+      setNotifications(prev => [{
+        id: Date.now(),
+        read: false,
+        timestamp: new Date().toISOString(),
+        type: 'completed',
+        contractor: contractorName,
+        contractorId: data.contractorId,
+        jobId: data.jobId,
+        workTitle: jobTitle,
+        property: data.propertyName || '',
+        apartment: data.unitName || '',
+        completionDate: new Date().toISOString(),
+      }, ...prev]);
+
+      // Play notification sound
+      playNotificationSound();
+
+      // Show toast notification
+      toast.success(
+        `${contractorName} completed work`,
+        {
+          duration: 5000,
+          icon: '✅',
+          style: {
+            borderRadius: '10px',
+            background: '#333',
+            color: '#fff',
+          },
+        }
+      );
+
+      // Show desktop notification
+      if (showNotificationRef.current) {
+        showNotificationRef.current(
+          `Work Completed`,
+          {
+            body: `${contractorName} has completed ${jobTitle}`,
+            tag: 'work-completed-notification',
+            requireInteraction: false,
+          }
+        );
+      }
     });
 
     setSocket(newSocket);
@@ -131,7 +349,16 @@ export const SocketProvider = ({ children }) => {
   }, []);
 
   return (
-    <SocketContext.Provider value={{ socket, isConnected }}>
+    <SocketContext.Provider value={{
+      socket,
+      isConnected,
+      notifications,
+      unreadCount,
+      addNotification,
+      markAsRead,
+      markAllAsRead,
+      clearNotifications,
+    }}>
       {children}
     </SocketContext.Provider>
   );
