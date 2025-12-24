@@ -20,6 +20,7 @@ import {
   Briefcase,
   Phone,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import { useSocket } from "../../contexts/SocketContext";
 import {
   getConversations,
@@ -194,12 +195,12 @@ function MessagesEntrepreneurNew() {
     console.log("📷 Attempting to upload image:", file.name);
 
     if (!file.type.startsWith("image/")) {
-      alert("Please select an image file");
+      toast.error("Please select an image file");
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      alert("Image must be less than 10MB");
+      toast.error("Image must be less than 10MB");
       return;
     }
 
@@ -211,13 +212,13 @@ function MessagesEntrepreneurNew() {
 
       const userProfile = localStorage.getItem("userProfile");
       if (!userProfile) {
-        alert("You must be logged in to upload files");
+        toast.error("You must be logged in to upload files");
         return;
       }
 
       const token = JSON.parse(userProfile)?.token;
       if (!token) {
-        alert("Authentication token not found. Please log in again.");
+        toast.error("Authentication token not found. Please log in again.");
         return;
       }
 
@@ -240,7 +241,7 @@ function MessagesEntrepreneurNew() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("❌ Upload failed:", errorText);
-        alert(`Failed to upload image: ${response.statusText}`);
+        toast.error(`Failed to upload image: ${response.statusText}`);
         return;
       }
 
@@ -251,11 +252,11 @@ function MessagesEntrepreneurNew() {
         setUploadedImage(data.file);
         console.log("✅ Image uploaded successfully:", data.file);
       } else {
-        alert(data.message || "Failed to upload image");
+        toast.error(data.message || "Failed to upload image");
       }
     } catch (error) {
       console.error("❌ Image upload error:", error);
-      alert(`Failed to upload image: ${error.message}`);
+      toast.error(`Failed to upload image: ${error.message}`);
     } finally {
       setIsUploadingImage(false);
     }
@@ -269,7 +270,7 @@ function MessagesEntrepreneurNew() {
     console.log("📎 Attempting to upload file:", file.name);
 
     if (file.size > 10 * 1024 * 1024) {
-      alert("File must be less than 10MB");
+      toast.error("File must be less than 10MB");
       return;
     }
 
@@ -281,13 +282,13 @@ function MessagesEntrepreneurNew() {
 
       const userProfile = localStorage.getItem("userProfile");
       if (!userProfile) {
-        alert("You must be logged in to upload files");
+        toast.error("You must be logged in to upload files");
         return;
       }
 
       const token = JSON.parse(userProfile)?.token;
       if (!token) {
-        alert("Authentication token not found. Please log in again.");
+        toast.error("Authentication token not found. Please log in again.");
         return;
       }
 
@@ -310,7 +311,7 @@ function MessagesEntrepreneurNew() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("❌ Upload failed:", errorText);
-        alert(`Failed to upload file: ${response.statusText}`);
+        toast.error(`Failed to upload file: ${response.statusText}`);
         return;
       }
 
@@ -321,14 +322,51 @@ function MessagesEntrepreneurNew() {
         setUploadedFiles((prev) => [...prev, data.file]);
         console.log("✅ File uploaded successfully:", data.file);
       } else {
-        alert(data.message || "Failed to upload file");
+        toast.error(data.message || "Failed to upload file");
       }
     } catch (error) {
       console.error("❌ File upload error:", error);
-      alert(`Failed to upload file: ${error.message}`);
+      toast.error(`Failed to upload file: ${error.message}`);
     } finally {
       setIsUploadingFile(false);
     }
+  };
+
+  // Send message via HTTP API (fallback when socket not connected)
+  const sendMessageViaAPI = async (messageData) => {
+    const userProfile = localStorage.getItem("userProfile");
+    if (!userProfile) {
+      throw new Error("You must be logged in to send messages");
+    }
+
+    const token = JSON.parse(userProfile)?.token;
+    if (!token) {
+      throw new Error("Authentication token not found");
+    }
+
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+    const response = await fetch(`${API_BASE_URL}/api/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        receiverId: messageData.receiverId,
+        content: messageData.content,
+        jobId: messageData.jobId,
+        imageUrl: messageData.imageUrl,
+        attachments: messageData.attachments,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Failed to send message');
+    }
+
+    return await response.json();
   };
 
   // Send message
@@ -336,13 +374,6 @@ function MessagesEntrepreneurNew() {
     if (!message.trim() && !uploadedImage && uploadedFiles.length === 0) return;
     if (!selectedChat) return;
     if (isSending) return;
-
-    // Check socket connection
-    if (!socket || !socket.connected) {
-      console.error("❌ Socket not connected");
-      alert("Connection lost. Please refresh the page.");
-      return;
-    }
 
     setIsSending(true);
 
@@ -358,14 +389,50 @@ function MessagesEntrepreneurNew() {
 
       console.log("📤 Sending message:", messageData);
 
+      // Check socket connection - use HTTP API as fallback
+      if (!socket || !socket.connected) {
+        console.log("⚠️ Socket not connected, using HTTP API fallback");
+
+        try {
+          const response = await sendMessageViaAPI(messageData);
+          console.log("✅ Message sent via HTTP API:", response);
+
+          // If this was a new conversation, update the selectedChat
+          if (!selectedChat.id && response.conversationId) {
+            console.log("🆕 Updating conversation ID:", response.conversationId);
+            setSelectedChat(prev => ({
+              ...prev,
+              id: response.conversationId
+            }));
+            loadConversations();
+          }
+
+          // Clear inputs
+          setMessage("");
+          setUploadedImage(null);
+          setUploadedFiles([]);
+
+          // Reload messages to show the new one
+          if (selectedChat.id || response.conversationId) {
+            loadMessages(selectedChat.id || response.conversationId);
+          }
+        } catch (apiError) {
+          console.error("❌ HTTP API error:", apiError);
+          toast.error(apiError.message || "Failed to send message");
+        }
+
+        setIsSending(false);
+        return;
+      }
+
       // Set up error handler
       const errorHandler = (error) => {
         console.error("❌ Message send error:", error);
         console.error("Full error object:", JSON.stringify(error, null, 2));
         const errorMessage = error?.message || "Failed to send message";
         const errorDetails = error?.details || error?.error;
-        const fullMessage = errorDetails ? `${errorMessage}\n${errorDetails}` : errorMessage;
-        alert(fullMessage);
+        const fullMessage = errorDetails ? `${errorMessage}: ${errorDetails}` : errorMessage;
+        toast.error(fullMessage);
         setIsSending(false);
       };
 
@@ -407,7 +474,7 @@ function MessagesEntrepreneurNew() {
       }, 5000);
     } catch (error) {
       console.error("❌ Send error:", error);
-      alert("Failed to send message. Please try again.");
+      toast.error("Failed to send message. Please try again.");
     } finally {
       setTimeout(() => setIsSending(false), 500);
     }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   MapPin,
   Calendar,
@@ -14,9 +15,12 @@ import {
   Upload,
   Filter,
   ChevronDown,
+  ChevronRight,
   Briefcase,
-  Shield
+  Shield,
+  MessageSquare
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Nav from "../../components/Nav";
 import '../../styles/manager/submissions.css';
 
@@ -71,6 +75,7 @@ function CustomSelect({ value, onChange, options, icon: Icon, placeholder }) {
 }
 
 function SupplierList() {
+  const navigate = useNavigate();
   const [suppliers, setSuppliers] = useState([]);
   const [filteredSuppliers, setFilteredSuppliers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -87,6 +92,7 @@ function SupplierList() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [myRequests, setMyRequests] = useState([]);
 
   const areaOptions = [
     'All Areas',
@@ -147,6 +153,7 @@ function SupplierList() {
 
   useEffect(() => {
     fetchSuppliers();
+    fetchMyRequests();
   }, []);
 
   useEffect(() => {
@@ -181,6 +188,55 @@ function SupplierList() {
         setIsLoading(false);
       }
     }
+  };
+
+  const fetchMyRequests = async () => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    const userProfile = localStorage.getItem('userProfile');
+
+    if (userProfile) {
+      const user = JSON.parse(userProfile);
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/my-supplier-requests`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${user.token}`
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setMyRequests(data.requests || []);
+        }
+      } catch (error) {
+        console.error('Error fetching my requests:', error);
+      }
+    }
+  };
+
+  // Check if entrepreneur can chat with a specific supplier
+  const canChatWithSupplier = (supplierId) => {
+    return myRequests.some(
+      request => request.supplier_id === supplierId &&
+                 (request.status === 'in-progress' || request.status === 'completed')
+    );
+  };
+
+  // Get the supplier request data (to get supplier_user_id)
+  const getSupplierRequest = (supplierId) => {
+    return myRequests.find(
+      request => request.supplier_id === supplierId &&
+                 (request.status === 'in-progress' || request.status === 'completed')
+    );
+  };
+
+  const handleChatWithSupplier = (supplier) => {
+    // Set target receiver info in localStorage for the messaging page
+    localStorage.setItem('targetReceiverId', supplier.user_id);
+    localStorage.setItem('targetReceiverName', supplier.company_name || 'Supplier');
+    // Navigate to messages
+    navigate('/messages/entrepreneur');
   };
 
   const filterSuppliers = () => {
@@ -263,11 +319,11 @@ function SupplierList() {
     const file = e.target.files[0];
     if (file) {
       if (file.type !== 'application/pdf') {
-        alert('Please select a PDF file');
+        toast.error('Please select a PDF file');
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
-        alert('File size should not exceed 10MB');
+        toast.error('File size should not exceed 10MB');
         return;
       }
       setRequestFile(file);
@@ -276,11 +332,11 @@ function SupplierList() {
 
   const handleSubmitRequest = async () => {
     if (requestType === 'text' && !requestDetails.trim()) {
-      alert('Please enter your material request details');
+      toast.error('Please enter your material request details');
       return;
     }
     if (requestType === 'file' && !requestFile) {
-      alert('Please upload a PDF file with your request details');
+      toast.error('Please upload a PDF file with your request details');
       return;
     }
 
@@ -314,12 +370,12 @@ function SupplierList() {
           throw new Error(errorData.error || errorData.message || 'Failed to submit request');
         }
 
-        alert('Material request submitted successfully! The supplier will review and create an invoice for you.');
+        toast.success('Material request submitted successfully! The supplier will review and create an invoice for you.');
         closeRequestModal();
       }
     } catch (error) {
       console.error('Error submitting request:', error);
-      alert(`Failed to submit request: ${error.message}`);
+      toast.error(`Failed to submit request: ${error.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -388,18 +444,18 @@ function SupplierList() {
             className={`subs-filter-btn ${showFilters ? 'active' : ''}`}
             onClick={() => setShowFilters(!showFilters)}
           >
-            <Filter size={16} />
+            <Filter size={18} />
             Filters
-            {hasActiveFilters && <span className="subs-filter-badge"></span>}
+            <ChevronDown size={16} className={showFilters ? 'rotated' : ''} />
           </button>
         </div>
 
         {/* Filter Panel */}
         {showFilters && (
-          <div className="subs-filter-panel">
-            <div className="subs-filter-grid">
+          <div className="subs-filters-panel">
+            <div className="subs-filters-grid">
               <div className="subs-filter-item">
-                <label className="subs-filter-label">Location</label>
+                <label>Location</label>
                 <CustomSelect
                   value={selectedArea}
                   onChange={setSelectedArea}
@@ -410,7 +466,7 @@ function SupplierList() {
               </div>
 
               <div className="subs-filter-item">
-                <label className="subs-filter-label">Material Type</label>
+                <label>Material Type</label>
                 <CustomSelect
                   value={selectedMaterial}
                   onChange={setSelectedMaterial}
@@ -421,7 +477,7 @@ function SupplierList() {
               </div>
 
               <div className="subs-filter-item">
-                <label className="subs-filter-label">Years in Business</label>
+                <label>Years in Business</label>
                 <CustomSelect
                   value={selectedYearsFilter}
                   onChange={setSelectedYearsFilter}
@@ -432,7 +488,7 @@ function SupplierList() {
               </div>
 
               <div className="subs-filter-item">
-                <label className="subs-filter-label">Certification</label>
+                <label>Certification</label>
                 <CustomSelect
                   value={certificationFilter}
                   onChange={setCertificationFilter}
@@ -444,7 +500,7 @@ function SupplierList() {
             </div>
 
             <button
-              className="subs-clear-filters-btn"
+              className="subs-clear-all-btn"
               onClick={() => {
                 setSelectedArea('All Areas');
                 setSelectedMaterial('All Materials');
@@ -452,6 +508,7 @@ function SupplierList() {
                 setCertificationFilter('All');
               }}
             >
+              <X size={16} />
               Clear All Filters
             </button>
           </div>
@@ -519,17 +576,28 @@ function SupplierList() {
 
                 {/* Action Row */}
                 <div className="subs-card-actions">
-                  <button className="subs-expand-btn" onClick={(e) => { e.stopPropagation(); handleViewDetails(supplier); }}>
-                    <FileText size={14} />
+                  <button className="subs-details-btn" onClick={(e) => { e.stopPropagation(); handleViewDetails(supplier); }}>
+                    Details
+                    <ChevronRight size={14} />
                   </button>
 
                   {supplier.catalog_pdf_url && (
                     <button
-                      className="subs-chat-btn"
+                      className="subs-expand-btn"
                       onClick={(e) => { e.stopPropagation(); handleDownloadCatalog(supplier.catalog_pdf_url); }}
                       title="View Catalog"
                     >
                       <FileText size={14} />
+                    </button>
+                  )}
+
+                  {canChatWithSupplier(supplier.id) && (
+                    <button
+                      className="subs-chat-btn"
+                      onClick={(e) => { e.stopPropagation(); handleChatWithSupplier(supplier); }}
+                      title="Chat with Supplier"
+                    >
+                      <MessageSquare size={14} />
                     </button>
                   )}
 
@@ -668,6 +736,19 @@ function SupplierList() {
                 >
                   <FileText size={16} />
                   View Catalog
+                </button>
+              )}
+              {canChatWithSupplier(selectedSupplier.id) && (
+                <button
+                  className="bid-btn-decline"
+                  onClick={() => {
+                    handleChatWithSupplier(selectedSupplier);
+                    setShowDetailsModal(false);
+                  }}
+                  style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', color: 'white', border: 'none' }}
+                >
+                  <MessageSquare size={16} />
+                  Chat with Supplier
                 </button>
               )}
               <button

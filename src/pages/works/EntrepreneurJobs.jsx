@@ -15,7 +15,20 @@ import {
   CheckCircle,
   FolderOpen,
   MessageSquare,
+  MapPin,
+  Hammer,
 } from "lucide-react"
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet"
+import L from "leaflet"
+import "leaflet/dist/leaflet.css"
+
+// Fix for default marker icon in Leaflet with React
+delete L.Icon.Default.prototype._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+})
 
 function EntrepreneurJobs() {
   const navigate = useNavigate()
@@ -486,48 +499,66 @@ function EntrepreneurJobs() {
                     )}
                   </div>
 
-                  {/* Action Row */}
-                  <div className="subs-card-actions">
-                    <button className="subs-expand-btn" onClick={(e) => { e.stopPropagation(); handleViewDetails(job); }}>
-                      <FileText size={14} />
-                    </button>
-
-                    {/* Chat button - always visible */}
-                    <button className="subs-chat-btn" onClick={(e) => { e.stopPropagation(); handleChatManager(job); }}>
-                      <MessageSquare size={14} />
-                    </button>
-
-                    {job.status === "accepted" && (
-                      <button className="subs-accept-btn" onClick={(e) => { e.stopPropagation(); openModal(job, "start"); }}>
-                        <PlayCircle size={14} />
-                        Start
-                      </button>
-                    )}
-
-                    {job.status === "ongoing" && (
-                      <button className="subs-accept-btn" onClick={(e) => { e.stopPropagation(); openModal(job, "done"); }}>
-                        <CheckCircle size={14} />
-                        Done
-                      </button>
-                    )}
-
-                    {job.status === "completed" && (
+                  {/* Action Row - Redesigned */}
+                  <div className="ej-card-actions-redesign">
+                    {/* Left: Icon buttons */}
+                    <div className="ej-card-icon-buttons">
                       <button
-                        className="subs-accept-btn"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setSelectedJob(job)
-                          if (job.review.length === 0) {
-                            setOpenReviewModal(true)
-                          } else {
-                            getJobInformation(job)
-                          }
-                        }}
+                        className="ej-icon-btn ej-icon-details"
+                        onClick={(e) => { e.stopPropagation(); handleViewDetails(job); }}
+                        title="View Details"
                       >
-                        <Star size={14} />
-                        Review
+                        <FileText size={16} />
                       </button>
-                    )}
+                      <button
+                        className="ej-icon-btn ej-icon-chat"
+                        onClick={(e) => { e.stopPropagation(); handleChatManager(job); }}
+                        title="Chat with Manager"
+                      >
+                        <MessageSquare size={16} />
+                      </button>
+                    </div>
+
+                    {/* Right: Primary action button */}
+                    <div className="ej-card-primary-action">
+                      {job.status === "accepted" && (
+                        <button
+                          className="ej-action-btn ej-action-start"
+                          onClick={(e) => { e.stopPropagation(); openModal(job, "start"); }}
+                        >
+                          <PlayCircle size={16} />
+                          Start Project
+                        </button>
+                      )}
+
+                      {job.status === "ongoing" && (
+                        <button
+                          className="ej-action-btn ej-action-complete"
+                          onClick={(e) => { e.stopPropagation(); openModal(job, "done"); }}
+                        >
+                          <CheckCircle size={16} />
+                          Mark Complete
+                        </button>
+                      )}
+
+                      {job.status === "completed" && (
+                        <button
+                          className="ej-action-btn ej-action-review"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedJob(job)
+                            if (job.review.length === 0) {
+                              setOpenReviewModal(true)
+                            } else {
+                              getJobInformation(job)
+                            }
+                          }}
+                        >
+                          <Star size={16} />
+                          {job.review.length === 0 ? 'Leave Review' : 'View Review'}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               )
@@ -881,35 +912,159 @@ function EntrepreneurJobs() {
                 </div>
               </section>
 
-              {/* Additional Information */}
-              {(detailsJob.is_emergency || detailsJob.is_budget_hidden !== undefined) && (
-                <section className="bid-modal-section">
+              {/* Your Bid Information */}
+              {detailsJob.bid_amount && (
+                <section className="bid-modal-section bid-modal-highlight">
                   <h3 className="bid-section-title">
-                    <FileText size={20} />
-                    Additional Information
+                    <Hammer size={20} />
+                    Your Bid
                   </h3>
                   <div className="bid-info-grid">
-                    {detailsJob.is_emergency && (
+                    <div className="bid-info-item">
+                      <label><DollarSign size={14} /> Bid Amount</label>
+                      <p style={{ fontWeight: '600', color: 'var(--color-secondary)', fontSize: '1.125rem' }}>
+                        {formatCurrency(detailsJob.bid_amount)}
+                      </p>
+                    </div>
+                    {detailsJob.bid_submitted_at && (
                       <div className="bid-info-item">
-                        <label>Emergency</label>
-                        <p style={{ color: '#dc2626' }}>Yes</p>
+                        <label><Clock size={14} /> Submitted On</label>
+                        <p>{formatDate(detailsJob.bid_submitted_at)}</p>
                       </div>
                     )}
-                    {detailsJob.is_budget_hidden !== undefined && (
-                      <div className="bid-info-item">
-                        <label>Budget Hidden</label>
-                        <p>{detailsJob.is_budget_hidden ? 'Yes' : 'No'}</p>
-                      </div>
-                    )}
+                  </div>
+                  {detailsJob.bid_message && (
+                    <div className="bid-info-item" style={{ marginTop: '1rem' }}>
+                      <label><MessageSquare size={14} /> Your Proposal Message</label>
+                      <p style={{
+                        marginTop: '0.5rem',
+                        padding: '0.875rem',
+                        backgroundColor: 'rgba(0, 165, 169, 0.05)',
+                        borderRadius: '8px',
+                        borderLeft: '3px solid var(--color-secondary)',
+                        whiteSpace: 'pre-wrap'
+                      }}>
+                        {detailsJob.bid_message}
+                      </p>
+                    </div>
+                  )}
+                </section>
+              )}
+
+              {/* Property Location Map */}
+              {detailsJob.property_latitude && detailsJob.property_longitude && (
+                <section className="bid-modal-section">
+                  <h3 className="bid-section-title">
+                    <MapPin size={20} />
+                    Property Location
+                  </h3>
+                  <div className="bid-info-item" style={{ marginBottom: '0.75rem' }}>
+                    <label>
+                      <Building2 size={14} /> {detailsJob.property_name || 'Property'}
+                    </label>
+                    <p>
+                      {detailsJob.property_address}
+                      {detailsJob.property_city && `, ${detailsJob.property_city}`}
+                    </p>
+                  </div>
+                  <div className="ej-details-map-container">
+                    <MapContainer
+                      center={[
+                        Number(detailsJob.property_latitude),
+                        Number(detailsJob.property_longitude)
+                      ]}
+                      zoom={16}
+                      scrollWheelZoom={false}
+                      style={{ height: "200px", width: "100%", borderRadius: "12px" }}
+                    >
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      <Marker
+                        position={[
+                          Number(detailsJob.property_latitude),
+                          Number(detailsJob.property_longitude)
+                        ]}
+                      >
+                        <Popup>
+                          <strong>{detailsJob.property_name || 'Property Location'}</strong>
+                          <br />
+                          {detailsJob.property_address}
+                          {detailsJob.property_city && <><br />{detailsJob.property_city}</>}
+                        </Popup>
+                      </Marker>
+                    </MapContainer>
                   </div>
                 </section>
               )}
             </div>
 
-            <div className="bid-modal-footer">
-              <button className="bid-btn-decline" onClick={() => setShowDetailsModal(false)}>
+            <div className="bid-modal-footer ej-modal-footer-redesign">
+              {/* Left: Close button */}
+              <button className="ej-modal-close-btn" onClick={() => setShowDetailsModal(false)}>
                 Close
               </button>
+
+              {/* Right: Action buttons */}
+              <div className="ej-modal-action-buttons">
+                {/* Chat with Manager button - always visible */}
+                <button
+                  className="ej-modal-chat-btn"
+                  onClick={() => {
+                    setShowDetailsModal(false)
+                    handleChatManager(detailsJob)
+                  }}
+                >
+                  <MessageSquare size={16} />
+                  Chat with Manager
+                </button>
+
+                {/* Primary action based on status */}
+                {detailsJob.status === "accepted" && (
+                  <button
+                    className="ej-modal-action-btn ej-modal-start"
+                    onClick={() => {
+                      setShowDetailsModal(false)
+                      openModal(detailsJob, "start")
+                    }}
+                  >
+                    <PlayCircle size={16} />
+                    Start Project
+                  </button>
+                )}
+
+                {detailsJob.status === "ongoing" && (
+                  <button
+                    className="ej-modal-action-btn ej-modal-complete"
+                    onClick={() => {
+                      setShowDetailsModal(false)
+                      openModal(detailsJob, "done")
+                    }}
+                  >
+                    <CheckCircle size={16} />
+                    Mark Complete
+                  </button>
+                )}
+
+                {detailsJob.status === "completed" && (
+                  <button
+                    className="ej-modal-action-btn ej-modal-review"
+                    onClick={() => {
+                      setShowDetailsModal(false)
+                      setSelectedJob(detailsJob)
+                      if (detailsJob.review && detailsJob.review.length === 0) {
+                        setOpenReviewModal(true)
+                      } else {
+                        getJobInformation(detailsJob)
+                      }
+                    }}
+                  >
+                    <Star size={16} />
+                    {detailsJob.review && detailsJob.review.length === 0 ? 'Leave Review' : 'View Review'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

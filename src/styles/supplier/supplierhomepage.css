@@ -575,6 +575,54 @@
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
 }
 
+.supplier-home-request-btn.chat {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+.supplier-home-request-btn.chat:hover {
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+/* ============================================
+   CONFIRMATION MODAL
+   ============================================ */
+
+.supplier-home-confirm-modal {
+  max-width: 420px;
+}
+
+.supplier-home-confirm-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 1.5rem 1rem;
+  gap: 1rem;
+}
+
+.supplier-home-confirm-icon {
+  flex-shrink: 0;
+}
+
+.supplier-home-confirm-icon.danger {
+  color: #ef4444;
+}
+
+.supplier-home-confirm-icon.success {
+  color: #10b981;
+}
+
+.supplier-home-confirm-icon.primary {
+  color: #00a5a9;
+}
+
+.supplier-home-confirm-message {
+  font-size: 0.9375rem;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0;
+}
+
 /* ============================================
    EMPTY STATE
    ============================================ */

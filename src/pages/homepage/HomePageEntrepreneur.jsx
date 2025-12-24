@@ -13,7 +13,6 @@ import {
   Hammer,
   X,
   Send,
-  Bell,
   SlidersHorizontal,
   MapPin,
   Wrench,
@@ -35,11 +34,16 @@ import {
   Check,
   FileText,
   MessageSquare,
+  Eye,
+  Edit3,
+  Trash2,
 } from "lucide-react"
+import toast from "react-hot-toast"
 import Nav from "../../components/Nav"
 import "../../styles/entrepreneur/homepageentrepreneur.css"
 import SubscriptionModal from "../../components/SubcriptionModal"
 import UnlockBudgetForm from '../../components/UnlockBudgetForm'
+import NotificationBell from '../../components/NotificationBell'
 
 
 // Map Controller Component for programmatic map control
@@ -217,10 +221,18 @@ function HomePageEntrepreneur() {
   // data variables
   const [properties, setProperties] = useState([])
   const [jobs, setJobs] = useState([])
-  const [submittedBids, setSubmittedBids] = useState([])
+  const [submittedBids, setSubmittedBids] = useState([]) // Now stores full bid objects
   const [showUnlockBudgetModal, setShowUnlockBudgetModal] = useState(false)
   const [budgetJobId, setBudgetJobId] = useState('')
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
+
+  // View/Edit Bid Modal states
+  const [viewBidModalOpen, setViewBidModalOpen] = useState(false)
+  const [selectedBidToView, setSelectedBidToView] = useState(null)
+  const [isEditingBid, setIsEditingBid] = useState(false)
+  const [editBidAmount, setEditBidAmount] = useState("")
+  const [editBidMessage, setEditBidMessage] = useState("")
+  const [isSubmittingBidAction, setIsSubmittingBidAction] = useState(false)
 
   // Radius filter states
   const [radiusFilter, setRadiusFilter] = useState({
@@ -373,7 +385,8 @@ function HomePageEntrepreneur() {
     }
 
     const bids = await bidsResponse.json()
-    return bids.bids.all.map(bid => bid.job_id)
+    // Return full bid objects for view/edit/delete functionality
+    return bids.bids.all
   }, [])
 
   // Refresh data function (used after subscription/budget unlock)
@@ -385,7 +398,7 @@ function HomePageEntrepreneur() {
       const user = JSON.parse(profileString)
 
       // Fetch all data in parallel
-      const [newProperties, newJobs, bidIds] = await Promise.all([
+      const [newProperties, newJobs, bidsData] = await Promise.all([
         fetchPropertiesData(user),
         fetchJobsData(user),
         fetchBidsData(user)
@@ -393,7 +406,7 @@ function HomePageEntrepreneur() {
 
       setProperties(newProperties)
       setJobs(newJobs)
-      setSubmittedBids(bidIds)
+      setSubmittedBids(bidsData)
 
       // Restore selected property if it exists
       if (selectedProperty) {
@@ -406,6 +419,16 @@ function HomePageEntrepreneur() {
       console.error("Error refreshing data:", error)
     }
   }, [fetchPropertiesData, fetchJobsData, fetchBidsData, selectedProperty])
+
+  // Helper function to check if user has bid on a job
+  const hasBidOnJob = useCallback((jobId) => {
+    return submittedBids.some(bid => bid.job_id === jobId)
+  }, [submittedBids])
+
+  // Helper function to get bid for a job
+  const getBidForJob = useCallback((jobId) => {
+    return submittedBids.find(bid => bid.job_id === jobId)
+  }, [submittedBids])
 
   // get user location
   useEffect(() => {
@@ -618,7 +641,7 @@ function HomePageEntrepreneur() {
     if (planType === 'basic' && bidsInfo) {
       const remaining = bidsInfo.remaining ?? (bidsInfo.limit - bidsInfo.used)
       if (remaining <= 0) {
-        alert(`You have used all ${bidsInfo.limit} bids for this month. Upgrade to Premium for unlimited bids.`)
+        toast.error(`You have used all ${bidsInfo.limit} bids for this month. Upgrade to Premium for unlimited bids.`)
         setShowSubscriptionModal(true)
         return
       }
@@ -636,7 +659,7 @@ function HomePageEntrepreneur() {
 
   const handleSubmitBid = async () => {
     if (!bidAmount || !bidMessage) {
-      alert("Please fill in all required fields")
+      toast.error("Please fill in all required fields")
       return
     }
 
@@ -663,7 +686,7 @@ function HomePageEntrepreneur() {
         if (response.status === 403) {
           const errorData = await response.json()
           if (errorData.error === 'Bid limit reached') {
-            alert(`${errorData.message}\n\nUpgrade to Premium for unlimited bids.`)
+            toast.error(`${errorData.message}. Upgrade to Premium for unlimited bids.`)
             setBidModalOpen(false)
             setShowSubscriptionModal(true)
             return
@@ -702,14 +725,14 @@ function HomePageEntrepreneur() {
           setUserProfile(updatedProfile)
         }
 
-        alert("Bid submitted successfully!")
+        toast.success("Bid submitted successfully!")
         setBidModalOpen(false)
         setBidAmount("")
         setBidMessage("")
         setSelectedJob(null)
       } catch(err) {
         console.log(err)
-        alert(err.message || "Failed to submit bid. Please try again.")
+        toast.error(err.message || "Failed to submit bid. Please try again.")
       }
     }
   }
@@ -732,12 +755,100 @@ function HomePageEntrepreneur() {
 
         const bids = await bidsResponse.json()
 
-        // Extract only bid IDs
-        const bidIds = bids.bids.all.map(bid => bid.job_id)
-        setSubmittedBids(bidIds)
+        // Store full bid objects
+        setSubmittedBids(bids.bids.all)
       } catch (error) {
         console.error("Failed to fetch bids:", error)
       }
+    }
+  }
+
+  // Handle viewing a bid
+  const handleViewBid = (jobId) => {
+    const bid = getBidForJob(jobId)
+    if (bid) {
+      setSelectedBidToView(bid)
+      setEditBidAmount(bid.amount.toString())
+      setEditBidMessage(bid.message || "")
+      setIsEditingBid(false)
+      setViewBidModalOpen(true)
+    }
+  }
+
+  // Handle updating a bid
+  const handleUpdateBid = async () => {
+    if (!editBidAmount) {
+      toast.error("Please enter a bid amount")
+      return
+    }
+
+    const storedProfile = localStorage.getItem('userProfile')
+    if (!storedProfile || !selectedBidToView) return
+
+    setIsSubmittingBidAction(true)
+    try {
+      const user = JSON.parse(storedProfile)
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+      const response = await fetch(`${API_BASE_URL}/api/bids/${selectedBidToView.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${user.token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          amount: Number(editBidAmount),
+          message: editBidMessage
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to update bid')
+      }
+
+      toast.success("Bid updated successfully!")
+      setViewBidModalOpen(false)
+      setIsEditingBid(false)
+      setSelectedBidToView(null)
+      fetchBids() // Refresh bids
+    } catch (err) {
+      console.error(err)
+      toast.error(err.message || "Failed to update bid. Please try again.")
+    } finally {
+      setIsSubmittingBidAction(false)
+    }
+  }
+
+  // Handle deleting a bid
+  const handleDeleteBid = async () => {
+    const storedProfile = localStorage.getItem('userProfile')
+    if (!storedProfile || !selectedBidToView) return
+
+    setIsSubmittingBidAction(true)
+    try {
+      const user = JSON.parse(storedProfile)
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+      const response = await fetch(`${API_BASE_URL}/api/bids/${selectedBidToView.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to delete bid')
+      }
+
+      toast.success("Bid deleted successfully!")
+      setViewBidModalOpen(false)
+      setSelectedBidToView(null)
+      fetchBids() // Refresh bids
+    } catch (err) {
+      console.error(err)
+      toast.error(err.message || "Failed to delete bid. Please try again.")
+    } finally {
+      setIsSubmittingBidAction(false)
     }
   }
 
@@ -865,8 +976,8 @@ function HomePageEntrepreneur() {
       // Increment trigger key to force map update even if same location
       setMapTriggerKey(prev => prev + 1)
     } else {
-      // Property has no valid coordinates - show alert to user
-      alert(`Location not available for "${property.name}". This property needs its coordinates to be set.`)
+      // Property has no valid coordinates - show toast to user
+      toast.error(`Location not available for "${property.name}". This property needs its coordinates to be set.`)
       return
     }
 
@@ -941,7 +1052,7 @@ function HomePageEntrepreneur() {
         }
       } catch (error) {
         console.error("Error fetching jobs:", error)
-        alert('Failed to load jobs. Please refresh the page.')
+        toast.error('Failed to load jobs. Please refresh the page.')
       }
     }
 
@@ -1172,6 +1283,8 @@ function HomePageEntrepreneur() {
 
       {/* Floating Header */}
       <div className="eh-floating-header">
+        <NotificationBell />
+
         <div className="eh-search-box-fullwidth" ref={searchContainerRef}>
           <Search size={16} className="eh-search-icon" />
           <input
@@ -1231,10 +1344,6 @@ function HomePageEntrepreneur() {
           <Filter size={16} />
           <span className="eh-filter-btn-text">Filters</span>
           {activeFiltersCount > 0 && <span className="eh-filter-count">{activeFiltersCount}</span>}
-        </button>
-
-        <button className="eh-notification-btn">
-          <Bell size={16} />
         </button>
       </div>
 
@@ -1455,14 +1564,28 @@ function HomePageEntrepreneur() {
                                 </div>
                               </div>
 
-                              <button className={(submittedBids.includes(job.id)? 'eh-bid-button eh-submitted-bid': 'eh-bid-button')} onClick={() => {
-                                if(!submittedBids.includes(job.id)) {
-                                  handleBidClick(job)
-                                }
-                              }}>
-                                <Hammer size={18} />
-                                {submittedBids.includes(job.id)? 'Bid Submitted' : 'Submit Your Bid'}
-                              </button>
+                              <div className="eh-bid-actions-row">
+                                {hasBidOnJob(job.id) ? (
+                                  <>
+                                    <button className="eh-bid-button eh-submitted-bid" disabled>
+                                      <Check size={18} />
+                                      Bid Submitted
+                                    </button>
+                                    <button
+                                      className="eh-view-bid-icon-btn"
+                                      onClick={() => handleViewBid(job.id)}
+                                      title="View Bid"
+                                    >
+                                      <Eye size={20} />
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button className="eh-bid-button" onClick={() => handleBidClick(job)}>
+                                    <Hammer size={18} />
+                                    Submit Your Bid
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           )
                         })
@@ -1865,13 +1988,34 @@ function HomePageEntrepreneur() {
                               </div>
                             </div>
 
-                            <button className={(submittedBids.includes(job.id)? 'eh-bid-button eh-submitted-bid': 'eh-bid-button')} onClick={() => {
-                              setPropertyModalOpen(false)
-                              handleBidClick(job)
-                            }}>
-                              <Hammer size={18} />
-                              {submittedBids.includes(job.id)? 'Bid Submitted' : 'Submit Your Bid'}
-                            </button>
+                            <div className="eh-bid-actions-row">
+                              {hasBidOnJob(job.id) ? (
+                                <>
+                                  <button className="eh-bid-button eh-submitted-bid" disabled>
+                                    <Check size={18} />
+                                    Bid Submitted
+                                  </button>
+                                  <button
+                                    className="eh-view-bid-icon-btn"
+                                    onClick={() => {
+                                      setPropertyModalOpen(false)
+                                      handleViewBid(job.id)
+                                    }}
+                                    title="View Bid"
+                                  >
+                                    <Eye size={20} />
+                                  </button>
+                                </>
+                              ) : (
+                                <button className="eh-bid-button" onClick={() => {
+                                  setPropertyModalOpen(false)
+                                  handleBidClick(job)
+                                }}>
+                                  <Hammer size={18} />
+                                  Submit Your Bid
+                                </button>
+                              )}
+                            </div>
                           </div>
                         )
                       })
@@ -1965,7 +2109,6 @@ function HomePageEntrepreneur() {
                     min={selectedJob.budget_min}
                     max={selectedJob.budget_max}
                   />
-                  <span className="eh-form-hint">Must be between budget range</span>
                 </div>
 
                 <div className="eh-form-group">
@@ -1984,6 +2127,162 @@ function HomePageEntrepreneur() {
                   Submit Bid
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View/Edit Bid Modal */}
+      {viewBidModalOpen && selectedBidToView && (
+        <div className="eh-modal-overlay eh-view-bid" onClick={() => {
+          setViewBidModalOpen(false)
+          setIsEditingBid(false)
+          setSelectedBidToView(null)
+        }}>
+          <div className="eh-modal-content eh-view-bid-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="eh-modal-header eh-view-bid">
+              <h2>{isEditingBid ? 'Edit Your Bid' : 'Your Submitted Bid'}</h2>
+              <button className="eh-modal-close" onClick={() => {
+                setViewBidModalOpen(false)
+                setIsEditingBid(false)
+                setSelectedBidToView(null)
+              }}>
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="eh-modal-body">
+              {/* Job Info */}
+              <div className="eh-view-bid-job-info">
+                <h3>{selectedBidToView.job_title}</h3>
+                <p className="eh-view-bid-category">{selectedBidToView.category}</p>
+                {selectedBidToView.property_address && (
+                  <p className="eh-view-bid-location">
+                    <MapPin size={14} />
+                    {selectedBidToView.property_address}, {selectedBidToView.city}
+                  </p>
+                )}
+              </div>
+
+              {/* Bid Status Badge */}
+              <div className={`eh-view-bid-status eh-status-${selectedBidToView.status}`}>
+                <span>Status: {selectedBidToView.status.charAt(0).toUpperCase() + selectedBidToView.status.slice(1)}</span>
+              </div>
+
+              {/* Bid Details */}
+              {isEditingBid ? (
+                <div className="eh-edit-bid-form">
+                  <div className="eh-form-group">
+                    <label htmlFor="editBidAmount">Bid Amount ($) *</label>
+                    <input
+                      type="number"
+                      id="editBidAmount"
+                      value={editBidAmount}
+                      onChange={(e) => setEditBidAmount(e.target.value)}
+                      placeholder="Enter your bid amount"
+                    />
+                  </div>
+
+                  <div className="eh-form-group">
+                    <label htmlFor="editBidMessage">Proposal Message</label>
+                    <textarea
+                      id="editBidMessage"
+                      value={editBidMessage}
+                      onChange={(e) => setEditBidMessage(e.target.value)}
+                      placeholder="Describe your approach..."
+                      rows="5"
+                    />
+                  </div>
+
+                  <div className="eh-edit-bid-actions">
+                    <button
+                      className="eh-cancel-edit-btn"
+                      onClick={() => {
+                        setIsEditingBid(false)
+                        setEditBidAmount(selectedBidToView.amount.toString())
+                        setEditBidMessage(selectedBidToView.message || "")
+                      }}
+                      disabled={isSubmittingBidAction}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="eh-save-bid-btn"
+                      onClick={handleUpdateBid}
+                      disabled={isSubmittingBidAction}
+                    >
+                      {isSubmittingBidAction ? 'Saving...' : 'Save Changes'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="eh-view-bid-details">
+                    <div className="eh-view-bid-detail-item">
+                      <DollarSign size={20} />
+                      <div>
+                        <span className="eh-view-bid-label">Your Bid Amount</span>
+                        <span className="eh-view-bid-value">${Number(selectedBidToView.amount).toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    <div className="eh-view-bid-detail-item">
+                      <Clock size={20} />
+                      <div>
+                        <span className="eh-view-bid-label">Submitted On</span>
+                        <span className="eh-view-bid-value">
+                          {new Date(selectedBidToView.created_at).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedBidToView.message && (
+                    <div className="eh-view-bid-message">
+                      <h4>Your Proposal Message</h4>
+                      <p>{selectedBidToView.message}</p>
+                    </div>
+                  )}
+
+                  {/* Action buttons - only show for pending bids */}
+                  {selectedBidToView.status === 'pending' && (
+                    <div className="eh-view-bid-actions">
+                      <button
+                        className="eh-edit-bid-btn"
+                        onClick={() => setIsEditingBid(true)}
+                        disabled={isSubmittingBidAction}
+                      >
+                        <Edit3 size={18} />
+                        Edit Bid
+                      </button>
+                      <button
+                        className="eh-delete-bid-btn"
+                        onClick={handleDeleteBid}
+                        disabled={isSubmittingBidAction}
+                      >
+                        <Trash2 size={18} />
+                        {isSubmittingBidAction ? 'Deleting...' : 'Delete Bid'}
+                      </button>
+                    </div>
+                  )}
+
+                  {selectedBidToView.status !== 'pending' && (
+                    <div className="eh-view-bid-status-message">
+                      <p>
+                        {selectedBidToView.status === 'approved'
+                          ? 'Congratulations! Your bid has been approved.'
+                          : 'This bid has been declined.'}
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>

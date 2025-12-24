@@ -1436,10 +1436,13 @@
     min-width: 0;
     padding: 0.5rem 0.75rem;
     margin-bottom: 0;
+    overflow: hidden;
   }
 
   .hp-select-label {
     font-size: 0.8125rem;
+    flex: 1;
+    min-width: 0;
   }
 
   .hp-select-icon {
@@ -1858,6 +1861,11 @@
     min-width: 0 !important;
     max-width: calc(50% - 4px) !important;
     width: calc(50% - 4px) !important;
+    overflow: hidden !important;
+  }
+
+  .hp-select-label {
+    font-size: 0.75rem !important;
   }
 }
 
@@ -2070,6 +2078,9 @@
   pointer-events: none;
   z-index: 1;
   transition: color 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .hp-property-filter-dropdown:hover .hp-select-label {

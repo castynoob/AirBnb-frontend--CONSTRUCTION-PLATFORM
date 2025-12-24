@@ -19,6 +19,7 @@ import {
   Search,
   Filter
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Nav from "../../components/Nav";
 import '../../styles/supplier/supplierhomepage.css';
 
@@ -41,6 +42,16 @@ function SupplierHomepage() {
   const [invoiceItems, setInvoiceItems] = useState([{ description: '', quantity: 1, unitPrice: 0 }]);
   const [deliveryTerms, setDeliveryTerms] = useState('');
   const [isSubmittingInvoice, setIsSubmittingInvoice] = useState(false);
+
+  // Confirmation modal state
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmModalConfig, setConfirmModalConfig] = useState({
+    title: '',
+    message: '',
+    confirmText: 'Confirm',
+    confirmStyle: 'primary',
+    onConfirm: () => {}
+  });
 
   useEffect(() => {
     fetchSupplierData();
@@ -153,14 +164,15 @@ function SupplierHomepage() {
       if (response.ok) {
         // Refresh the requests and stats
         fetchSupplierData();
+        toast.success('Request status updated successfully');
       } else {
         const error = await response.json();
         console.error('Error updating request status:', error);
-        alert(error.message || 'Failed to update request status');
+        toast.error(error.message || 'Failed to update request status');
       }
     } catch (error) {
       console.error('Error updating request status:', error);
-      alert('Failed to update request status');
+      toast.error('Failed to update request status');
     }
   };
 
@@ -169,15 +181,31 @@ function SupplierHomepage() {
   };
 
   const handleDeclineRequest = (requestId) => {
-    if (confirm('Are you sure you want to decline this request?')) {
-      handleUpdateRequestStatus(requestId, 'cancelled');
-    }
+    setConfirmModalConfig({
+      title: 'Decline Request',
+      message: 'Are you sure you want to decline this request? This action cannot be undone.',
+      confirmText: 'Decline',
+      confirmStyle: 'danger',
+      onConfirm: () => {
+        handleUpdateRequestStatus(requestId, 'cancelled');
+        setShowConfirmModal(false);
+      }
+    });
+    setShowConfirmModal(true);
   };
 
   const handleCompleteRequest = (requestId) => {
-    if (confirm('Mark this request as completed?')) {
-      handleUpdateRequestStatus(requestId, 'completed');
-    }
+    setConfirmModalConfig({
+      title: 'Complete Request',
+      message: 'Mark this request as completed? You can add a receipt/invoice after completion.',
+      confirmText: 'Complete',
+      confirmStyle: 'success',
+      onConfirm: () => {
+        handleUpdateRequestStatus(requestId, 'completed');
+        setShowConfirmModal(false);
+      }
+    });
+    setShowConfirmModal(true);
   };
 
   const handleAddReceipt = (request) => {
@@ -219,19 +247,19 @@ function SupplierHomepage() {
     // Validate items
     const hasEmptyDescription = invoiceItems.some(item => !item.description.trim());
     if (hasEmptyDescription) {
-      alert('Please fill in all item descriptions');
+      toast.error('Please fill in all item descriptions');
       return;
     }
 
     const hasInvalidQuantity = invoiceItems.some(item => item.quantity <= 0);
     if (hasInvalidQuantity) {
-      alert('Please enter valid quantities for all items');
+      toast.error('Please enter valid quantities for all items');
       return;
     }
 
     const hasInvalidPrice = invoiceItems.some(item => item.unitPrice <= 0);
     if (hasInvalidPrice) {
-      alert('Please enter valid prices for all items');
+      toast.error('Please enter valid prices for all items');
       return;
     }
 
@@ -256,17 +284,17 @@ function SupplierHomepage() {
       });
 
       if (response.ok) {
-        alert('Invoice/Receipt created successfully!');
+        toast.success('Invoice/Receipt created successfully!');
         setShowInvoiceModal(false);
         setSelectedRequest(null);
         fetchSupplierData(); // Refresh data
       } else {
         const error = await response.json();
-        alert(error.message || 'Failed to create invoice');
+        toast.error(error.message || 'Failed to create invoice');
       }
     } catch (error) {
       console.error('Error creating invoice:', error);
-      alert('Failed to create invoice');
+      toast.error('Failed to create invoice');
     } finally {
       setIsSubmittingInvoice(false);
     }
@@ -285,6 +313,14 @@ function SupplierHomepage() {
   const handleDownloadPDF = (pdfUrl, fileName) => {
     // Open PDF in new tab for viewing/downloading
     window.open(pdfUrl, '_blank');
+  };
+
+  const handleChatWithEntrepreneur = (request) => {
+    // Set target receiver info in localStorage for the messaging page
+    localStorage.setItem('targetReceiverId', request.entrepreneur_user_id);
+    localStorage.setItem('targetReceiverName', request.entrepreneur_company_name || 'Entrepreneur');
+    // Navigate to messages
+    navigate('/messages/supplier');
   };
 
   const filteredRequests = recentRequests.filter(request => {
@@ -477,22 +513,42 @@ function SupplierHomepage() {
                             </>
                           )}
                           {request.status === 'in-progress' && (
-                            <button
-                              className="supplier-home-request-btn complete"
-                              onClick={() => handleCompleteRequest(request.id)}
-                            >
-                              <CheckCircle size={16} />
-                              Mark as Completed
-                            </button>
+                            <>
+                              <button
+                                className="supplier-home-request-btn chat"
+                                onClick={() => handleChatWithEntrepreneur(request)}
+                                title="Chat with Entrepreneur"
+                              >
+                                <MessageSquare size={16} />
+                                Chat
+                              </button>
+                              <button
+                                className="supplier-home-request-btn complete"
+                                onClick={() => handleCompleteRequest(request.id)}
+                              >
+                                <CheckCircle size={16} />
+                                Mark as Completed
+                              </button>
+                            </>
                           )}
                           {request.status === 'completed' && (
-                            <button
-                              className="supplier-home-request-btn receipt"
-                              onClick={() => handleAddReceipt(request)}
-                            >
-                              <FileText size={16} />
-                              Add Receipt
-                            </button>
+                            <>
+                              <button
+                                className="supplier-home-request-btn chat"
+                                onClick={() => handleChatWithEntrepreneur(request)}
+                                title="Chat with Entrepreneur"
+                              >
+                                <MessageSquare size={16} />
+                                Chat
+                              </button>
+                              <button
+                                className="supplier-home-request-btn receipt"
+                                onClick={() => handleAddReceipt(request)}
+                              >
+                                <FileText size={16} />
+                                Add Receipt
+                              </button>
+                            </>
                           )}
                         </div>
                       </div>
@@ -652,6 +708,18 @@ function SupplierHomepage() {
                     </button>
                   </>
                 )}
+                {(selectedRequest.status === 'in-progress' || selectedRequest.status === 'completed') && (
+                  <button
+                    className="supplier-home-request-btn chat"
+                    onClick={() => {
+                      handleChatWithEntrepreneur(selectedRequest);
+                      handleCloseModal();
+                    }}
+                  >
+                    <MessageSquare size={16} />
+                    Chat with Entrepreneur
+                  </button>
+                )}
                 {selectedRequest.status === 'in-progress' && (
                   <button
                     className="supplier-home-request-btn complete"
@@ -792,6 +860,46 @@ function SupplierHomepage() {
                   disabled={isSubmittingInvoice}
                 >
                   {isSubmittingInvoice ? 'Creating...' : 'Create Invoice'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Confirmation Modal */}
+        {showConfirmModal && (
+          <div className="supplier-home-modal-overlay" onClick={() => setShowConfirmModal(false)}>
+            <div className="supplier-home-modal supplier-home-confirm-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="supplier-home-modal-header">
+                <h2>{confirmModalConfig.title}</h2>
+                <button
+                  className="supplier-home-modal-close"
+                  onClick={() => setShowConfirmModal(false)}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="supplier-home-modal-body">
+                <div className="supplier-home-confirm-content">
+                  <AlertCircle
+                    size={48}
+                    className={`supplier-home-confirm-icon ${confirmModalConfig.confirmStyle}`}
+                  />
+                  <p className="supplier-home-confirm-message">{confirmModalConfig.message}</p>
+                </div>
+              </div>
+              <div className="supplier-home-modal-footer">
+                <button
+                  className="supplier-home-request-btn"
+                  onClick={() => setShowConfirmModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className={`supplier-home-request-btn ${confirmModalConfig.confirmStyle === 'danger' ? 'decline' : confirmModalConfig.confirmStyle === 'success' ? 'complete' : 'accept'}`}
+                  onClick={confirmModalConfig.onConfirm}
+                >
+                  {confirmModalConfig.confirmText}
                 </button>
               </div>
             </div>

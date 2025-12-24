@@ -96,7 +96,7 @@ export const SocketProvider = ({ children }) => {
         console.log("📥 Loaded", formattedNotifications.length, "notifications from backend");
 
         // Show toast + sound for unread notifications received while offline
-        // Only show once per session (not on every reconnect) and only for property managers
+        // Only show once per session (not on every reconnect)
         const unreadNotifications = formattedNotifications.filter(n => !n.read);
         const userRole = user?.role;
 
@@ -104,10 +104,10 @@ export const SocketProvider = ({ children }) => {
           unreadCount: unreadNotifications.length,
           userRole,
           hasShownBefore: hasShownLoginToastsRef.current,
-          shouldShowToast: unreadNotifications.length > 0 && !hasShownLoginToastsRef.current && userRole === 'property_manager'
+          shouldShowToast: unreadNotifications.length > 0 && !hasShownLoginToastsRef.current
         });
 
-        if (unreadNotifications.length > 0 && !hasShownLoginToastsRef.current && userRole === 'property_manager') {
+        if (unreadNotifications.length > 0 && !hasShownLoginToastsRef.current) {
           hasShownLoginToastsRef.current = true; // Mark as shown
 
           // Play sound once for all unread notifications
@@ -179,6 +179,32 @@ export const SocketProvider = ({ children }) => {
                       style: {
                         borderRadius: '10px',
                         background: '#333',
+                        color: '#fff',
+                      },
+                    }
+                  );
+                } else if (notif.type === 'bid_approved') {
+                  toast.success(
+                    notif.content || `Your bid for "${notif.jobTitle}" has been approved!`,
+                    {
+                      duration: 8000,
+                      icon: '🎉',
+                      style: {
+                        borderRadius: '10px',
+                        background: '#059669',
+                        color: '#fff',
+                      },
+                    }
+                  );
+                } else if (notif.type === 'bid_declined') {
+                  toast(
+                    notif.content || `Your bid for "${notif.jobTitle}" was not selected.`,
+                    {
+                      duration: 8000,
+                      icon: '😔',
+                      style: {
+                        borderRadius: '10px',
+                        background: '#dc2626',
                         color: '#fff',
                       },
                     }
@@ -392,7 +418,10 @@ export const SocketProvider = ({ children }) => {
 
     // Listen for new bid notifications
     newSocket.on("new_bid", (data) => {
-      console.log("📋 New bid notification:", data);
+      console.log("📋 New bid notification received:");
+      console.log("   Current user ID:", user.id);
+      console.log("   Current user role:", user.role);
+      console.log("   Notification data:", data);
 
       const bidderName = data.bidderName || 'A contractor';
       const jobTitle = data.jobTitle || 'your job';
@@ -543,6 +572,112 @@ export const SocketProvider = ({ children }) => {
           {
             body: `${contractorName} has completed ${jobTitle}`,
             tag: 'work-completed-notification',
+            requireInteraction: false,
+          }
+        );
+      }
+    });
+
+    // Listen for bid approved notifications (for entrepreneurs)
+    newSocket.on("bid_approved", (data) => {
+      console.log("🎉 Bid approved notification received:");
+      console.log("   Current user ID:", user.id);
+      console.log("   Current user role:", user.role);
+      console.log("   Notification data:", data);
+
+      const jobTitle = data.jobTitle || 'a job';
+      const bidAmount = data.bidAmount ? `$${Number(data.bidAmount).toLocaleString()}` : '';
+
+      // Add to notifications list
+      setNotifications(prev => [{
+        id: Date.now(),
+        read: false,
+        timestamp: new Date().toISOString(),
+        type: 'bid_approved',
+        jobId: data.jobId,
+        jobTitle,
+        property: data.propertyName || '',
+        budget: data.bidAmount,
+        content: data.message,
+      }, ...prev]);
+
+      // Play notification sound
+      playNotificationSound();
+
+      // Show toast notification with success styling
+      toast.success(
+        data.message || `Your bid for "${jobTitle}" has been approved!`,
+        {
+          duration: 8000,
+          icon: '🎉',
+          style: {
+            borderRadius: '10px',
+            background: '#059669',
+            color: '#fff',
+          },
+        }
+      );
+
+      // Show desktop notification
+      if (showNotificationRef.current) {
+        showNotificationRef.current(
+          `Bid Approved! 🎉`,
+          {
+            body: data.message || `Your bid ${bidAmount ? `of ${bidAmount}` : ''} for ${jobTitle} has been approved!`,
+            tag: 'bid-approved-notification',
+            requireInteraction: true,
+          }
+        );
+      }
+    });
+
+    // Listen for bid declined notifications (for entrepreneurs)
+    newSocket.on("bid_declined", (data) => {
+      console.log("❌ Bid declined notification received:");
+      console.log("   Current user ID:", user.id);
+      console.log("   Current user role:", user.role);
+      console.log("   Notification data:", data);
+
+      const jobTitle = data.jobTitle || 'a job';
+
+      // Add to notifications list
+      setNotifications(prev => [{
+        id: Date.now(),
+        read: false,
+        timestamp: new Date().toISOString(),
+        type: 'bid_declined',
+        jobId: data.jobId,
+        jobTitle,
+        property: data.propertyName || '',
+        budget: data.bidAmount,
+        content: data.message,
+        reason: data.reason, // 'another_accepted' or 'manager_declined'
+      }, ...prev]);
+
+      // Play notification sound
+      playNotificationSound();
+
+      // Show toast notification with error styling
+      toast(
+        data.message || `Your bid for "${jobTitle}" was not selected.`,
+        {
+          duration: 8000,
+          icon: '😔',
+          style: {
+            borderRadius: '10px',
+            background: '#dc2626',
+            color: '#fff',
+          },
+        }
+      );
+
+      // Show desktop notification
+      if (showNotificationRef.current) {
+        showNotificationRef.current(
+          `Bid Update`,
+          {
+            body: data.message || `Your bid for ${jobTitle} was not selected.`,
+            tag: 'bid-declined-notification',
             requireInteraction: false,
           }
         );

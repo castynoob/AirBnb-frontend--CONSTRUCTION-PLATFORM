@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useState, useEffect, useRef } from "react"
-import { Bell, Wrench, Search, Plus, X, FileText, CheckCircle, Megaphone, Building2, AlertTriangle, Check, MessageSquare, Hammer } from "lucide-react"
+import { Wrench, Search, Plus, Megaphone, Building2, Bell } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import toast from "react-hot-toast"
 import "../../styles/manager/homepage.css"
@@ -13,7 +13,7 @@ import AddAnnouncementModal from "../../components/modal/AddAnnouncementModal"
 import AddPropertyModal from "../../components/modal/AddPropertyModal"
 import AddWorkModalCompact from "../../components/modal/AddWorkModalCompact"
 import InspectionReportUploadModal from "../../components/InspectionReportUploadModal"
-import { useSocket } from "../../contexts/SocketContext"
+import NotificationBell from "../../components/NotificationBell"
 
 // Skeleton Loader Component
 function SkeletonCard() {
@@ -95,13 +95,6 @@ function SummarySkeleton() {
 function HomePage() {
   const navigate = useNavigate()
 
-  // Get notifications from socket context
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useSocket() || {
-    notifications: [],
-    unreadCount: 0,
-    markAsRead: () => {},
-    markAllAsRead: () => {}
-  }
 
   const [properties, setProperties] = useState([])
   const [jobs, setJobs] = useState([])
@@ -348,9 +341,7 @@ function HomePage() {
   const [selectedRepair, setSelectedRepair] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [searchExpanded, setSearchExpanded] = useState(false)
-  const [showNotifications, setShowNotifications] = useState(false)
   const searchInputRef = useRef(null)
-  const notificationRef = useRef(null)
 
   // urgent modal
   const [showUrgentModal, setShowUrgentModal] = useState(false)
@@ -646,31 +637,11 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
     }
   }
 
-  const toggleNotifications = () => {
-    setShowNotifications(!showNotifications)
-  }
-
   useEffect(() => {
     if (searchExpanded && searchInputRef.current) {
       searchInputRef.current.focus()
     }
   }, [searchExpanded])
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
-        setShowNotifications(false)
-      }
-    }
-
-    if (showNotifications) {
-      document.addEventListener("mousedown", handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [showNotifications])
 
   const filteredRepairs = properties.filter(
     (repair) =>
@@ -680,40 +651,6 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
       repair?.category?.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  // Handle notification click - navigate to relevant page
-  const handleNotificationClick = (notification) => {
-    // Mark as read
-    markAsRead(notification.id)
-
-    // Navigate based on notification type
-    switch (notification.type) {
-      case 'message':
-        navigate('/messages')
-        break
-      case 'bid':
-        if (notification.jobId) {
-          // Find the repair and open its details
-          const repair = properties.find(p => p.id === notification.jobId)
-          if (repair) {
-            setSelectedRepair(repair)
-          }
-        }
-        break
-      case 'started':
-      case 'completed':
-        if (notification.jobId) {
-          const repair = properties.find(p => p.id === notification.jobId)
-          if (repair) {
-            setSelectedRepair(repair)
-          }
-        }
-        break
-      default:
-        break
-    }
-
-    setShowNotifications(false)
-  }
 
   if (isLoading) {
     return (
@@ -862,182 +799,7 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
               </button>
             </div>
 
-            <div className="pm-notification-wrapper" ref={notificationRef}>
-              <button className="pm-notification-btn" aria-label="Notifications" onClick={toggleNotifications}>
-                <Bell size={18} />
-                {unreadCount > 0 && <span className="pm-notification-badge">{unreadCount}</span>}
-              </button>
-
-              {showNotifications && (
-                <div className="pm-notification-modal">
-                  <div className="pm-notification-header">
-                    <h3>Notifications</h3>
-                    {notifications.length > 0 && (
-                      <button
-                        className="pm-mark-all-read-btn"
-                        onClick={markAllAsRead}
-                        title="Mark all as read"
-                      >
-                        <Check size={14} />
-                        <span>Mark all read</span>
-                      </button>
-                    )}
-                    <button
-                      className="pm-close-notification-btn"
-                      onClick={toggleNotifications}
-                      aria-label="Close notifications"
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
-                  <div className="pm-notification-list">
-                    {notifications.length === 0 ? (
-                      <div className="pm-no-notifications">
-                        <Bell size={32} />
-                        <p>No notifications yet</p>
-                      </div>
-                    ) : (
-                      notifications.map((notification) => (
-                        <div
-                          key={notification.id}
-                          className={`pm-notification-item ${!notification.read ? "unread" : ""}`}
-                          onClick={() => handleNotificationClick(notification)}
-                          style={{ cursor: 'pointer' }}
-                        >
-                          {/* Bid Notification */}
-                          {notification.type === "bid" && (
-                            <>
-                              <div className="pm-notification-icon pm-bid-icon">
-                                <FileText size={20} />
-                              </div>
-                              <div className="pm-notification-content">
-                                <div className="pm-notification-title">
-                                  New Bid Submission
-                                  {!notification.read && <span className="pm-unread-dot"></span>}
-                                </div>
-                                <div className="pm-notification-body">
-                                  <strong>{notification.bidder}</strong> submitted a bid for{" "}
-                                  <strong>{notification.property || notification.jobTitle}</strong>
-                                  {notification.apartment && ` - ${notification.apartment}`}
-                                </div>
-                                <div className="pm-notification-meta">
-                                  {notification.budget && (
-                                    <>
-                                      <span>Budget: ${notification.budget.toLocaleString()}</span>
-                                      <span className="pm-notification-dot">•</span>
-                                    </>
-                                  )}
-                                  <span>License: {notification.licenseNumber}</span>
-                                </div>
-                                <div className="pm-notification-time">
-                                  {new Date(notification.submissionDate || notification.timestamp).toLocaleDateString("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </div>
-                              </div>
-                            </>
-                          )}
-
-                          {/* Job Started Notification */}
-                          {notification.type === "started" && (
-                            <>
-                              <div className="pm-notification-icon pm-started-icon">
-                                <Hammer size={20} />
-                              </div>
-                              <div className="pm-notification-content">
-                                <div className="pm-notification-title">
-                                  Work Started
-                                  {!notification.read && <span className="pm-unread-dot"></span>}
-                                </div>
-                                <div className="pm-notification-body">
-                                  <strong>{notification.contractor}</strong> started working on{" "}
-                                  <strong>{notification.jobTitle || notification.property}</strong>
-                                  {notification.apartment && ` - ${notification.apartment}`}
-                                </div>
-                                <div className="pm-notification-meta">
-                                  <span>Contractor: {notification.contractor}</span>
-                                </div>
-                                <div className="pm-notification-time">
-                                  {new Date(notification.startDate || notification.timestamp).toLocaleDateString("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </div>
-                              </div>
-                            </>
-                          )}
-
-                          {/* Work Completed Notification */}
-                          {notification.type === "completed" && (
-                            <>
-                              <div className="pm-notification-icon pm-completed-icon">
-                                <CheckCircle size={20} />
-                              </div>
-                              <div className="pm-notification-content">
-                                <div className="pm-notification-title">
-                                  Work Completed
-                                  {!notification.read && <span className="pm-unread-dot"></span>}
-                                </div>
-                                <div className="pm-notification-body">
-                                  <strong>{notification.workTitle || notification.jobTitle}</strong> at{" "}
-                                  <strong>{notification.property}</strong>
-                                  {notification.apartment && ` - ${notification.apartment}`}
-                                </div>
-                                <div className="pm-notification-meta">
-                                  <span>Contractor: {notification.contractor}</span>
-                                </div>
-                                <div className="pm-notification-time">
-                                  {new Date(notification.completionDate || notification.timestamp).toLocaleDateString("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </div>
-                              </div>
-                            </>
-                          )}
-
-                          {/* Message Notification */}
-                          {notification.type === "message" && (
-                            <>
-                              <div className="pm-notification-icon pm-message-icon">
-                                <MessageSquare size={20} />
-                              </div>
-                              <div className="pm-notification-content">
-                                <div className="pm-notification-title">
-                                  New Message
-                                  {!notification.read && <span className="pm-unread-dot"></span>}
-                                </div>
-                                <div className="pm-notification-body">
-                                  <strong>{notification.senderName}</strong> sent you a message
-                                </div>
-                                <div className="pm-notification-meta">
-                                  <span>{notification.content}</span>
-                                </div>
-                                <div className="pm-notification-time">
-                                  {new Date(notification.timestamp).toLocaleDateString("en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </div>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+            <NotificationBell />
           </div>
         </header>
 
