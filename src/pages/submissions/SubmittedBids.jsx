@@ -14,8 +14,13 @@ import {
   FileText,
   X,
   ChevronRight,
+  User,
+  Building2,
+  Mail,
+  Phone,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const SubmittedBids = () => {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -154,39 +159,67 @@ const SubmittedBids = () => {
   };
 
   const handleMessageClicked = async (bid) => {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
     const userProfile = localStorage.getItem('userProfile')
 
-    if(userProfile) {
+    if (!userProfile) {
+      toast.error('Please log in to send messages');
+      return;
+    }
+
+    try {
       const user = JSON.parse(userProfile)
-      const jobResponse = await fetch(`${API_BASE_URL}/api/jobs/${bid.job_id}`, {
+
+      // Use manager info directly from bid data (already fetched from backend)
+      const managerId = bid.manager_user_id;
+      const managerName = `${bid.manager_first_name || ''} ${bid.manager_last_name || ''}`.trim() || 'Manager';
+
+      if (!managerId || managerId === user.id) {
+        toast.error('Cannot find property manager for this job');
+        return;
+      }
+
+      // Check for existing conversation with this manager
+      const conversationsResponse = await fetch(`${API_BASE_URL}/api/messages/conversations`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${user.token}`
         }
-      })
+      });
 
-      if(!jobResponse.ok) {
-        throw new Error('Error', jobResponse.status)
+      if (conversationsResponse.ok) {
+        const conversationsData = await conversationsResponse.json();
+        const conversations = conversationsData.conversations || [];
+
+        // Find existing conversation with this manager (optionally matching job_id)
+        const existingConversation = conversations.find(conv =>
+          String(conv.other_user_id) === String(managerId) &&
+          (!conv.job_id || String(conv.job_id) === String(bid.job_id))
+        );
+
+        if (existingConversation) {
+          // Existing conversation found - navigate to it
+          console.log("💬 Found existing conversation:", existingConversation.id);
+          localStorage.setItem("targetReceiverId", managerId);
+          localStorage.setItem("targetReceiverName", managerName);
+          localStorage.setItem("targetConversationId", existingConversation.id);
+          if (bid.job_id) localStorage.setItem("targetJobId", bid.job_id);
+          toast.success('Opening existing conversation...');
+          navigate('/messages/entrepreneur');
+          return;
+        }
       }
 
-      const data = await jobResponse.json()
-      // Use manager_user_id if available, otherwise fall back to manager_id
-      // The backend should return manager_user_id for proper authorization
-      const manageId = data.manager_user_id || data.manager_id;
-      console.log("🔍 Job data:", data); // Debug log
-      console.log("🎯 Manager ID being sent:", manageId); // Debug log
-      console.log("👤 Current user ID:", user.id); // Your own ID
+      // No existing conversation - create new chat
+      console.log("🆕 Creating new conversation with manager:", managerId);
+      localStorage.setItem("targetReceiverId", managerId);
+      localStorage.setItem("targetReceiverName", managerName);
+      localStorage.removeItem("targetConversationId"); // Clear any previous conversation ID
+      if (bid.job_id) localStorage.setItem("targetJobId", bid.job_id);
+      navigate('/messages/entrepreneur');
 
-      if (!manageId || manageId === user.id) {
-        alert("Error: Cannot find property manager for this job or manager ID is same as your ID");
-        return;
-      }
-
-      localStorage.setItem("targetReceiverId", manageId);
-      localStorage.setItem("targetReceiverName", data.manager_name || "Manager");
-      if (data.id) localStorage.setItem("targetJobId", data.id);
-      navigate('/messages/entrepreneur')
+    } catch (error) {
+      console.error('Error handling message click:', error);
+      toast.error('Failed to open messages. Please try again.');
     }
   }
 
@@ -433,6 +466,50 @@ const SubmittedBids = () => {
                     </div>
                   )}
                 </section>
+
+                {/* Property Manager Information */}
+                {(selectedBid.manager_first_name || selectedBid.manager_company_name) && (
+                  <section className="bid-modal-section">
+                    <h3 className="bid-section-title">
+                      <User size={20} />
+                      Property Manager
+                    </h3>
+                    <div className="bid-info-grid">
+                      {(selectedBid.manager_first_name || selectedBid.manager_last_name) && (
+                        <div className="bid-info-item">
+                          <label>
+                            <User size={14} /> Manager Name
+                          </label>
+                          <p>{`${selectedBid.manager_first_name || ''} ${selectedBid.manager_last_name || ''}`.trim()}</p>
+                        </div>
+                      )}
+                      {selectedBid.manager_company_name && (
+                        <div className="bid-info-item">
+                          <label>
+                            <Building2 size={14} /> Company
+                          </label>
+                          <p>{selectedBid.manager_company_name}</p>
+                        </div>
+                      )}
+                      {selectedBid.manager_email && (
+                        <div className="bid-info-item">
+                          <label>
+                            <Mail size={14} /> Email
+                          </label>
+                          <p>{selectedBid.manager_email}</p>
+                        </div>
+                      )}
+                      {selectedBid.manager_phone && (
+                        <div className="bid-info-item">
+                          <label>
+                            <Phone size={14} /> Phone
+                          </label>
+                          <p>{selectedBid.manager_phone}</p>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                )}
 
                 {/* Bid Information */}
                 <section className="bid-modal-section bid-modal-highlight">

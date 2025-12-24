@@ -4,6 +4,7 @@
 
 .notification-bell-container {
   position: relative;
+  z-index: 150;
 }
 
 .notification-bell-btn {

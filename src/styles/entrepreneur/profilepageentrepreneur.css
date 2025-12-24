@@ -1570,3 +1570,223 @@
     font-size: 0.9rem;
   }
 }
+
+/* =====================================================
+   IMPROVED EDIT MODAL STYLES
+   ===================================================== */
+
+/* Section Styling */
+.edit-section {
+  background: #FAFBFC;
+  border-radius: 12px;
+  padding: 1.25rem;
+  border: 1px solid #E8ECF0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.edit-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #0F223D;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #E8ECF0;
+}
+
+.edit-section-icon {
+  color: #00A5A9;
+}
+
+.edit-selected-count {
+  margin-left: auto;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #00A5A9;
+  background: rgba(0, 165, 169, 0.1);
+  padding: 0.25rem 0.625rem;
+  border-radius: 20px;
+}
+
+/* Enhanced Form Labels with Icons */
+.edit-form-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #2C3E50;
+  margin-bottom: 0.5rem;
+}
+
+.edit-form-label svg {
+  color: #7F8C8D;
+  flex-shrink: 0;
+}
+
+.edit-required {
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+/* Enhanced Checkbox/Specializations Grid */
+.edit-specializations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.625rem;
+}
+
+.edit-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: none;
+  padding: 0.625rem 0.875rem;
+  background: #fff;
+  border: 1px solid #D9E1E7;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.edit-checkbox-label:hover {
+  border-color: #00A5A9;
+  background: rgba(0, 165, 169, 0.02);
+}
+
+.edit-checkbox-label.checked {
+  background: rgba(0, 165, 169, 0.08);
+  border-color: #00A5A9;
+}
+
+.edit-checkbox-input {
+  width: 1.125rem;
+  height: 1.125rem;
+  color: #00A5A9;
+  border: 1px solid #D9E1E7;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  accent-color: #00A5A9;
+}
+
+.edit-checkbox-text {
+  font-size: 0.8125rem;
+  color: #2C3E50;
+  transition: color 0.2s;
+  flex: 1;
+}
+
+.edit-checkbox-label.checked .edit-checkbox-text {
+  color: #00A5A9;
+  font-weight: 500;
+}
+
+.edit-check-icon {
+  color: #00A5A9;
+  flex-shrink: 0;
+}
+
+/* Enhanced Buttons */
+.edit-cancel-btn,
+.edit-submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex: 1;
+  padding: 0.875rem 1.5rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+  font-family: inherit;
+}
+
+.edit-cancel-btn {
+  border: 1px solid #D9E1E7;
+  background-color: white;
+  color: #2C3E50;
+}
+
+.edit-cancel-btn:hover:not(:disabled) {
+  background-color: #F7F8FA;
+  border-color: #7F8C8D;
+}
+
+.edit-submit-btn {
+  background: linear-gradient(135deg, #00A5A9 0%, #008B8E 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 165, 169, 0.25);
+}
+
+.edit-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #008B8E 0%, #007578 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 165, 169, 0.35);
+}
+
+.edit-submit-btn:disabled,
+.edit-cancel-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Loading Spinner */
+.edit-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: editSpin 0.8s linear infinite;
+}
+
+@keyframes editSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Disabled Input Styling */
+.edit-form-input:disabled,
+.edit-form-textarea:disabled {
+  background-color: #F5F6F8;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Mobile Responsive for Edit Modal */
+@media (max-width: 640px) {
+  .edit-section {
+    padding: 1rem;
+  }
+
+  .edit-section-header {
+    font-size: 0.875rem;
+  }
+
+  .edit-specializations-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .edit-checkbox-label {
+    padding: 0.75rem;
+  }
+
+  .edit-button-group {
+    flex-direction: column;
+  }
+
+  .edit-cancel-btn,
+  .edit-submit-btn {
+    width: 100%;
+  }
+}

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Star, CheckCircle, Award, Briefcase, MapPin, Calendar, Mail, Phone, LogOut, MessageSquare, User, Upload, Camera, X, Crown, Check, Zap, Shield, Activity, DollarSign, FileText, ArrowUpCircle } from 'lucide-react';
+import { Star, CheckCircle, Award, Briefcase, MapPin, Calendar, Mail, Phone, LogOut, MessageSquare, User, Upload, Camera, X, Crown, Check, Zap, Shield, Activity, DollarSign, FileText, ArrowUpCircle, AlertCircle } from 'lucide-react';
 import Nav from "../../components/Nav";
 import '../../styles/entrepreneur/profilepageentrepreneur.css';
 import '../../styles/entrepreneur/subscriptionpage.css';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import EntrepreneurProfileSkeleton from '../../components/loading/EntrepreneurProfileSkeleton'
 import SubscriptionPaymentForm from '../../components/SubscriptionPaymentModal'
 import '../../styles/entrepreneur/subscriptionmodal.css'
@@ -212,13 +213,13 @@ function ProfilePageEntrepreneur() {
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('Please select a valid image file')
+        toast.error('Please select a valid image file')
         return
       }
 
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('Image size should not exceed 5MB')
+        toast.error('Image size should not exceed 5MB')
         return
       }
 
@@ -239,7 +240,7 @@ function ProfilePageEntrepreneur() {
   const handleSubmit = async () => {
     if (!formData.company_name || !formData.license_number || !formData.years_in_business ||
         !formData.num_employees || !formData.address) {
-      alert('Please fill in all required fields');
+      toast.error('Please fill in all required fields');
       return;
     }
 
@@ -324,14 +325,14 @@ function ProfilePageEntrepreneur() {
         setIsEditModalOpen(false)
 
         if (imageUploadFailed) {
-          alert('Profile updated successfully, but the image upload failed. Please try uploading your image again later.')
+          toast.success('Profile updated successfully, but the image upload failed. Please try uploading your image again later.')
         } else {
-          alert('Profile updated successfully!')
+          toast.success('Profile updated successfully!')
         }
       }
     } catch (error) {
       console.error('Error updating profile:', error)
-      alert('Failed to update profile. Please try again.')
+      toast.error('Failed to update profile. Please try again.')
     } finally {
       setIsUpdating(false)
       setIsUploadingImage(false)
@@ -1064,16 +1065,17 @@ function ProfilePageEntrepreneur() {
                 <p className="edit-modal-subtitle">Update your business information</p>
               </div>
               <button onClick={() => setIsEditModalOpen(false)} className="edit-close-btn">
-                <svg className="edit-close-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X size={24} />
               </button>
             </div>
 
             <div className="edit-modal-body">
-              {/* Profile Image Upload */}
-              <div className="edit-form-group">
-                <label className="edit-form-label">Company Logo / Profile Picture</label>
+              {/* Profile Image Upload Section */}
+              <div className="edit-section">
+                <div className="edit-section-header">
+                  <Camera size={18} className="edit-section-icon" />
+                  <span>Company Logo / Profile Picture</span>
+                </div>
                 <div className="edit-image-upload-container">
                   <div className="edit-image-preview">
                     {profileImagePreview ? (
@@ -1113,99 +1115,147 @@ function ProfilePageEntrepreneur() {
                 </div>
               </div>
 
-              <div className="edit-form-group">
-                <label className="edit-form-label">Company Name *</label>
-                <input
-                  type="text"
-                  name="company_name"
-                  value={formData.company_name}
-                  onChange={handleInputChange}
-                  className="edit-form-input"
-                  placeholder="Enter your company name"
-                />
-              </div>
+              {/* Company Information Section */}
+              <div className="edit-section">
+                <div className="edit-section-header">
+                  <Briefcase size={18} className="edit-section-icon" />
+                  <span>Company Information</span>
+                </div>
 
-              <div className="edit-form-group">
-                <label className="edit-form-label">License Number *</label>
-                <input
-                  type="text"
-                  name="license_number"
-                  value={formData.license_number}
-                  onChange={handleInputChange}
-                  className="edit-form-input"
-                  placeholder="Enter business license number"
-                />
-              </div>
-
-              <div className="edit-form-row">
                 <div className="edit-form-group">
-                  <label className="edit-form-label">Years in Business *</label>
+                  <label className="edit-form-label">
+                    <Briefcase size={14} />
+                    Company Name <span className="edit-required">*</span>
+                  </label>
                   <input
-                    type="number"
-                    name="years_in_business"
-                    value={formData.years_in_business}
+                    type="text"
+                    name="company_name"
+                    value={formData.company_name}
                     onChange={handleInputChange}
                     className="edit-form-input"
-                    placeholder="0"
-                    min="0"
+                    placeholder="Enter your company name"
                   />
                 </div>
-                <div className="edit-form-group">
-                  <label className="edit-form-label">Number of Employees *</label>
-                  <input
-                    type="number"
-                    name="num_employees"
-                    value={formData.num_employees}
-                    onChange={handleInputChange}
-                    className="edit-form-input"
-                    placeholder="0"
-                    min="1"
-                  />
-                </div>
-              </div>
 
-              <div className="edit-form-row">
                 <div className="edit-form-group">
-                  <label className="edit-form-label">Phone</label>
+                  <label className="edit-form-label">
+                    <Award size={14} />
+                    License Number <span className="edit-required">*</span>
+                  </label>
                   <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
+                    type="text"
+                    name="license_number"
+                    value={formData.license_number}
                     onChange={handleInputChange}
                     className="edit-form-input"
-                    placeholder="+63 XXX XXX XXXX"
+                    placeholder="Enter business license number"
                   />
                 </div>
-                <div className="edit-form-group">
-                  <label className="edit-form-label">Email</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="edit-form-input"
-                    placeholder="email@example.com"
-                  />
+
+                <div className="edit-form-row">
+                  <div className="edit-form-group">
+                    <label className="edit-form-label">
+                      <Calendar size={14} />
+                      Years in Business <span className="edit-required">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="years_in_business"
+                      value={formData.years_in_business}
+                      onChange={handleInputChange}
+                      className="edit-form-input"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                  <div className="edit-form-group">
+                    <label className="edit-form-label">
+                      <User size={14} />
+                      Number of Employees <span className="edit-required">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="num_employees"
+                      value={formData.num_employees}
+                      onChange={handleInputChange}
+                      className="edit-form-input"
+                      placeholder="0"
+                      min="1"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="edit-form-group">
-                <label className="edit-form-label">Business Address *</label>
-                <textarea
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  className="edit-form-textarea"
-                  placeholder="Enter your business address"
-                  rows="3"
-                />
+              {/* Contact Information Section */}
+              <div className="edit-section">
+                <div className="edit-section-header">
+                  <Phone size={18} className="edit-section-icon" />
+                  <span>Contact Information</span>
+                </div>
+
+                <div className="edit-form-row">
+                  <div className="edit-form-group">
+                    <label className="edit-form-label">
+                      <Phone size={14} />
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      className="edit-form-input"
+                      placeholder="+63 XXX XXX XXXX"
+                    />
+                  </div>
+                  <div className="edit-form-group">
+                    <label className="edit-form-label">
+                      <Mail size={14} />
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      className="edit-form-input"
+                      placeholder="email@example.com"
+                      disabled
+                    />
+                  </div>
+                </div>
+
+                <div className="edit-form-group">
+                  <label className="edit-form-label">
+                    <MapPin size={14} />
+                    Business Address <span className="edit-required">*</span>
+                  </label>
+                  <textarea
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    className="edit-form-textarea"
+                    placeholder="Enter your business address"
+                    rows="3"
+                  />
+                </div>
               </div>
 
-              <div className="edit-form-group">
-                <label className="edit-form-label edit-specializations-label">Specializations</label>
+              {/* Specializations Section */}
+              <div className="edit-section">
+                <div className="edit-section-header">
+                  <CheckCircle size={18} className="edit-section-icon" />
+                  <span>Specializations</span>
+                  <span className="edit-selected-count">
+                    {formData.specializations.length} selected
+                  </span>
+                </div>
                 <div className="edit-specializations-grid">
                   {specializationOptions.map(spec => (
-                    <label key={spec} className="edit-checkbox-label">
+                    <label
+                      key={spec}
+                      className={`edit-checkbox-label ${formData.specializations.includes(spec) ? 'checked' : ''}`}
+                    >
                       <input
                         type="checkbox"
                         checked={formData.specializations.includes(spec)}
@@ -1213,17 +1263,22 @@ function ProfilePageEntrepreneur() {
                         className="edit-checkbox-input"
                       />
                       <span className="edit-checkbox-text">{spec}</span>
+                      {formData.specializations.includes(spec) && (
+                        <Check size={14} className="edit-check-icon" />
+                      )}
                     </label>
                   ))}
                 </div>
               </div>
 
+              {/* Action Buttons */}
               <div className="edit-button-group">
                 <button
                   onClick={() => setIsEditModalOpen(false)}
                   className="edit-cancel-btn"
                   disabled={isUpdating}
                 >
+                  <X size={18} />
                   Cancel
                 </button>
                 <button
@@ -1233,10 +1288,14 @@ function ProfilePageEntrepreneur() {
                 >
                   {isUpdating ? (
                     <>
+                      <span className="edit-spinner"></span>
                       {isUploadingImage ? 'Uploading Image...' : 'Saving Changes...'}
                     </>
                   ) : (
-                    'Save Changes'
+                    <>
+                      <Check size={18} />
+                      Save Changes
+                    </>
                   )}
                 </button>
               </div>

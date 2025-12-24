@@ -223,18 +223,19 @@
 /* Tabs */
 .subs-tabs-container {
   display: flex;
-  gap: 0.5rem;
+  gap: 0;
   margin-bottom: 1.5rem;
   background-color: var(--color-white);
   padding: 0.5rem;
   border-radius: 10px;
   border: 1px solid var(--color-border-divider);
-  overflow-x: auto;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 .subs-tab-btn {
-  flex: 1;
-  min-width: fit-content;
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2384,7 +2385,7 @@
     padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 3.25rem);
   }
 
-  /* Compact tabs - horizontally scrollable */
+  /* Compact tabs - full width */
   .subs-tabs-container {
     display: flex;
     gap: 0;
@@ -2393,9 +2394,10 @@
     border-radius: 0;
     background: #f8fafc;
     border: 1px solid #e5e7eb;
-    overflow-x: auto;
+    overflow-x: hidden;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    width: 100%;
   }
 
   .subs-tabs-container::-webkit-scrollbar {
@@ -2404,8 +2406,8 @@
 
   /* Compact tab buttons */
   .subs-tab-btn {
-    flex: 0 0 auto;
-    min-width: auto;
+    flex: 1 1 0;
+    min-width: 0;
     padding: 0.5rem 0.75rem;
     font-size: 0.75rem;
     border-radius: 0;
@@ -2502,15 +2504,17 @@
 /* Tabs: compact sharp design */
 .subs-tabs-container {
   background: #f8fafc;
-  padding: 0.25rem;
+  padding: 0;
   border-radius: 0;
   border: 1px solid #e5e7eb;
   display: flex;
-  gap: 0.25rem;
+  gap: 0;
   align-items: center;
-  justify-content: stretch;
+  width: 100%;
 }
 .subs-tab-btn {
+  flex: 1 1 0;
+  min-width: 0;
   background: transparent;
   border-radius: 0;
   padding: 0.5rem 0.75rem;
@@ -2810,13 +2814,14 @@
 
 /* Desktop tabs - compact design */
 .subs-tabs-container {
-  background: #f8fafc !important;
+  background: transparent !important;
   padding: 0 !important;
   border-radius: 0 !important;
-  border: 1px solid #e5e7eb !important;
+  border: none !important;
   display: flex !important;
   gap: 0 !important;
-  overflow-x: auto !important;
+  width: 100% !important;
+  overflow-x: hidden !important;
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
 }
@@ -2826,18 +2831,23 @@
 }
 
 .subs-tab-btn {
-  flex: 1 1 auto !important;
-  min-width: fit-content !important;
-  background: transparent !important;
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  background: #f8fafc !important;
   border-radius: 0 !important;
   padding: 0.625rem 1rem !important;
   font-weight: 600 !important;
   font-size: 0.8125rem !important;
   color: #6b7280 !important;
-  border: none !important;
+  border: 1px solid #e5e7eb !important;
+  border-right: none !important;
   box-shadow: none !important;
   transform: none !important;
   white-space: nowrap !important;
+}
+
+.subs-tab-btn:last-child {
+  border-right: 1px solid #e5e7eb !important;
 }
 
 .subs-tab-btn:hover {
@@ -2850,7 +2860,7 @@
 .subs-tab-btn.active {
   background: #0F223D !important;
   color: #ffffff !important;
-  border: none !important;
+  border-color: #0F223D !important;
   box-shadow: none !important;
   border-radius: 0 !important;
   transform: none !important;
@@ -2873,10 +2883,10 @@
 @media (max-width: 768px) {
   .subs-tabs-container {
     margin-bottom: 0.75rem !important;
-    background: #ffffff !important;
-    border: 1px solid #e5e7eb !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
+    background: transparent !important;
+    border: none !important;
+    overflow-x: hidden !important;
+    width: 100% !important;
   }
 
   .subs-tab-btn {
@@ -2885,17 +2895,19 @@
     padding: 0.625rem 0.5rem !important;
     font-size: 0.6875rem !important;
     text-align: center !important;
-    border-right: 1px solid #e5e7eb !important;
+    background: #f8fafc !important;
+    border: 1px solid #e5e7eb !important;
+    border-right: none !important;
   }
 
   .subs-tab-btn:last-child {
-    border-right: none !important;
+    border-right: 1px solid #e5e7eb !important;
   }
 
   .subs-tab-btn.active {
     background: #0F223D !important;
     color: #ffffff !important;
-    border-right-color: #0F223D !important;
+    border-color: #0F223D !important;
   }
 
   /* Hide tab count on mobile to save space */

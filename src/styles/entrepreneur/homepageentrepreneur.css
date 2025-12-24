@@ -2192,6 +2192,7 @@
     flex-direction: row;
     align-items: center;
     gap: 0.5rem;
+    z-index: 200;
   }
 
   .eh-search-box-fullwidth {
@@ -2242,36 +2243,61 @@
 
   .eh-fullscreen-map-layout .eh-mobile-view-toggle {
     display: flex;
-    /* Move to top, below the floating header with proper gap */
-    top: 5rem;
+    /* Move to top, below the floating header with more gap */
+    top: 5.75rem;
     bottom: auto;
-    transform: translateX(-50%);
+    /* Full width with side margins instead of centered */
+    left: 1rem;
+    right: 1rem;
+    transform: none;
+    width: calc(100% - 2rem);
     /* Glass-morphism style */
-    background: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-radius: 50px;
-    padding: 0.25rem;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-  }
-
-  /* Update toggle buttons for top position */
-  .eh-fullscreen-map-layout .eh-view-toggle-btn {
-    padding: 0.5rem 1rem;
-    border-radius: 50px;
-    font-size: 0.8125rem;
+    border-radius: 12px;
+    padding: 0.375rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    border: 1px solid rgba(0, 0, 0, 0.06);
     gap: 0.375rem;
   }
 
-  .eh-fullscreen-map-layout .eh-view-toggle-btn svg {
-    width: 16px;
-    height: 16px;
+  /* Update toggle buttons - each 50% width */
+  .eh-fullscreen-map-layout .eh-view-toggle-btn {
+    flex: 1;
+    width: 50%;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    gap: 0.5rem;
+    justify-content: center;
+    transition: all 0.2s ease;
   }
 
-  /* Adjust floating panel top position to account for toggle */
+  .eh-fullscreen-map-layout .eh-view-toggle-btn:not(.eh-active) {
+    background: transparent;
+    color: #5a6c7d;
+  }
+
+  .eh-fullscreen-map-layout .eh-view-toggle-btn:not(.eh-active):hover {
+    background: rgba(0, 0, 0, 0.04);
+  }
+
+  .eh-fullscreen-map-layout .eh-view-toggle-btn.eh-active {
+    background: linear-gradient(135deg, #00A5A9 0%, #008B8E 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 165, 169, 0.3);
+  }
+
+  .eh-fullscreen-map-layout .eh-view-toggle-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* Adjust floating panel top position to account for taller toggle */
   .eh-floating-panel {
-    top: 8rem;
+    top: 9.5rem;
   }
 
   /* Hide panel toggle on mobile - use mobile view toggle instead */
@@ -2340,7 +2366,7 @@
 
   /* Floating panel - smaller margins on very small screens */
   .eh-floating-panel {
-    top: 7.5rem;
+    top: 9rem;
     right: 0.75rem;
     left: 0.75rem;
     bottom: 5rem; /* Account for bottom navigation bar */
@@ -2348,12 +2374,23 @@
 
   /* Adjust toggle position on very small screens */
   .eh-fullscreen-map-layout .eh-mobile-view-toggle {
-    top: 4.5rem;
+    top: 5.25rem;
+    left: 0.75rem;
+    right: 0.75rem;
+    width: calc(100% - 1.5rem);
+    padding: 0.25rem;
+    border-radius: 10px;
   }
 
   .eh-fullscreen-map-layout .eh-view-toggle-btn {
-    padding: 0.375rem 0.75rem;
-    font-size: 0.75rem;
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8125rem;
+    border-radius: 8px;
+  }
+
+  .eh-fullscreen-map-layout .eh-view-toggle-btn svg {
+    width: 16px;
+    height: 16px;
   }
 }
 

@@ -726,13 +726,18 @@ export default function LandingPage() {
     const errors = {};
 
     // Validate first name
+    const nameRegex = /^[A-Za-zÀ-ÿ\s'\-]{2,50}$/;
     if (!registerFormData.first_name) {
       errors.first_name = "First name is required";
+    } else if (!nameRegex.test(registerFormData.first_name)) {
+      errors.first_name = "First name must contain only letters (2-50 characters)";
     }
 
     // Validate last name (only required for local registration, optional for Google)
     if (registerFormData.provider !== 'google' && !registerFormData.last_name) {
       errors.last_name = "Last name is required";
+    } else if (registerFormData.last_name && !nameRegex.test(registerFormData.last_name)) {
+      errors.last_name = "Last name must contain only letters (2-50 characters)";
     }
 
     // Validate email
@@ -748,6 +753,8 @@ export default function LandingPage() {
         errors.password = "Password is required";
       } else if (registerFormData.password.length < 8) {
         errors.password = "Password must be at least 8 characters";
+      } else if (!/(?=.*[a-z])(?=.*\d)/.test(registerFormData.password)) {
+        errors.password = "Password must contain at least one lowercase letter and one number";
       }
 
       // Validate confirm password
@@ -1928,7 +1935,7 @@ export default function LandingPage() {
                           <input
                             type={showRegisterPassword ? "text" : "password"}
                             name="password"
-                            placeholder="Create a strong password"
+                            placeholder="Min 8 chars, 1 lowercase, 1 number"
                             value={registerFormData.password}
                             onChange={handleRegisterChange}
                             required
@@ -2538,7 +2545,7 @@ export default function LandingPage() {
                         </div>
                       </div>
                       <div className="lp-form-group">
-                        <label>Website</label>
+                        <label>Website <span className="lp-optional-label">(Optional)</span></label>
                         <div className="lp-input-wrapper">
                           <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <circle cx="12" cy="12" r="10"/>
@@ -2551,7 +2558,6 @@ export default function LandingPage() {
                             placeholder="https://yourwebsite.com"
                             value={registerFormData.website}
                             onChange={handleRegisterChange}
-                            required
                           />
                         </div>
                       </div>

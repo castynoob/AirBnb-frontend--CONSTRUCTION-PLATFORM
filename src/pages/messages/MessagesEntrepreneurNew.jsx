@@ -79,13 +79,29 @@ function MessagesEntrepreneurNew() {
       const targetReceiverId = localStorage.getItem("targetReceiverId");
       const targetReceiverName = localStorage.getItem("targetReceiverName");
       const targetJobId = localStorage.getItem("targetJobId");
+      const targetConversationId = localStorage.getItem("targetConversationId");
 
-      if (targetReceiverId) {
+      if (targetReceiverId && conversations.length > 0) {
         console.log("🔍 Checking for existing conversation with:", targetReceiverId);
+        console.log("📋 Available conversations:", conversations.map(c => ({ id: c.id, other_user_id: c.other_user_id })));
 
-        const existingConv = conversations.find(
-          (conv) => conv.other_user_id === targetReceiverId
-        );
+        // First, check if we have a specific conversation ID to navigate to
+        let existingConv = null;
+
+        if (targetConversationId) {
+          existingConv = conversations.find(
+            (conv) => String(conv.id) === String(targetConversationId)
+          );
+          console.log("🎯 Looking for conversation ID:", targetConversationId, "Found:", existingConv?.id);
+        }
+
+        // If no specific conversation found, try to find by receiver ID (with type conversion)
+        if (!existingConv) {
+          existingConv = conversations.find(
+            (conv) => String(conv.other_user_id) === String(targetReceiverId)
+          );
+          console.log("🔍 Looking for receiver ID:", targetReceiverId, "Found:", existingConv?.id);
+        }
 
         if (existingConv) {
           console.log("✅ Found existing conversation:", existingConv.id);
@@ -112,6 +128,7 @@ function MessagesEntrepreneurNew() {
         localStorage.removeItem("targetReceiverId");
         localStorage.removeItem("targetReceiverName");
         localStorage.removeItem("targetJobId");
+        localStorage.removeItem("targetConversationId");
       }
     };
     initializeConversation();
