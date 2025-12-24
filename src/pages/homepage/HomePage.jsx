@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useState, useEffect, useRef } from "react"
-import { Bell, Wrench, Search, Plus, X, FileText, CheckCircle, Megaphone, Building2, AlertTriangle, Check } from "lucide-react"
+import { Bell, Wrench, Search, Plus, X, FileText, CheckCircle, Megaphone, Building2, AlertTriangle, Check, MessageSquare, Hammer } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import toast from "react-hot-toast"
 import "../../styles/manager/homepage.css"
@@ -13,6 +13,7 @@ import AddAnnouncementModal from "../../components/modal/AddAnnouncementModal"
 import AddPropertyModal from "../../components/modal/AddPropertyModal"
 import AddWorkModalCompact from "../../components/modal/AddWorkModalCompact"
 import InspectionReportUploadModal from "../../components/InspectionReportUploadModal"
+import { useSocket } from "../../contexts/SocketContext"
 
 // Skeleton Loader Component
 function SkeletonCard() {
@@ -94,13 +95,20 @@ function SummarySkeleton() {
 function HomePage() {
   const navigate = useNavigate()
 
+  // Get notifications from socket context
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useSocket() || {
+    notifications: [],
+    unreadCount: 0,
+    markAsRead: () => {},
+    markAllAsRead: () => {}
+  }
+
   const [properties, setProperties] = useState([])
   const [jobs, setJobs] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [imagesLoaded, setImagesLoaded] = useState({})
 
-  const [notifications] = useState([])
   const [uProfile, setUProfile] = useState({})
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false)
   const [showAddPropertyModal, setShowAddPropertyModal] = useState(false)
@@ -672,7 +680,40 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
       repair?.category?.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  const unreadCount = notifications.filter((n) => !n.read).length
+  // Handle notification click - navigate to relevant page
+  const handleNotificationClick = (notification) => {
+    // Mark as read
+    markAsRead(notification.id)
+
+    // Navigate based on notification type
+    switch (notification.type) {
+      case 'message':
+        navigate('/messages')
+        break
+      case 'bid':
+        if (notification.jobId) {
+          // Find the repair and open its details
+          const repair = properties.find(p => p.id === notification.jobId)
+          if (repair) {
+            setSelectedRepair(repair)
+          }
+        }
+        break
+      case 'started':
+      case 'completed':
+        if (notification.jobId) {
+          const repair = properties.find(p => p.id === notification.jobId)
+          if (repair) {
+            setSelectedRepair(repair)
+          }
+        }
+        break
+      default:
+        break
+    }
+
+    setShowNotifications(false)
+  }
 
   if (isLoading) {
     return (
@@ -683,7 +724,7 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
             <div className="pm-header-left">
               <div className="pm-header-title-group">
                 <h1>TRAVAUX</h1>
-                <span className="pm-project-count">0 active</span>
+                <span className="pm-project-count">0 active jobs</span>
               </div>
             </div>
             <div className="pm-header-actions">
@@ -692,8 +733,10 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                 <input
                   type="text"
                   placeholder="Search jobs..."
+                  value=""
                   className="pm-search-input"
                   disabled
+                  readOnly
                 />
               </div>
 
@@ -768,7 +811,7 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
           <div className="pm-header-left">
             <div className="pm-header-title-group">
               <h1>TRAVAUX</h1>
-              <span className="pm-project-count">{properties.length} active</span>
+              <span className="pm-project-count">{properties.length} active jobs</span>
             </div>
           </div>
           <div className="pm-header-actions">
@@ -829,6 +872,16 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                 <div className="pm-notification-modal">
                   <div className="pm-notification-header">
                     <h3>Notifications</h3>
+                    {notifications.length > 0 && (
+                      <button
+                        className="pm-mark-all-read-btn"
+                        onClick={markAllAsRead}
+                        title="Mark all as read"
+                      >
+                        <Check size={14} />
+                        <span>Mark all read</span>
+                      </button>
+                    )}
                     <button
                       className="pm-close-notification-btn"
                       onClick={toggleNotifications}
@@ -848,8 +901,11 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                         <div
                           key={notification.id}
                           className={`pm-notification-item ${!notification.read ? "unread" : ""}`}
+                          onClick={() => handleNotificationClick(notification)}
+                          style={{ cursor: 'pointer' }}
                         >
-                          {notification.type === "bid" ? (
+                          {/* Bid Notification */}
+                          {notification.type === "bid" && (
                             <>
                               <div className="pm-notification-icon pm-bid-icon">
                                 <FileText size={20} />
@@ -861,15 +917,20 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                                 </div>
                                 <div className="pm-notification-body">
                                   <strong>{notification.bidder}</strong> submitted a bid for{" "}
-                                  <strong>{notification.property}</strong> - {notification.apartment}
+                                  <strong>{notification.property || notification.jobTitle}</strong>
+                                  {notification.apartment && ` - ${notification.apartment}`}
                                 </div>
                                 <div className="pm-notification-meta">
-                                  <span>Budget: ${notification.budget.toLocaleString()}</span>
-                                  <span className="pm-notification-dot">•</span>
+                                  {notification.budget && (
+                                    <>
+                                      <span>Budget: ${notification.budget.toLocaleString()}</span>
+                                      <span className="pm-notification-dot">•</span>
+                                    </>
+                                  )}
                                   <span>License: {notification.licenseNumber}</span>
                                 </div>
                                 <div className="pm-notification-time">
-                                  {new Date(notification.submissionDate).toLocaleDateString("en-US", {
+                                  {new Date(notification.submissionDate || notification.timestamp).toLocaleDateString("en-US", {
                                     month: "short",
                                     day: "numeric",
                                     hour: "2-digit",
@@ -878,7 +939,41 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                                 </div>
                               </div>
                             </>
-                          ) : (
+                          )}
+
+                          {/* Job Started Notification */}
+                          {notification.type === "started" && (
+                            <>
+                              <div className="pm-notification-icon pm-started-icon">
+                                <Hammer size={20} />
+                              </div>
+                              <div className="pm-notification-content">
+                                <div className="pm-notification-title">
+                                  Work Started
+                                  {!notification.read && <span className="pm-unread-dot"></span>}
+                                </div>
+                                <div className="pm-notification-body">
+                                  <strong>{notification.contractor}</strong> started working on{" "}
+                                  <strong>{notification.jobTitle || notification.property}</strong>
+                                  {notification.apartment && ` - ${notification.apartment}`}
+                                </div>
+                                <div className="pm-notification-meta">
+                                  <span>Contractor: {notification.contractor}</span>
+                                </div>
+                                <div className="pm-notification-time">
+                                  {new Date(notification.startDate || notification.timestamp).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </div>
+                              </div>
+                            </>
+                          )}
+
+                          {/* Work Completed Notification */}
+                          {notification.type === "completed" && (
                             <>
                               <div className="pm-notification-icon pm-completed-icon">
                                 <CheckCircle size={20} />
@@ -889,14 +984,44 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                                   {!notification.read && <span className="pm-unread-dot"></span>}
                                 </div>
                                 <div className="pm-notification-body">
-                                  <strong>{notification.workTitle}</strong> at{" "}
-                                  <strong>{notification.property}</strong> - {notification.apartment}
+                                  <strong>{notification.workTitle || notification.jobTitle}</strong> at{" "}
+                                  <strong>{notification.property}</strong>
+                                  {notification.apartment && ` - ${notification.apartment}`}
                                 </div>
                                 <div className="pm-notification-meta">
                                   <span>Contractor: {notification.contractor}</span>
                                 </div>
                                 <div className="pm-notification-time">
-                                  {new Date(notification.completionDate).toLocaleDateString("en-US", {
+                                  {new Date(notification.completionDate || notification.timestamp).toLocaleDateString("en-US", {
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </div>
+                              </div>
+                            </>
+                          )}
+
+                          {/* Message Notification */}
+                          {notification.type === "message" && (
+                            <>
+                              <div className="pm-notification-icon pm-message-icon">
+                                <MessageSquare size={20} />
+                              </div>
+                              <div className="pm-notification-content">
+                                <div className="pm-notification-title">
+                                  New Message
+                                  {!notification.read && <span className="pm-unread-dot"></span>}
+                                </div>
+                                <div className="pm-notification-body">
+                                  <strong>{notification.senderName}</strong> sent you a message
+                                </div>
+                                <div className="pm-notification-meta">
+                                  <span>{notification.content}</span>
+                                </div>
+                                <div className="pm-notification-time">
+                                  {new Date(notification.timestamp).toLocaleDateString("en-US", {
                                     month: "short",
                                     day: "numeric",
                                     hour: "2-digit",

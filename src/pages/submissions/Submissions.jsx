@@ -20,10 +20,13 @@ import {
   Heart,
   MapPin,
   ChevronRight,
+  BadgeCheck,
+  Briefcase,
 } from "lucide-react"
 import Nav from "../../components/Nav"
 import "../../styles/manager/submissions.css"
 import { useNavigate } from "react-router-dom"
+import toast from "react-hot-toast"
 
 function SubmissionsPage() {
   const [submissions, setSubmissions] = useState([])
@@ -33,7 +36,6 @@ function SubmissionsPage() {
   const [activeTab, setActiveTab] = useState("all")
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [notification, setNotification] = useState(null)
   const [uProfile, setUProfile] = useState({})
 
   const navigate = useNavigate()
@@ -65,16 +67,22 @@ function SubmissionsPage() {
   // Property filter state
   const [selectedProperty, setSelectedProperty] = useState("all")
 
+  // Job filter state
+  const [selectedJob, setSelectedJob] = useState("all")
+
   useEffect(() => {
     fetchSubmissions()
     fetchFavorites()
   }, [])
 
   const showNotification = (message, type = "success") => {
-    setNotification({ message, type })
-    setTimeout(() => {
-      setNotification(null)
-    }, 5000)
+    if (type === "success") {
+      toast.success(message)
+    } else if (type === "error") {
+      toast.error(message)
+    } else {
+      toast(message)
+    }
   }
 
   // Fetch favorites
@@ -484,10 +492,15 @@ function SubmissionsPage() {
     // ✅ FIX: Use user_id instead of profile id
     let entrepUserId = submission.entrepreneur_profile.user_id
     let jobId = submission.job.id
-    let name = submission.entrepreneur_profile.company_name
+    // Use actual name from submission.user (first_name + last_name) to match messages tab
+    let name = submission.user?.first_name && submission.user?.last_name
+      ? `${submission.user.first_name} ${submission.user.last_name}`
+      : submission.entrepreneur_profile.company_name
+    let companyName = submission.entrepreneur_profile.company_name
 
     localStorage.setItem("targetReceiverId", entrepUserId);
     localStorage.setItem("targetReceiverName", name);
+    localStorage.setItem("targetCompanyName", companyName);
     if (jobId) localStorage.setItem("targetJobId", jobId);
     navigate(`/messages/${uProfile.role}`)
   }
@@ -667,7 +680,7 @@ function SubmissionsPage() {
     const normalizedStatus = normalizeStatus(status)
     const statusMap = {
       open: { class: "status-open", icon: FolderOpen, label: "Open" },
-      accepted: { class: "status-accepted", icon: CheckCircle, label: "Accepted" },
+      accepted: { class: "status-accepted", icon: CheckCircle, label: "Approved" },
       ongoing: { class: "status-ongoing", icon: PlayCircle, label: "Ongoing" },
       completed: { class: "status-completed", icon: CheckCircle, label: "Completed" },
     }
@@ -725,11 +738,22 @@ function SubmissionsPage() {
     return acc
   }, [])
 
+  // Get unique jobs for selected property
+  const uniqueJobs = submissions
+    .filter(sub => selectedProperty === "all" || String(sub.job.property_id) === selectedProperty)
+    .reduce((acc, sub) => {
+      const jobId = sub.job.id
+      if (jobId && !acc.find(j => j.id === jobId)) {
+        acc.push({ id: jobId, title: sub.job.title })
+      }
+      return acc
+    }, [])
+
   // Updated tabs to match job status values
   const tabs = [
     { id: "all", label: "All Submissions" },
     { id: "open", label: "Open" },
-    { id: "accepted", label: "Accepted" },
+    { id: "accepted", label: "Approved" },
     { id: "ongoing", label: "Ongoing" },
     { id: "completed", label: "Completed" },
   ]
@@ -740,6 +764,11 @@ function SubmissionsPage() {
     // Filter by selected property (using property_id)
     if (selectedProperty !== "all") {
       filtered = filtered.filter((sub) => String(sub.job.property_id) === selectedProperty)
+    }
+
+    // Filter by selected job
+    if (selectedJob !== "all") {
+      filtered = filtered.filter((sub) => String(sub.job.id) === selectedJob)
     }
 
     // Updated to filter by job status (using normalized status)
@@ -778,31 +807,11 @@ function SubmissionsPage() {
     }
 
     setFilteredSubmissions(filtered)
-  }, [searchTerm, locationFilter, categoryFilter, amountRange, dateRange, submissions, activeTab, selectedProperty])
+  }, [searchTerm, locationFilter, categoryFilter, amountRange, dateRange, submissions, activeTab, selectedProperty, selectedJob])
 
   return (
     <div className="subs-submissions-container">
       <Nav />
-
-      {/* Notification Toast */}
-      {notification && (
-        <div className={`notification-toast notification-${notification.type}`}>
-          <div className="notification-content">
-            <div className="notification-icon">
-              {notification.type === "success" && <CheckCircle size={24} />}
-              {notification.type === "error" && <X size={24} />}
-              {notification.type === "info" && <FileText size={24} />}
-            </div>
-            <div className="notification-message">{notification.message}</div>
-            <button
-              className="notification-close"
-              onClick={() => setNotification(null)}
-            >
-              <X size={18} />
-            </button>
-          </div>
-        </div>
-      )}
 
       <div className="subs-submissions-content">
         <header className="subs-page-header">
@@ -820,26 +829,53 @@ function SubmissionsPage() {
           </div>
         </header>
 
-        {/* Property Filter Dropdown */}
-        <div className="subs-property-filter">
-          <div className="subs-property-filter-label">
-            <Building2 size={16} />
-            <span>Filter by Property:</span>
+        {/* Property & Job Filter Dropdowns */}
+        <div className="subs-filter-row">
+          <div className="subs-property-filter">
+            <div className="subs-property-filter-label">
+              <Building2 size={16} />
+              <span>Property:</span>
+            </div>
+            <div className="subs-property-select-wrapper">
+              <select
+                className="subs-property-select"
+                value={selectedProperty}
+                onChange={(e) => {
+                  setSelectedProperty(e.target.value)
+                  setSelectedJob("all") // Reset job filter when property changes
+                }}
+              >
+                <option value="all">All Properties ({uniqueProperties.length})</option>
+                {uniqueProperties.map((property) => (
+                  <option key={property.id} value={String(property.id)}>
+                    {property.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={16} className="subs-select-icon" />
+            </div>
           </div>
-          <div className="subs-property-select-wrapper">
-            <select
-              className="subs-property-select"
-              value={selectedProperty}
-              onChange={(e) => setSelectedProperty(e.target.value)}
-            >
-              <option value="all">All Properties ({uniqueProperties.length})</option>
-              {uniqueProperties.map((property) => (
-                <option key={property.id} value={String(property.id)}>
-                  {property.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={16} className="subs-select-icon" />
+
+          <div className="subs-property-filter">
+            <div className="subs-property-filter-label">
+              <FileText size={16} />
+              <span>Job:</span>
+            </div>
+            <div className="subs-property-select-wrapper">
+              <select
+                className="subs-property-select"
+                value={selectedJob}
+                onChange={(e) => setSelectedJob(e.target.value)}
+              >
+                <option value="all">All Jobs ({uniqueJobs.length})</option>
+                {uniqueJobs.map((job) => (
+                  <option key={job.id} value={String(job.id)}>
+                    {job.title}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={16} className="subs-select-icon" />
+            </div>
           </div>
         </div>
 
@@ -1255,187 +1291,161 @@ function SubmissionsPage() {
           </div>
         )}
 
-        {/* Submission Details Modal */}
+        {/* Submission Details Modal - Redesigned */}
         {showDetailsModal && selectedSubmission && (
-          <div className="bid-modal-overlay" onClick={() => setShowDetailsModal(false)}>
-            <div className="bid-modal-content" onClick={(e) => e.stopPropagation()}>
-              <div className="bid-modal-header">
-                <h2>Submission Details</h2>
-                <button
-                  className="bid-modal-close"
-                  onClick={() => setShowDetailsModal(false)}
-                >
-                  <X size={24} />
+          <div className="details-overlay" onClick={() => setShowDetailsModal(false)}>
+            <div className="details-content" onClick={(e) => e.stopPropagation()}>
+              {/* Navy Header */}
+              <div className="details-header">
+                <div className="details-title-wrapper">
+                  <FileText size={20} className="details-icon" />
+                  <div>
+                    <h2>Submission Details</h2>
+                    <p className="details-subtitle">{selectedSubmission.job.title}</p>
+                  </div>
+                </div>
+                <button className="details-close-btn" onClick={() => setShowDetailsModal(false)}>
+                  <X size={20} />
                 </button>
               </div>
 
-              <div className="bid-modal-body">
-                {/* Job Information */}
-                <section className="bid-modal-section">
-                  <h3 className="bid-section-title">
-                    <FileText size={20} />
-                    Job Information
-                  </h3>
-                  <div className="bid-info-grid">
-                    <div className="bid-info-item">
-                      <label>Job Title</label>
-                      <p>{selectedSubmission.job.title}</p>
-                    </div>
-                    <div className="bid-info-item">
-                      <label>Category</label>
-                      <p>{selectedSubmission.job.category}</p>
-                    </div>
-                    <div className="bid-info-item">
-                      <label>
-                        <Clock size={14} /> Urgency
-                      </label>
-                      <p>{selectedSubmission.job.urgency}</p>
-                    </div>
-                    <div className="bid-info-item">
-                      <label>
-                        <Calendar size={14} /> Due Date
-                      </label>
-                      <p>{formatDate(selectedSubmission.job.due_date)}</p>
-                    </div>
-                    <div className="bid-info-item">
-                      <label>
-                        <Clock size={14} /> Duration
-                      </label>
-                      <p>{selectedSubmission.job.estimated_duration_days} days</p>
-                    </div>
-                    <div className="bid-info-item">
-                      <label>
-                        <DollarSign size={14} /> Budget Range
-                      </label>
-                      <p>{formatCurrency(selectedSubmission.job.budget_min)} - {formatCurrency(selectedSubmission.job.budget_max)}</p>
-                    </div>
+              <div className="details-body">
+                {/* Top Card - Status & Amount */}
+                <div className="details-top-card">
+                  <div className="details-top-left">
+                    <span className={`details-status-badge status-${normalizeStatus(selectedSubmission.job.status)}`}>
+                      {getStatusInfo(selectedSubmission.job.status)?.label || selectedSubmission.job.status}
+                    </span>
+                    <span className="details-bid-status">
+                      Bid: {selectedSubmission.bid.status || "pending"}
+                    </span>
                   </div>
-                  <div className="bid-info-item" style={{ marginTop: '1rem' }}>
-                    <label>Description</label>
-                    <p>{selectedSubmission.job.description}</p>
+                  <div className="details-amount">
+                    {formatCurrency(selectedSubmission.bid.amount)}
                   </div>
-                  <div className="bid-info-item" style={{ marginTop: '1rem' }}>
-                    <label>Property Location</label>
-                    <p>{selectedSubmission.property_address}</p>
-                  </div>
-                </section>
+                </div>
 
-                {/* Company Information */}
-                <section className="bid-modal-section">
-                  <h3 className="bid-section-title">
-                    <Building2 size={20} />
-                    Contractor Information
-                  </h3>
-                  <div className="bid-info-grid">
-                    <div className="bid-info-item">
-                      <label>Company Name</label>
-                      <p>{selectedSubmission.entrepreneur_profile.company_name}</p>
-                    </div>
-                    <div className="bid-info-item">
-                      <label>Contact Person</label>
-                      <p>{selectedSubmission.user.first_name} {selectedSubmission.user.last_name}</p>
-                    </div>
-                    <div className="bid-info-item">
-                      <label>License Number</label>
-                      <p>{selectedSubmission.entrepreneur_profile.license_number || "N/A"}</p>
-                    </div>
-                    <div className="bid-info-item">
-                      <label>
-                        <Calendar size={14} /> Years in Business
-                      </label>
-                      <p>{selectedSubmission.entrepreneur_profile.years_in_business || "N/A"}</p>
-                    </div>
+                {/* Job Information Card */}
+                <div className="details-card">
+                  <div className="details-card-header">
+                    <FileText size={16} />
+                    <span>Job Information</span>
                   </div>
-                </section>
-
-                {/* Rating & Specializations */}
-                <section className="bid-modal-section">
-                  <h3 className="bid-section-title">
-                    <Star size={20} />
-                    Rating & Specializations
-                  </h3>
-                  <div className="bid-rating-display">
-                    <div className="bid-rating-stars">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          size={24}
-                          fill={
-                            i < Math.round(selectedSubmission.entrepreneur_profile.average_rating)
-                              ? "#facc15"
-                              : "none"
-                          }
-                          stroke="#facc15"
-                        />
-                      ))}
+                  <div className="details-card-body">
+                    <div className="details-info-row">
+                      <div className="details-info-item">
+                        <span className="details-label">Category</span>
+                        <span className="details-value">{selectedSubmission.job.category}</span>
+                      </div>
+                      <div className="details-info-item">
+                        <span className="details-label">Urgency</span>
+                        <span className="details-value">{selectedSubmission.job.urgency}</span>
+                      </div>
                     </div>
-                    <p className="bid-rating-text">
-                      {selectedSubmission.entrepreneur_profile.average_rating} out of 5 stars
-                    </p>
-                    <p className="bid-review-count">
-                      Based on {selectedSubmission.entrepreneur_profile.total_reviews} reviews
-                    </p>
-                  </div>
-                  {selectedSubmission.entrepreneur_profile.specializations &&
-                    selectedSubmission.entrepreneur_profile.specializations.length > 0 && (
-                      <div className="bid-specializations-list" style={{ marginTop: '1rem' }}>
-                        {selectedSubmission.entrepreneur_profile.specializations.map(
-                          (spec, index) => (
-                            <span key={index} className="bid-specialization-tag">
-                              {spec}
-                            </span>
-                          )
-                        )}
+                    <div className="details-info-row">
+                      <div className="details-info-item">
+                        <span className="details-label">Due Date</span>
+                        <span className="details-value">{formatDate(selectedSubmission.job.due_date)}</span>
+                      </div>
+                      <div className="details-info-item">
+                        <span className="details-label">Duration</span>
+                        <span className="details-value">{selectedSubmission.job.estimated_duration_days} days</span>
+                      </div>
+                    </div>
+                    <div className="details-info-row">
+                      <div className="details-info-item full-width">
+                        <span className="details-label">Budget Range</span>
+                        <span className="details-value">{formatCurrency(selectedSubmission.job.budget_min)} - {formatCurrency(selectedSubmission.job.budget_max)}</span>
+                      </div>
+                    </div>
+                    <div className="details-info-row">
+                      <div className="details-info-item full-width">
+                        <span className="details-label">Property</span>
+                        <span className="details-value">{selectedSubmission.property_address}</span>
+                      </div>
+                    </div>
+                    {selectedSubmission.job.description && (
+                      <div className="details-description">
+                        <span className="details-label">Description</span>
+                        <p>{selectedSubmission.job.description}</p>
                       </div>
                     )}
-                </section>
+                  </div>
+                </div>
 
-                {/* Bid Information */}
-                <section className="bid-modal-section bid-modal-highlight">
-                  <h3 className="bid-section-title">
-                    <DollarSign size={20} />
-                    Bid Information
-                  </h3>
-                  <div className="bid-info-display">
-                    <div className="bid-amount-display">
-                      <label>Bid Amount</label>
-                      <p className="amount">
-                        {formatCurrency(selectedSubmission.bid.amount)}
-                      </p>
+                {/* Contractor Information Card */}
+                <div className="details-card">
+                  <div className="details-card-header">
+                    <Building2 size={16} />
+                    <span>Contractor Information</span>
+                  </div>
+                  <div className="details-card-body">
+                    <div className="details-contractor-main">
+                      <div className="details-contractor-name">
+                        {selectedSubmission.entrepreneur_profile.company_name}
+                      </div>
+                      <div className="details-contractor-rating">
+                        <Star size={14} fill="#f59e0b" stroke="#f59e0b" />
+                        <span>{selectedSubmission.entrepreneur_profile.average_rating}</span>
+                        <span className="details-review-count">({selectedSubmission.entrepreneur_profile.total_reviews} reviews)</span>
+                      </div>
                     </div>
-                    {selectedSubmission.bid.message && (
-                      <div className="bid-message">
-                        <label>
-                          <MessageCircle size={14} /> Message from Contractor
-                        </label>
-                        <p>{selectedSubmission.bid.message}</p>
+                    <div className="details-info-row">
+                      <div className="details-info-item">
+                        <span className="details-label">Contact</span>
+                        <span className="details-value">{selectedSubmission.user.first_name} {selectedSubmission.user.last_name}</span>
+                      </div>
+                      <div className="details-info-item">
+                        <span className="details-label">License</span>
+                        <span className="details-value">{selectedSubmission.entrepreneur_profile.license_number || "N/A"}</span>
+                      </div>
+                    </div>
+                    <div className="details-info-row">
+                      <div className="details-info-item full-width">
+                        <span className="details-label">Years in Business</span>
+                        <span className="details-value">{selectedSubmission.entrepreneur_profile.years_in_business || "N/A"} years</span>
+                      </div>
+                    </div>
+                    {selectedSubmission.entrepreneur_profile.specializations?.length > 0 && (
+                      <div className="details-specializations">
+                        <span className="details-label">Specializations</span>
+                        <div className="details-tags">
+                          {selectedSubmission.entrepreneur_profile.specializations.map((spec, index) => (
+                            <span key={index} className="details-tag">{spec}</span>
+                          ))}
+                        </div>
                       </div>
                     )}
-                    <div className="bid-status-display">
-                      <label>Bid Status</label>
-                      <span
-                        className={`bid-status-badge-modal status-${selectedSubmission.bid.status}`}
-                      >
-                        {selectedSubmission.bid.status || "pending"}
-                      </span>
+                  </div>
+                </div>
+
+                {/* Bid Message Card (if exists) */}
+                {selectedSubmission.bid.message && (
+                  <div className="details-card">
+                    <div className="details-card-header">
+                      <MessageCircle size={16} />
+                      <span>Message from Contractor</span>
+                    </div>
+                    <div className="details-card-body">
+                      <p className="details-message">{selectedSubmission.bid.message}</p>
                     </div>
                   </div>
-                </section>
+                )}
               </div>
 
-              {/* Modal Footer with Actions */}
-              <div className="bid-modal-footer">
+              {/* Footer with Actions */}
+              <div className="details-footer">
                 {normalizeStatus(selectedSubmission.job.status) === "open" && selectedSubmission.bid.status === "pending" && (
                   <>
                     <button
-                      className="bid-btn-decline"
+                      className="details-btn details-btn-secondary"
                       onClick={() => handleDecline(selectedSubmission.bid.id)}
                       disabled={isProcessing}
                     >
-                      {isProcessing ? "Processing..." : "Decline Bid"}
+                      {isProcessing ? "Processing..." : "Decline"}
                     </button>
                     <button
-                      className="bid-btn-accept"
+                      className="details-btn details-btn-primary"
                       onClick={() => handleAccept(
                         selectedSubmission.bid.id,
                         selectedSubmission.job.id,
@@ -1443,14 +1453,14 @@ function SubmissionsPage() {
                       )}
                       disabled={isProcessing}
                     >
-                      {isProcessing ? "Processing..." : "Accept Bid"}
+                      {isProcessing ? "Processing..." : "Approve Bid"}
                     </button>
                   </>
                 )}
                 {(selectedSubmission.bid.status === "approved" || selectedSubmission.bid.status === "declined") && (
-                  <p className="bid-status-message">
-                    This bid has been {selectedSubmission.bid.status}
-                  </p>
+                  <div className="details-status-message">
+                    This bid has been <strong>{selectedSubmission.bid.status}</strong>
+                  </div>
                 )}
               </div>
             </div>
@@ -1519,6 +1529,27 @@ function SubmissionsPage() {
                       <span>{submission.entrepreneur_profile.company_name}</span>
                       <span className="subs-rating">★ {submission.entrepreneur_profile.average_rating}</span>
                     </div>
+                    {submission.user?.first_name && (
+                      <div className="subs-info-item">
+                        <User size={12} />
+                        <span className="subs-contact-name">{submission.user.first_name} {submission.user.last_name}</span>
+                      </div>
+                    )}
+                    {submission.entrepreneur_profile.license_number && (
+                      <div className="subs-info-item">
+                        <BadgeCheck size={12} />
+                        <span className="subs-license">License: {submission.entrepreneur_profile.license_number}</span>
+                      </div>
+                    )}
+                    {submission.entrepreneur_profile.specializations?.length > 0 && (
+                      <div className="subs-info-item">
+                        <Briefcase size={12} />
+                        <span className="subs-specializations">
+                          {submission.entrepreneur_profile.specializations.slice(0, 2).join(", ")}
+                          {submission.entrepreneur_profile.specializations.length > 2 && ` +${submission.entrepreneur_profile.specializations.length - 2}`}
+                        </span>
+                      </div>
+                    )}
                     <div className="subs-info-item">
                       <MapPin size={12} />
                       <span>{submission.property_address}</span>

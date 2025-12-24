@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import Nav from '../../components/Nav';
 import '../../styles/manager/favoriteentrepreneurs.css';
+import toast from 'react-hot-toast';
 
 const FavoriteEntrepreneurs = () => {
   const navigate = useNavigate();
@@ -33,14 +34,16 @@ const FavoriteEntrepreneurs = () => {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [editingNotes, setEditingNotes] = useState(null);
   const [notesText, setNotesText] = useState('');
-  const [notification, setNotification] = useState(null);
   const [confirmModal, setConfirmModal] = useState(null);
 
   const showNotification = (message, type = 'success') => {
-    setNotification({ message, type });
-    setTimeout(() => {
-      setNotification(null);
-    }, 5000);
+    if (type === 'success') {
+      toast.success(message);
+    } else if (type === 'error') {
+      toast.error(message);
+    } else {
+      toast(message);
+    }
   };
 
   // Fetch favorites on mount
@@ -161,14 +164,65 @@ const FavoriteEntrepreneurs = () => {
     setNotesText('');
   };
 
+  // Skeleton Card Component
+  const SkeletonCard = () => (
+    <div className="fav-card fav-skeleton-card">
+      <div className="fav-card-header">
+        <div className="fav-contractor-info">
+          <div className="fav-skeleton fav-skeleton-avatar"></div>
+          <div className="fav-contractor-details">
+            <div className="fav-skeleton fav-skeleton-name"></div>
+            <div className="fav-skeleton fav-skeleton-rating"></div>
+          </div>
+        </div>
+        <div className="fav-skeleton fav-skeleton-btn"></div>
+      </div>
+      <div className="fav-card-body">
+        <div className="fav-stats-row">
+          <div className="fav-skeleton fav-skeleton-stat"></div>
+        </div>
+        <div className="fav-skeleton fav-skeleton-last-job"></div>
+        <div className="fav-skeleton fav-skeleton-badge"></div>
+        <div className="fav-notes-section">
+          <div className="fav-skeleton fav-skeleton-notes"></div>
+        </div>
+      </div>
+      <div className="fav-card-footer">
+        <div className="fav-skeleton fav-skeleton-action-btn"></div>
+        <div className="fav-skeleton fav-skeleton-action-btn"></div>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="fav-favorites-container">
         <Nav />
         <div className="fav-favorites-content">
-          <div className="fav-loading-container">
-            <div className="fav-spinner-large"></div>
-            <p>Loading your favorites...</p>
+          {/* Skeleton Header */}
+          <header className="fav-page-header">
+            <div className="fav-header-left">
+              <div className="fav-header-title-group">
+                <h1>FAVORITES</h1>
+                <span className="fav-count-badge">Loading...</span>
+              </div>
+            </div>
+            <div className="fav-header-actions">
+              <button className="fav-btn fav-btn-primary" disabled>
+                <FileText size={18} />
+                <span>Browse Bids</span>
+              </button>
+            </div>
+          </header>
+
+          {/* Skeleton Cards Grid */}
+          <div className="fav-cards-grid">
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
           </div>
         </div>
       </div>
@@ -177,16 +231,6 @@ const FavoriteEntrepreneurs = () => {
 
   return (
     <div className="fav-favorites-container">
-      {/* Toast Notification */}
-      {notification && (
-        <div className={`fav-toast fav-toast-${notification.type}`}>
-          <span className="fav-toast-message">{notification.message}</span>
-          <button className="fav-toast-close" onClick={() => setNotification(null)}>
-            <X size={16} />
-          </button>
-        </div>
-      )}
-
       <Nav />
 
       <div className="fav-favorites-content">

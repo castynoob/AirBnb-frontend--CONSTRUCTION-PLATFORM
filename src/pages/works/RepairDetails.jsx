@@ -21,6 +21,7 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "../../styles/manager/repairdetails.css";
+import toast from "react-hot-toast";
 
 // Custom marker icon for the map
 const createPropertyIcon = () => {
@@ -44,16 +45,18 @@ function RepairDetails({ isOpen, onClose, repair }) {
   const [showBidModal, setShowBidModal] = useState(false);
   const [selectedBidder, setSelectedBidder] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [notification, setNotification] = useState(null);
   const [isLoadingBidders, setIsLoadingBidders] = useState(true);
   const [propertyCoords, setPropertyCoords] = useState(null);
   const [isLoadingCoords, setIsLoadingCoords] = useState(true);
 
   const showNotification = (message, type = "success") => {
-    setNotification({ message, type });
-    setTimeout(() => {
-      setNotification(null);
-    }, 5000);
+    if (type === "success") {
+      toast.success(message);
+    } else if (type === "error") {
+      toast.error(message);
+    } else {
+      toast(message);
+    }
   };
 
   const toggleFavorite = (company_name) => {
@@ -331,19 +334,6 @@ function RepairDetails({ isOpen, onClose, repair }) {
 
   return (
     <>
-      {/* Notification Toast */}
-      {notification && (
-        <div className={`rd-notification rd-notification-${notification.type}`}>
-          <div className="rd-notification-content">
-            {notification.type === "success" && <CheckCircle size={18} />}
-            {notification.type === "error" && <XCircle size={18} />}
-            {notification.type === "info" && <AlertCircle size={18} />}
-            <span>{notification.message}</span>
-            <button onClick={() => setNotification(null)}><X size={16} /></button>
-          </div>
-        </div>
-      )}
-
       {/* Main Modal Overlay */}
       <div className="rd-modal-overlay" onClick={onClose}>
         <div className="rd-modal-compact" onClick={(e) => e.stopPropagation()}>

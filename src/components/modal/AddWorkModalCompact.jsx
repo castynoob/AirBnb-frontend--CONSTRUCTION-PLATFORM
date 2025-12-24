@@ -37,7 +37,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
     estimated_duration_days: '',
     budget_min: '',
     budget_max: '',
-    is_budget_hidden: false,
+    is_budget_hidden: true,
     is_emergency: false,
   });
 
@@ -601,20 +601,6 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                     step="0.01"
                     disabled={isSubmitting}
                   />
-                </div>
-                <div className="compact-checkbox-group">
-                  <input
-                    type="checkbox"
-                    id="is_budget_hidden"
-                    name="is_budget_hidden"
-                    checked={formData.is_budget_hidden}
-                    onChange={handleChange}
-                    className="compact-checkbox"
-                    disabled={isSubmitting}
-                  />
-                  <label htmlFor="is_budget_hidden" className="compact-checkbox-label">
-                    Hide budget from contractors
-                  </label>
                 </div>
               </div>
 
