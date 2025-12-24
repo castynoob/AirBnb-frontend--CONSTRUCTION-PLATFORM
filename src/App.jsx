@@ -24,6 +24,7 @@ import HomePageResident from "./pages/homepage/HomePageResident";
 import MessagesResident from "./pages/messages/MessagesResident";
 import MembersResident from "./pages/members/MembersResident";
 import ProfilePageResident from "./pages/profile/ProfilePageResident";
+import MessagesSupplier from "./pages/messages/MessagesSupplier";
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -132,7 +133,7 @@ function ProtectedRoutes() {
       />
       <Route
         path="/messages/supplier"
-        element={<ProtectedRoute element={<Messages />} />}
+        element={<ProtectedRoute element={<MessagesSupplier />} />}
       />
       <Route
         path="/profile/supplier"

@@ -13,7 +13,8 @@ import {
   Calendar,
   Truck,
   CreditCard,
-  Award
+  Award,
+  LogOut
 } from 'lucide-react';
 import Nav from "../../components/Nav";
 import '../../styles/supplier/supplierprofile.css';
@@ -299,6 +300,12 @@ function SupplierProfile() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("userProfile");
+    localStorage.removeItem("selectedPropertyId");
+    navigate("/");
+  };
+
   if (isLoading) {
     return (
       <div className="sp-supplier-app-layout">
@@ -391,6 +398,13 @@ function SupplierProfile() {
                 onClick={() => setIsEditModalOpen(true)}
               >
                 Edit Profile
+              </button>
+              <button
+                className="sp-supplier-logout-button"
+                onClick={handleLogout}
+              >
+                <LogOut size={18} />
+                Logout
               </button>
             </div>
           </div>

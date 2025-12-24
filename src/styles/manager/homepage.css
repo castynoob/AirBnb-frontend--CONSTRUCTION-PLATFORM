@@ -24,7 +24,7 @@
   box-sizing: border-box;
 }
 
-/* Shimmer Wave Animation */
+/* ===== ANIMATIONS ===== */
 @keyframes shimmer {
   0% {
     transform: translateX(-100%);
@@ -55,6 +55,46 @@
   }
 }
 
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pm-urgent-modal-pop {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pm-toast-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pm-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===== SKELETON STYLES ===== */
 .pm-shimmer {
   position: absolute;
   top: 0;
@@ -72,7 +112,6 @@
   animation: wave 1.8s ease-in-out infinite;
 }
 
-/* Skeleton Styles */
 .pm-skeleton {
   pointer-events: none;
   animation: pulse 2s ease-in-out infinite;
@@ -155,7 +194,6 @@
   height: 24px;
 }
 
-/* Ensure skeleton summary cards match real card layout exactly */
 .pm-summary-card.pm-skeleton {
   padding: 1.25rem !important;
   display: flex !important;
@@ -207,7 +245,6 @@
   height: 10px;
 }
 
-/* Skeleton filter dropdown */
 .pm-skeleton-filter {
   width: 140px;
   height: 38px;
@@ -259,9 +296,10 @@
   display: flex;
   gap: 0.75rem;
   align-items: center;
+  flex-wrap: wrap;
 }
 
-/* ===== PERMANENT SEARCH BOX ===== */
+/* ===== SEARCH BOX ===== */
 .pm-search-wrapper {
   position: relative;
   flex-shrink: 0;
@@ -377,7 +415,6 @@
   transform: translateY(0.5px);
 }
 
-/* Icon size within buttons */
 .pm-btn svg {
   flex-shrink: 0;
 }
@@ -459,7 +496,7 @@
   color: var(--color-text-muted);
 }
 
-/* Icon Buttons */
+/* ===== ICON BUTTONS ===== */
 .pm-add-work-btn-icon,
 .pm-urgent-button-icon {
   display: flex;
@@ -496,7 +533,7 @@
   box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
 }
 
-/* Notification Button and Wrapper */
+/* ===== NOTIFICATIONS ===== */
 .pm-notification-wrapper {
   position: relative;
 }
@@ -541,7 +578,6 @@
   border: 2px solid var(--color-white);
 }
 
-/* Notification Modal */
 .pm-notification-modal {
   position: absolute;
   top: calc(100% + 8px);
@@ -556,17 +592,6 @@
   display: flex;
   flex-direction: column;
   animation: slideDown 0.2s ease;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 .pm-notification-header {
@@ -647,7 +672,6 @@
   background: #c0c0c0;
 }
 
-/* No Notifications State */
 .pm-no-notifications {
   display: flex;
   flex-direction: column;
@@ -667,7 +691,6 @@
   margin: 0;
 }
 
-/* Notification Item */
 .pm-notification-item {
   display: flex;
   gap: 1rem;
@@ -778,8 +801,7 @@
   color: var(--color-text-muted);
 }
 
-/* Summary Section */
-/* ===== COMPACT SUMMARY SECTION ===== */
+/* ===== SUMMARY SECTION ===== */
 .pm-summary-section {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -791,7 +813,6 @@
   overflow: hidden;
 }
 
-/* Base Dashboard Card */
 .pm-summary-card {
   position: relative;
   background: var(--color-white);
@@ -817,22 +838,6 @@
   --accent-color: #ef4444;
   --accent-bg: #fef2f2;
   --accent-light: rgba(239, 68, 68, 0.15);
-}
-
-.pm-card-teal {
-  --accent-color: #14b8a6;
-  --accent-bg: #f0fdfa;
-  --accent-light: rgba(20, 184, 166, 0.15);
-}
-
-.pm-card-navy {
-  --accent-color: #64748b;
-  --accent-bg: #f8fafc;
-  --accent-light: rgba(100, 116, 139, 0.15);
-}
-
-/* STYLE 1: Corner Accent Indicator (Properties Card) - Sharp Edges */
-.pm-card-red {
   border: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   border-radius: 0;
@@ -865,8 +870,10 @@
   border-color: var(--accent-color);
 }
 
-/* STYLE 2: Corner Accent Indicator (Bids Card) - Sharp Edges */
 .pm-card-teal {
+  --accent-color: #14b8a6;
+  --accent-bg: #f0fdfa;
+  --accent-light: rgba(20, 184, 166, 0.15);
   border: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   border-radius: 0;
@@ -899,8 +906,10 @@
   border-color: var(--accent-color);
 }
 
-/* STYLE 3: Corner Accent Indicator (Jobs Card) - Sharp Edges */
 .pm-card-navy {
+  --accent-color: #64748b;
+  --accent-bg: #f8fafc;
+  --accent-light: rgba(100, 116, 139, 0.15);
   border: 1px solid #e5e7eb;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   border-radius: 0;
@@ -933,7 +942,6 @@
   border-color: var(--accent-color);
 }
 
-/* Left Content Section */
 .pm-card-left-content {
   flex: 1;
   min-width: 0;
@@ -980,7 +988,6 @@
   font-weight: 500;
 }
 
-/* Right Column - Icon + Trend Stacked */
 .pm-card-right-column {
   display: flex;
   flex-direction: column;
@@ -989,7 +996,6 @@
   z-index: 1;
 }
 
-/* Icon Circle - Perfect Circle */
 .pm-card-icon-circle {
   width: 40px;
   height: 40px;
@@ -1022,7 +1028,6 @@
   color: #64748b;
 }
 
-/* Trend Badge - Bottom Right, Circular */
 .pm-trend-badge-bottom {
   display: inline-flex;
   align-items: center;
@@ -1048,7 +1053,7 @@
   flex-shrink: 0;
 }
 
-/* Repairs Section */
+/* ===== REPAIRS SECTION ===== */
 .pm-repairs-section {
   margin-bottom: 2rem;
 }
@@ -1070,7 +1075,6 @@
   margin: 0;
 }
 
-/* Repair Cards Grid */
 .pm-repair-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
@@ -1136,7 +1140,6 @@
   color: var(--color-white);
 }
 
-/* Repair Content */
 .pm-repair-content {
   padding: 1.25rem;
 }
@@ -1226,7 +1229,6 @@
   font-weight: var(--font-weight-lg);
 }
 
-/* No Results */
 .pm-no-results-home {
   text-align: center;
   padding: 3rem 1rem;
@@ -1242,7 +1244,7 @@
   margin: 0;
 }
 
-/* Responsive Design */
+/* ===== RESPONSIVE DESIGN ===== */
 @media (max-width: 968px) {
   .main-container {
     margin-left: 80px;
@@ -1278,22 +1280,12 @@
     padding: 1rem;
   }
 
-  /* Ensure skeleton cards also use mobile layout */
   .pm-summary-card.pm-skeleton {
     flex-direction: column !important;
     padding: 0.75rem !important;
     aspect-ratio: 1 !important;
     justify-content: center !important;
     text-align: center;
-    min-height: auto;
-  }
-
-  .pm-summary-card.pm-skeleton .pm-card-content {
-    align-items: center;
-  }
-
-  .pm-summary-card.pm-skeleton .pm-skeleton-icon-small {
-    margin: 0 auto;
   }
 
   .pm-card-icon-circle {
@@ -1325,18 +1317,12 @@
 }
 
 @media (max-width: 768px) {
-  .homepage {
-    width: 100%;
-    overflow-x: hidden;
-  }
-
   .main-container {
     margin-left: 0 !important;
     padding: 0.875rem 0.5rem;
-    padding-bottom: 1.5rem;
-    width: 100% !important;
-    max-width: 100vw !important;
-    overflow-x: hidden !important;
+    padding-bottom: 5rem;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .pm-page-header {
@@ -1363,7 +1349,6 @@
     flex-wrap: wrap;
   }
 
-  /* Make search wrapper take remaining space */
   .pm-search-wrapper {
     flex: 1;
     max-width: none;
@@ -1377,7 +1362,6 @@
     font-size: 0.8125rem;
   }
 
-  /* Adjust button sizes for mobile */
   .pm-btn {
     height: 36px;
     padding: 0 0.875rem;
@@ -1396,69 +1380,25 @@
   }
 
   .pm-notification-modal {
-    width: calc(100vw - 1rem);
+    width: calc(100vw - 2rem);
     max-width: 320px;
-    max-height: 460px;
+    max-height: 70vh;
     right: 0;
   }
 
-  /* Summary section responsive - tablet/small screens */
   .pm-summary-section {
-    display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 8px !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow: hidden !important;
-    box-sizing: border-box !important;
-    padding: 0 !important;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
   }
 
   .pm-summary-card {
-    padding: 12px 10px !important;
-    min-width: 0 !important;
-    max-width: 100% !important;
-    overflow: hidden !important;
-    box-sizing: border-box !important;
-    border-radius: 6px !important;
+    padding: 1rem;
+    flex-direction: row;
   }
 
-  /* Compact summary cards for small screens */
-  .pm-card-left-content {
-    min-width: 0 !important;
-    max-width: 100% !important;
-    overflow: hidden !important;
-    flex: 1;
-  }
-
-  .pm-card-right-column {
-    display: none !important;
-  }
-
-  .pm-card-title {
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    font-size: 0.625rem !important;
-    display: block !important;
-    max-width: 100% !important;
-  }
-
-  .pm-metric-value {
-    font-size: 1.375rem !important;
-    font-weight: 700 !important;
-  }
-
-  .pm-card-icon-circle {
-    display: none !important;
-  }
-
-  .pm-metric-label {
-    display: none !important;
-  }
-
-  .pm-trend-badge-bottom {
-    display: none !important;
+  .pm-summary-card.pm-skeleton {
+    flex-direction: row !important;
+    aspect-ratio: auto !important;
   }
 
   .hp-repairs-section {
@@ -1470,18 +1410,62 @@
 
   .hp-section-header {
     margin-bottom: 0.75rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
   }
 
   .hp-section-header h2 {
     font-size: 1rem;
   }
 
-  .hp-repair-cards-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.625rem !important;
+  .hp-section-header-right {
+    width: 100%;
+    justify-content: space-between;
   }
 
-  /* Mobile List View - Hide image, horizontal layout */
+  .hp-filters-row {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .hp-property-filter-dropdown,
+  .hp-urgency-filter-dropdown {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0;
+  }
+
+  .hp-select-label {
+    font-size: 0.8125rem;
+  }
+
+  .hp-select-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .hp-view-toggle {
+    flex-shrink: 0;
+  }
+
+  .hp-view-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .hp-view-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .hp-repair-cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
   .hp-repair-cards-list {
     gap: 0.5rem !important;
   }
@@ -1528,7 +1512,6 @@
     margin-top: 0 !important;
   }
 
-  /* Force compact card sizing on mobile */
   .hp-repair-card-modern {
     font-size: 0.625rem !important;
   }
@@ -1632,7 +1615,6 @@
 }
 
 @media (max-width: 480px) {
-  /* Force everything to respect viewport width using viewport units */
   .homepage {
     width: 100vw !important;
     max-width: 100vw !important;
@@ -1672,25 +1654,6 @@
     gap: 0.5rem;
   }
 
-  /* Repair cards grid - keep 2 columns on mobile */
-  .hp-repair-cards-grid {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 0.5rem !important;
-    box-sizing: border-box !important;
-  }
-
-  .hp-repairs-section {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    overflow: hidden !important;
-    box-sizing: border-box !important;
-  }
-
-  /* Summary cards on very small screens - using minmax(0, 1fr) to force shrinking */
   .pm-summary-section {
     display: grid !important;
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
@@ -1722,80 +1685,36 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
   }
 
-  /* Keep corner accent design on mobile - scaled down */
   .pm-summary-card.pm-card-red::before {
-    content: '' !important;
-    display: block !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
     width: 3px !important;
     height: 24px !important;
-    background: #ef4444 !important;
-    border-radius: 0 !important;
   }
 
   .pm-summary-card.pm-card-red::after {
-    content: '' !important;
-    display: block !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
     width: 24px !important;
     height: 3px !important;
-    background: #ef4444 !important;
-    border-radius: 0 !important;
   }
 
   .pm-summary-card.pm-card-teal::before {
-    content: '' !important;
-    display: block !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
     width: 3px !important;
     height: 24px !important;
-    background: #14b8a6 !important;
-    border-radius: 0 !important;
   }
 
   .pm-summary-card.pm-card-teal::after {
-    content: '' !important;
-    display: block !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
     width: 24px !important;
     height: 3px !important;
-    background: #14b8a6 !important;
-    border-radius: 0 !important;
   }
 
   .pm-summary-card.pm-card-navy::before {
-    content: '' !important;
-    display: block !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
     width: 3px !important;
     height: 24px !important;
-    background: #64748b !important;
-    border-radius: 0 !important;
   }
 
   .pm-summary-card.pm-card-navy::after {
-    content: '' !important;
-    display: block !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
     width: 24px !important;
     height: 3px !important;
-    background: #64748b !important;
-    border-radius: 0 !important;
   }
 
-  /* Keep right column with icon on mobile - just smaller */
   .pm-card-right-column {
     display: flex !important;
     flex-direction: column !important;
@@ -1809,18 +1728,13 @@
     max-width: 100% !important;
     overflow: hidden !important;
     gap: 2px !important;
-    display: flex !important;
-    flex-direction: column !important;
   }
 
-  /* Show icon circle on mobile - smaller size */
   .pm-card-icon-circle {
     display: flex !important;
     width: 28px !important;
     height: 28px !important;
     border-radius: 50% !important;
-    align-items: center !important;
-    justify-content: center !important;
   }
 
   .pm-card-icon-circle svg {
@@ -1832,40 +1746,25 @@
     font-size: 1.125rem !important;
     line-height: 1.1 !important;
     font-weight: 800 !important;
-    min-width: 0 !important;
   }
 
   .pm-card-title {
     font-size: 0.5rem !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
     text-overflow: ellipsis !important;
-    max-width: 100% !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.03em !important;
-    display: block !important;
-    color: #6b7280 !important;
-    min-width: 0 !important;
-    font-weight: 700 !important;
   }
 
   .pm-metric-label {
     display: none !important;
   }
 
-  /* Hide trend badge on mobile to save space */
   .pm-trend-badge-bottom {
     display: none !important;
   }
 
   .pm-card-value-row {
     gap: 4px !important;
-    flex-wrap: nowrap !important;
-    min-width: 0 !important;
-    width: 100% !important;
   }
 
-  /* Search and notification on same row */
   .pm-search-wrapper {
     order: -1 !important;
     flex: 1 1 auto !important;
@@ -1888,12 +1787,8 @@
     width: 36px !important;
     height: 36px !important;
     padding: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
   }
 
-  /* Mobile action buttons - improved UX with labels */
   .pm-action-buttons {
     display: grid !important;
     grid-template-columns: repeat(4, 1fr) !important;
@@ -1906,7 +1801,6 @@
     flex-direction: column !important;
     padding: 6px 4px !important;
     width: 100% !important;
-    min-width: 0 !important;
     height: auto !important;
     gap: 2px !important;
     border-radius: 0 !important;
@@ -1918,10 +1812,6 @@
     font-weight: 600 !important;
     text-align: center !important;
     line-height: 1 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    max-width: 100% !important;
   }
 
   .pm-btn svg {
@@ -1929,36 +1819,6 @@
     height: 16px !important;
   }
 
-  /* Make primary buttons more distinct */
-  .pm-btn-primary {
-    box-shadow: none !important;
-  }
-
-  .pm-btn-property {
-    box-shadow: none !important;
-  }
-
-  /* Old search box */
-  .pm-search-box-header {
-    order: -1;
-    flex: 1 1 100%;
-    width: 100%;
-  }
-
-  .pm-search-box-header.expanded {
-    width: 100%;
-  }
-
-  .pm-notification-modal {
-    position: fixed;
-    width: calc(100vw - 1rem);
-    max-width: calc(100vw - 1rem);
-    left: 0.5rem;
-    right: 0.5rem;
-    top: 60px;
-  }
-
-  /* Always expand search on mobile */
   .pm-search-box-header,
   .hp-search-box-header {
     width: 100% !important;
@@ -1970,44 +1830,26 @@
     pointer-events: auto !important;
   }
 
-  /* Repair cards grid for mobile - 2 columns */
+  .pm-notification-modal {
+    position: fixed;
+    width: calc(100vw - 1rem);
+    max-width: calc(100vw - 1rem);
+    left: 0.5rem;
+    right: 0.5rem;
+    top: 60px;
+  }
+
   .hp-repair-cards-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 0.5rem !important;
     width: 100% !important;
   }
 
-  /* Badge sizing for mobile - prevent overlap */
   .hp-category-badge {
     font-size: 0.5rem !important;
     padding: 0.125rem 0.25rem !important;
     top: 0.25rem !important;
     right: 0.25rem !important;
-    border-radius: 3px !important;
-    letter-spacing: 0 !important;
-  }
-
-  .hp-approved-badge {
-    font-size: 0.5rem !important;
-    padding: 0.125rem 0.25rem !important;
-    top: 0.25rem !important;
-    left: 0.25rem !important;
-    border-radius: 3px !important;
-    gap: 0.125rem !important;
-  }
-
-  .hp-approved-badge svg {
-    width: 8px !important;
-    height: 8px !important;
-  }
-
-  /* Filter dropdowns mobile - equal fixed width, fill row */
-  .hp-filters-row {
-    width: 100% !important;
-    max-width: 100% !important;
-    display: flex !important;
-    gap: 8px !important;
-    box-sizing: border-box !important;
   }
 
   .hp-property-filter-dropdown,
@@ -2016,94 +1858,33 @@
     min-width: 0 !important;
     max-width: calc(50% - 4px) !important;
     width: calc(50% - 4px) !important;
-    overflow: hidden !important;
-    box-sizing: border-box !important;
-  }
-
-  .hp-select-label {
-    font-size: 0.75rem !important;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  /* Section header mobile */
-  .hp-section-header {
-    flex-direction: column;
-    align-items: flex-start !important;
-    gap: 0.5rem;
-  }
-
-  .hp-section-header-right {
-    width: 100%;
-  }
-
-  .hp-view-toggle {
-    display: none !important;
-  }
-
-  /* Repairs section */
-  .hp-repairs-section {
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow: hidden !important;
-  }
-
-  /* Repair card fixes */
-  .hp-repair-card-modern {
-    width: 100% !important;
-    max-width: 100% !important;
   }
 }
 
-/* Extra small screens (360px and below) */
 @media (max-width: 360px) {
   .main-container {
     width: 100vw !important;
     max-width: 100vw !important;
-    min-width: 0 !important;
     padding: 8px !important;
     padding-bottom: 80px !important;
-    box-sizing: border-box !important;
   }
 
   .pm-summary-section {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
     gap: 4px !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  }
-
-  .hp-repairs-section,
-  .hp-repair-cards-grid,
-  .pm-page-header {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
   }
 
   .pm-summary-card {
     padding: 6px !important;
-    min-width: 0 !important;
   }
 
   .pm-metric-value {
     font-size: 0.9375rem !important;
-    min-width: 0 !important;
   }
 
   .pm-card-title {
     font-size: 0.4375rem !important;
-    min-width: 0 !important;
   }
 
-  .pm-card-left-content {
-    min-width: 0 !important;
-    flex: 1 !important;
-  }
-
-  /* Smaller icon circle on extra small screens */
   .pm-card-icon-circle {
     width: 24px !important;
     height: 24px !important;
@@ -2113,65 +1894,65 @@
     width: 12px !important;
     height: 12px !important;
   }
-
-  /* Smaller corner accents on extra small screens */
-  .pm-summary-card.pm-card-red::before,
-  .pm-summary-card.pm-card-teal::before,
-  .pm-summary-card.pm-card-navy::before {
-    width: 2px !important;
-    height: 18px !important;
-  }
-
-  .pm-summary-card.pm-card-red::after,
-  .pm-summary-card.pm-card-teal::after,
-  .pm-summary-card.pm-card-navy::after {
-    width: 18px !important;
-    height: 2px !important;
-  }
 }
 
-/* ==================== HP-PREFIXED CLASSES ==================== */
-/* These are aliases for the pm- classes to avoid conflicts */
-.hp-repairs-section { @extend .pm-repairs-section; }
-.hp-section-header { @extend .pm-section-header; }
-.hp-section-subtitle { @extend .pm-section-subtitle; }
-.hp-repair-cards-grid { @extend .pm-repair-cards-grid; }
-.hp-repair-card-modern { @extend .pm-repair-card-modern; }
-.hp-repair-image-container { @extend .pm-repair-image-container; }
-.hp-category-badge { @extend .pm-category-badge; }
-.hp-urgent { @extend .urgent; }
-.hp-warning { @extend .warning; }
-.hp-info { @extend .info; }
-.hp-repair-content { @extend .pm-repair-content; }
-.hp-repair-header { @extend .pm-repair-header; }
-.hp-property-info { @extend .pm-property-info; }
-.hp-property-icon { @extend .pm-property-icon; }
-.hp-property-name { @extend .pm-property-name; }
-.hp-property-address { @extend .pm-property-address; }
-.hp-apartment-info { @extend .pm-apartment-info; }
-.hp-repair-description { @extend .pm-repair-description; }
-.hp-repair-footer { @extend .pm-repair-footer; }
-.hp-footer-item { @extend .pm-footer-item; }
-.hp-budget { @extend .budget; }
+/* ===== HP-PREFIXED CLASSES ===== */
+.hp-repairs-section {
+  margin-top: 1.25rem;
+}
 
-/* ===== COMPACT REPAIR CARDS DESIGN ===== */
-.hp-repairs-section { margin-top: 1.25rem; }
-.hp-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-.hp-section-header-left { flex: 1; }
-.hp-section-header-right { display: flex; align-items: center; gap: 0.75rem; }
-.hp-section-title-group { flex: 1; }
-.hp-section-header h2 { font-size: 1.125rem; font-weight: 600; color: var(--color-primary); margin: 0; }
-.hp-section-subtitle { font-size: 0.8125rem; color: var(--color-text-muted); margin-top: 0.125rem; }
+.hp-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
 
-/* Filters Row */
-.hp-filters-row {
+.hp-section-header-left {
+  flex: 1;
+  min-width: 200px;
+}
+
+.hp-section-header-right {
   display: flex;
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
 }
 
-/* Property Filter Dropdown */
+.hp-section-title-group {
+  flex: 1;
+  min-width: 0;
+}
+
+.hp-section-header h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin: 0;
+}
+
+.hp-section-subtitle {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  margin-top: 0.125rem;
+}
+
+.hp-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: nowrap;
+}
+
+.hp-results-count {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.75rem;
+}
+
 .hp-property-filter-dropdown {
   position: relative;
   display: inline-flex;
@@ -2181,13 +1962,17 @@
   background: var(--color-white);
   border: 1px solid #e5e7eb;
   border-radius: 0;
-  margin-bottom: 0.5rem;
   transition: all 0.2s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   cursor: pointer;
+  flex-shrink: 0;
 }
 
-/* Urgency Filter Dropdown */
+.hp-property-filter-dropdown:hover {
+  border-color: var(--color-secondary);
+  box-shadow: 0 2px 6px rgba(0, 165, 169, 0.15);
+}
+
 .hp-urgency-filter-dropdown {
   position: relative;
   display: inline-flex;
@@ -2197,10 +1982,10 @@
   background: var(--color-white);
   border: 1px solid #e5e7eb;
   border-radius: 0;
-  margin-bottom: 0.5rem;
   transition: all 0.2s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .hp-urgency-filter-dropdown:hover {
@@ -2245,11 +2030,6 @@
   color: var(--color-secondary);
 }
 
-.hp-property-filter-dropdown:hover {
-  border-color: var(--color-secondary);
-  box-shadow: 0 2px 6px rgba(0, 165, 169, 0.15);
-}
-
 .hp-property-select {
   appearance: none;
   -webkit-appearance: none;
@@ -2259,8 +2039,7 @@
   font-size: 1rem;
   font-weight: 600;
   color: var(--color-primary);
-  padding: 0;
-  padding-right: 0.25rem;
+  padding: 0 0.25rem 0 0;
   cursor: pointer;
   outline: none;
   transition: color 0.2s ease;
@@ -2318,35 +2097,164 @@
   font-size: 0.9375rem;
 }
 
-/* View Toggle Buttons */
-.hp-view-toggle { display: flex; gap: 0.375rem; background: var(--color-background-light); padding: 0.25rem; border-radius: 8px; }
-.hp-view-btn { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: none; background: transparent; color: var(--color-text-muted); border-radius: 6px; cursor: pointer; transition: all 0.2s ease; }
-.hp-view-btn:hover { background: var(--color-white); color: var(--color-secondary); }
-.hp-view-btn.active { background: var(--color-white); color: var(--color-secondary); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+.hp-view-toggle {
+  display: flex;
+  gap: 0.375rem;
+  background: var(--color-white);
+  padding: 0.25rem;
+  border-radius: 8px;
+  flex-shrink: 0;
+  border: 1px solid var(--color-border-divider);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
 
-/* Grid View */
-.hp-repair-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+.hp-view-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: var(--color-background-light);
+  color: var(--color-text-dark);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
 
-/* List View */
-.hp-repair-cards-list { display: flex; flex-direction: column; gap: 0.625rem; }
-.hp-repair-cards-list .hp-repair-card-modern { display: flex; flex-direction: row; max-width: 100%; height: 120px; }
-.hp-repair-cards-list .hp-repair-image-container { width: 160px; min-width: 160px; height: 100%; min-height: auto; }
-.hp-repair-cards-list .hp-repair-content { flex: 1; display: flex; flex-direction: row; gap: 1.5rem; align-items: center; padding: 0.75rem 1rem; }
-.hp-repair-cards-list .hp-repair-header { margin-bottom: 0; flex: 0 0 200px; }
-.hp-repair-cards-list .hp-apartment-info { margin-bottom: 0; flex: 0 0 140px; }
-.hp-repair-cards-list .hp-repair-description { flex: 1; margin-bottom: 0; -webkit-line-clamp: 2; font-size: 0.8125rem; }
-.hp-repair-cards-list .hp-repair-footer { padding-top: 0; margin-top: 0; border-top: none; flex: 0 0 180px; gap: 0.75rem; }
-.hp-repair-card-modern { background: var(--color-white); border-radius: 0; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); transition: all 0.3s ease; cursor: pointer; border: 1px solid var(--color-border-divider); }
-.hp-repair-card-modern:hover { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1); border-color: var(--color-secondary); }
-.hp-repair-image-container { position: relative; width: 100%; height: 140px; overflow: hidden; }
-.hp-repair-image-container img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
-.hp-repair-card-modern:hover .hp-repair-image-container img { transform: scale(1.05); }
-.hp-category-badge { position: absolute; top: 0.625rem; right: 0.625rem; padding: 0.25rem 0.625rem; border-radius: 6px; font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; backdrop-filter: blur(4px); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12); }
-.hp-category-badge.hp-urgent { background: rgba(231, 76, 60, 0.95); color: var(--color-white); }
-.hp-category-badge.hp-warning { background: rgba(241, 196, 15, 0.95); color: var(--color-white); }
-.hp-category-badge.hp-info { background: rgba(52, 152, 219, 0.95); color: var(--color-white); }
+.hp-view-btn:hover {
+  background: var(--color-secondary);
+  color: var(--color-white);
+}
 
-/* Approved Bid Badge */
+.hp-view-btn.active {
+  background: var(--color-secondary);
+  color: var(--color-white);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.hp-repair-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.hp-repair-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.hp-repair-cards-list .hp-repair-card-modern {
+  display: flex;
+  flex-direction: row;
+  max-width: 100%;
+  height: 120px;
+}
+
+.hp-repair-cards-list .hp-repair-image-container {
+  width: 160px;
+  min-width: 160px;
+  height: 100%;
+}
+
+.hp-repair-cards-list .hp-repair-content {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 0.75rem 1rem;
+}
+
+.hp-repair-cards-list .hp-repair-header {
+  margin-bottom: 0;
+  flex: 0 0 200px;
+}
+
+.hp-repair-cards-list .hp-apartment-info {
+  margin-bottom: 0;
+  flex: 0 0 140px;
+}
+
+.hp-repair-cards-list .hp-repair-description {
+  flex: 1;
+  margin-bottom: 0;
+  -webkit-line-clamp: 2;
+  font-size: 0.8125rem;
+}
+
+.hp-repair-cards-list .hp-repair-footer {
+  padding-top: 0;
+  margin-top: 0;
+  border-top: none;
+  flex: 0 0 180px;
+  gap: 0.75rem;
+}
+
+.hp-repair-card-modern {
+  background: var(--color-white);
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  border: 1px solid var(--color-border-divider);
+}
+
+.hp-repair-card-modern:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  border-color: var(--color-secondary);
+}
+
+.hp-repair-image-container {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  overflow: hidden;
+}
+
+.hp-repair-image-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.hp-repair-card-modern:hover .hp-repair-image-container img {
+  transform: scale(1.05);
+}
+
+.hp-category-badge {
+  position: absolute;
+  top: 0.625rem;
+  right: 0.625rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 6px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.hp-category-badge.hp-urgent {
+  background: rgba(231, 76, 60, 0.95);
+  color: var(--color-white);
+}
+
+.hp-category-badge.hp-warning {
+  background: rgba(241, 196, 15, 0.95);
+  color: var(--color-white);
+}
+
+.hp-category-badge.hp-info {
+  background: rgba(52, 152, 219, 0.95);
+  color: var(--color-white);
+}
+
 .hp-approved-badge {
   position: absolute;
   top: 0.625rem;
@@ -2370,21 +2278,102 @@
 .hp-approved-badge svg {
   flex-shrink: 0;
 }
-.hp-repair-content { padding: 0.875rem; }
-.hp-repair-header { margin-bottom: 0.5rem; }
-.hp-property-info { display: flex; align-items: flex-start; gap: 0.5rem; }
-.hp-property-icon { color: var(--color-secondary); flex-shrink: 0; margin-top: 0.125rem; width: 14px; height: 14px; }
-.hp-property-name { font-size: 0.9375rem; font-weight: 600; color: var(--color-text-dark); margin: 0; line-height: 1.3; }
-.hp-property-address { font-size: 0.75rem; color: var(--color-text-muted); margin: 0.125rem 0 0 0; }
-.hp-apartment-info { display: flex; align-items: center; gap: 0.375rem; font-size: 0.8125rem; color: var(--color-text-dark); background: var(--color-background-light); padding: 0.375rem 0.625rem; border-radius: 6px; margin-bottom: 0.625rem; font-weight: 500; }
-.hp-apartment-info svg { color: var(--color-secondary); flex-shrink: 0; width: 13px; height: 13px; }
-.hp-repair-description { font-size: 0.8125rem; color: var(--color-text-muted); line-height: 1.5; margin: 0 0 0.75rem 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.hp-repair-footer { display: flex; justify-content: space-between; align-items: center; padding-top: 0.75rem; border-top: 1px solid var(--color-border-divider); }
-.hp-footer-item { display: flex; align-items: center; gap: 0.375rem; font-size: 0.8125rem; color: var(--color-text-muted); }
-.hp-footer-item svg { flex-shrink: 0; width: 13px; height: 13px; }
-.hp-footer-item.hp-budget { color: var(--color-status-success); font-weight: 600; }
 
-/* ==================== IMAGE SKELETON ==================== */
+.hp-repair-content {
+  padding: 0.875rem;
+}
+
+.hp-repair-header {
+  margin-bottom: 0.5rem;
+}
+
+.hp-property-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.hp-property-icon {
+  color: var(--color-secondary);
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+  width: 14px;
+  height: 14px;
+}
+
+.hp-property-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-dark);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.hp-property-address {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin: 0.125rem 0 0 0;
+}
+
+.hp-apartment-info {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-dark);
+  background: var(--color-background-light);
+  padding: 0.375rem 0.625rem;
+  border-radius: 6px;
+  margin-bottom: 0.625rem;
+  font-weight: 500;
+}
+
+.hp-apartment-info svg {
+  color: var(--color-secondary);
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+}
+
+.hp-repair-description {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin: 0 0 0.75rem 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.hp-repair-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border-divider);
+}
+
+.hp-footer-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.hp-footer-item svg {
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+}
+
+.hp-footer-item.hp-budget {
+  color: var(--color-status-success);
+  font-weight: 600;
+}
+
+/* ===== HP SKELETON ===== */
 .hp-image-skeleton {
   position: absolute;
   top: 0;
@@ -2412,7 +2401,6 @@
   animation: wave 1.8s ease-in-out infinite;
 }
 
-/* HP Skeleton Styles */
 .hp-skeleton {
   pointer-events: none;
   animation: pulse 2s ease-in-out infinite;
@@ -2474,7 +2462,6 @@
   overflow: hidden;
 }
 
-/* Ensure skeleton cards match real card structure */
 .hp-repair-card-modern.hp-skeleton .hp-repair-content {
   padding: 0.875rem;
 }
@@ -2490,10 +2477,7 @@
   margin-bottom: 0.625rem;
 }
 
-/* ========================================
-   PAGINATION STYLES
-   ======================================== */
-
+/* ===== PAGINATION ===== */
 .hp-pagination {
   display: flex;
   align-items: center;
@@ -2576,7 +2560,6 @@
   user-select: none;
 }
 
-/* Responsive Pagination */
 @media (max-width: 768px) {
   .hp-pagination {
     gap: 0.375rem;
@@ -2612,7 +2595,7 @@
   }
 }
 
-/* ==================== URGENT REQUEST MODAL ==================== */
+/* ===== URGENT MODAL ===== */
 .pm-urgent-modal-overlay {
   position: fixed;
   inset: 0;
@@ -2633,17 +2616,6 @@
   display: flex;
   flex-direction: column;
   animation: pm-urgent-modal-pop 0.2s ease;
-}
-
-@keyframes pm-urgent-modal-pop {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
 }
 
 .pm-urgent-modal-header {
@@ -2909,18 +2881,7 @@
   animation: pm-spin 1s linear infinite;
 }
 
-@keyframes pm-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Responsive for urgent modal */
 @media (max-width: 640px) {
-  .pm-urgent-modal-overlay {
-    padding: 0;
-  }
-
   .pm-urgent-modal {
     max-width: 100%;
     max-height: 100vh;
@@ -2963,7 +2924,7 @@
   }
 }
 
-/* ===== Toast Notification Styles ===== */
+/* ===== TOAST NOTIFICATIONS ===== */
 .pm-toast {
   position: fixed;
   top: 24px;
@@ -2979,17 +2940,6 @@
   z-index: 10000;
   animation: pm-toast-slide-in 0.3s ease-out;
   max-width: 400px;
-}
-
-@keyframes pm-toast-slide-in {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
 }
 
 .pm-toast-success {
@@ -3032,16 +2982,6 @@
   animation: pm-spin 1s linear infinite;
 }
 
-@keyframes pm-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Toast responsive */
 @media (max-width: 480px) {
   .pm-toast {
     left: 16px;
