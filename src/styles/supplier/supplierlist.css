@@ -1086,9 +1086,11 @@
    ============================================ */
 
 @media (max-width: 1024px) {
-  .sl-container {
-    margin-left: 0;
-    padding: 1rem;
+  .sl-container,
+  .sl-loading {
+    margin-left: 80px;
+    width: calc(100% - 80px);
+    padding: 1.25rem;
   }
 
   .sl-suppliers-container.grid-view {
@@ -1101,25 +1103,86 @@
 }
 
 @media (max-width: 768px) {
-  .sl-container {
-    padding: 0.75rem;
+  .sl-app-layout {
+    min-height: 100vh;
+  }
+
+  .sl-container,
+  .sl-loading {
+    margin-left: 0;
+    width: 100%;
+    padding: 1rem;
+    padding-bottom: 5rem; /* Space for bottom nav */
+  }
+
+  .sl-content-wrapper {
+    max-width: 100%;
+  }
+
+  .sl-header {
+    margin-bottom: 1rem;
+  }
+
+  .sl-title {
+    font-size: 1.5rem;
+  }
+
+  .sl-subtitle {
+    font-size: 0.8rem;
   }
 
   .sl-controls-section {
     flex-direction: column;
     align-items: stretch;
+    gap: 0.75rem;
   }
 
   .sl-search-box {
     min-width: auto;
+    width: 100%;
   }
 
   .sl-controls-right {
     justify-content: space-between;
+    width: 100%;
+  }
+
+  .sl-filter-toggle {
+    flex: 1;
+  }
+
+  .sl-view-toggle {
+    flex-shrink: 0;
+  }
+
+  .sl-filter-panel {
+    padding: 1rem;
+    border-radius: 10px;
+  }
+
+  .sl-filter-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .sl-results-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
   }
 
   .sl-suppliers-container.grid-view {
     grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .sl-suppliers-container.list-view {
+    gap: 0.75rem;
+  }
+
+  .sl-supplier-card {
+    border-radius: 10px;
   }
 
   .sl-supplier-card.list {
@@ -1147,19 +1210,274 @@
     min-width: auto;
   }
 
-  .sl-title {
-    font-size: 1.5rem;
+  .sl-card-header {
+    padding: 0.875rem;
   }
 
-  .sl-subtitle {
+  .sl-company-name {
+    font-size: 0.9375rem;
+  }
+
+  .sl-license-badge {
+    font-size: 0.6rem;
+    padding: 0.175rem 0.4rem;
+  }
+
+  .sl-years-badge {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  .sl-card-body {
+    padding: 0.875rem;
+    gap: 0.625rem;
+  }
+
+  .sl-detail-row {
+    font-size: 0.75rem;
+  }
+
+  .sl-section-label {
+    font-size: 0.65rem;
+  }
+
+  .sl-area-tag {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
+  }
+
+  .sl-card-footer {
+    padding: 0.625rem 0.875rem;
+    gap: 0.5rem;
+  }
+
+  .sl-catalog-btn,
+  .sl-request-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .sl-no-results {
+    padding: 2rem 1.5rem;
+  }
+
+  .sl-no-results h3 {
+    font-size: 1rem;
+  }
+
+  .sl-no-results p {
     font-size: 0.8rem;
   }
 
-  .sl-filter-grid {
+  /* Modal responsive */
+  .sl-modal-backdrop {
+    padding: 0.5rem;
+    align-items: flex-end;
+  }
+
+  .sl-modal-container {
+    max-width: 100%;
+    max-height: 95vh;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .sl-modal-header {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .sl-modal-title {
+    font-size: 1.25rem;
+  }
+
+  .sl-modal-body {
+    padding: 1.5rem;
+  }
+
+  .sl-type-buttons {
     grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .sl-type-btn {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+  }
+
+  .sl-file-upload-label {
+    padding: 2rem 1.5rem;
+  }
+
+  .sl-upload-icon-wrapper {
+    width: 60px;
+    height: 60px;
   }
 
   .sl-modal-footer {
     flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+  }
+
+  .sl-cancel-btn,
+  .sl-submit-btn {
+    padding: 0.75rem 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .sl-container,
+  .sl-loading {
+    padding: 0.75rem;
+    padding-bottom: 5.5rem;
+  }
+
+  .sl-title {
+    font-size: 1.25rem;
+  }
+
+  .sl-subtitle {
+    font-size: 0.75rem;
+  }
+
+  .sl-search-input {
+    padding: 0.625rem 0.875rem 0.625rem 2.5rem;
+    font-size: 0.8rem;
+  }
+
+  .sl-search-icon {
+    left: 0.875rem;
+  }
+
+  .sl-filter-toggle {
+    padding: 0.625rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  .sl-view-btn {
+    padding: 0.625rem 0.75rem;
+  }
+
+  .sl-filter-label {
+    font-size: 0.7rem;
+  }
+
+  .sl-select-trigger {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.8rem;
+  }
+
+  .sl-clear-filters {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.8rem;
+  }
+
+  .sl-results-count {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.875rem;
+  }
+
+  .sl-card-header {
+    padding: 0.75rem;
+  }
+
+  .sl-company-name {
+    font-size: 0.875rem;
+  }
+
+  .sl-card-body {
+    padding: 0.75rem;
+  }
+
+  .sl-card-footer {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .sl-catalog-btn,
+  .sl-request-btn {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.7rem;
+    gap: 0.25rem;
+  }
+
+  .sl-modal-header {
+    padding: 1rem 1.25rem;
+  }
+
+  .sl-modal-title {
+    font-size: 1.125rem;
+  }
+
+  .sl-modal-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .sl-modal-body {
+    padding: 1.25rem;
+  }
+
+  .sl-modal-info-card {
+    padding: 0.875rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .sl-modal-info-title,
+  .sl-modal-info-text {
+    font-size: 0.8rem;
+  }
+
+  .sl-form-label {
+    font-size: 0.8rem;
+  }
+
+  .sl-form-textarea {
+    padding: 0.875rem;
+    font-size: 0.8rem;
+  }
+
+  .sl-form-hint {
+    font-size: 0.7rem;
+  }
+
+  .sl-type-btn {
+    padding: 0.875rem;
+    font-size: 0.8rem;
+  }
+
+  .sl-file-upload-label {
+    padding: 1.5rem 1rem;
+  }
+
+  .sl-upload-icon-wrapper {
+    width: 50px;
+    height: 50px;
+  }
+
+  .sl-upload-text {
+    font-size: 0.8rem;
+  }
+
+  .sl-upload-subtext {
+    font-size: 0.7rem;
+  }
+
+  .sl-file-preview {
+    padding: 1rem;
+  }
+
+  .sl-file-name {
+    font-size: 0.8rem;
+  }
+
+  .sl-file-size {
+    font-size: 0.7rem;
+  }
+
+  .sl-cancel-btn,
+  .sl-submit-btn {
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
   }
 }

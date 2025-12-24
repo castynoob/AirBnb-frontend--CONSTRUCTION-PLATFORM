@@ -533,9 +533,24 @@
 }
 
 @media (max-width: 768px) {
+  .messages-entrepreneur-page-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
+    overflow: hidden;
+  }
+
   .messages-entrepreneur-container-fullscreen {
     margin-left: 0;
     width: 100%;
+    max-width: 100vw;
+    height: calc(100vh - 70px);
+    height: calc(100dvh - 70px); /* Account for bottom nav with dynamic viewport */
+    overflow: hidden;
+    flex-direction: column;
   }
 
   .messages-entrepreneur-header-bar {
@@ -543,6 +558,7 @@
     align-items: flex-start;
     padding: 1rem;
     gap: 1rem;
+    flex-shrink: 0;
   }
 
   .messages-entrepreneur-header-bar h1 {
@@ -588,6 +604,7 @@
     position: relative;
     flex: 1;
     min-height: 0;
+    overflow: hidden;
   }
 
   .chat-sidebar-entrepreneur {
@@ -596,16 +613,24 @@
     height: 100%;
     min-height: 0;
     transition: transform 0.3s ease;
+    border-right: none;
+    flex-direction: column;
   }
 
   .chat-sidebar-entrepreneur.mobile-hidden {
     display: none;
   }
 
+  .messages-entrepreneur-header-bar.mobile-hidden {
+    display: none !important;
+  }
+
   .chat-list-entrepreneur {
     flex: 1;
     overflow-y: auto;
     min-height: 0;
+    padding-bottom: 70px; /* Space for bottom nav */
+    -webkit-overflow-scrolling: touch;
   }
 
   .chat-window-entrepreneur {
@@ -620,7 +645,51 @@
   }
 
   .chat-window-entrepreneur.mobile-show {
-    display: flex;
+    display: flex !important;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    max-height: 100vh;
+    max-height: 100dvh; /* Dynamic viewport height */
+    z-index: 1000;
+    background: white;
+    overflow: hidden;
+  }
+
+  /* Chat header fixed at top */
+  .chat-window-entrepreneur.mobile-show .chat-header-entrepreneur {
+    flex: 0 0 auto;
+    position: relative;
+    z-index: 10;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  /* Messages area takes remaining space */
+  .chat-window-entrepreneur.mobile-show .chat-messages-entrepreneur {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
+    max-height: none;
+  }
+
+  /* Input area fixed at bottom */
+  .chat-window-entrepreneur.mobile-show .chat-input-area-entrepreneur {
+    flex: 0 0 auto;
+    position: relative;
+    z-index: 10;
+    background: white;
+    padding: 12px 16px;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 12px));
+    border-top: 1px solid #e5e7eb;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
   }
 
   /* Show back button in mobile */
@@ -662,6 +731,7 @@
 
   .chat-messages-entrepreneur {
     padding: 1rem;
+    padding-bottom: 8px;
   }
 
   .message-bubble-entrepreneur {
@@ -675,6 +745,7 @@
 
   .chat-input-area-entrepreneur {
     padding: 0.75rem;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   }
 
   .message-input-entrepreneur {
@@ -760,12 +831,14 @@
 
   .chat-messages-entrepreneur {
     padding: 0.75rem;
+    padding-bottom: 6px;
     gap: 0.75rem;
   }
 
   .message-bubble-entrepreneur {
     max-width: 90%;
     padding: 0.5rem 0.75rem;
+    border-radius: 14px;
   }
 
   .message-text-entrepreneur {
@@ -778,12 +851,19 @@
 
   .chat-input-area-entrepreneur {
     padding: 0.625rem;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 12px));
     gap: 0.5rem;
+  }
+
+  .chat-window-entrepreneur.mobile-show .chat-input-area-entrepreneur {
+    padding: 10px 12px;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 16px));
   }
 
   .message-input-entrepreneur {
     padding: 0.5rem 0.75rem;
     font-size: 0.8125rem;
+    border-radius: 20px;
   }
 
   .send-btn-entrepreneur {
@@ -811,5 +891,16 @@
 
   .mobile-back-btn-entrepreneur {
     padding: 0.375rem;
+  }
+
+  .header-actions-entrepreneur {
+    gap: 4px;
+  }
+
+  .contact-btn-entrepreneur {
+    width: 36px;
+    height: 36px;
+    padding: 0.5rem;
+    border-radius: 50%;
   }
 }

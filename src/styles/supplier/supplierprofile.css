@@ -50,15 +50,18 @@
   flex: 1;
   position: relative;
   overflow-y: auto;
-  padding: 1rem 1.25rem;
+  padding: 1.5rem 2rem;
   margin-left: 280px;
-  width: 100%;
+  width: calc(100% - 280px);
+  max-width: 100%;
 }
 
 .sp-supplier-content-wrapper {
   position: relative;
   z-index: 1;
   width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 /* ============================================
@@ -67,20 +70,22 @@
 
 .sp-supplier-profile-header {
   background: white;
-  border-radius: 10px;
-  padding: 1.25rem 1.5rem;
-  margin-bottom: 1rem;
+  border-radius: 16px;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 1.5rem;
+  gap: 2rem;
   border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .sp-supplier-profile-header-left {
   display: flex;
-  gap: 1.25rem;
+  gap: 1.5rem;
   flex: 1;
+  align-items: flex-start;
 }
 
 .sp-supplier-profile-image-container {
@@ -88,22 +93,25 @@
 }
 
 .sp-supplier-company-logo {
-  width: 100px;
-  height: 100px;
-  border-radius: 8px;
+  width: 120px;
+  height: 120px;
+  border-radius: 12px;
   object-fit: cover;
-  border: 2px solid #00a5a9;
+  border: 3px solid #00a5a9;
+  box-shadow: 0 4px 12px rgba(0, 165, 169, 0.2);
 }
 
 .sp-supplier-profile-info {
   flex: 1;
+  min-width: 0;
+  width: 100%;
 }
 
 .sp-supplier-profile-title {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   font-weight: 700;
   color: #1e293b;
-  margin: 0 0 0.375rem 0;
+  margin: 0 0 0.5rem 0;
 }
 
 .sp-supplier-license-badge {
@@ -112,41 +120,46 @@
   gap: 0.375rem;
   background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
   color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 16px;
-  font-size: 0.7rem;
+  padding: 0.375rem 0.875rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
   font-weight: 600;
-  margin-bottom: 0.75rem;
+  margin-bottom: 1rem;
 }
 
 .sp-supplier-header-details {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-  margin-top: 0.75rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
 .sp-supplier-header-detail-item {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
 }
 
 .sp-supplier-header-detail-label {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.375rem;
   font-size: 0.7rem;
   color: #64748b;
-  font-weight: 500;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .sp-supplier-header-detail-value {
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   color: #1e293b;
   font-weight: 500;
+  word-break: break-word;
 }
 
 .sp-supplier-header-detail-value.light {
@@ -173,23 +186,56 @@
   flex-direction: column;
   gap: 0.5rem;
   flex-shrink: 0;
+  align-self: flex-start;
 }
 
 .sp-supplier-edit-button {
   background: #00a5a9;
   color: white;
   border: none;
-  padding: 0.625rem 1.25rem;
-  border-radius: 6px;
-  font-size: 0.8rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .sp-supplier-edit-button:hover {
   background: #006d70;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 165, 169, 0.3);
+}
+
+.sp-supplier-logout-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.2);
+}
+
+.sp-supplier-logout-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+  background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+}
+
+.sp-supplier-logout-button:active {
+  transform: translateY(0);
 }
 
 /* ============================================
@@ -198,21 +244,22 @@
 
 .sp-supplier-tab-navigation {
   display: flex;
-  gap: 0.375rem;
+  gap: 0.5rem;
   background: white;
-  border-radius: 8px;
-  padding: 0.375rem;
-  margin-bottom: 1rem;
+  border-radius: 12px;
+  padding: 0.5rem;
+  margin-bottom: 1.5rem;
   border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .sp-supplier-tab-button {
   flex: 1;
   background: transparent;
   border: none;
-  padding: 0.625rem 1rem;
-  border-radius: 6px;
-  font-size: 0.8rem;
+  padding: 0.875rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
   font-weight: 600;
   color: #64748b;
   cursor: pointer;
@@ -227,6 +274,7 @@
 .sp-supplier-tab-button.active {
   background: #00a5a9;
   color: white;
+  box-shadow: 0 2px 8px rgba(0, 165, 169, 0.3);
 }
 
 /* ============================================
@@ -235,10 +283,11 @@
 
 .sp-supplier-tab-content {
   background: white;
-  border-radius: 10px;
-  padding: 1.25rem 1.5rem;
+  border-radius: 16px;
+  padding: 2rem;
   border: 1px solid #e2e8f0;
-  min-height: 350px;
+  min-height: 400px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .sp-supplier-tab-panel {
@@ -257,12 +306,15 @@
 }
 
 .sp-supplier-section-title {
-  font-size: 1.1rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: #1e293b;
-  margin: 0 0 1rem 0;
-  padding-bottom: 0.625rem;
+  margin: 0 0 1.25rem 0;
+  padding-bottom: 0.75rem;
   border-bottom: 2px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 /* ============================================
@@ -271,38 +323,40 @@
 
 .sp-supplier-info-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
 }
 
 .sp-supplier-info-card {
   display: flex;
   align-items: center;
-  gap: 0.875rem;
-  padding: 1rem 1.25rem;
-  background: #f8fafc;
-  border-radius: 8px;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
   border: 1px solid #e2e8f0;
   transition: all 0.2s;
 }
 
 .sp-supplier-info-card:hover {
   border-color: #00a5a9;
-  background: #f0fdfd;
+  background: linear-gradient(135deg, #f0fdfd 0%, #e6fafa 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 165, 169, 0.1);
 }
 
 .sp-supplier-info-label {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   color: #64748b;
-  font-weight: 500;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.25rem;
 }
 
 .sp-supplier-info-value {
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #1e293b;
 }
@@ -312,37 +366,43 @@
    ============================================ */
 
 .sp-supplier-service-areas {
-  margin-top: 0.75rem;
+  margin-top: 1rem;
 }
 
 .sp-supplier-areas-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .sp-supplier-area-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  background: #00a5a9;
+  gap: 0.375rem;
+  background: linear-gradient(135deg, #00a5a9 0%, #008a8e 100%);
   color: white;
-  padding: 0.375rem 0.875rem;
-  border-radius: 16px;
-  font-size: 0.8rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
   font-weight: 500;
   transition: all 0.2s;
+  box-shadow: 0 2px 6px rgba(0, 165, 169, 0.2);
 }
 
 .sp-supplier-area-badge:hover {
-  background: #006d70;
+  background: linear-gradient(135deg, #006d70 0%, #005a5d 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 165, 169, 0.3);
 }
 
 .sp-supplier-no-data {
   color: #94a3b8;
   font-style: italic;
   text-align: center;
-  padding: 1.5rem;
+  padding: 2rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 2px dashed #e2e8f0;
 }
 
 /* ============================================
@@ -775,39 +835,163 @@
    RESPONSIVE DESIGN
    ============================================ */
 
+@media (max-width: 1200px) {
+  .sp-supplier-header-details {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 1024px) {
-  .sp-supplier-profile-container {
-    margin-left: 0;
-    padding: 1rem;
+  .sp-supplier-profile-container,
+  .sp-supplier-loading {
+    margin-left: 80px;
+    width: calc(100% - 80px);
+    padding: 1.25rem;
   }
 
   .sp-supplier-profile-header {
     flex-direction: column;
+    padding: 1.5rem;
   }
 
   .sp-supplier-header-actions {
     width: 100%;
-    flex-direction: row;
+    flex-direction: column;
   }
 
-  .sp-supplier-info-grid {
-    grid-template-columns: 1fr;
+  .sp-supplier-edit-button,
+  .sp-supplier-logout-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .sp-supplier-header-details {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 768px) {
+  .sp-supplier-app-layout {
+    min-height: 100vh;
+  }
+
+  .sp-supplier-profile-container,
+  .sp-supplier-loading {
+    margin-left: 0;
+    width: 100%;
+    padding: 1rem;
+    padding-bottom: 5rem;
+  }
+
+  .sp-supplier-content-wrapper {
+    max-width: 100%;
+  }
+
+  .sp-supplier-profile-header {
+    padding: 1.25rem;
+    gap: 1.25rem;
+    border-radius: 12px;
+  }
+
   .sp-supplier-profile-header-left {
     flex-direction: column;
     align-items: center;
     text-align: center;
+    gap: 1rem;
+    width: 100%;
+  }
+
+  .sp-supplier-profile-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .sp-supplier-profile-title {
+    font-size: 1.375rem;
+    text-align: center;
+  }
+
+  .sp-supplier-company-logo {
+    width: 100px;
+    height: 100px;
+  }
+
+  .sp-supplier-license-badge {
+    margin-bottom: 0.75rem;
   }
 
   .sp-supplier-header-details {
     grid-template-columns: 1fr;
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 0.75rem;
+    padding: 0;
+  }
+
+  .sp-supplier-header-detail-item {
+    text-align: left;
+    padding: 0.875rem;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .sp-supplier-header-actions {
+    width: 100%;
+    margin-top: 0.5rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .sp-supplier-edit-button,
+  .sp-supplier-logout-button {
+    width: 100%;
+    justify-content: center;
+    padding: 0.875rem 1.25rem;
   }
 
   .sp-supplier-tab-navigation {
     flex-direction: column;
+    gap: 0.375rem;
+    border-radius: 10px;
+  }
+
+  .sp-supplier-tab-button {
+    padding: 0.875rem 1rem;
+    border-radius: 8px;
+  }
+
+  .sp-supplier-tab-content {
+    padding: 1.25rem;
+    min-height: 280px;
+    border-radius: 12px;
+  }
+
+  .sp-supplier-section-title {
+    font-size: 1.1rem;
+    flex-wrap: wrap;
+  }
+
+  .sp-supplier-info-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .sp-supplier-info-card {
+    padding: 1rem 1.25rem;
+  }
+
+  .sp-supplier-areas-grid {
+    gap: 0.5rem;
+  }
+
+  .sp-supplier-area-badge {
+    padding: 0.4rem 0.875rem;
+    font-size: 0.8rem;
   }
 
   .sp-profile-edit-form-row {
@@ -816,17 +1000,349 @@
 
   .sp-profile-edit-specializations-grid {
     grid-template-columns: 1fr;
+    max-height: 200px;
   }
 
   .sp-profile-edit-image-upload-container {
     flex-direction: column;
+    align-items: center;
+  }
+
+  .sp-profile-edit-modal-backdrop {
+    padding: 0.5rem;
+    align-items: flex-end;
   }
 
   .sp-profile-edit-modal-container {
-    max-width: 95vw;
+    max-width: 100%;
+    max-height: 95vh;
+    border-radius: 16px 16px 0 0;
   }
 
   .sp-profile-edit-modal-body {
     padding: 1rem;
+  }
+
+  .sp-supplier-catalog-card {
+    flex-direction: column;
+    text-align: center;
+    padding: 1.25rem;
+  }
+
+  .sp-supplier-catalog-info h3 {
+    font-size: 1rem;
+  }
+
+  .sp-supplier-catalog-info p {
+    font-size: 0.8rem;
+  }
+
+  .sp-supplier-no-catalog h3 {
+    font-size: 1rem;
+  }
+
+  .sp-supplier-no-catalog p {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .sp-supplier-profile-container,
+  .sp-supplier-loading {
+    padding: 0.75rem;
+    padding-bottom: 5.5rem;
+  }
+
+  .sp-supplier-profile-header {
+    padding: 1rem;
+    border-radius: 10px;
+    gap: 1rem;
+  }
+
+  .sp-supplier-profile-header-left {
+    width: 100%;
+    max-width: 100%;
+    gap: 0.875rem;
+  }
+
+  .sp-supplier-profile-info {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .sp-supplier-company-logo {
+    width: 72px;
+    height: 72px;
+    border-width: 2px;
+  }
+
+  .sp-supplier-profile-title {
+    font-size: 1.125rem;
+    line-height: 1.3;
+  }
+
+  .sp-supplier-license-badge {
+    font-size: 0.65rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 16px;
+  }
+
+  .sp-supplier-header-details {
+    gap: 0.5rem;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0;
+  }
+
+  .sp-supplier-header-detail-item {
+    padding: 0.625rem 0.75rem;
+    border-radius: 6px;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .sp-supplier-header-detail-label {
+    font-size: 0.6rem;
+    gap: 0.25rem;
+  }
+
+  .sp-supplier-header-detail-label svg {
+    width: 10px;
+    height: 10px;
+  }
+
+  .sp-supplier-header-detail-value {
+    font-size: 0.75rem;
+  }
+
+  .sp-supplier-edit-button,
+  .sp-supplier-logout-button {
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  .sp-supplier-tab-navigation {
+    padding: 0.25rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .sp-supplier-tab-button {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.75rem;
+    border-radius: 6px;
+  }
+
+  .sp-supplier-tab-content {
+    padding: 0.875rem;
+    border-radius: 10px;
+    min-height: 250px;
+  }
+
+  .sp-supplier-section-title {
+    font-size: 0.9375rem;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.875rem;
+  }
+
+  .sp-supplier-info-grid {
+    gap: 0.75rem;
+  }
+
+  .sp-supplier-info-card {
+    padding: 0.875rem 1rem;
+    gap: 0.75rem;
+    border-radius: 10px;
+  }
+
+  .sp-supplier-info-card svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .sp-supplier-info-label {
+    font-size: 0.65rem;
+  }
+
+  .sp-supplier-info-value {
+    font-size: 0.85rem;
+  }
+
+  .sp-supplier-service-areas {
+    margin-top: 0.75rem;
+  }
+
+  .sp-supplier-areas-grid {
+    gap: 0.375rem;
+  }
+
+  .sp-supplier-area-badge {
+    padding: 0.3rem 0.75rem;
+    font-size: 0.75rem;
+    border-radius: 16px;
+  }
+
+  .sp-supplier-area-badge svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .sp-supplier-no-data {
+    padding: 1.5rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  .sp-supplier-catalog-section {
+    min-height: 200px;
+  }
+
+  .sp-supplier-catalog-card {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .sp-supplier-catalog-icon svg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .sp-supplier-catalog-info h3 {
+    font-size: 0.9375rem;
+  }
+
+  .sp-supplier-catalog-info p {
+    font-size: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .sp-supplier-download-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.75rem;
+  }
+
+  .sp-supplier-no-catalog {
+    padding: 2rem 1rem;
+  }
+
+  .sp-supplier-no-catalog svg {
+    width: 48px;
+    height: 48px;
+  }
+
+  .sp-supplier-no-catalog h3 {
+    font-size: 0.9375rem;
+  }
+
+  .sp-supplier-no-catalog p {
+    font-size: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .sp-supplier-upload-catalog-btn {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.75rem;
+  }
+
+  /* Edit Modal Mobile */
+  .sp-profile-edit-modal-backdrop {
+    padding: 0;
+  }
+
+  .sp-profile-edit-modal-container {
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .sp-profile-edit-modal-header {
+    padding: 1rem;
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1;
+  }
+
+  .sp-profile-edit-modal-title {
+    font-size: 1rem;
+  }
+
+  .sp-profile-edit-modal-subtitle {
+    font-size: 0.75rem;
+  }
+
+  .sp-profile-edit-modal-body {
+    padding: 1rem;
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
+  }
+
+  .sp-profile-edit-form-group {
+    margin-bottom: 1rem;
+  }
+
+  .sp-profile-edit-form-label {
+    font-size: 0.75rem;
+    margin-bottom: 0.375rem;
+  }
+
+  .sp-profile-edit-form-input,
+  .sp-profile-edit-form-textarea {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .sp-profile-edit-image-preview {
+    width: 80px;
+    height: 80px;
+  }
+
+  .sp-profile-edit-upload-btn,
+  .sp-profile-edit-remove-btn {
+    padding: 0.5rem 0.875rem;
+    font-size: 0.75rem;
+  }
+
+  .sp-profile-edit-image-hint {
+    font-size: 0.65rem;
+  }
+
+  .sp-profile-edit-catalog-upload-btn {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.75rem;
+  }
+
+  .sp-profile-edit-specializations-grid {
+    max-height: 180px;
+    padding: 0.375rem;
+  }
+
+  .sp-profile-edit-checkbox-label {
+    padding: 0.3rem 0.375rem;
+  }
+
+  .sp-profile-edit-checkbox-input {
+    width: 14px;
+    height: 14px;
+  }
+
+  .sp-profile-edit-checkbox-text {
+    font-size: 0.75rem;
+  }
+
+  .sp-profile-edit-button-group {
+    flex-direction: column;
+    gap: 0.625rem;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    position: sticky;
+    bottom: 0;
+    background: white;
+    padding-bottom: 1rem;
+  }
+
+  .sp-profile-edit-cancel-btn,
+  .sp-profile-edit-submit-btn {
+    padding: 0.875rem 1rem;
+    font-size: 0.8rem;
   }
 }

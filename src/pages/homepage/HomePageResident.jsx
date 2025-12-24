@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
+import { Search, Bell, Calendar, Wrench, AlertTriangle, Megaphone } from 'lucide-react';
 import Nav from '../../components/Nav';
 import AnnouncementCard from '../../components/AnnouncementCard';
 import '../../styles/resident/homepageresident.css';
@@ -174,8 +175,14 @@ const HomePageResident = () => {
     }
   }, []);
 
-  // Get unique types from announcements
-  const types = ['All', 'Maintenance', 'Event', 'Notice', 'Emergency'];
+  // Filter types with icons
+  const filterTypes = [
+    { name: 'All', icon: null },
+    { name: 'Maintenance', icon: Wrench },
+    { name: 'Event', icon: Calendar },
+    { name: 'Notice', icon: Megaphone },
+    { name: 'Emergency', icon: AlertTriangle }
+  ];
 
   return (
     <>
@@ -193,6 +200,7 @@ const HomePageResident = () => {
           {/* Search and Filter Section */}
           <div className="resident-filter-section">
             <div className="resident-search-box-filter">
+              <Search className="search-icon" size={18} />
               <input
                 type="text"
                 placeholder="Search announcements..."
@@ -211,15 +219,16 @@ const HomePageResident = () => {
               )}
             </div>
             <div className="resident-filter-buttons">
-              {types.map((type) => (
+              {filterTypes.map(({ name, icon: Icon }) => (
                 <button
-                  key={type}
+                  key={name}
                   className={`resident-filter-btn ${
-                    activeFilter === type ? 'resident-filter-btn-active' : ''
+                    activeFilter === name ? 'resident-filter-btn-active' : ''
                   }`}
-                  onClick={() => setActiveFilter(type)}
+                  onClick={() => setActiveFilter(name)}
                 >
-                  {type}
+                  {Icon && <Icon size={14} />}
+                  {name}
                 </button>
               ))}
             </div>

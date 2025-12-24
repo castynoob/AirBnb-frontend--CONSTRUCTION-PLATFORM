@@ -1275,7 +1275,9 @@
   .main-container {
     margin-left: 0 !important;
     padding: 0.875rem 0.5rem;
-    padding-bottom: 1.5rem;
+    padding-bottom: 5rem; /* Space for mobile bottom navigation */
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .pm-page-header {
@@ -1330,8 +1332,26 @@
   }
 
   .pm-notification-modal {
-    width: 320px;
-    max-height: 460px;
+    width: calc(100vw - 2rem);
+    max-width: 320px;
+    max-height: 70vh;
+    right: 0;
+  }
+
+  /* Summary cards - stack to single column on mobile */
+  .pm-summary-section {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .pm-summary-card {
+    padding: 1rem;
+    flex-direction: row;
+  }
+
+  .pm-summary-card.pm-skeleton {
+    flex-direction: row !important;
+    aspect-ratio: auto !important;
   }
 
   .hp-repairs-section {
@@ -1346,9 +1366,58 @@
     font-size: 1rem;
   }
 
+  /* Section header responsive layout */
+  .hp-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .hp-section-header-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .hp-filters-row {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .hp-property-filter-dropdown,
+  .hp-urgency-filter-dropdown {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0;
+  }
+
+  .hp-select-label {
+    font-size: 0.8125rem;
+  }
+
+  .hp-select-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .hp-view-toggle {
+    flex-shrink: 0;
+  }
+
+  .hp-view-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  .hp-view-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
   .hp-repair-cards-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 0.625rem !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
   }
 
   /* Mobile List View - Hide image, horizontal layout */
@@ -1503,26 +1572,33 @@
 
 @media (max-width: 480px) {
   .main-container {
-    padding: 1rem;
-    padding-bottom: 4rem;
+    padding: 0.75rem;
+    padding-bottom: 5.5rem; /* Extra space for mobile bottom navigation */
   }
 
   .pm-page-header {
     gap: 0.75rem;
+    padding-bottom: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .pm-page-header h1 {
+    font-size: 1.125rem;
   }
 
   .pm-header-actions {
     flex-wrap: wrap;
+    gap: 0.375rem;
   }
 
   /* Summary cards on very small screens */
   .pm-summary-section {
-    gap: 0.625rem;
+    gap: 0.5rem;
   }
 
   .pm-summary-card {
-    padding: 0.875rem;
-    gap: 0.75rem;
+    padding: 0.75rem;
+    gap: 0.625rem;
   }
 
   .pm-card-icon-circle {
@@ -1566,6 +1642,8 @@
 
   .pm-search-input {
     width: 100%;
+    height: 34px;
+    font-size: 0.8125rem;
   }
 
   /* Hide button text, show icon only on very small screens */
@@ -1575,8 +1653,14 @@
 
   .pm-btn {
     padding: 0;
-    width: 36px;
+    width: 34px;
+    height: 34px;
     justify-content: center;
+  }
+
+  .pm-btn svg {
+    width: 16px;
+    height: 16px;
   }
 
   /* Old search box */
@@ -1591,8 +1675,9 @@
   }
 
   .pm-notification-modal {
-    width: calc(100vw - 2rem);
-    right: -1rem;
+    width: calc(100vw - 1.5rem);
+    right: -0.5rem;
+    max-height: 60vh;
   }
 
   /* Always expand search on mobile */
@@ -1606,38 +1691,109 @@
     opacity: 1 !important;
     pointer-events: auto !important;
   }
+
+  /* Repair section compact styles */
+  .hp-repairs-section {
+    margin-top: 0.75rem;
+  }
+
+  .hp-section-header {
+    margin-bottom: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .hp-section-header h2 {
+    font-size: 0.9375rem;
+  }
+
+  .hp-section-subtitle {
+    font-size: 0.6875rem;
+  }
+
+  .hp-property-filter-dropdown,
+  .hp-urgency-filter-dropdown {
+    padding: 0.375rem 0.5rem;
+    gap: 0.25rem;
+  }
+
+  .hp-select-label {
+    font-size: 0.75rem;
+  }
+
+  .hp-select-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .hp-filter-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .hp-view-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .hp-view-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Repair cards compact */
+  .hp-repair-cards-grid {
+    gap: 0.5rem !important;
+  }
+
+  .hp-repair-card-modern {
+    border-radius: 0;
+  }
+
+  .hp-repair-image-container {
+    height: 100px !important;
+  }
+
+  .hp-repair-content {
+    padding: 0.625rem !important;
+  }
+
+  .hp-property-name {
+    font-size: 0.8125rem !important;
+  }
+
+  .hp-property-address {
+    font-size: 0.6875rem !important;
+  }
+
+  .hp-apartment-info {
+    font-size: 0.6875rem !important;
+    padding: 0.25rem 0.5rem;
+  }
+
+  .hp-repair-description {
+    font-size: 0.6875rem !important;
+    -webkit-line-clamp: 2 !important;
+  }
+
+  .hp-footer-item {
+    font-size: 0.6875rem !important;
+  }
+
+  .hp-category-badge {
+    font-size: 0.5625rem !important;
+    padding: 0.1875rem 0.375rem !important;
+  }
 }
 
 /* ==================== HP-PREFIXED CLASSES ==================== */
-/* These are aliases for the pm- classes to avoid conflicts */
-.hp-repairs-section { @extend .pm-repairs-section; }
-.hp-section-header { @extend .pm-section-header; }
-.hp-section-subtitle { @extend .pm-section-subtitle; }
-.hp-repair-cards-grid { @extend .pm-repair-cards-grid; }
-.hp-repair-card-modern { @extend .pm-repair-card-modern; }
-.hp-repair-image-container { @extend .pm-repair-image-container; }
-.hp-category-badge { @extend .pm-category-badge; }
-.hp-urgent { @extend .urgent; }
-.hp-warning { @extend .warning; }
-.hp-info { @extend .info; }
-.hp-repair-content { @extend .pm-repair-content; }
-.hp-repair-header { @extend .pm-repair-header; }
-.hp-property-info { @extend .pm-property-info; }
-.hp-property-icon { @extend .pm-property-icon; }
-.hp-property-name { @extend .pm-property-name; }
-.hp-property-address { @extend .pm-property-address; }
-.hp-apartment-info { @extend .pm-apartment-info; }
-.hp-repair-description { @extend .pm-repair-description; }
-.hp-repair-footer { @extend .pm-repair-footer; }
-.hp-footer-item { @extend .pm-footer-item; }
-.hp-budget { @extend .budget; }
+/* HP styles are defined below - no longer using @extend which is invalid in plain CSS */
 
 /* ===== COMPACT REPAIR CARDS DESIGN ===== */
 .hp-repairs-section { margin-top: 1.25rem; }
-.hp-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-.hp-section-header-left { flex: 1; }
-.hp-section-header-right { display: flex; align-items: center; gap: 0.75rem; }
-.hp-section-title-group { flex: 1; }
+.hp-section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem; }
+.hp-section-header-left { flex: 1; min-width: 200px; }
+.hp-section-header-right { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.hp-section-title-group { flex: 1; min-width: 0; }
 .hp-section-header h2 { font-size: 1.125rem; font-weight: 600; color: var(--color-primary); margin: 0; }
 .hp-section-subtitle { font-size: 0.8125rem; color: var(--color-text-muted); margin-top: 0.125rem; }
 
@@ -1646,7 +1802,14 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+}
+
+/* Results count text */
+.hp-results-count {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.75rem;
 }
 
 /* Property Filter Dropdown */
@@ -1659,10 +1822,10 @@
   background: var(--color-white);
   border: 1px solid #e5e7eb;
   border-radius: 0;
-  margin-bottom: 0.5rem;
   transition: all 0.2s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 /* Urgency Filter Dropdown */
@@ -1675,10 +1838,10 @@
   background: var(--color-white);
   border: 1px solid #e5e7eb;
   border-radius: 0;
-  margin-bottom: 0.5rem;
   transition: all 0.2s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .hp-urgency-filter-dropdown:hover {
@@ -1797,10 +1960,31 @@
 }
 
 /* View Toggle Buttons */
-.hp-view-toggle { display: flex; gap: 0.375rem; background: var(--color-background-light); padding: 0.25rem; border-radius: 8px; }
-.hp-view-btn { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: none; background: transparent; color: var(--color-text-muted); border-radius: 6px; cursor: pointer; transition: all 0.2s ease; }
-.hp-view-btn:hover { background: var(--color-white); color: var(--color-secondary); }
-.hp-view-btn.active { background: var(--color-white); color: var(--color-secondary); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+.hp-view-toggle {
+  display: flex;
+  gap: 0.375rem;
+  background: var(--color-white);
+  padding: 0.25rem;
+  border-radius: 8px;
+  flex-shrink: 0;
+  border: 1px solid var(--color-border-divider);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.hp-view-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: var(--color-background-light);
+  color: var(--color-text-dark);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.hp-view-btn:hover { background: var(--color-secondary); color: var(--color-white); }
+.hp-view-btn.active { background: var(--color-secondary); color: var(--color-white); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
 
 /* Grid View */
 .hp-repair-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }

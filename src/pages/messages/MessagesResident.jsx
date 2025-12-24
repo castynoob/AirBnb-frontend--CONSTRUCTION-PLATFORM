@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSocket } from '../../contexts/SocketContext';
+import { Image as ImageIcon, Paperclip, X, File, Download, Loader2 } from 'lucide-react';
 import Nav from '../../components/Nav';
 import '../../styles/resident/messagesresident.css';
 
@@ -82,7 +83,13 @@ const MessagesResident = () => {
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupDescription, setNewGroupDescription] = useState('');
   const [showMobileChat, setShowMobileChat] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState(null);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
   const messagesContainerRef = useRef(null);
+  const imageInputRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const scrollToBottom = (smooth = false) => {
     const el = messagesContainerRef.current;
@@ -443,17 +450,25 @@ const MessagesResident = () => {
 
   const sendMessage = async (e) => {
     e.preventDefault();
-    if (!messageInput.trim() || !activeChat) return;
+    if ((!messageInput.trim() && !uploadedImage && uploadedFiles.length === 0) || !activeChat) return;
 
     try {
       console.log('📤 Sending group message to chat:', activeChat.id);
+
+      // Determine message type based on attachments
+      let messageType = 'text';
+      if (uploadedImage) messageType = 'image';
+      else if (uploadedFiles.length > 0) messageType = 'file';
+
       const response = await fetchWithAuth(
         `${API_BASE_URL}/api/residents/group-chats/${activeChat.id}/messages`,
         {
           method: 'POST',
           body: JSON.stringify({
             content: messageInput,
-            message_type: 'text'
+            message_type: messageType,
+            image_url: uploadedImage?.url || null,
+            attachments: uploadedFiles.length > 0 ? uploadedFiles : null
           })
         }
       );
@@ -467,6 +482,8 @@ const MessagesResident = () => {
       if (data.success) {
         console.log('✅ Message sent successfully');
         setMessageInput('');
+        setUploadedImage(null);
+        setUploadedFiles([]);
 
         // Optimistically append the sent group message when socket is not connected
         const userId = getCurrentUserId();
@@ -476,6 +493,8 @@ const MessagesResident = () => {
           group_chat_id: activeChat.id,
           sender_id: serverMsg?.sender_id ?? userId,
           content: serverMsg?.content ?? messageInput,
+          image_url: serverMsg?.image_url || uploadedImage?.url || null,
+          attachments: serverMsg?.attachments || (uploadedFiles.length > 0 ? uploadedFiles : null),
           created_at: serverMsg?.created_at || new Date().toISOString(),
           sender_name: serverMsg?.sender_name || null
         };
@@ -486,7 +505,7 @@ const MessagesResident = () => {
         });
 
         // Update group chat preview
-        setGroupChats(prev => prev.map(gc => gc.id === activeChat.id ? { ...gc, last_message: newMsg.content } : gc));
+        setGroupChats(prev => prev.map(gc => gc.id === activeChat.id ? { ...gc, last_message: newMsg.content || '[Attachment]' } : gc));
 
         // ensure view scrolls to the new message
         scrollToBottom(true);
@@ -543,14 +562,18 @@ const MessagesResident = () => {
 
   const sendDMMessage = async (e) => {
     e.preventDefault();
-    if (!messageInput.trim() || !activeDM) return;
+    if ((!messageInput.trim() && !uploadedImage && uploadedFiles.length === 0) || !activeDM) return;
 
     try {
       const response = await fetchWithAuth(
         `${API_BASE_URL}/api/residents/direct-messages/${activeDM.user_id}/messages`,
         {
           method: 'POST',
-          body: JSON.stringify({ message_text: messageInput })
+          body: JSON.stringify({
+            message_text: messageInput,
+            image_url: uploadedImage?.url || null,
+            attachments: uploadedFiles.length > 0 ? uploadedFiles : null
+          })
         }
       );
 
@@ -559,6 +582,8 @@ const MessagesResident = () => {
       const data = await response.json();
       if (data.success) {
         setMessageInput('');
+        setUploadedImage(null);
+        setUploadedFiles([]);
 
         // Build a normalized optimistic message object to ensure sender detection
         const currentUserId = getCurrentUserId();
@@ -569,6 +594,8 @@ const MessagesResident = () => {
           sender_id: serverMsg?.sender_id ?? currentUserId,
           recipient_id: serverMsg?.recipient_id ?? activeDM.user_id,
           message_text: serverMsg?.message_text ?? serverMsg?.content ?? messageInput,
+          image_url: serverMsg?.image_url || uploadedImage?.url || null,
+          attachments: serverMsg?.attachments || (uploadedFiles.length > 0 ? uploadedFiles : null),
           created_at: serverMsg?.created_at || new Date().toISOString(),
           ...serverMsg
         };
@@ -580,7 +607,7 @@ const MessagesResident = () => {
         });
 
         // Update the DM list preview
-        setDirectMessages(prev => prev.map(dm => String(dm.user_id) === String(activeDM.user_id) ? { ...dm, last_message: newMsg.message_text || dm.last_message } : dm));
+        setDirectMessages(prev => prev.map(dm => String(dm.user_id) === String(activeDM.user_id) ? { ...dm, last_message: newMsg.message_text || '[Attachment]' } : dm));
 
         // scroll to newly appended DM
         scrollToBottom(true);
@@ -626,6 +653,152 @@ const MessagesResident = () => {
     setActiveChat(null);
     setActiveDM(null);
     setMessages([]);
+    // Clear any pending uploads when switching tabs
+    setUploadedImage(null);
+    setUploadedFiles([]);
+  };
+
+  // Handle image upload
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    console.log('📷 Attempting to upload image:', file.name);
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Image must be less than 10MB');
+      return;
+    }
+
+    setIsUploadingImage(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const userProfile = JSON.parse(localStorage.getItem('userProfile'));
+      if (!userProfile?.token) {
+        alert('You must be logged in to upload files');
+        return;
+      }
+
+      console.log('📤 Uploading to:', `${API_BASE_URL}/api/messages/upload-attachment`);
+
+      const response = await fetch(`${API_BASE_URL}/api/messages/upload-attachment`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${userProfile.token}`
+        },
+        body: formData
+      });
+
+      console.log('📥 Upload response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Upload failed:', errorText);
+        alert(`Failed to upload image: ${response.statusText}`);
+        return;
+      }
+
+      const data = await response.json();
+      console.log('✅ Upload response:', data);
+
+      if (data.success) {
+        setUploadedImage(data.file);
+        console.log('✅ Image uploaded successfully:', data.file);
+      } else {
+        alert(data.message || 'Failed to upload image');
+      }
+    } catch (error) {
+      console.error('❌ Image upload error:', error);
+      alert(`Failed to upload image: ${error.message}`);
+    } finally {
+      setIsUploadingImage(false);
+      // Reset the input
+      if (imageInputRef.current) {
+        imageInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Handle file upload
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    console.log('📎 Attempting to upload file:', file.name);
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File must be less than 10MB');
+      return;
+    }
+
+    setIsUploadingFile(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const userProfile = JSON.parse(localStorage.getItem('userProfile'));
+      if (!userProfile?.token) {
+        alert('You must be logged in to upload files');
+        return;
+      }
+
+      console.log('📤 Uploading to:', `${API_BASE_URL}/api/messages/upload-attachment`);
+
+      const response = await fetch(`${API_BASE_URL}/api/messages/upload-attachment`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${userProfile.token}`
+        },
+        body: formData
+      });
+
+      console.log('📥 Upload response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Upload failed:', errorText);
+        alert(`Failed to upload file: ${response.statusText}`);
+        return;
+      }
+
+      const data = await response.json();
+      console.log('✅ Upload response:', data);
+
+      if (data.success) {
+        setUploadedFiles(prev => [...prev, data.file]);
+        console.log('✅ File uploaded successfully:', data.file);
+      } else {
+        alert(data.message || 'Failed to upload file');
+      }
+    } catch (error) {
+      console.error('❌ File upload error:', error);
+      alert(`Failed to upload file: ${error.message}`);
+    } finally {
+      setIsUploadingFile(false);
+      // Reset the input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Remove uploaded image
+  const removeUploadedImage = () => {
+    setUploadedImage(null);
+  };
+
+  // Remove uploaded file
+  const removeUploadedFile = (index) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -771,7 +944,32 @@ const MessagesResident = () => {
                           <span className="message-sender-name">{msg.sender_name}</span>
                         )}
                         <div className="message-bubble-resident">
-                          <p className="message-text-resident">{msg.message_text || msg.content || msg.message}</p>
+                          {(msg.message_text || msg.content || msg.message) && (
+                            <p className="message-text-resident">{msg.message_text || msg.content || msg.message}</p>
+                          )}
+                          {msg.image_url && (
+                            <img
+                              src={msg.image_url}
+                              alt="attachment"
+                              className="message-image-resident"
+                              onClick={() => window.open(msg.image_url, '_blank')}
+                            />
+                          )}
+                          {msg.attachments && msg.attachments.length > 0 && (
+                            <div className="message-attachments-resident">
+                              {msg.attachments.map((file, idx) => (
+                                <div
+                                  key={idx}
+                                  className="message-attachment-item"
+                                  onClick={() => window.open(file.url, '_blank')}
+                                >
+                                  <File size={16} />
+                                  <span>{file.fileName}</span>
+                                  <Download size={14} />
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         <span className="message-time-resident">
                           {new Date(msg.created_at).toLocaleTimeString([], {
@@ -801,19 +999,79 @@ const MessagesResident = () => {
 
               {/* Group Chat Input */}
               <div className="chat-input-area-resident">
+                {/* Attachment Previews */}
+                {(uploadedImage || uploadedFiles.length > 0) && (
+                  <div className="attachment-previews-resident">
+                    {uploadedImage && (
+                      <div className="attachment-preview-item">
+                        <ImageIcon size={16} />
+                        <span className="attachment-preview-name">{uploadedImage.fileName}</span>
+                        <button
+                          type="button"
+                          className="attachment-remove-btn"
+                          onClick={removeUploadedImage}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    )}
+                    {uploadedFiles.map((file, idx) => (
+                      <div key={idx} className="attachment-preview-item">
+                        <File size={16} />
+                        <span className="attachment-preview-name">{file.fileName}</span>
+                        <button
+                          type="button"
+                          className="attachment-remove-btn"
+                          onClick={() => removeUploadedFile(idx)}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <form className="message-input-form-resident" onSubmit={sendMessage}>
                   <div className="input-actions-resident">
-                    <button type="button" className="input-action-btn" title="Send image">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                        <circle cx="8.5" cy="8.5" r="1.5"/>
-                        <polyline points="21 15 16 10 5 21"/>
-                      </svg>
+                    <input
+                      type="file"
+                      ref={imageInputRef}
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      style={{ display: 'none' }}
+                    />
+                    <button
+                      type="button"
+                      className="input-action-btn"
+                      title="Send image"
+                      onClick={() => imageInputRef.current?.click()}
+                      disabled={isUploadingImage}
+                    >
+                      {isUploadingImage ? (
+                        <Loader2 size={20} className="spinning" />
+                      ) : (
+                        <ImageIcon size={20} />
+                      )}
                     </button>
-                    <button type="button" className="input-action-btn" title="Attach file">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
-                      </svg>
+
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      style={{ display: 'none' }}
+                    />
+                    <button
+                      type="button"
+                      className="input-action-btn"
+                      title="Attach file"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingFile}
+                    >
+                      {isUploadingFile ? (
+                        <Loader2 size={20} className="spinning" />
+                      ) : (
+                        <Paperclip size={20} />
+                      )}
                     </button>
                   </div>
                   <input
@@ -824,7 +1082,11 @@ const MessagesResident = () => {
                     onKeyDown={handleTyping}
                     className="message-input-resident"
                   />
-                  <button type="submit" className="send-btn-resident" disabled={!messageInput.trim()}>
+                  <button
+                    type="submit"
+                    className="send-btn-resident"
+                    disabled={!messageInput.trim() && !uploadedImage && uploadedFiles.length === 0}
+                  >
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                     </svg>
@@ -871,7 +1133,32 @@ const MessagesResident = () => {
                     return (
                       <div key={msg.id} className={`message-wrapper-resident ${isOwn ? 'sent' : 'received'}`}>
                         <div className="message-bubble-resident">
-                          <p className="message-text-resident">{msg.message_text || msg.content || msg.message}</p>
+                          {(msg.message_text || msg.content || msg.message) && (
+                            <p className="message-text-resident">{msg.message_text || msg.content || msg.message}</p>
+                          )}
+                          {msg.image_url && (
+                            <img
+                              src={msg.image_url}
+                              alt="attachment"
+                              className="message-image-resident"
+                              onClick={() => window.open(msg.image_url, '_blank')}
+                            />
+                          )}
+                          {msg.attachments && msg.attachments.length > 0 && (
+                            <div className="message-attachments-resident">
+                              {msg.attachments.map((file, idx) => (
+                                <div
+                                  key={idx}
+                                  className="message-attachment-item"
+                                  onClick={() => window.open(file.url, '_blank')}
+                                >
+                                  <File size={16} />
+                                  <span>{file.fileName}</span>
+                                  <Download size={14} />
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         <span className="message-time-resident">
                           {new Date(msg.created_at).toLocaleTimeString([], {
@@ -890,19 +1177,79 @@ const MessagesResident = () => {
 
               {/* DM Input */}
               <div className="chat-input-area-resident">
+                {/* Attachment Previews */}
+                {(uploadedImage || uploadedFiles.length > 0) && (
+                  <div className="attachment-previews-resident">
+                    {uploadedImage && (
+                      <div className="attachment-preview-item">
+                        <ImageIcon size={16} />
+                        <span className="attachment-preview-name">{uploadedImage.fileName}</span>
+                        <button
+                          type="button"
+                          className="attachment-remove-btn"
+                          onClick={removeUploadedImage}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    )}
+                    {uploadedFiles.map((file, idx) => (
+                      <div key={idx} className="attachment-preview-item">
+                        <File size={16} />
+                        <span className="attachment-preview-name">{file.fileName}</span>
+                        <button
+                          type="button"
+                          className="attachment-remove-btn"
+                          onClick={() => removeUploadedFile(idx)}
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <form className="message-input-form-resident" onSubmit={sendDMMessage}>
                   <div className="input-actions-resident">
-                    <button type="button" className="input-action-btn" title="Send image">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                        <circle cx="8.5" cy="8.5" r="1.5"/>
-                        <polyline points="21 15 16 10 5 21"/>
-                      </svg>
+                    <input
+                      type="file"
+                      ref={imageInputRef}
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      style={{ display: 'none' }}
+                    />
+                    <button
+                      type="button"
+                      className="input-action-btn"
+                      title="Send image"
+                      onClick={() => imageInputRef.current?.click()}
+                      disabled={isUploadingImage}
+                    >
+                      {isUploadingImage ? (
+                        <Loader2 size={20} className="spinning" />
+                      ) : (
+                        <ImageIcon size={20} />
+                      )}
                     </button>
-                    <button type="button" className="input-action-btn" title="Attach file">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
-                      </svg>
+
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      style={{ display: 'none' }}
+                    />
+                    <button
+                      type="button"
+                      className="input-action-btn"
+                      title="Attach file"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingFile}
+                    >
+                      {isUploadingFile ? (
+                        <Loader2 size={20} className="spinning" />
+                      ) : (
+                        <Paperclip size={20} />
+                      )}
                     </button>
                   </div>
                   <input
@@ -912,7 +1259,11 @@ const MessagesResident = () => {
                     onChange={(e) => setMessageInput(e.target.value)}
                     className="message-input-resident"
                   />
-                  <button type="submit" className="send-btn-resident" disabled={!messageInput.trim()}>
+                  <button
+                    type="submit"
+                    className="send-btn-resident"
+                    disabled={!messageInput.trim() && !uploadedImage && uploadedFiles.length === 0}
+                  >
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                     </svg>
