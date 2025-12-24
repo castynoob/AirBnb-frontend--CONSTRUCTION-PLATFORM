@@ -49,6 +49,7 @@ function MessagesNew() {
   const [showMobileChat, setShowMobileChat] = useState(false);
   const [userFilter, setUserFilter] = useState("all"); // "all", "resident", "entrepreneur"
   const [showJobInfo, setShowJobInfo] = useState(false); // Toggle for job/bid info dropdown
+  const [isLoadingJobInfo, setIsLoadingJobInfo] = useState(false); // Loading state for job details
 
   const currentUserId = localStorage.getItem("userId");
   const messagesEndRef = useRef(null);
@@ -78,18 +79,38 @@ function MessagesNew() {
       const targetReceiverId = localStorage.getItem("targetReceiverId");
       const targetReceiverName = localStorage.getItem("targetReceiverName");
       const targetJobId = localStorage.getItem("targetJobId");
+      const targetCompanyName = localStorage.getItem("targetCompanyName");
 
       if (targetReceiverId) {
-        console.log("🎯 Initializing conversation with:", targetReceiverId);
+        console.log("🎯 Initializing conversation with:", targetReceiverId, "for job:", targetJobId);
 
-        // Check if conversation already exists
-        const existingConv = conversations.find(
-          (conv) => conv.other_user_id === targetReceiverId
-        );
+        // Check if conversation already exists for this specific user AND job
+        let existingConv = null;
+
+        if (targetJobId) {
+          // First try to find conversation with matching job_id
+          existingConv = conversations.find(
+            (conv) => conv.other_user_id === targetReceiverId && String(conv.job_id) === String(targetJobId)
+          );
+        }
+
+        // If no job-specific conversation found, look for any conversation with this user
+        if (!existingConv) {
+          existingConv = conversations.find(
+            (conv) => conv.other_user_id === targetReceiverId
+          );
+        }
 
         if (existingConv) {
-          console.log("✅ Found existing conversation:", existingConv.id);
-          setSelectedChat(existingConv);
+          console.log("✅ Found existing conversation:", existingConv.id, "with job_id:", existingConv.job_id);
+          // If existing conv doesn't have job_id but we have targetJobId, add it
+          // Also add company_name if provided
+          const convWithJob = {
+            ...existingConv,
+            job_id: existingConv.job_id || targetJobId,
+            company_name: existingConv.company_name || targetCompanyName,
+          };
+          setSelectedChat(convWithJob);
           setShowMobileChat(true);
         } else {
           console.log("🆕 Creating new conversation");
@@ -99,6 +120,7 @@ function MessagesNew() {
             other_user_id: targetReceiverId, // Keep as string (UUID)
             other_user_name: targetReceiverName || "Entrepreneur",
             other_user_role: "entrepreneur",
+            company_name: targetCompanyName || null,
             last_message: null,
             last_message_time: new Date().toISOString(),
             unread_count: 0,
@@ -112,6 +134,7 @@ function MessagesNew() {
         localStorage.removeItem("targetReceiverId");
         localStorage.removeItem("targetReceiverName");
         localStorage.removeItem("targetJobId");
+        localStorage.removeItem("targetCompanyName");
       }
     };
 
@@ -265,9 +288,92 @@ function MessagesNew() {
     setMessages([]);
   };
 
+  // Fetch job details and bid info for a conversation if missing
+  const fetchJobDetails = async (jobId, otherUserId) => {
+    try {
+      const token = getAuthToken();
+      if (!token) return null;
+
+      // Fetch job details directly from jobs endpoint
+      const jobResponse = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      let jobDetails = {};
+      if (jobResponse.ok) {
+        const data = await jobResponse.json();
+        jobDetails = {
+          job_title: data.title,
+          job_category: data.category,
+          job_description: data.description,
+          job_budget_min: data.budget_min,
+          job_budget_max: data.budget_max,
+          job_due_date: data.due_date,
+          job_property_address: data.property_address,
+          job_city: data.city,
+        };
+      }
+
+      // Also fetch the bid for this job by this entrepreneur
+      if (otherUserId) {
+        try {
+          const bidsResponse = await fetch(`${API_BASE_URL}/api/bids/job/${jobId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (bidsResponse.ok) {
+            const bidsData = await bidsResponse.json();
+            // Find the bid from the entrepreneur we're chatting with
+            const relevantBid = bidsData.bids?.find(bid =>
+              bid.entrepreneur_id === otherUserId || bid.user_id === otherUserId
+            );
+
+            if (relevantBid) {
+              jobDetails.bid_id = relevantBid.id;
+              jobDetails.bid_amount = relevantBid.amount || relevantBid.bid_amount;
+              jobDetails.bid_message = relevantBid.message || relevantBid.bid_message;
+              jobDetails.bid_status = relevantBid.status;
+              jobDetails.bid_created_at = relevantBid.created_at;
+            }
+          }
+        } catch (bidError) {
+          console.error("Error fetching bid details:", bidError);
+        }
+      }
+
+      return Object.keys(jobDetails).length > 0 ? jobDetails : null;
+    } catch (error) {
+      console.error("Error fetching job details:", error);
+      return null;
+    }
+  };
+
   // Load messages when chat selected
   useEffect(() => {
     if (selectedChat) {
+      // If conversation has job_id but missing job details, fetch them (works for both new and existing conversations)
+      if (selectedChat.job_id && !selectedChat.job_title) {
+        console.log('📋 Fetching job details for job_id:', selectedChat.job_id, 'other_user_id:', selectedChat.other_user_id);
+        setIsLoadingJobInfo(true);
+        fetchJobDetails(selectedChat.job_id, selectedChat.other_user_id).then(jobDetails => {
+          if (jobDetails) {
+            setSelectedChat(prev => ({
+              ...prev,
+              ...jobDetails
+            }));
+          }
+          setIsLoadingJobInfo(false);
+        }).catch(() => {
+          setIsLoadingJobInfo(false);
+        });
+      }
+
       // All conversations now use the unified messages table
       if (selectedChat.id) {
         loadMessages(selectedChat.id);
@@ -899,7 +1005,7 @@ function MessagesNew() {
                 <div className="chat-header-info">
                   <h3 className="chat-header-name">{selectedChat.other_user_name}</h3>
                   <p className="chat-header-role">
-                    {formatUserRole(selectedChat.other_user_role)}
+                    {selectedChat.company_name || formatUserRole(selectedChat.other_user_role)}
                   </p>
                 </div>
                 <button className="chat-header-call-btn" title="Call">
@@ -917,7 +1023,7 @@ function MessagesNew() {
                     <div className="job-info-preview">
                       <Briefcase size={16} />
                       <span className="job-info-title">
-                        {selectedChat.job_title || "Job Details"}
+                        {isLoadingJobInfo ? "Loading..." : (selectedChat.job_title || "Job Details")}
                       </span>
                       {selectedChat.bid_status && (
                         <span className={`job-info-badge ${selectedChat.bid_status}`}>
@@ -930,6 +1036,13 @@ function MessagesNew() {
 
                   {showJobInfo && (
                     <div className="job-info-details">
+                      {isLoadingJobInfo ? (
+                        <div className="job-info-loading">
+                          <Loader2 size={20} className="spinning" />
+                          <span>Loading job details...</span>
+                        </div>
+                      ) : (
+                      <>
                       {/* Job Information */}
                       <div className="job-info-section">
                         <h4 className="job-info-section-title">Job Details</h4>
@@ -1005,6 +1118,8 @@ function MessagesNew() {
                             </div>
                           )}
                         </div>
+                      )}
+                      </>
                       )}
                     </div>
                   )}

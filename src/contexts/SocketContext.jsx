@@ -24,7 +24,11 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
   const { showNotification, requestPermission } = useNotifications();
+
+  // Track if we've already shown login toasts (to avoid showing on every reconnect)
+  const hasShownLoginToastsRef = useRef(false);
 
   // Use refs to avoid stale closures in socket listeners
   const showNotificationRef = useRef(showNotification);
@@ -36,6 +40,166 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     requestPermission();
   }, []);
+
+  // Fetch notifications from backend API
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const userProfile = localStorage.getItem("userProfile");
+      if (!userProfile) return;
+
+      const user = JSON.parse(userProfile);
+      const token = user?.token;
+      if (!token) return;
+
+      setIsLoadingNotifications(true);
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+      const response = await fetch(`${apiUrl}/api/notifications`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Transform backend notifications to match our format
+        const formattedNotifications = (data.notifications || []).map(n => ({
+          id: n.id,
+          read: n.is_read || n.read || false,
+          timestamp: n.created_at || n.timestamp,
+          type: n.type,
+          // Message notification fields
+          senderName: n.sender_name || n.senderName,
+          senderId: n.sender_id || n.senderId,
+          content: n.content || n.message,
+          conversationId: n.conversation_id || n.conversationId,
+          // Bid notification fields
+          bidder: n.bidder_name || n.bidder,
+          bidderId: n.bidder_id || n.bidderId,
+          jobId: n.job_id || n.jobId,
+          jobTitle: n.job_title || n.jobTitle,
+          property: n.property_name || n.property,
+          apartment: n.unit_name || n.apartment,
+          budget: n.bid_amount || n.budget,
+          licenseNumber: n.license_number || n.licenseNumber,
+          submissionDate: n.submission_date || n.submissionDate,
+          // Job started/completed fields
+          contractor: n.contractor_name || n.contractor,
+          contractorId: n.contractor_id || n.contractorId,
+          workTitle: n.work_title || n.workTitle,
+          startDate: n.start_date || n.startDate,
+          completionDate: n.completion_date || n.completionDate,
+        }));
+
+        setNotifications(formattedNotifications);
+        console.log("📥 Loaded", formattedNotifications.length, "notifications from backend");
+
+        // Show toast + sound for unread notifications received while offline
+        // Only show once per session (not on every reconnect) and only for property managers
+        const unreadNotifications = formattedNotifications.filter(n => !n.read);
+        const userRole = user?.role;
+
+        console.log("🔔 Notification check:", {
+          unreadCount: unreadNotifications.length,
+          userRole,
+          hasShownBefore: hasShownLoginToastsRef.current,
+          shouldShowToast: unreadNotifications.length > 0 && !hasShownLoginToastsRef.current && userRole === 'property_manager'
+        });
+
+        if (unreadNotifications.length > 0 && !hasShownLoginToastsRef.current && userRole === 'property_manager') {
+          hasShownLoginToastsRef.current = true; // Mark as shown
+
+          // Play sound once for all unread notifications
+          playNotificationSound();
+
+          // Show a summary toast if there are multiple unread
+          if (unreadNotifications.length > 3) {
+            toast.success(
+              `You have ${unreadNotifications.length} unread notifications`,
+              {
+                duration: 5000,
+                icon: '🔔',
+                style: {
+                  borderRadius: '10px',
+                  background: '#333',
+                  color: '#fff',
+                },
+              }
+            );
+          } else {
+            // Show individual toasts for up to 3 unread notifications
+            unreadNotifications.slice(0, 3).forEach((notif, index) => {
+              setTimeout(() => {
+                if (notif.type === 'bid') {
+                  toast.success(
+                    `New bid from ${notif.bidder || 'A contractor'}`,
+                    {
+                      duration: 5000,
+                      icon: '📋',
+                      style: {
+                        borderRadius: '10px',
+                        background: '#333',
+                        color: '#fff',
+                      },
+                    }
+                  );
+                } else if (notif.type === 'message') {
+                  toast.success(
+                    `New message from ${notif.senderName || 'Someone'}`,
+                    {
+                      duration: 5000,
+                      icon: '💬',
+                      style: {
+                        borderRadius: '10px',
+                        background: '#333',
+                        color: '#fff',
+                      },
+                    }
+                  );
+                } else if (notif.type === 'started') {
+                  toast.success(
+                    `${notif.contractor || 'Contractor'} started work`,
+                    {
+                      duration: 5000,
+                      icon: '🔨',
+                      style: {
+                        borderRadius: '10px',
+                        background: '#333',
+                        color: '#fff',
+                      },
+                    }
+                  );
+                } else if (notif.type === 'completed') {
+                  toast.success(
+                    `${notif.contractor || 'Contractor'} completed work`,
+                    {
+                      duration: 5000,
+                      icon: '✅',
+                      style: {
+                        borderRadius: '10px',
+                        background: '#333',
+                        color: '#fff',
+                      },
+                    }
+                  );
+                }
+              }, index * 500); // Stagger toasts by 500ms
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    } finally {
+      setIsLoadingNotifications(false);
+    }
+  }, []);
+
+  // Load notifications when component mounts (user logs in)
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   // Add a new notification to the list - using direct setState to avoid stale closure
   const addNotificationDirect = (notification) => {
@@ -54,16 +218,56 @@ export const SocketProvider = ({ children }) => {
     return addNotificationDirect(notification);
   }, []);
 
-  // Mark notification as read
-  const markAsRead = useCallback((notificationId) => {
+  // Mark notification as read (also sync to backend)
+  const markAsRead = useCallback(async (notificationId) => {
     setNotifications(prev =>
       prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
     );
+
+    // Sync to backend
+    try {
+      const userProfile = localStorage.getItem("userProfile");
+      if (!userProfile) return;
+      const user = JSON.parse(userProfile);
+      const token = user?.token;
+      if (!token) return;
+
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:5000";
+      await fetch(`${apiUrl}/api/notifications/${notificationId}/read`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
   }, []);
 
-  // Mark all notifications as read
-  const markAllAsRead = useCallback(() => {
+  // Mark all notifications as read (also sync to backend)
+  const markAllAsRead = useCallback(async () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+
+    // Sync to backend
+    try {
+      const userProfile = localStorage.getItem("userProfile");
+      if (!userProfile) return;
+      const user = JSON.parse(userProfile);
+      const token = user?.token;
+      if (!token) return;
+
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || "http://localhost:5000";
+      await fetch(`${apiUrl}/api/notifications/read-all`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+    }
   }, []);
 
   // Clear all notifications
@@ -116,6 +320,9 @@ export const SocketProvider = ({ children }) => {
       console.log("✅ Socket connected:", newSocket.id);
       console.log("✅ Socket transport:", newSocket.io.engine.transport.name);
       setIsConnected(true);
+
+      // Fetch notifications when socket connects (user logged in)
+      fetchNotifications();
     });
 
     newSocket.on("connect_error", (error) => {
@@ -346,7 +553,7 @@ export const SocketProvider = ({ children }) => {
       newSocket.disconnect();
       setIsConnected(false);
     };
-  }, []);
+  }, [fetchNotifications]);
 
   return (
     <SocketContext.Provider value={{
@@ -354,10 +561,12 @@ export const SocketProvider = ({ children }) => {
       isConnected,
       notifications,
       unreadCount,
+      isLoadingNotifications,
       addNotification,
       markAsRead,
       markAllAsRead,
       clearNotifications,
+      fetchNotifications,
     }}>
       {children}
     </SocketContext.Provider>

@@ -724,7 +724,7 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
             <div className="pm-header-left">
               <div className="pm-header-title-group">
                 <h1>TRAVAUX</h1>
-                <span className="pm-project-count">0 active</span>
+                <span className="pm-project-count">0 active jobs</span>
               </div>
             </div>
             <div className="pm-header-actions">
@@ -733,8 +733,10 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                 <input
                   type="text"
                   placeholder="Search jobs..."
+                  value=""
                   className="pm-search-input"
                   disabled
+                  readOnly
                 />
               </div>
 
@@ -809,7 +811,7 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
           <div className="pm-header-left">
             <div className="pm-header-title-group">
               <h1>TRAVAUX</h1>
-              <span className="pm-project-count">{properties.length} active</span>
+              <span className="pm-project-count">{properties.length} active jobs</span>
             </div>
           </div>
           <div className="pm-header-actions">
