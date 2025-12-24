@@ -196,10 +196,9 @@ export const SocketProvider = ({ children }) => {
     }
   }, []);
 
-  // Load notifications when component mounts (user logs in)
-  useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
+  // NOTE: We don't fetch notifications on mount anymore
+  // Notifications are fetched when socket connects (which only happens when user is logged in)
+  // This prevents toasts from appearing on the landing page
 
   // Add a new notification to the list - using direct setState to avoid stale closure
   const addNotificationDirect = (notification) => {
@@ -283,9 +282,11 @@ export const SocketProvider = ({ children }) => {
 
     // ✅ Skip socket setup if no profile or no token
     if (!userProfile) {
-      console.log("�� No userProfile found — socket not initialized");
+      console.log("⚠️ No userProfile found — socket not initialized");
       setSocket(null);
       setIsConnected(false);
+      setNotifications([]); // Clear notifications when logged out
+      hasShownLoginToastsRef.current = false; // Reset toast flag for next login
       return;
     }
 
@@ -296,6 +297,8 @@ export const SocketProvider = ({ children }) => {
       console.log("⚠️ No token found — socket not initialized");
       setSocket(null);
       setIsConnected(false);
+      setNotifications([]); // Clear notifications when logged out
+      hasShownLoginToastsRef.current = false; // Reset toast flag for next login
       return;
     }
 
