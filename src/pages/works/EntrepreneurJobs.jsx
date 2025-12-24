@@ -1,10 +1,24 @@
-
 import { useEffect, useState } from "react"
-import "../../styles/entrepreneur/entrepreneurjobs.css"
+import { useNavigate } from "react-router-dom"
+import "../../styles/manager/submissions.css"
 import Nav from "../../components/Nav"
-import { FaSearch, FaTimes } from "react-icons/fa"
+import {
+  Search,
+  X,
+  FileText,
+  Calendar,
+  DollarSign,
+  Clock,
+  Star,
+  Building2,
+  PlayCircle,
+  CheckCircle,
+  FolderOpen,
+  MessageSquare,
+} from "lucide-react"
 
 function EntrepreneurJobs() {
+  const navigate = useNavigate()
   const [jobs, setJobs] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeStatus, setActiveStatus] = useState("accepted")
@@ -292,6 +306,40 @@ function EntrepreneurJobs() {
     setShowReviewModal(true)
   }
 
+  const handleChatManager = async (job) => {
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+      // Fetch job details to get manager info
+      const jobResponse = await fetch(`${API_BASE_URL}/api/jobs/${job.id}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${userProfile.token}`
+        }
+      })
+
+      if (!jobResponse.ok) {
+        throw new Error('Error fetching job details')
+      }
+
+      const data = await jobResponse.json()
+      const managerId = data.manager_user_id || data.manager_id
+
+      if (!managerId || managerId === userProfile.id) {
+        alert("Error: Cannot find property manager for this job")
+        return
+      }
+
+      localStorage.setItem("targetReceiverId", managerId)
+      localStorage.setItem("targetReceiverName", data.manager_name || "Property Manager")
+      if (data.id) localStorage.setItem("targetJobId", data.id)
+      navigate('/messages/entrepreneur')
+    } catch (err) {
+      console.error('Error navigating to messages:', err)
+      alert('Failed to open messages. Please try again.')
+    }
+  }
+
   const handleViewDetails = (job) => {
     setDetailsJob(job);
     setShowDetailsModal(true);
@@ -320,134 +368,166 @@ function EntrepreneurJobs() {
 
   if (isLoading) {
     return (
-      <div className="ej-loading-screen">
+      <div className="subs-submissions-container">
         <Nav />
-        <div className="ej-loading-container">
-          <div className="ej-spinner"></div>
-          <p>Loading projects...</p>
+        <div className="subs-submissions-content">
+          <div className="subs-loading-state">
+            <div className="subs-spinner"></div>
+            <p>Loading projects...</p>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="ej-container">
+    <div className="subs-submissions-container">
       <Nav />
-      <div className="ej-content">
+      <div className="subs-submissions-content">
         {/* Page Header */}
-        <div className="ej-page-header">
-          <div>
-            <h1 className="ej-page-title">My Projects</h1>
-            <p className="ej-page-subtitle">Track and manage your active projects</p>
-          </div>
-          <div className="ej-header-stats">
-            <div className="ej-stat-chip">
-              <span className="ej-stat-label">Total</span>
-              <span className="ej-stat-value">{jobs.length}</span>
-            </div>
-            <div className="ej-stat-chip ej-stat-active">
-              <span className="ej-stat-label">Active</span>
-              <span className="ej-stat-value">{jobs.filter((j) => j.status === "ongoing").length}</span>
+        <header className="subs-page-header">
+          <div className="subs-header-left">
+            <div className="subs-header-title-group">
+              <h1>MY PROJECTS</h1>
+              <span className="subs-submission-count">{jobs.length} projects</span>
             </div>
           </div>
-        </div>
+          <div className="subs-header-actions">
+            <div className="subs-btn subs-btn-secondary">
+              <PlayCircle size={18} />
+              <span>{jobs.filter((j) => j.status === "ongoing").length} Active</span>
+            </div>
+          </div>
+        </header>
 
         {/* Tabs */}
-        <div className="ej-tabs-container">
+        <div className="subs-tabs-container">
           {["accepted", "ongoing", "completed"].map((status) => (
             <button
               key={status}
-              className={`ej-tab-btn ${activeStatus === status ? "active" : ""}`}
+              className={`subs-tab-btn ${activeStatus === status ? "active" : ""}`}
               onClick={() => setActiveStatus(status)}
             >
               {status.charAt(0).toUpperCase() + status.slice(1)}
-              <span className="ej-tab-count">{getStatusCount(status)}</span>
+              <span className="subs-tab-count">{getStatusCount(status)}</span>
             </button>
           ))}
         </div>
 
         {/* Search Bar */}
-        <div className="ej-search-box">
-          <FaSearch size={16} />
-          <input
-            type="text"
-            placeholder="Search projects..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          {searchTerm && (
-            <button className="ej-clear-btn" onClick={() => setSearchTerm("")}>
-              <FaTimes size={14} />
-            </button>
-          )}
+        <div className="subs-controls-bar">
+          <div className="subs-search-box">
+            <Search size={18} />
+            <input
+              type="text"
+              placeholder="Search projects..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button className="subs-clear-btn" onClick={() => setSearchTerm("")}>
+                <X size={16} />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Jobs Grid */}
         {filteredJobs.length === 0 ? (
-          <div className="ej-empty-state">
-            <p>No {activeStatus} projects found.</p>
+          <div className="subs-empty-state">
+            <FileText size={48} />
+            <h3>No {activeStatus} projects found</h3>
+            <p>Try adjusting your search or check other tabs</p>
           </div>
         ) : (
-          <div className="ej-jobs-grid">
+          <div className="subs-bids-grid">
             {filteredJobs.map((job) => {
+              const getStatusInfo = (status) => {
+                const statusMap = {
+                  accepted: { class: "status-accepted", icon: CheckCircle, label: "Accepted" },
+                  ongoing: { class: "status-ongoing", icon: PlayCircle, label: "Ongoing" },
+                  completed: { class: "status-completed", icon: CheckCircle, label: "Completed" },
+                }
+                return statusMap[status] || { class: "status-open", icon: FolderOpen, label: status }
+              }
+              const statusInfo = getStatusInfo(job.status)
+              const StatusIcon = statusInfo.icon
+
               return (
-                <div className="ej-job-card" key={job.id}>
-                  {/* Card Header */}
-                  <div className="ej-card-header">
-                    <div className={`ej-status-badge ej-status-${job.status}`}>
-                      {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+                <div className="subs-bid-card" key={job.id} onClick={() => handleViewDetails(job)}>
+                  {/* Top Row: Status + Category */}
+                  <div className="subs-card-top">
+                    <div className={`subs-status-badge-subs ${statusInfo.class}`}>
+                      <StatusIcon size={12} />
+                      {statusInfo.label}
                     </div>
-                    <span className="ej-job-category">{job.category}</span>
+                    <div className="subs-card-top-right">
+                      {job.is_emergency && (
+                        <span className="subs-urgency urgent">Urgent</span>
+                      )}
+                      <span className="subs-bid-amount">{job.category}</span>
+                    </div>
                   </div>
 
                   {/* Job Title */}
-                  <h3 className="ej-job-title">{job.title}</h3>
+                  <h3 className="subs-job-title">{job.title}</h3>
 
-                  {/* Job Description */}
-                  <p className="ej-job-description">{job.description}</p>
-
-                  {/* Quick Info */}
-                  <div className="ej-quick-info">
-                    <div className="ej-info-item">
-                      <span className="ej-info-label">Due Date</span>
-                      <span className="ej-info-value">{formatDate(job.due_date)}</span>
+                  {/* Info Row */}
+                  <div className="subs-card-info">
+                    <div className="subs-info-item">
+                      <Calendar size={12} />
+                      <span>Due: {formatDate(job.due_date)}</span>
                     </div>
+                    {job.budget_min && job.budget_max && (
+                      <div className="subs-info-item">
+                        <DollarSign size={12} />
+                        <span>{formatCurrency(job.budget_min)} - {formatCurrency(job.budget_max)}</span>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Card Footer with Actions */}
-                  <div className="ej-card-footer">
-                    <button className="ej-btn ej-btn-details" onClick={() => handleViewDetails(job)}>
-                      View Details
+                  {/* Action Row */}
+                  <div className="subs-card-actions">
+                    <button className="subs-expand-btn" onClick={(e) => { e.stopPropagation(); handleViewDetails(job); }}>
+                      <FileText size={14} />
                     </button>
-                    <div className="ej-action-buttons">
-                      {job.status === "accepted" && (
-                        <button className="ej-btn ej-btn-primary" onClick={() => openModal(job, "start")}>
-                          Start Project
-                        </button>
-                      )}
 
-                      {job.status === "ongoing" && (
-                        <button className="ej-btn ej-btn-success" onClick={() => openModal(job, "done")}>
-                          Mark as Done
-                        </button>
-                      )}
+                    {/* Chat button - always visible */}
+                    <button className="subs-chat-btn" onClick={(e) => { e.stopPropagation(); handleChatManager(job); }}>
+                      <MessageSquare size={14} />
+                    </button>
 
-                      {job.status === "completed" && (
-                        <button
-                          className="ej-btn ej-btn-secondary"
-                          onClick={() => {
-                            setSelectedJob(job)
-                            if (job.review.length === 0) {
-                              setOpenReviewModal(true)
-                            } else {
-                              getJobInformation(job)
-                            }
-                          }}
-                        >
-                          {job.review.length !== 0 ? "View Review" : "Add Review"}
-                        </button>
-                      )}
-                    </div>
+                    {job.status === "accepted" && (
+                      <button className="subs-accept-btn" onClick={(e) => { e.stopPropagation(); openModal(job, "start"); }}>
+                        <PlayCircle size={14} />
+                        Start
+                      </button>
+                    )}
+
+                    {job.status === "ongoing" && (
+                      <button className="subs-accept-btn" onClick={(e) => { e.stopPropagation(); openModal(job, "done"); }}>
+                        <CheckCircle size={14} />
+                        Done
+                      </button>
+                    )}
+
+                    {job.status === "completed" && (
+                      <button
+                        className="subs-accept-btn"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedJob(job)
+                          if (job.review.length === 0) {
+                            setOpenReviewModal(true)
+                          } else {
+                            getJobInformation(job)
+                          }
+                        }}
+                      >
+                        <Star size={14} />
+                        Review
+                      </button>
+                    )}
                   </div>
                 </div>
               )
@@ -458,20 +538,20 @@ function EntrepreneurJobs() {
 
       {/* Review Modal - Improved UI */}
       {openReviewModal && (
-        <div className="ej-rm-modal-overlay" onClick={() => {
+        <div className="rm-modal-overlay" onClick={() => {
           setOpenReviewModal(false)
           reviewImagePreviews.forEach((url) => URL.revokeObjectURL(url))
           setReviewImagePreviews([])
           setReviewImages([])
         }}>
-          <div className="ej-rm-modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="ej-rm-modal-header">
-              <div className="ej-rm-header-content">
-                <h2 className="ej-rm-modal-title">Leave a Review</h2>
-                <p className="ej-rm-modal-subtitle">{selectedJob?.title}</p>
+          <div className="rm-modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="rm-modal-header">
+              <div className="rm-header-content">
+                <h2 className="rm-modal-title">Leave a Review</h2>
+                <p className="rm-modal-subtitle">{selectedJob?.title}</p>
               </div>
               <button
-                className="ej-rm-close-btn"
+                className="rm-close-btn"
                 onClick={() => {
                   setOpenReviewModal(false)
                   reviewImagePreviews.forEach((url) => URL.revokeObjectURL(url))
@@ -479,74 +559,74 @@ function EntrepreneurJobs() {
                   setReviewImages([])
                 }}
               >
-                <FaTimes size={20} />
+                <X size={20} />
               </button>
             </div>
 
-            <div className="ej-rm-modal-body">
+            <div className="rm-modal-body">
               {/* Rating Section */}
-              <div className="ej-rm-rating-section">
-                <label className="ej-rm-section-label">How would you rate your experience?</label>
-                <div className="ej-rm-stars-container">
+              <div className="rm-rating-section">
+                <label className="rm-section-label">How would you rate your experience?</label>
+                <div className="rm-stars-container">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       type="button"
-                      className={`ej-rm-star-btn ${reviewForm.rating >= star ? 'ej-rm-active' : ''}`}
+                      className={`rm-star-btn ${reviewForm.rating >= star ? 'rm-active' : ''}`}
                       onClick={() => setReviewForm({ ...reviewForm, rating: star })}
                     >
                       ★
                     </button>
                   ))}
-                  <span className="ej-rm-rating-text">{reviewForm.rating}/5</span>
+                  <span className="rm-rating-text">{reviewForm.rating}/5</span>
                 </div>
               </div>
 
               {/* Comment Section */}
-              <div className="ej-rm-comment-section">
-                <label className="ej-rm-section-label">Share your experience</label>
+              <div className="rm-comment-section">
+                <label className="rm-section-label">Share your experience</label>
                 <textarea
-                  className="ej-rm-textarea"
+                  className="rm-textarea"
                   placeholder="Tell us about your experience with this property manager..."
                   value={reviewForm.comment}
                   onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
                   rows={5}
                 />
-                <div className="ej-rm-char-count">
+                <div className="rm-char-count">
                   {reviewForm.comment.length} characters {reviewForm.comment.trim().length < 10 && '(minimum 10)'}
                 </div>
               </div>
 
               {/* Image Upload Section */}
-              <div className="ej-rm-image-section">
-                <label className="ej-rm-section-label">Add photos (optional)</label>
-                <p className="ej-rm-section-hint">Upload up to 5 photos to showcase the work</p>
+              <div className="rm-image-section">
+                <label className="rm-section-label">Add photos (optional)</label>
+                <p className="rm-section-hint">Upload up to 5 photos to showcase the work</p>
 
                 <input
                   type="file"
                   accept="image/*"
                   multiple
                   onChange={handleImageSelect}
-                  className="ej-rm-file-input"
-                  id="ej-rm-review-images"
+                  className="rm-file-input"
+                  id="rm-review-images"
                 />
-                <label htmlFor="ej-rm-review-images" className="ej-rm-upload-btn">
-                  <span>📷</span>
+                <label htmlFor="rm-review-images" className="rm-upload-btn">
+                  <FileText size={18} />
                   <span>Choose Images</span>
                 </label>
 
                 {reviewImagePreviews.length > 0 && (
-                  <div className="ej-rm-image-grid">
+                  <div className="rm-image-grid">
                     {reviewImagePreviews.map((preview, index) => (
-                      <div key={index} className="ej-rm-image-item">
-                        <img src={preview} alt={`Preview ${index + 1}`} className="ej-rm-image-preview" />
+                      <div key={index} className="rm-image-item">
+                        <img src={preview} alt={`Preview ${index + 1}`} className="rm-image-preview" />
                         <button
                           type="button"
-                          className="ej-rm-remove-btn"
+                          className="rm-remove-btn"
                           onClick={() => removeReviewImage(index)}
                           title="Remove image"
                         >
-                          <FaTimes size={16} />
+                          <X size={16} />
                         </button>
                       </div>
                     ))}
@@ -555,9 +635,9 @@ function EntrepreneurJobs() {
               </div>
             </div>
 
-            <div className="ej-rm-modal-footer">
+            <div className="rm-modal-footer">
               <button
-                className="ej-rm-btn ej-rm-btn-cancel"
+                className="rm-btn rm-btn-cancel"
                 onClick={() => {
                   setOpenReviewModal(false)
                   reviewImagePreviews.forEach((url) => URL.revokeObjectURL(url))
@@ -569,18 +649,18 @@ function EntrepreneurJobs() {
                 Cancel
               </button>
               <button
-                className="ej-rm-btn ej-rm-btn-submit"
+                className="rm-btn rm-btn-submit"
                 onClick={handleSubmitReview}
                 disabled={isSubmittingReview || !reviewForm.rating || !reviewForm.comment.trim() || reviewForm.comment.trim().length < 10}
               >
                 {isSubmittingReview ? (
                   <>
-                    <div className="ej-rm-spinner"></div>
+                    <div className="rm-spinner"></div>
                     <span>Submitting...</span>
                   </>
                 ) : (
                   <>
-                    <span>⭐</span>
+                    <Star size={16} />
                     <span>Submit Review</span>
                   </>
                 )}
@@ -592,20 +672,33 @@ function EntrepreneurJobs() {
 
       {/* Confirmation Modal */}
       {modalType && selectedJob && (
-        <div className="ej-modal-overlay" onClick={closeModal}>
-          <div className="ej-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="ej-modal-header">
-              <h3 className="ej-modal-title">
+        <div className="bid-modal-overlay" onClick={closeModal}>
+          <div className="bid-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <div className="bid-modal-header">
+              <h2>
                 {modalType === "start" && "Start this project?"}
                 {modalType === "done" && "Mark this project as completed?"}
-              </h3>
+              </h2>
+              <button className="bid-modal-close" onClick={closeModal}>
+                <X size={24} />
+              </button>
             </div>
-            <p className="ej-modal-body">{selectedJob.title}</p>
-            <div className="ej-modal-footer">
-              <button className="ej-btn ej-btn-outline" onClick={closeModal}>
+            <div className="bid-modal-body">
+              <section className="bid-modal-section">
+                <h3 className="bid-section-title">
+                  <FileText size={20} />
+                  {selectedJob.title}
+                </h3>
+                <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>
+                  {modalType === "start" ? "This will change the project status to ongoing." : "This will mark the project as completed."}
+                </p>
+              </section>
+            </div>
+            <div className="bid-modal-footer">
+              <button className="bid-btn-decline" onClick={closeModal}>
                 Cancel
               </button>
-              <button className="ej-btn ej-btn-primary" onClick={handleConfirmAction}>
+              <button className="bid-btn-accept" onClick={handleConfirmAction} disabled={isConfirming}>
                 {isConfirming ? "Loading..." : "Confirm"}
               </button>
             </div>
@@ -615,89 +708,101 @@ function EntrepreneurJobs() {
 
       {/* View Job Details Modal */}
       {showReviewModal && selectedJob && reviewed != null && (
-        <div className="ej-modal-overlay" onClick={() => setShowReviewModal(false)}>
-          <div className="ej-modal ej-modal-large" onClick={(e) => e.stopPropagation()}>
-            <div className="ej-modal-header">
-              <h2 className="ej-modal-title">{selectedJob.title}</h2>
-              <button className="ej-modal-close" onClick={() => setShowReviewModal(false)}>
-                ✕
+        <div className="bid-modal-overlay" onClick={() => setShowReviewModal(false)}>
+          <div className="bid-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="bid-modal-header">
+              <h2>{selectedJob.title}</h2>
+              <button className="bid-modal-close" onClick={() => setShowReviewModal(false)}>
+                <X size={24} />
               </button>
             </div>
 
-            <div className="ej-modal-body">
-              <div className="ej-details-section">
-                <h4 className="ej-section-title">Project Details</h4>
-                <div className="ej-detail-field">
-                  <span className="ej-detail-label">Category</span>
-                  <span className="ej-detail-value">{selectedJob.category}</span>
-                </div>
-                <div className="ej-detail-field">
-                  <span className="ej-detail-label">Due Date</span>
-                  <span className="ej-detail-value">{formatDate(selectedJob.due_date)}</span>
-                </div>
-                {selectedJob.budget_min && selectedJob.budget_max && (
-                  <div className="ej-detail-field">
-                    <span className="ej-detail-label">Budget Range</span>
-                    <span className="ej-detail-value">
-                      {formatCurrency(selectedJob.budget_min)} - {formatCurrency(selectedJob.budget_max)}
-                    </span>
+            <div className="bid-modal-body">
+              <section className="bid-modal-section">
+                <h3 className="bid-section-title">
+                  <FileText size={20} />
+                  Project Details
+                </h3>
+                <div className="bid-info-grid">
+                  <div className="bid-info-item">
+                    <label>Category</label>
+                    <p>{selectedJob.category}</p>
                   </div>
-                )}
-              </div>
+                  <div className="bid-info-item">
+                    <label><Calendar size={14} /> Due Date</label>
+                    <p>{formatDate(selectedJob.due_date)}</p>
+                  </div>
+                  {selectedJob.budget_min && selectedJob.budget_max && (
+                    <div className="bid-info-item">
+                      <label><DollarSign size={14} /> Budget Range</label>
+                      <p>{formatCurrency(selectedJob.budget_min)} - {formatCurrency(selectedJob.budget_max)}</p>
+                    </div>
+                  )}
+                </div>
+              </section>
 
-              <div className="ej-details-section">
-                <h4 className="ej-section-title">Property Manager</h4>
-                <div className="ej-detail-field">
-                  <span className="ej-detail-label">Company</span>
-                  <span className="ej-detail-value">{manager.company_name}</span>
+              <section className="bid-modal-section">
+                <h3 className="bid-section-title">
+                  <Building2 size={20} />
+                  Property Manager
+                </h3>
+                <div className="bid-info-grid">
+                  <div className="bid-info-item">
+                    <label>Company</label>
+                    <p>{manager.company_name}</p>
+                  </div>
+                  <div className="bid-info-item">
+                    <label>Address</label>
+                    <p>{manager.address}</p>
+                  </div>
                 </div>
-                <div className="ej-detail-field">
-                  <span className="ej-detail-label">Address</span>
-                  <span className="ej-detail-value">{manager.address}</span>
-                </div>
-              </div>
+              </section>
 
               {reviewed && reviewed.length > 0 && (
-                <div className="ej-details-section">
-                  <h4 className="ej-section-title">Your Review</h4>
-                  <div className="ej-review-rating">
-                    {[...Array(reviewed[0].rating)].map((_, i) => (
-                      <span key={i} className="ej-star">
-                        ★
-                      </span>
-                    ))}
-                    {[...Array(5 - reviewed[0].rating)].map((_, i) => (
-                      <span key={i} className="ej-star inactive">
-                        ★
-                      </span>
-                    ))}
+                <section className="bid-modal-section bid-modal-highlight">
+                  <h3 className="bid-section-title">
+                    <Star size={20} />
+                    Your Review
+                  </h3>
+                  <div className="bid-rating-display">
+                    <div className="bid-rating-stars">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          size={24}
+                          fill={i < reviewed[0].rating ? "#facc15" : "none"}
+                          stroke="#facc15"
+                        />
+                      ))}
+                    </div>
+                    <p className="bid-rating-text">{reviewed[0].rating} out of 5 stars</p>
                   </div>
-                  <p className="ej-review-comment">"{reviewed[0].comment}"</p>
-                  <div className="ej-review-by">
+                  <div className="bid-message">
+                    <label>Comment</label>
+                    <p>"{reviewed[0].comment}"</p>
+                  </div>
+                  <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.5rem' }}>
                     — {reviewed[0].reviewer_first_name} {reviewed[0].reviewer_last_name}
-                  </div>
+                  </p>
 
                   {/* Display attached images */}
                   {reviewed[0].images && reviewed[0].images.length > 0 && (
-                    <div className="ej-review-images-section">
-                      <label className="ej-image-label">
-                        Attached Photos ({reviewed[0].images.length}):
-                      </label>
-                      <div className="ej-image-previews">
+                    <div className="review-images-section" style={{ marginTop: '1rem' }}>
+                      <label>Attached Photos ({reviewed[0].images.length}):</label>
+                      <div className="review-images-grid">
                         {reviewed[0].images.map((image, index) => (
-                          <div key={index} className="ej-image-preview">
+                          <div key={index} className="review-image-item">
                             <img
                               src={image.image_url}
                               alt={`Review ${index + 1}`}
                               onClick={() => window.open(image.image_url, "_blank")}
-                              style={{ cursor: "pointer" }}
                             />
                           </div>
                         ))}
                       </div>
                     </div>
                   )}
-                </div>
+                </section>
               )}
             </div>
           </div>
@@ -706,90 +811,103 @@ function EntrepreneurJobs() {
 
       {/* Project Details Modal */}
       {showDetailsModal && detailsJob && (
-        <div className="ej-details-modal-overlay" onClick={() => setShowDetailsModal(false)}>
-          <div className="ej-details-modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="ej-details-modal-header">
-              <h2 className="ej-details-modal-title">Project Details</h2>
-              <button className="ej-details-modal-close" onClick={() => setShowDetailsModal(false)}>
-                <FaTimes size={20} />
+        <div className="bid-modal-overlay" onClick={() => setShowDetailsModal(false)}>
+          <div className="bid-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="bid-modal-header">
+              <h2>Project Details</h2>
+              <button className="bid-modal-close" onClick={() => setShowDetailsModal(false)}>
+                <X size={24} />
               </button>
             </div>
 
-            <div className="ej-details-modal-body">
+            <div className="bid-modal-body">
               {/* Project Information */}
-              <div className="ej-details-modal-section">
-                <h4 className="ej-details-section-title">Project Information</h4>
-                <div className="ej-details-field">
-                  <span className="ej-details-label">Title</span>
-                  <span className="ej-details-value">{detailsJob.title}</span>
-                </div>
-                <div className="ej-details-field">
-                  <span className="ej-details-label">Category</span>
-                  <span className="ej-details-value">{detailsJob.category}</span>
-                </div>
-                <div className="ej-details-field">
-                  <span className="ej-details-label">Status</span>
-                  <span className={`ej-details-status-badge ej-status-${detailsJob.status}`}>
-                    {detailsJob.status.charAt(0).toUpperCase() + detailsJob.status.slice(1)}
-                  </span>
-                </div>
-                <div className="ej-details-field">
-                  <span className="ej-details-label">Description</span>
-                  <span className="ej-details-value">{detailsJob.description}</span>
-                </div>
-              </div>
-
-              {/* Timeline & Budget */}
-              <div className="ej-details-modal-section">
-                <h4 className="ej-details-section-title">Timeline & Budget</h4>
-                <div className="ej-details-field">
-                  <span className="ej-details-label">Due Date</span>
-                  <span className="ej-details-value">{formatDate(detailsJob.due_date)}</span>
-                </div>
-                {detailsJob.estimated_duration_days && (
-                  <div className="ej-details-field">
-                    <span className="ej-details-label">Estimated Duration</span>
-                    <span className="ej-details-value">{detailsJob.estimated_duration_days} days</span>
+              <section className="bid-modal-section">
+                <h3 className="bid-section-title">
+                  <FileText size={20} />
+                  Project Information
+                </h3>
+                <div className="bid-info-grid">
+                  <div className="bid-info-item">
+                    <label>Title</label>
+                    <p>{detailsJob.title}</p>
                   </div>
-                )}
-                {detailsJob.budget_min && detailsJob.budget_max && (
-                  <div className="ej-details-field">
-                    <span className="ej-details-label">Budget Range</span>
-                    <span className="ej-details-value">
-                      {formatCurrency(detailsJob.budget_min)} - {formatCurrency(detailsJob.budget_max)}
+                  <div className="bid-info-item">
+                    <label>Category</label>
+                    <p>{detailsJob.category}</p>
+                  </div>
+                  <div className="bid-info-item">
+                    <label>Status</label>
+                    <span className={`bid-status-badge-modal status-${detailsJob.status === 'approved' ? 'approved' : detailsJob.status}`}>
+                      {detailsJob.status.charAt(0).toUpperCase() + detailsJob.status.slice(1)}
                     </span>
                   </div>
-                )}
-                {detailsJob.urgency && (
-                  <div className="ej-details-field">
-                    <span className="ej-details-label">Urgency</span>
-                    <span className="ej-details-value">{detailsJob.urgency}</span>
+                </div>
+                <div className="bid-info-item" style={{ marginTop: '1rem' }}>
+                  <label>Description</label>
+                  <p>{detailsJob.description}</p>
+                </div>
+              </section>
+
+              {/* Timeline & Budget */}
+              <section className="bid-modal-section bid-modal-highlight">
+                <h3 className="bid-section-title">
+                  <DollarSign size={20} />
+                  Timeline & Budget
+                </h3>
+                <div className="bid-info-grid">
+                  <div className="bid-info-item">
+                    <label><Calendar size={14} /> Due Date</label>
+                    <p>{formatDate(detailsJob.due_date)}</p>
                   </div>
-                )}
-              </div>
+                  {detailsJob.estimated_duration_days && (
+                    <div className="bid-info-item">
+                      <label><Clock size={14} /> Estimated Duration</label>
+                      <p>{detailsJob.estimated_duration_days} days</p>
+                    </div>
+                  )}
+                  {detailsJob.budget_min && detailsJob.budget_max && (
+                    <div className="bid-info-item">
+                      <label><DollarSign size={14} /> Budget Range</label>
+                      <p>{formatCurrency(detailsJob.budget_min)} - {formatCurrency(detailsJob.budget_max)}</p>
+                    </div>
+                  )}
+                  {detailsJob.urgency && (
+                    <div className="bid-info-item">
+                      <label>Urgency</label>
+                      <p>{detailsJob.urgency}</p>
+                    </div>
+                  )}
+                </div>
+              </section>
 
               {/* Additional Information */}
               {(detailsJob.is_emergency || detailsJob.is_budget_hidden !== undefined) && (
-                <div className="ej-details-modal-section">
-                  <h4 className="ej-details-section-title">Additional Information</h4>
-                  {detailsJob.is_emergency && (
-                    <div className="ej-details-field">
-                      <span className="ej-details-label">Emergency</span>
-                      <span className="ej-details-value">Yes</span>
-                    </div>
-                  )}
-                  {detailsJob.is_budget_hidden !== undefined && (
-                    <div className="ej-details-field">
-                      <span className="ej-details-label">Budget Hidden</span>
-                      <span className="ej-details-value">{detailsJob.is_budget_hidden ? 'Yes' : 'No'}</span>
-                    </div>
-                  )}
-                </div>
+                <section className="bid-modal-section">
+                  <h3 className="bid-section-title">
+                    <FileText size={20} />
+                    Additional Information
+                  </h3>
+                  <div className="bid-info-grid">
+                    {detailsJob.is_emergency && (
+                      <div className="bid-info-item">
+                        <label>Emergency</label>
+                        <p style={{ color: '#dc2626' }}>Yes</p>
+                      </div>
+                    )}
+                    {detailsJob.is_budget_hidden !== undefined && (
+                      <div className="bid-info-item">
+                        <label>Budget Hidden</label>
+                        <p>{detailsJob.is_budget_hidden ? 'Yes' : 'No'}</p>
+                      </div>
+                    )}
+                  </div>
+                </section>
               )}
             </div>
 
-            <div className="ej-details-modal-footer">
-              <button className="ej-details-modal-btn-close" onClick={() => setShowDetailsModal(false)}>
+            <div className="bid-modal-footer">
+              <button className="bid-btn-decline" onClick={() => setShowDetailsModal(false)}>
                 Close
               </button>
             </div>

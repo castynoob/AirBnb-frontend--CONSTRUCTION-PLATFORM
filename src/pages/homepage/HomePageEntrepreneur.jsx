@@ -33,12 +33,13 @@ import {
   Lock,
   Crown,
   Check,
+  FileText,
+  MessageSquare,
 } from "lucide-react"
 import Nav from "../../components/Nav"
 import "../../styles/entrepreneur/homepageentrepreneur.css"
 import SubscriptionModal from "../../components/SubcriptionModal"
 import UnlockBudgetForm from '../../components/UnlockBudgetForm'
-import logo from "../../assets/logo.png"
 
 
 // Map Controller Component for programmatic map control
@@ -1317,48 +1318,77 @@ function HomePageEntrepreneur() {
                 {!userProfile?.entrepProfile?.subscription?.hasSubscription ? (
                   <div className="eh-subscribe-prompt">
                     <div className="eh-subscribe-prompt-content">
-                      <div className="eh-subscribe-brand">
-                        <img src={logo} alt="Intervos" className="eh-subscribe-logo" />
-                        <span className="eh-subscribe-brand-text">INTERVOS</span>
+                      {/* Animated background elements */}
+                      <div className="eh-subscribe-bg-decoration">
+                        <div className="eh-subscribe-circle eh-circle-1"></div>
+                        <div className="eh-subscribe-circle eh-circle-2"></div>
+                        <div className="eh-subscribe-circle eh-circle-3"></div>
                       </div>
-                      <div className="eh-subscribe-icon">
-                        <Lock size={48} />
+
+                      {/* Lock icon with glow effect */}
+                      <div className="eh-subscribe-icon-wrapper">
+                        <div className="eh-subscribe-icon-glow"></div>
+                        <div className="eh-subscribe-icon">
+                          <Lock size={32} />
+                        </div>
                       </div>
-                      <h3 className="eh-subscribe-title">Subscribe to View Jobs</h3>
+
+                      {/* Job count badge */}
+                      <div className="eh-subscribe-job-badge">
+                        <Hammer size={14} />
+                        <span>{getPropertyOpenJobsCount(selectedProperty.id)} Jobs Available</span>
+                      </div>
+
+                      <h3 className="eh-subscribe-title">Unlock Premium Access</h3>
                       <p className="eh-subscribe-description">
-                        Unlock access to <strong>{getPropertyOpenJobsCount(selectedProperty.id)} available jobs</strong> on this property. Subscribe now to start bidding and grow your business.
+                        Get instant access to job details, submit bids, and start winning contracts on this property.
                       </p>
 
-                      <div className="eh-subscribe-features">
-                        <div className="eh-subscribe-feature">
-                          <Check size={16} />
-                          <span>View detailed job information</span>
+                      {/* Features grid */}
+                      <div className="eh-subscribe-features-grid">
+                        <div className="eh-subscribe-feature-card">
+                          <div className="eh-feature-icon">
+                            <FileText size={18} />
+                          </div>
+                          <span>Full Job Details</span>
                         </div>
-                        <div className="eh-subscribe-feature">
-                          <Check size={16} />
-                          <span>Submit competitive bids</span>
+                        <div className="eh-subscribe-feature-card">
+                          <div className="eh-feature-icon">
+                            <Send size={18} />
+                          </div>
+                          <span>Submit Bids</span>
                         </div>
-                        <div className="eh-subscribe-feature">
-                          <Check size={16} />
-                          <span>Unlock project budgets</span>
+                        <div className="eh-subscribe-feature-card">
+                          <div className="eh-feature-icon">
+                            <DollarSign size={18} />
+                          </div>
+                          <span>View Budgets</span>
                         </div>
-                        <div className="eh-subscribe-feature">
-                          <Check size={16} />
-                          <span>Message on approved projects</span>
+                        <div className="eh-subscribe-feature-card">
+                          <div className="eh-feature-icon">
+                            <MessageSquare size={18} />
+                          </div>
+                          <span>Direct Chat</span>
                         </div>
                       </div>
 
-                      <button
-                        className="eh-subscribe-cta-btn"
-                        onClick={() => setShowSubscriptionModal(true)}
-                      >
-                        <Crown size={18} />
-                        View Subscription Plans
-                      </button>
+                      {/* CTA Section */}
+                      <div className="eh-subscribe-cta-section">
+                        <button
+                          className="eh-subscribe-cta-btn"
+                          onClick={() => setShowSubscriptionModal(true)}
+                        >
+                          <Crown size={18} />
+                          <span>View Plans</span>
+                          <ChevronRight size={18} />
+                        </button>
 
-                      <p className="eh-subscribe-trial-text">
-                        Start with a 14-day free trial • No credit card required
-                      </p>
+                        <div className="eh-subscribe-trial-badge">
+                          <span className="eh-trial-text">14-day free trial</span>
+                          <span className="eh-trial-dot">•</span>
+                          <span className="eh-trial-text">Cancel anytime</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -1699,49 +1729,79 @@ function HomePageEntrepreneur() {
 
               {/* Check subscription before showing jobs in mobile modal */}
               {!userProfile?.entrepProfile?.subscription?.hasSubscription ? (
-                <div className="eh-subscribe-prompt">
+                <div className="eh-subscribe-prompt eh-mobile">
                   <div className="eh-subscribe-prompt-content">
-                    <div className="eh-subscribe-brand">
-                      <img src={logo} alt="Intervos" className="eh-subscribe-logo" />
-                      <span className="eh-subscribe-brand-text">INTERVOS</span>
+                    {/* Animated background elements */}
+                    <div className="eh-subscribe-bg-decoration">
+                      <div className="eh-subscribe-circle eh-circle-1"></div>
+                      <div className="eh-subscribe-circle eh-circle-2"></div>
                     </div>
-                    <div className="eh-subscribe-icon">
-                      <Lock size={40} />
+
+                    {/* Lock icon with glow effect */}
+                    <div className="eh-subscribe-icon-wrapper">
+                      <div className="eh-subscribe-icon-glow"></div>
+                      <div className="eh-subscribe-icon">
+                        <Lock size={28} />
+                      </div>
                     </div>
-                    <h3 className="eh-subscribe-title">Subscribe to View Jobs</h3>
+
+                    {/* Job count badge */}
+                    <div className="eh-subscribe-job-badge">
+                      <Hammer size={12} />
+                      <span>{getPropertyOpenJobsCount(selectedProperty.id)} Jobs</span>
+                    </div>
+
+                    <h3 className="eh-subscribe-title">Unlock Access</h3>
                     <p className="eh-subscribe-description">
-                      Unlock access to <strong>{getPropertyOpenJobsCount(selectedProperty.id)} available jobs</strong> on this property.
+                      View job details and start bidding on this property.
                     </p>
 
-                    <div className="eh-subscribe-features eh-mobile-features">
-                      <div className="eh-subscribe-feature">
-                        <Check size={14} />
-                        <span>View job details</span>
+                    {/* Features grid - compact for mobile */}
+                    <div className="eh-subscribe-features-grid eh-mobile-grid">
+                      <div className="eh-subscribe-feature-card">
+                        <div className="eh-feature-icon">
+                          <FileText size={16} />
+                        </div>
+                        <span>Details</span>
                       </div>
-                      <div className="eh-subscribe-feature">
-                        <Check size={14} />
-                        <span>Submit bids</span>
+                      <div className="eh-subscribe-feature-card">
+                        <div className="eh-feature-icon">
+                          <Send size={16} />
+                        </div>
+                        <span>Bids</span>
                       </div>
-                      <div className="eh-subscribe-feature">
-                        <Check size={14} />
-                        <span>Unlock budgets</span>
+                      <div className="eh-subscribe-feature-card">
+                        <div className="eh-feature-icon">
+                          <DollarSign size={16} />
+                        </div>
+                        <span>Budget</span>
+                      </div>
+                      <div className="eh-subscribe-feature-card">
+                        <div className="eh-feature-icon">
+                          <MessageSquare size={16} />
+                        </div>
+                        <span>Chat</span>
                       </div>
                     </div>
 
-                    <button
-                      className="eh-subscribe-cta-btn"
-                      onClick={() => {
-                        setPropertyModalOpen(false)
-                        setShowSubscriptionModal(true)
-                      }}
-                    >
-                      <Crown size={16} />
-                      View Plans
-                    </button>
+                    {/* CTA Section */}
+                    <div className="eh-subscribe-cta-section">
+                      <button
+                        className="eh-subscribe-cta-btn"
+                        onClick={() => {
+                          setPropertyModalOpen(false)
+                          setShowSubscriptionModal(true)
+                        }}
+                      >
+                        <Crown size={16} />
+                        <span>View Plans</span>
+                        <ChevronRight size={16} />
+                      </button>
 
-                    <p className="eh-subscribe-trial-text">
-                      14-day free trial
-                    </p>
+                      <div className="eh-subscribe-trial-badge">
+                        <span className="eh-trial-text">14-day free trial</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : (

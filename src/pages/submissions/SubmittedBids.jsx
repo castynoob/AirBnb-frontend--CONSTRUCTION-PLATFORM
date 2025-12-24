@@ -1,7 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import Nav from '../../components/Nav';
-import '../../styles/entrepreneur/submittedbids.css'
-import { Search, Calendar, DollarSign, Clock, MessageSquare, CheckCircle, XCircle, AlertCircle, MapPin, FileText, User, X } from 'lucide-react';
+import '../../styles/manager/submissions.css'
+import {
+  Search,
+  Calendar,
+  DollarSign,
+  Clock,
+  MessageSquare,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  MapPin,
+  FileText,
+  X,
+  ChevronRight,
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const SubmittedBids = () => {
@@ -85,38 +98,6 @@ const SubmittedBids = () => {
 
     fetchBids();
   }, [API_BASE_URL]);
-
-  const getStatusIcon = (status) => {
-    const normalizedStatus = status?.toLowerCase();
-    switch (normalizedStatus) {
-      case 'accepted':
-        return <CheckCircle size={18} />;
-      case 'approved':
-        return <CheckCircle size={18} />;
-      case 'declined':
-        return <XCircle size={18} />;
-      case 'pending':
-        return <AlertCircle size={18} />;
-      default:
-        return <Clock size={18} />;
-    }
-  };
-
-  const getStatusClass = (status) => {
-    const normalizedStatus = status?.toLowerCase();
-    switch (normalizedStatus) {
-      case 'accepted':
-        return 'eb-status-accepted';
-      case 'approved':
-        return 'eb-status-accepted';
-      case 'declined':
-        return 'eb-status-declined';
-      case 'pending':
-        return 'eb-status-pending';
-      default:
-        return '';
-    }
-  };
 
   const getStatusLabel = (status) => {
     const normalizedStatus = status?.toLowerCase();
@@ -211,173 +192,188 @@ const SubmittedBids = () => {
 
   if (loading) {
     return (
-      <div className="eb-page-container">
+      <div className="subs-submissions-container">
         <Nav />
-        <main className="eb-main-content">
-          <div className="eb-loading-state">
-            <div className="eb-loader"></div>
+        <div className="subs-submissions-content">
+          <div className="subs-loading-state">
+            <div className="subs-spinner"></div>
             <p>Loading your bids...</p>
           </div>
-        </main>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="eb-page-container">
+      <div className="subs-submissions-container">
         <Nav />
-        <main className="eb-main-content">
-          <div className="eb-error-state">
+        <div className="subs-submissions-content">
+          <div className="subs-empty-state">
             <XCircle size={48} />
             <h3>Error Loading Bids</h3>
             <p>{error}</p>
           </div>
-        </main>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="eb-page-container">
+    <div className="subs-submissions-container">
       <Nav />
-      
-      <main className="eb-main-content">
-        <div className="eb-page-header">
-          <div className="eb-header-content">
-            <h1 className="eb-page-title">Submitted Bids</h1>
-            <p className="eb-page-subtitle">Track and manage all your project proposals</p>
+
+      <div className="subs-submissions-content">
+        <header className="subs-page-header">
+          <div className="subs-header-left">
+            <div className="subs-header-title-group">
+              <h1>SUBMITTED BIDS</h1>
+              <span className="subs-submission-count">{summary.total} bids</span>
+            </div>
           </div>
-        </div>
+          <div className="subs-header-actions">
+            <div className="subs-btn subs-btn-secondary">
+              <AlertCircle size={18} />
+              <span>{summary.pending} Pending</span>
+            </div>
+          </div>
+        </header>
 
         {/* Status Tabs */}
-        <div className="eb-tabs-container">
-          <div className="eb-tabs">
-            <button
-              className={`eb-tab ${activeTab === 'all' ? 'eb-active' : ''}`}
-              onClick={() => setActiveTab('all')}
-            >
-              <span className="eb-tab-label">All Bids</span>
-              <span className="eb-tab-count">{summary.total}</span>
-            </button>
-            <button
-              className={`eb-tab ${activeTab === 'pending' ? 'eb-active' : ''}`}
-              onClick={() => setActiveTab('pending')}
-            >
-              <span className="eb-tab-label">Pending</span>
-              <span className="eb-tab-count">{summary.pending}</span>
-            </button>
-            <button
-              className={`eb-tab ${activeTab === 'accepted' ? 'eb-active' : ''}`}
-              onClick={() => setActiveTab('accepted')}
-            >
-              <span className="eb-tab-label">Accepted</span>
-              <span className="eb-tab-count">{summary.accepted}</span>
-            </button>
-            <button
-              className={`eb-tab ${activeTab === 'declined' ? 'eb-active' : ''}`}
-              onClick={() => setActiveTab('declined')}
-            >
-              <span className="eb-tab-label">Declined</span>
-              <span className="eb-tab-count">{summary.declined}</span>
-            </button>
-          </div>
+        <div className="subs-tabs-container">
+          <button
+            className={`subs-tab-btn ${activeTab === 'all' ? 'active' : ''}`}
+            onClick={() => setActiveTab('all')}
+          >
+            All Bids
+            <span className="subs-tab-count">{summary.total}</span>
+          </button>
+          <button
+            className={`subs-tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
+            onClick={() => setActiveTab('pending')}
+          >
+            Pending
+            <span className="subs-tab-count">{summary.pending}</span>
+          </button>
+          <button
+            className={`subs-tab-btn ${activeTab === 'accepted' ? 'active' : ''}`}
+            onClick={() => setActiveTab('accepted')}
+          >
+            Accepted
+            <span className="subs-tab-count">{summary.accepted}</span>
+          </button>
+          <button
+            className={`subs-tab-btn ${activeTab === 'declined' ? 'active' : ''}`}
+            onClick={() => setActiveTab('declined')}
+          >
+            Declined
+            <span className="subs-tab-count">{summary.declined}</span>
+          </button>
+        </div>
 
-          {/* Search Bar */}
-          <div className="eb-search-container">
-            <Search className="eb-search-icon" size={20} />
+        {/* Search Bar */}
+        <div className="subs-controls-bar">
+          <div className="subs-search-box">
+            <Search size={18} />
             <input
               type="text"
               placeholder="Search by job title, category, or location..."
-              className="eb-search-input"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+            {searchTerm && (
+              <button className="subs-clear-btn" onClick={() => setSearchTerm('')}>
+                <X size={16} />
+              </button>
+            )}
           </div>
         </div>
 
         {/* Bids List */}
-        <div className="eb-bids-container">
-          {filteredBids.length === 0 ? (
-            <div className="eb-empty-state">
-              <div className="eb-empty-icon">
-                <MessageSquare size={48} />
-              </div>
-              <h3>No bids found</h3>
-              <p>
-                {searchTerm 
-                  ? 'Try adjusting your search criteria' 
-                  : activeTab === 'all'
-                  ? 'You haven\'t submitted any bids yet'
-                  : `No ${activeTab} bids at the moment`
-                }
-              </p>
-            </div>
-          ) : (
-            filteredBids.map(bid => (
-              <div key={bid.id} className="eb-bid-card">
-                <div className="eb-bid-header">
-                  <div className="eb-bid-title-section">
-                    <h3 className="eb-bid-title">{bid.job_title}</h3>
-                    <span className="eb-bid-category">{bid.category}</span>
-                  </div>
-                  <div className={`eb-bid-status ${getStatusClass(bid.status)}`}>
-                    {getStatusIcon(bid.status)}
-                    <span>{getStatusLabel(bid.status)}</span>
-                  </div>
-                </div>
+        {filteredBids.length === 0 ? (
+          <div className="subs-empty-state">
+            <MessageSquare size={48} />
+            <h3>No bids found</h3>
+            <p>
+              {searchTerm
+                ? 'Try adjusting your search criteria'
+                : activeTab === 'all'
+                ? 'You haven\'t submitted any bids yet'
+                : `No ${activeTab} bids at the moment`
+              }
+            </p>
+          </div>
+        ) : (
+          <div className="subs-bids-grid">
+            {filteredBids.map(bid => {
+              const getStatusInfo = (status) => {
+                const normalizedStatus = status?.toLowerCase();
+                const statusMap = {
+                  pending: { class: "status-pending", icon: AlertCircle, label: "Pending" },
+                  accepted: { class: "status-accepted", icon: CheckCircle, label: "Accepted" },
+                  approved: { class: "status-accepted", icon: CheckCircle, label: "Approved" },
+                  declined: { class: "status-declined", icon: XCircle, label: "Declined" },
+                };
+                return statusMap[normalizedStatus] || { class: "status-pending", icon: Clock, label: status };
+              };
+              const statusInfo = getStatusInfo(bid.status);
+              const StatusIcon = statusInfo.icon;
 
-                <p className="eb-bid-description">{bid.job_description}</p>
-
-                {/* Location */}
-                {(bid.property_address || bid.city) && (
-                  <div className="eb-bid-location">
-                    <MapPin size={16} />
-                    <span>{bid.property_address}{bid.city ? `, ${bid.city}` : ''}</span>
-                  </div>
-                )}
-
-                {/* Urgency Badge */}
-                {bid.urgency && (
-                  <div className={`eb-urgency-badge ${bid.urgency.includes('Urgent') ? 'eb-urgent' : 'eb-normal'}`}>
-                    {bid.urgency}
-                  </div>
-                )}
-
-                <div className="eb-bid-details">
-                  <div className="eb-detail-item">
-                    <DollarSign size={16} />
-                    <span className="eb-detail-label">Your Bid:</span>
-                    <span className="eb-detail-value">{formatCurrency(bid.amount)}</span>
+              return (
+                <div key={bid.id} className="subs-bid-card" onClick={() => handleViewDetails(bid)}>
+                  {/* Top Row: Status + Amount */}
+                  <div className="subs-card-top">
+                    <div className={`subs-status-badge-subs ${statusInfo.class}`}>
+                      <StatusIcon size={12} />
+                      {statusInfo.label}
+                    </div>
+                    <div className="subs-card-top-right">
+                      {bid.urgency && bid.urgency.includes('Urgent') && (
+                        <span className="subs-urgency urgent">Urgent</span>
+                      )}
+                      <span className="subs-bid-amount">{formatCurrency(bid.amount)}</span>
+                    </div>
                   </div>
 
-                  <div className="eb-detail-item">
-                    <Calendar size={16} />
-                    <span className="eb-detail-label">Submitted:</span>
-                    <span className="eb-detail-value">{formatDate(bid.created_at)}</span>
-                  </div>
-                </div>
+                  {/* Job Title */}
+                  <h3 className="subs-job-title">{bid.job_title}</h3>
 
-                <div className="eb-bid-footer">
-                  <span className="eb-response-time">{getTimeAgo(bid.created_at)}</span>
-                  <div className="eb-bid-actions">
-                    <button className="eb-btn-details" onClick={() => handleViewDetails(bid)}>
-                      View Details
+                  {/* Info Row */}
+                  <div className="subs-card-info">
+                    <div className="subs-info-item">
+                      <FileText size={12} />
+                      <span>{bid.category}</span>
+                    </div>
+                    {(bid.property_address || bid.city) && (
+                      <div className="subs-info-item">
+                        <MapPin size={12} />
+                        <span>{bid.property_address}{bid.city ? `, ${bid.city}` : ''}</span>
+                      </div>
+                    )}
+                    <div className="subs-info-item">
+                      <Calendar size={12} />
+                      <span>{getTimeAgo(bid.created_at)}</span>
+                    </div>
+                  </div>
+
+                  {/* Action Row */}
+                  <div className="subs-card-actions">
+                    <button className="subs-details-btn" onClick={(e) => { e.stopPropagation(); handleViewDetails(bid); }}>
+                      Details
+                      <ChevronRight size={14} />
                     </button>
-                    {
-                      bid.status == 'accepted' &&
-                    <>
-                    <button className="eb-btn-icon" onClick={() => handleMessageClicked(bid)}>
-                      <MessageSquare size={16} />
-                    </button>
-                    </>
-                    }
+
+                    {(bid.status === 'accepted' || bid.status === 'approved') && (
+                      <button className="subs-chat-btn" onClick={(e) => { e.stopPropagation(); handleMessageClicked(bid); }}>
+                        <MessageSquare size={14} />
+                      </button>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))
-          )}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Bid Details Modal */}
         {showDetailsModal && selectedBid && (
@@ -479,9 +475,9 @@ const SubmittedBids = () => {
 
               {/* Modal Footer */}
               <div className="bid-modal-footer">
-                {selectedBid.status === 'accepted' && (
+                {(selectedBid.status === 'accepted' || selectedBid.status === 'approved') && (
                   <button
-                    className="bid-btn-message"
+                    className="bid-btn-accept"
                     onClick={() => {
                       setShowDetailsModal(false);
                       handleMessageClicked(selectedBid);
@@ -492,7 +488,7 @@ const SubmittedBids = () => {
                   </button>
                 )}
                 <button
-                  className="bid-btn-close"
+                  className="bid-btn-decline"
                   onClick={() => setShowDetailsModal(false)}
                 >
                   Close
@@ -501,7 +497,7 @@ const SubmittedBids = () => {
             </div>
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 };
