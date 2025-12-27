@@ -524,14 +524,14 @@
    .edit-modal-backdrop {
      position: fixed;
      inset: 0;
-     background-color: rgba(255, 255, 255, 0.3);
+     background-color: rgba(15, 34, 61, 0.6);
      backdrop-filter: blur(12px);
      -webkit-backdrop-filter: blur(12px);
      display: flex;
      align-items: center;
      justify-content: center;
      padding: 1rem;
-     z-index: 50;
+     z-index: 2000;
      animation: fadeIn 0.2s ease-out;
      font-family: 'Poppins', sans-serif;
    }
@@ -547,6 +547,8 @@
      animation: slideUp 0.3s ease-out;
      scrollbar-width: none;
      -ms-overflow-style: none;
+     position: relative;
+     z-index: 2001;
    }
    
    .edit-modal-container::-webkit-scrollbar {
@@ -1035,26 +1037,34 @@
    
    /* Edit Modal Responsive */
    @media (max-width: 640px) {
+     .edit-modal-backdrop {
+       z-index: 2000 !important;
+       padding: 0.5rem;
+     }
+
      .edit-modal-container {
        max-height: 95vh;
+       z-index: 2001 !important;
+       margin: 0;
+       border-radius: 0.75rem;
      }
-     
+
      .edit-modal-header {
        padding: 1.25rem;
      }
-     
+
      .edit-modal-title {
        font-size: 1.25rem;
      }
-     
+
      .edit-modal-body {
        padding: 1.25rem;
      }
-     
+
      .edit-button-group {
        flex-direction: column;
      }
-     
+
      .edit-cancel-btn,
      .edit-submit-btn {
        width: 100%;

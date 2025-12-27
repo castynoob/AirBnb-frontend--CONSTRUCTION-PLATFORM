@@ -17,7 +17,13 @@ import {
   MessageSquare,
   MapPin,
   Hammer,
+  Maximize2,
+  Minimize2,
+  ChevronRight,
+  User,
 } from "lucide-react"
+import toast from "react-hot-toast"
+import PropertyManagerProfileModal from "../../components/modal/PropertyManagerProfileModal"
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
@@ -46,6 +52,12 @@ function EntrepreneurJobs() {
   const [reviewed, setReviewed] = useState(null)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [detailsJob, setDetailsJob] = useState(null)
+  const [isMapFullscreen, setIsMapFullscreen] = useState(false)
+
+  // Property Manager Profile Modal states
+  const [showManagerModal, setShowManagerModal] = useState(false)
+  const [selectedManagerProfile, setSelectedManagerProfile] = useState(null)
+  const [isLoadingManagerProfile, setIsLoadingManagerProfile] = useState(false)
 
   const [reviewForm, setReviewForm] = useState({
     rating: 5,
@@ -356,6 +368,45 @@ function EntrepreneurJobs() {
   const handleViewDetails = (job) => {
     setDetailsJob(job);
     setShowDetailsModal(true);
+  }
+
+  // Handle viewing property manager profile
+  const handleViewManagerProfile = async (job) => {
+    const managerId = job.manager_id
+    if (!managerId || isLoadingManagerProfile) return
+
+    setIsLoadingManagerProfile(true)
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/users/manager/profile/id/${managerId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${userProfile.token}`,
+          },
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch manager profile")
+      }
+
+      const data = await response.json()
+      setSelectedManagerProfile({
+        ...data.profile,
+        first_name: job.manager_first_name,
+        last_name: job.manager_last_name,
+        email: job.manager_email,
+      })
+      setShowManagerModal(true)
+    } catch (error) {
+      console.error("Error fetching manager profile:", error)
+      toast.error("Failed to load manager profile")
+    } finally {
+      setIsLoadingManagerProfile(false)
+    }
   }
 
   const getStatusCount = (status) => {
@@ -951,14 +1002,70 @@ function EntrepreneurJobs() {
                 </section>
               )}
 
+              {/* Property Manager Information */}
+              {detailsJob.manager_id && (
+                <section className="bid-modal-section">
+                  <h3 className="bid-section-title">
+                    <User size={20} />
+                    Property Manager
+                  </h3>
+                  <div
+                    className="bid-manager-card"
+                    onClick={() => handleViewManagerProfile(detailsJob)}
+                    title="View property manager profile"
+                  >
+                    <div className="bid-manager-avatar">
+                      {detailsJob.manager_company_name?.charAt(0) || detailsJob.manager_first_name?.charAt(0) || 'P'}
+                    </div>
+                    <div className="bid-manager-info">
+                      <span className="bid-manager-name">
+                        {detailsJob.manager_company_name || `${detailsJob.manager_first_name || ''} ${detailsJob.manager_last_name || ''}`.trim() || 'Property Manager'}
+                      </span>
+                      {detailsJob.manager_first_name && detailsJob.manager_company_name && (
+                        <span className="bid-manager-contact">
+                          {`${detailsJob.manager_first_name} ${detailsJob.manager_last_name || ''}`.trim()}
+                        </span>
+                      )}
+                      {detailsJob.manager_email && (
+                        <span className="bid-manager-email">{detailsJob.manager_email}</span>
+                      )}
+                    </div>
+                    <ChevronRight size={18} className="bid-manager-chevron" />
+                  </div>
+                </section>
+              )}
+
               {/* Property Location Map */}
               {detailsJob.property_latitude && detailsJob.property_longitude && (
                 <section className="bid-modal-section">
-                  <h3 className="bid-section-title">
-                    <MapPin size={20} />
-                    Property Location
-                  </h3>
-                  <div className="bid-info-item" style={{ marginBottom: '0.75rem' }}>
+                  <div className="bid-section-title-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 className="bid-section-title" style={{ margin: 0 }}>
+                      <MapPin size={20} />
+                      Property Location
+                    </h3>
+                    <button
+                      className="ej-map-fullscreen-btn"
+                      onClick={() => setIsMapFullscreen(true)}
+                      title="View fullscreen map"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 12px',
+                        backgroundColor: 'var(--color-secondary, #00a5a9)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                        fontSize: '0.8rem',
+                        fontWeight: '500'
+                      }}
+                    >
+                      <Maximize2 size={14} />
+                      Full View
+                    </button>
+                  </div>
+                  <div className="bid-info-item" style={{ marginBottom: '0.75rem', marginTop: '0.75rem' }}>
                     <label>
                       <Building2 size={14} /> {detailsJob.property_name || 'Property'}
                     </label>
@@ -975,10 +1082,10 @@ function EntrepreneurJobs() {
                       ]}
                       zoom={16}
                       scrollWheelZoom={false}
+                      attributionControl={false}
                       style={{ height: "200px", width: "100%", borderRadius: "12px" }}
                     >
                       <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                       />
                       <Marker
@@ -1069,6 +1176,104 @@ function EntrepreneurJobs() {
           </div>
         </div>
       )}
+
+      {/* Fullscreen Map Modal */}
+      {isMapFullscreen && detailsJob && detailsJob.property_latitude && detailsJob.property_longitude && (
+        <div
+          className="ej-fullscreen-map-overlay"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            zIndex: 10000,
+            display: 'flex',
+            flexDirection: 'column'
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '16px 24px',
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              color: 'white'
+            }}
+          >
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '600' }}>
+                {detailsJob.property_name || 'Property Location'}
+              </h3>
+              <p style={{ margin: '4px 0 0', fontSize: '0.875rem', opacity: 0.8 }}>
+                {detailsJob.property_address}
+                {detailsJob.property_city && `, ${detailsJob.property_city}`}
+              </p>
+            </div>
+            <button
+              onClick={() => setIsMapFullscreen(false)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 20px',
+                backgroundColor: 'white',
+                color: '#1f2937',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                fontWeight: '500'
+              }}
+            >
+              <Minimize2 size={18} />
+              Close
+            </button>
+          </div>
+
+          {/* Map Container */}
+          <div style={{ flex: 1, position: 'relative' }}>
+            <MapContainer
+              key={`fullscreen-map-${detailsJob.id}`}
+              center={[
+                Number(detailsJob.property_latitude),
+                Number(detailsJob.property_longitude)
+              ]}
+              zoom={17}
+              scrollWheelZoom={true}
+              attributionControl={false}
+              style={{ height: "100%", width: "100%" }}
+            >
+              <TileLayer
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <Marker
+                position={[
+                  Number(detailsJob.property_latitude),
+                  Number(detailsJob.property_longitude)
+                ]}
+              >
+                <Popup>
+                  <strong>{detailsJob.property_name || 'Property Location'}</strong>
+                  <br />
+                  {detailsJob.property_address}
+                  {detailsJob.property_city && <><br />{detailsJob.property_city}</>}
+                </Popup>
+              </Marker>
+            </MapContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Property Manager Profile Modal */}
+      <PropertyManagerProfileModal
+        isOpen={showManagerModal}
+        onClose={() => setShowManagerModal(false)}
+        profile={selectedManagerProfile}
+      />
     </div>
   )
 }

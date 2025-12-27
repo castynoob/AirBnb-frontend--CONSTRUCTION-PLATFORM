@@ -23,6 +23,7 @@ import {
 import Nav from '../../components/Nav';
 import '../../styles/manager/favoriteentrepreneurs.css';
 import toast from 'react-hot-toast';
+import EntrepreneurProfileModal from '../../components/modal/EntrepreneurProfileModal';
 
 const FavoriteEntrepreneurs = () => {
   const navigate = useNavigate();
@@ -35,6 +36,9 @@ const FavoriteEntrepreneurs = () => {
   const [editingNotes, setEditingNotes] = useState(null);
   const [notesText, setNotesText] = useState('');
   const [confirmModal, setConfirmModal] = useState(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
   const showNotification = (message, type = 'success') => {
     if (type === 'success') {
@@ -164,6 +168,44 @@ const FavoriteEntrepreneurs = () => {
     setNotesText('');
   };
 
+  // Fetch and show entrepreneur profile modal
+  const handleViewProfile = async (favorite) => {
+    const userId = favorite.user_id;
+    if (!userId || isLoadingProfile) return;
+
+    setIsLoadingProfile(true);
+    try {
+      const userProfile = localStorage.getItem('userProfile');
+      if (!userProfile) return;
+
+      const user = JSON.parse(userProfile);
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/users/entrepreneur/user/${userId}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch profile');
+      }
+
+      const data = await response.json();
+      setSelectedProfile(data.profile);
+      setShowProfileModal(true);
+    } catch (error) {
+      console.error('Error fetching entrepreneur profile:', error);
+      showNotification('Failed to load profile', 'error');
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
   // Skeleton Card Component
   const SkeletonCard = () => (
     <div className="fav-card fav-skeleton-card">
@@ -283,7 +325,11 @@ const FavoriteEntrepreneurs = () => {
               <div key={favorite.bid_id || favorite.favorite_id} className="fav-card">
                 <div className="fav-card-header">
                   <div className="fav-contractor-info">
-                    <div className="fav-avatar">
+                    <div
+                      className="fav-avatar fav-avatar-clickable"
+                      onClick={() => handleViewProfile(favorite)}
+                      title="View profile"
+                    >
                       {favorite.profile_picture_url ? (
                         <img src={favorite.profile_picture_url} alt={favorite.first_name} />
                       ) : (
@@ -293,7 +339,13 @@ const FavoriteEntrepreneurs = () => {
                       )}
                     </div>
                     <div className="fav-contractor-details">
-                      <h3 className="fav-contractor-name">{favorite.first_name} {favorite.last_name}</h3>
+                      <h3
+                        className="fav-contractor-name fav-contractor-name-clickable"
+                        onClick={() => handleViewProfile(favorite)}
+                        title="View profile"
+                      >
+                        {favorite.first_name} {favorite.last_name}
+                      </h3>
                       <div className="fav-contractor-rating">
                         <Star size={12} fill="#f59e0b" stroke="#f59e0b" />
                         <span>{Number(favorite.average_rating).toFixed(1)}</span>
@@ -495,6 +547,13 @@ const FavoriteEntrepreneurs = () => {
           </div>
         </div>
       )}
+
+      {/* Entrepreneur Profile Modal */}
+      <EntrepreneurProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        profile={selectedProfile}
+      />
     </div>
   );
 };

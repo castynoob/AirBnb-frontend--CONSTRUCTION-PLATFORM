@@ -347,6 +347,27 @@
   margin: 2px 0 0 0;
 }
 
+/* Clickable profile elements for entrepreneurs */
+.chat-header-avatar.clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.chat-header-avatar.clickable:hover {
+  transform: scale(1.08);
+  box-shadow: 0 2px 8px rgba(0, 165, 169, 0.3);
+}
+
+.chat-header-name.clickable {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.chat-header-name.clickable:hover {
+  color: #00a5a9;
+  text-decoration: underline;
+}
+
 .chat-header-call-btn {
   width: 40px;
   height: 40px;

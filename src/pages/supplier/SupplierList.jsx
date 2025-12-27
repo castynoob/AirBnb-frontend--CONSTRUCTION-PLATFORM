@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Nav from "../../components/Nav";
+import SupplierProfileModal from "../../components/modal/SupplierProfileModal";
 import '../../styles/manager/submissions.css';
 
 // Custom Select Component
@@ -93,6 +94,11 @@ function SupplierList() {
   const [showFilters, setShowFilters] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [myRequests, setMyRequests] = useState([]);
+
+  // Supplier Profile Modal states
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
   const areaOptions = [
     'All Areas',
@@ -386,6 +392,49 @@ function SupplierList() {
     setShowDetailsModal(true);
   };
 
+  // Handle viewing supplier profile modal
+  const handleViewSupplierProfile = async (supplier) => {
+    const userId = supplier.user_id;
+    if (!userId || isLoadingProfile) return;
+
+    setIsLoadingProfile(true);
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+      const userProfile = localStorage.getItem('userProfile');
+      if (!userProfile) return;
+
+      const user = JSON.parse(userProfile);
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/users/supplier/${userId}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch supplier profile');
+      }
+
+      const data = await response.json();
+      setSelectedProfile({
+        ...data.profile,
+        first_name: supplier.first_name,
+        last_name: supplier.last_name,
+        email: supplier.email,
+      });
+      setShowProfileModal(true);
+    } catch (error) {
+      console.error('Error fetching supplier profile:', error);
+      toast.error('Failed to load supplier profile');
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
   const hasActiveFilters = selectedArea !== 'All Areas' || selectedMaterial !== 'All Materials' ||
     selectedYearsFilter !== 'All' || certificationFilter !== 'All';
 
@@ -524,7 +573,7 @@ function SupplierList() {
         ) : (
           <div className="subs-bids-grid">
             {filteredSuppliers.map(supplier => (
-              <div key={supplier.id} className="subs-bid-card" onClick={() => handleViewDetails(supplier)}>
+              <div key={supplier.id} className="subs-bid-card" onClick={() => handleViewSupplierProfile(supplier)}>
                 {/* Top Row: Certification + Years */}
                 <div className="subs-card-top">
                   {supplier.business_license ? (
@@ -576,7 +625,7 @@ function SupplierList() {
 
                 {/* Action Row */}
                 <div className="subs-card-actions">
-                  <button className="subs-details-btn" onClick={(e) => { e.stopPropagation(); handleViewDetails(supplier); }}>
+                  <button className="subs-details-btn" onClick={(e) => { e.stopPropagation(); handleViewSupplierProfile(supplier); }}>
                     Details
                     <ChevronRight size={14} />
                   </button>
@@ -926,6 +975,25 @@ function SupplierList() {
           </div>
         </div>
       )}
+
+      {/* Supplier Profile Modal */}
+      <SupplierProfileModal
+        isOpen={showProfileModal}
+        onClose={() => {
+          setShowProfileModal(false);
+          setSelectedProfile(null);
+        }}
+        profile={selectedProfile}
+        onRequestMaterials={() => {
+          // Close profile modal and open request modal
+          setShowProfileModal(false);
+          // Find the supplier from the list that matches the profile
+          const supplier = suppliers.find(s => s.id === selectedProfile?.id);
+          if (supplier) {
+            openRequestModal(supplier);
+          }
+        }}
+      />
     </div>
   );
 }

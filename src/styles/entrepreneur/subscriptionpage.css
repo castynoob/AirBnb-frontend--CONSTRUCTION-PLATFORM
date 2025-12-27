@@ -630,11 +630,10 @@
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   transition: all 0.2s ease;
-
   display: flex;
-  justify-content: center;
-  align-items: center;
   flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
 }
 
 .stat-card.subs:hover {
@@ -644,11 +643,11 @@
 
 .stat-header.subs {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  flex-direction: row;
+  justify-content: flex-start;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .subsval {
@@ -862,8 +861,10 @@
   }
 
   .banner-content {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     gap: 1rem;
+    align-items: flex-start;
   }
 
   /* Make trial banner more compact on mobile */
@@ -873,22 +874,37 @@
   }
 
   .banner-icon-wrapper {
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+  }
+
+  .banner-info {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
   }
 
   .banner-header {
     flex-wrap: wrap;
     gap: 0.5rem;
     margin-bottom: 0.5rem;
+    justify-content: flex-start;
+  }
+
+  .banner-title {
+    font-size: 1.1rem;
+    text-align: left;
   }
 
   .banner-text {
     margin-bottom: 0.25rem;
+    text-align: left;
   }
 
   .banner-subtext {
     margin-bottom: 0.5rem;
+    text-align: left;
   }
 
   .trial-progress-bar {
@@ -897,53 +913,48 @@
   }
 
   .trial-countdown {
-    margin-top: 0.25rem;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
   }
 
   .countdown-number {
-    font-size: 2.5rem;
+    font-size: 1.5rem;
   }
 
   .countdown-label {
-    margin-top: 0.25rem;
+    margin-top: 0;
+    font-size: 0.875rem;
   }
 
   .countdown-hours {
-    margin-top: 0.25rem;
+    margin-top: 0;
   }
 
   /* Usage Analytics - Horizontal Scroll */
   .stats-grid.subs {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
-    padding-bottom: 0.5rem;
-    margin: 0 -1rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
-  }
-
-  .stats-grid.subs::-webkit-scrollbar {
-    height: 4px;
-  }
-
-  .stats-grid.subs::-webkit-scrollbar-track {
-    background: var(--color-background-light);
-    border-radius: 4px;
-  }
-
-  .stats-grid.subs::-webkit-scrollbar-thumb {
-    background: var(--color-secondary);
-    border-radius: 4px;
+    padding-bottom: 0;
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
   }
 
   .stat-card.subs {
-    flex: 0 0 140px;
-    min-width: 140px;
-    scroll-snap-align: start;
     padding: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .stat-header.subs {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .stat-value {
@@ -961,6 +972,45 @@
 
   .stats-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* Plan Info Card - Left Aligned */
+  .plan-info-card,
+  .billing-timeline-card {
+    padding: 1.25rem;
+  }
+
+  .card-header {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 1rem;
+  }
+
+  .card-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .plan-name {
+    font-size: 1.35rem;
+    text-align: left;
+  }
+
+  .plan-desc {
+    text-align: left;
+    margin-bottom: 1rem;
+  }
+
+  .plan-price {
+    justify-content: flex-start;
+  }
+
+  .timeline-content {
+    text-align: left;
+  }
+
+  .date-item {
+    text-align: left;
   }
 
   /* Comparison Table - Horizontal Scroll */
@@ -1068,15 +1118,26 @@
 
   /* Stats grid on extra small */
   .stats-grid.subs {
-    margin: 0 -0.75rem;
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
   }
 
   .stat-card.subs {
-    flex: 0 0 120px;
-    min-width: 120px;
-    padding: 0.875rem;
+    padding: 0.875rem 1rem;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .stat-header.subs {
+    flex-direction: row;
+    margin-bottom: 0;
+  }
+
+  .subsval {
+    font-size: 1.25rem !important;
   }
 
   .stat-value {
@@ -1185,13 +1246,34 @@
 @media (max-width: 768px) {
   .upgrade-card {
     flex-direction: column;
-    gap: 1.5rem;
-    text-align: center;
-    padding: 1.5rem;
+    gap: 1rem;
+    text-align: left;
+    padding: 1.25rem;
+    align-items: flex-start;
   }
 
   .upgrade-content {
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .upgrade-icon {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+  }
+
+  .upgrade-info {
+    align-items: flex-start;
+  }
+
+  .upgrade-title {
+    font-size: 1.1rem;
+  }
+
+  .upgrade-description {
+    font-size: 0.85rem;
   }
 
   .upgrade-btn {

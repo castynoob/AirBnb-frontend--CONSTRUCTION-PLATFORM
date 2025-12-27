@@ -27,6 +27,7 @@ import Nav from "../../components/Nav"
 import "../../styles/manager/submissions.css"
 import { useNavigate } from "react-router-dom"
 import toast from "react-hot-toast"
+import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal"
 
 function SubmissionsPage() {
   const [submissions, setSubmissions] = useState([])
@@ -63,6 +64,11 @@ function SubmissionsPage() {
 
   // Favorites state
   const [favorites, setFavorites] = useState([])
+
+  // Profile modal state
+  const [showProfileModal, setShowProfileModal] = useState(false)
+  const [selectedProfile, setSelectedProfile] = useState(null)
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false)
 
   // Property filter state
   const [selectedProperty, setSelectedProperty] = useState("all")
@@ -666,6 +672,42 @@ function SubmissionsPage() {
   const handleViewReviews = () => {
     setShowViewReviews(true)
     fetchUserReviews()
+  }
+
+  // Fetch and show entrepreneur profile modal
+  const handleViewProfile = async (e, submission) => {
+    e.stopPropagation()
+
+    const userId = submission.entrepreneur_profile.user_id || submission.entrepreneur_profile.entrepreneur_user_id
+    if (!userId || isLoadingProfile) return
+
+    setIsLoadingProfile(true)
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/users/entrepreneur/user/${userId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${uProfile.token}`,
+          },
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch profile")
+      }
+
+      const data = await response.json()
+      setSelectedProfile(data.profile)
+      setShowProfileModal(true)
+    } catch (error) {
+      console.error("Error fetching entrepreneur profile:", error)
+      showNotification("Failed to load profile", "error")
+    } finally {
+      setIsLoadingProfile(false)
+    }
   }
 
   // Normalize job status to handle various backend status values
@@ -1381,7 +1423,11 @@ function SubmissionsPage() {
                   </div>
                   <div className="details-card-body">
                     <div className="details-contractor-main">
-                      <div className="details-contractor-name">
+                      <div
+                        className="details-contractor-name details-contractor-link"
+                        onClick={(e) => handleViewProfile(e, selectedSubmission)}
+                        title="View profile"
+                      >
                         {selectedSubmission.entrepreneur_profile.company_name}
                       </div>
                       <div className="details-contractor-rating">
@@ -1526,7 +1572,13 @@ function SubmissionsPage() {
                   <div className="subs-card-info">
                     <div className="subs-info-item">
                       <User size={12} />
-                      <span>{submission.entrepreneur_profile.company_name}</span>
+                      <span
+                        className="subs-company-link"
+                        onClick={(e) => handleViewProfile(e, submission)}
+                        title="View profile"
+                      >
+                        {submission.entrepreneur_profile.company_name}
+                      </span>
                       <span className="subs-rating">★ {submission.entrepreneur_profile.average_rating}</span>
                     </div>
                     {submission.user?.first_name && (
@@ -1581,6 +1633,13 @@ function SubmissionsPage() {
           </div>
         )}
       </div>
+
+      {/* Entrepreneur Profile Modal */}
+      <EntrepreneurProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        profile={selectedProfile}
+      />
     </div>
   )
 }

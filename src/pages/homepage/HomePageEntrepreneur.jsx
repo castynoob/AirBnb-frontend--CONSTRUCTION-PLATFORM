@@ -44,6 +44,7 @@ import "../../styles/entrepreneur/homepageentrepreneur.css"
 import SubscriptionModal from "../../components/SubcriptionModal"
 import UnlockBudgetForm from '../../components/UnlockBudgetForm'
 import NotificationBell from '../../components/NotificationBell'
+import PropertyManagerProfileModal from '../../components/modal/PropertyManagerProfileModal'
 
 
 // Map Controller Component for programmatic map control
@@ -234,6 +235,11 @@ function HomePageEntrepreneur() {
   const [editBidMessage, setEditBidMessage] = useState("")
   const [isSubmittingBidAction, setIsSubmittingBidAction] = useState(false)
 
+  // Property Manager Profile Modal states
+  const [showManagerModal, setShowManagerModal] = useState(false)
+  const [selectedManagerProfile, setSelectedManagerProfile] = useState(null)
+  const [isLoadingManagerProfile, setIsLoadingManagerProfile] = useState(false)
+
   // Radius filter states
   const [radiusFilter, setRadiusFilter] = useState({
     enabled: false,
@@ -304,6 +310,14 @@ function HomePageEntrepreneur() {
         city: d.city,
         totalUnits: d.num_units,
         propertyType: d.building_type,
+        // Manager info
+        managerId: d.manager_id,
+        managerUserId: d.manager_user_id,
+        managerCompanyName: d.manager_company_name,
+        managerFirstName: d.manager_first_name,
+        managerLastName: d.manager_last_name,
+        managerEmail: d.manager_email,
+        managerImage: d.manager_image,
       })
     })
     return newProperties
@@ -849,6 +863,44 @@ function HomePageEntrepreneur() {
       toast.error(err.message || "Failed to delete bid. Please try again.")
     } finally {
       setIsSubmittingBidAction(false)
+    }
+  }
+
+  // Handle viewing property manager profile
+  const handleViewManagerProfile = async (property) => {
+    if (!property.managerId || isLoadingManagerProfile) return
+
+    setIsLoadingManagerProfile(true)
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+      const response = await fetch(
+        `${API_BASE_URL}/api/users/manager/profile/id/${property.managerId}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${userProfile.token}`,
+          },
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch manager profile')
+      }
+
+      const data = await response.json()
+      // Merge the fetched profile with the basic info we already have
+      setSelectedManagerProfile({
+        ...data.profile,
+        first_name: property.managerFirstName,
+        last_name: property.managerLastName,
+        email: property.managerEmail,
+      })
+      setShowManagerModal(true)
+    } catch (error) {
+      console.error('Error fetching manager profile:', error)
+      toast.error('Failed to load manager profile')
+    } finally {
+      setIsLoadingManagerProfile(false)
     }
   }
 
@@ -1420,6 +1472,28 @@ function HomePageEntrepreneur() {
                     <span className="eh-stat-value">{getPropertyOpenJobsCount(selectedProperty.id)}</span>
                   </div>
                 </div>
+
+                {/* Property Manager Info */}
+                {selectedProperty.managerCompanyName && (
+                  <div
+                    className="eh-manager-info"
+                    onClick={() => handleViewManagerProfile(selectedProperty)}
+                    title="View property manager profile"
+                  >
+                    <div className="eh-manager-avatar">
+                      {selectedProperty.managerImage ? (
+                        <img src={selectedProperty.managerImage} alt={selectedProperty.managerCompanyName} />
+                      ) : (
+                        selectedProperty.managerCompanyName?.charAt(0) || 'P'
+                      )}
+                    </div>
+                    <div className="eh-manager-details">
+                      <span className="eh-manager-label">Managed by</span>
+                      <span className="eh-manager-name">{selectedProperty.managerCompanyName}</span>
+                    </div>
+                    <ChevronRight size={16} className="eh-manager-chevron" />
+                  </div>
+                )}
 
                 <div className="eh-section-divider"></div>
 
@@ -2287,6 +2361,13 @@ function HomePageEntrepreneur() {
           </div>
         </div>
       )}
+
+      {/* Property Manager Profile Modal */}
+      <PropertyManagerProfileModal
+        isOpen={showManagerModal}
+        onClose={() => setShowManagerModal(false)}
+        profile={selectedManagerProfile}
+      />
     </div>
   )
 }

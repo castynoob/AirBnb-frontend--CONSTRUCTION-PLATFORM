@@ -27,6 +27,8 @@ import {
   getMessages,
   markConversationAsRead,
 } from "../../utils/api";
+import toast from "react-hot-toast";
+import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -50,6 +52,9 @@ function MessagesNew() {
   const [userFilter, setUserFilter] = useState("all"); // "all", "resident", "entrepreneur"
   const [showJobInfo, setShowJobInfo] = useState(false); // Toggle for job/bid info dropdown
   const [isLoadingJobInfo, setIsLoadingJobInfo] = useState(false); // Loading state for job details
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
   const currentUserId = localStorage.getItem("userId");
   const messagesEndRef = useRef(null);
@@ -760,6 +765,40 @@ function MessagesNew() {
       : parts[0][0].toUpperCase();
   };
 
+  // Fetch entrepreneur profile and show modal
+  const handleViewEntrepreneurProfile = async (userId) => {
+    if (!userId || isLoadingProfile) return;
+
+    setIsLoadingProfile(true);
+    try {
+      const token = getAuthToken();
+      if (!token) return;
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/users/entrepreneur/user/${userId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch profile");
+      }
+
+      const data = await response.json();
+      setSelectedProfile(data.profile);
+      setShowProfileModal(true);
+    } catch (error) {
+      console.error("Error fetching entrepreneur profile:", error);
+      toast.error("Failed to load profile");
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
   return (
     <div className="messages-page-fullscreen">
       <Nav />
@@ -999,11 +1038,29 @@ function MessagesNew() {
                 >
                   <ArrowLeft size={24} />
                 </button>
-                <div className="chat-header-avatar">
+                <div
+                  className={`chat-header-avatar ${selectedChat.other_user_role === 'entrepreneur' ? 'clickable' : ''}`}
+                  onClick={() => {
+                    if (selectedChat.other_user_role === 'entrepreneur') {
+                      handleViewEntrepreneurProfile(selectedChat.other_user_id);
+                    }
+                  }}
+                  title={selectedChat.other_user_role === 'entrepreneur' ? 'View profile' : ''}
+                >
                   {getInitials(selectedChat.other_user_name)}
                 </div>
                 <div className="chat-header-info">
-                  <h3 className="chat-header-name">{selectedChat.other_user_name}</h3>
+                  <h3
+                    className={`chat-header-name ${selectedChat.other_user_role === 'entrepreneur' ? 'clickable' : ''}`}
+                    onClick={() => {
+                      if (selectedChat.other_user_role === 'entrepreneur') {
+                        handleViewEntrepreneurProfile(selectedChat.other_user_id);
+                      }
+                    }}
+                    title={selectedChat.other_user_role === 'entrepreneur' ? 'View profile' : ''}
+                  >
+                    {selectedChat.other_user_name}
+                  </h3>
                   <p className="chat-header-role">
                     {selectedChat.company_name || formatUserRole(selectedChat.other_user_role)}
                   </p>
@@ -1280,6 +1337,13 @@ function MessagesNew() {
           )}
         </div>
       </div>
+
+      {/* Entrepreneur Profile Modal */}
+      <EntrepreneurProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        profile={selectedProfile}
+      />
     </div>
   );
 }

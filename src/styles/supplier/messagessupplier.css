@@ -1142,3 +1142,51 @@
     font-size: 12px;
   }
 }
+
+/* ========================================
+   CLICKABLE PROFILE ELEMENTS
+   ======================================== */
+
+/* Clickable avatar in sidebar */
+.avatar-circle-supplier.clickable {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.avatar-circle-supplier.clickable:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 165, 169, 0.3);
+}
+
+/* Clickable name in sidebar */
+.chat-name-supplier.clickable {
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.chat-name-supplier.clickable:hover {
+  color: #00a5a9;
+}
+
+/* Clickable header info */
+.header-info-supplier.clickable-header {
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 10px;
+  transition: background-color 0.2s ease;
+}
+
+.header-info-supplier.clickable-header:hover {
+  background-color: rgba(0, 165, 169, 0.08);
+}
+
+.header-chevron-supplier {
+  color: #9ca3af;
+  margin-left: auto;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.header-info-supplier.clickable-header:hover .header-chevron-supplier {
+  color: #00a5a9;
+  transform: translateX(2px);
+}

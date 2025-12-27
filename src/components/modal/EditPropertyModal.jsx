@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Building2, MapPin } from 'lucide-react';
+import { X, Building2, MapPin, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 import '../../styles/manager/addpropertymodal.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
-const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
+const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
   const mapRef = useRef(null);
   const markerRef = useRef(null);
   const [map, setMap] = useState(null);
@@ -39,75 +39,108 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
     'Senior Living'
   ];
 
-  // Initialize map when modal opens
+  // Initialize form data when property changes
   useEffect(() => {
-    if (!isOpen) return;
-
-    // Load Leaflet CSS
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-    if (!document.querySelector('link[href*="leaflet.css"]')) {
-      document.head.appendChild(link);
-    }
-
-    // Load Leaflet JS
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-    script.async = true;
-
-    const existingScript = document.querySelector('script[src*="leaflet.js"]');
-
-    if (window.L && mapRef.current) {
-      // Leaflet already loaded
-      initializeMap(formData.latitude, formData.longitude, window.L);
-    } else if (!existingScript) {
-      script.onload = () => {
-        if (mapRef.current && window.L) {
-          const L = window.L;
-
-          // Attempt to get user's location
-          if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-              (position) => {
-                const userLat = position.coords.latitude;
-                const userLng = position.coords.longitude;
-
-                setFormData(prev => ({
-                  ...prev,
-                  latitude: userLat,
-                  longitude: userLng
-                }));
-
-                initializeMap(userLat, userLng, L);
-              },
-              (error) => {
-                console.warn("Geolocation error, using default location", error);
-                initializeMap(formData.latitude, formData.longitude, L);
-              }
-            );
-          } else {
-            initializeMap(formData.latitude, formData.longitude, L);
-          }
-        }
-      };
-      document.head.appendChild(script);
-    } else if (existingScript) {
-      // Script exists but may not be loaded yet
-      existingScript.addEventListener('load', () => {
-        if (mapRef.current && window.L) {
-          initializeMap(formData.latitude, formData.longitude, window.L);
-        }
+    if (property && isOpen) {
+      setFormData({
+        building_name: property.building_name || '',
+        address: property.address || '',
+        city: property.city || '',
+        province: property.province || '',
+        postal_code: property.postal_code || '',
+        num_units: property.num_units?.toString() || '',
+        building_type: property.building_type || 'Apartment',
+        latitude: parseFloat(property.latitude) || 14.5995,
+        longitude: parseFloat(property.longitude) || 120.9842,
       });
     }
+  }, [property, isOpen]);
+
+  // Initialize map when modal opens
+  useEffect(() => {
+    if (!isOpen || !property) return;
+
+    let mapInstance = null;
+    let isMounted = true;
+
+    const initMap = async () => {
+      try {
+        // Dynamically import Leaflet
+        const L = await import('leaflet');
+        await import('leaflet/dist/leaflet.css');
+
+        // Fix marker icons
+        if (L.Icon?.Default?.prototype) {
+          delete L.Icon.Default.prototype._getIconUrl;
+          L.Icon.Default.mergeOptions({
+            iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+            iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+          });
+        }
+
+        if (!isMounted || !mapRef.current) return;
+
+        // Check if container already has a map and remove it
+        if (mapRef.current._leaflet_id) {
+          return; // Map already initialized on this container
+        }
+
+        const lat = parseFloat(property.latitude) || 14.5995;
+        const lng = parseFloat(property.longitude) || 120.9842;
+
+        mapInstance = L.map(mapRef.current).setView([lat, lng], 15);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: ''
+        }).addTo(mapInstance);
+
+        const marker = L.marker([lat, lng], { draggable: true }).addTo(mapInstance);
+
+        marker.on('dragend', () => {
+          const position = marker.getLatLng();
+          setFormData(prev => ({
+            ...prev,
+            latitude: position.lat,
+            longitude: position.lng
+          }));
+          reverseGeocode(position.lat, position.lng);
+        });
+
+        mapInstance.on('click', (e) => {
+          marker.setLatLng(e.latlng);
+          setFormData(prev => ({
+            ...prev,
+            latitude: e.latlng.lat,
+            longitude: e.latlng.lng
+          }));
+          reverseGeocode(e.latlng.lat, e.latlng.lng);
+        });
+
+        markerRef.current = marker;
+        if (isMounted) {
+          setMap(mapInstance);
+        }
+      } catch (err) {
+        console.error('Error initializing map:', err);
+      }
+    };
+
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(initMap, 100);
 
     return () => {
+      isMounted = false;
+      clearTimeout(timer);
+      if (mapInstance) {
+        mapInstance.remove();
+      }
       if (map) {
         map.remove();
         setMap(null);
       }
     };
-  }, [isOpen]);
+  }, [isOpen, property]);
 
   // Reverse geocode coordinates to get address information
   const reverseGeocode = async (lat, lng) => {
@@ -130,7 +163,6 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
       if (data && data.address) {
         const address = data.address;
 
-        // Extract address components
         const road = address.road || '';
         const houseNumber = address.house_number || '';
         const suburb = address.suburb || address.neighbourhood || '';
@@ -138,13 +170,11 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
         const province = address.state || address.province || '';
         const postalCode = address.postcode || '';
 
-        // Construct full address
         let fullAddress = '';
         if (houseNumber) fullAddress += houseNumber + ' ';
         if (road) fullAddress += road;
         if (suburb && !fullAddress.includes(suburb)) fullAddress += (fullAddress ? ', ' : '') + suburb;
 
-        // Update form data with geocoded information
         setFormData(prev => ({
           ...prev,
           address: fullAddress.trim() || prev.address,
@@ -158,43 +188,6 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
     }
   };
 
-  const initializeMap = (lat, lng, L) => {
-    if (!mapRef.current || map) return;
-
-    const mapInstance = L.map(mapRef.current).setView([lat, lng], 13);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(mapInstance);
-
-    const marker = L.marker([lat, lng], { draggable: true }).addTo(mapInstance);
-
-    marker.on('dragend', (e) => {
-      const position = marker.getLatLng();
-      setFormData(prev => ({
-        ...prev,
-        latitude: position.lat,
-        longitude: position.lng
-      }));
-
-      reverseGeocode(position.lat, position.lng);
-    });
-
-    mapInstance.on('click', (e) => {
-      marker.setLatLng(e.latlng);
-      setFormData(prev => ({
-        ...prev,
-        latitude: e.latlng.lat,
-        longitude: e.latlng.lng
-      }));
-
-      reverseGeocode(e.latlng.lat, e.latlng.lng);
-    });
-
-    markerRef.current = marker;
-    setMap(mapInstance);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -203,11 +196,11 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
     try {
       const userProfile = JSON.parse(localStorage.getItem('userProfile'));
       if (!userProfile?.token) {
-        throw new Error('Please log in to add properties');
+        throw new Error('Please log in to edit properties');
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/properties/`, {
-        method: 'POST',
+      const response = await fetch(`${API_BASE_URL}/api/properties/${property.id}`, {
+        method: 'PUT',
         headers: {
           'Authorization': `Bearer ${userProfile.token}`,
           'Content-Type': 'application/json'
@@ -220,27 +213,14 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || 'Failed to create property');
+        throw new Error(data.message || 'Failed to update property');
       }
 
       const data = await response.json();
 
-      // Reset form
-      setFormData({
-        building_name: '',
-        address: '',
-        city: '',
-        province: '',
-        postal_code: '',
-        num_units: '',
-        building_type: 'Apartment',
-        latitude: 14.5995,
-        longitude: 120.9842,
-      });
-
       if (onSuccess) onSuccess(data.property);
 
-      toast.success('Property added successfully', {
+      toast.success('Property updated successfully', {
         duration: 5000,
         style: {
           borderRadius: '4px',
@@ -256,10 +236,10 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
 
       onClose();
     } catch (error) {
-      console.error('Error creating property:', error);
+      console.error('Error updating property:', error);
       setError(error.message);
 
-      toast.error(error.message || 'Failed to add property', {
+      toast.error(error.message || 'Failed to update property', {
         duration: 4000,
         style: {
           borderRadius: '4px',
@@ -285,7 +265,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
     }));
   };
 
-  if (!isOpen) return null;
+  if (!isOpen || !property) return null;
 
   return (
     <div className="property-overlay" onClick={onClose}>
@@ -295,8 +275,8 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
           <div className="property-title-wrapper">
             <Building2 size={20} className="property-icon" />
             <div>
-              <h2>Add New Property</h2>
-              <p className="property-subtitle">Add a building or property to your portfolio</p>
+              <h2>Edit Property</h2>
+              <p className="property-subtitle">Update property information</p>
             </div>
           </div>
           <button className="property-close-btn" onClick={onClose} aria-label="Close">
@@ -334,10 +314,10 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
           <div className="property-map-section-large">
             <h4 className="map-section-title">
               <MapPin size={18} />
-              Pin Property Location on Map
+              Property Location
             </h4>
             <p className="map-instruction">
-              📍 Click on the map or drag the marker to set location. Address fields will auto-fill based on your selection.
+              Click on the map or drag the marker to update the location. Address fields will auto-fill.
             </p>
             <div ref={mapRef} className="property-map-container-large" />
 
@@ -345,7 +325,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
             <div className="coordinates-display">
               <h4 className="coordinates-title">
                 <MapPin size={16} />
-                Selected Coordinates
+                Current Coordinates
               </h4>
               <div className="coordinates-row">
                 <div className="coordinate-item">
@@ -362,8 +342,8 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
 
           {/* Address Fields Section */}
           <div className="address-section">
-            <h4 className="section-title">Auto-Filled Address Information</h4>
-            <p className="section-description">These fields are automatically filled based on the map location. You can edit them if needed.</p>
+            <h4 className="section-title">Address Information</h4>
+            <p className="section-description">Edit the address details or update via the map above.</p>
 
             <div className="property-form-grid">
               {/* Address */}
@@ -378,7 +358,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
                   value={formData.address}
                   onChange={handleChange}
                   className="form-input"
-                  placeholder="Will auto-fill from map"
+                  placeholder="Street address"
                   required
                 />
               </div>
@@ -396,14 +376,14 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
                     value={formData.city}
                     onChange={handleChange}
                     className="form-input"
-                    placeholder="Will auto-fill from map"
+                    placeholder="City"
                     required
                   />
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="province" className="form-label">
-                    Province/State
+                    Province/State <span className="required">*</span>
                   </label>
                   <input
                     type="text"
@@ -412,8 +392,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
                     value={formData.province}
                     onChange={handleChange}
                     className="form-input"
-                    placeholder="Will auto-fill from map"
-                    required
+                    placeholder="Province/State"
                   />
                 </div>
               </div>
@@ -430,7 +409,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
                   value={formData.postal_code}
                   onChange={handleChange}
                   className="form-input"
-                  placeholder="Will auto-fill from map"
+                  placeholder="Postal code"
                 />
               </div>
             </div>
@@ -495,7 +474,14 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
               className="property-btn property-btn-primary"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Adding...' : 'Add Property'}
+              {isSubmitting ? (
+                'Saving...'
+              ) : (
+                <>
+                  <Save size={16} />
+                  Save Changes
+                </>
+              )}
             </button>
           </div>
         </form>
@@ -504,4 +490,4 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
   );
 };
 
-export default AddPropertyModal;
+export default EditPropertyModal;

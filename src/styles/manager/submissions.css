@@ -4101,3 +4101,99 @@
     justify-content: center;
   }
 }
+
+/* ========================================
+   CLICKABLE COMPANY/PROFILE LINKS
+   ======================================== */
+
+/* Company link in bid cards */
+.subs-company-link {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.subs-company-link:hover {
+  color: #00A5A9;
+  text-decoration: underline;
+}
+
+/* Contractor link in details modal */
+.details-contractor-link {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.details-contractor-link:hover {
+  color: #00A5A9;
+  text-decoration: underline;
+}
+
+/* ========================================
+   BID MANAGER CARD (SubmittedBids.jsx)
+   ======================================== */
+
+.bid-manager-card {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%);
+  border: 1px solid #99f6e4;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bid-manager-card:hover {
+  background: linear-gradient(135deg, #ccfbf1 0%, #bae6fd 100%);
+  border-color: #5eead4;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 165, 169, 0.15);
+}
+
+.bid-manager-avatar {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #00A5A9 0%, #008B8F 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.bid-manager-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.bid-manager-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #0f766e;
+}
+
+.bid-manager-contact {
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.bid-manager-email {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.bid-manager-chevron {
+  color: #00A5A9;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.bid-manager-card:hover .bid-manager-chevron {
+  transform: translateX(3px);
+}

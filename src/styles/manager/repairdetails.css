@@ -598,6 +598,27 @@
   text-overflow: ellipsis;
 }
 
+/* Clickable avatar and name for profile view */
+.rd-bid-avatar-clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.rd-bid-avatar-clickable:hover {
+  transform: scale(1.08);
+  box-shadow: 0 2px 8px rgba(15, 34, 61, 0.25);
+}
+
+.rd-bid-name-clickable {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.rd-bid-name-clickable:hover {
+  color: #00A5A9;
+  text-decoration: underline;
+}
+
 .rd-bid-meta {
   display: flex;
   align-items: center;

@@ -22,6 +22,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "../../styles/manager/repairdetails.css";
 import toast from "react-hot-toast";
+import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal";
 
 // Custom marker icon for the map
 const createPropertyIcon = () => {
@@ -48,6 +49,8 @@ function RepairDetails({ isOpen, onClose, repair }) {
   const [isLoadingBidders, setIsLoadingBidders] = useState(true);
   const [propertyCoords, setPropertyCoords] = useState(null);
   const [isLoadingCoords, setIsLoadingCoords] = useState(true);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState(null);
 
   const showNotification = (message, type = "success") => {
     if (type === "success") {
@@ -217,6 +220,12 @@ function RepairDetails({ isOpen, onClose, repair }) {
   const handleBidderClick = (bidder) => {
     setSelectedBidder(bidder);
     setShowBidModal(true);
+  };
+
+  const handleProfileClick = (e, bidder) => {
+    e.stopPropagation();
+    setSelectedProfile(bidder.profile);
+    setShowProfileModal(true);
   };
 
   const handleAcceptBid = async () => {
@@ -502,11 +511,21 @@ function RepairDetails({ isOpen, onClose, repair }) {
                         className={`rd-compact-bid-card ${index === 0 ? 'top' : ''}`}
                         onClick={() => handleBidderClick(bidder)}
                       >
-                        <div className="rd-bid-avatar">
+                        <div
+                          className="rd-bid-avatar rd-bid-avatar-clickable"
+                          onClick={(e) => handleProfileClick(e, bidder)}
+                          title="View profile"
+                        >
                           {bidder.company_name?.charAt(0) || 'C'}
                         </div>
                         <div className="rd-bid-main">
-                          <div className="rd-bid-name">{bidder.company_name}</div>
+                          <div
+                            className="rd-bid-name rd-bid-name-clickable"
+                            onClick={(e) => handleProfileClick(e, bidder)}
+                            title="View profile"
+                          >
+                            {bidder.company_name}
+                          </div>
                           <div className="rd-bid-meta">
                             <Star size={10} fill="#facc15" stroke="#facc15" />
                             <span>{Number(bidder.average_rating || 0).toFixed(1)}</span>
@@ -620,6 +639,13 @@ function RepairDetails({ isOpen, onClose, repair }) {
           </div>
         </div>
       )}
+
+      {/* Entrepreneur Profile Modal */}
+      <EntrepreneurProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        profile={selectedProfile}
+      />
     </>
   );
 }

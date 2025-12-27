@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Star, CheckCircle, Award, Briefcase, MapPin, Calendar, Mail, Phone, LogOut, MessageSquare, User, Upload, Camera, X, Crown, Check, Zap, Shield, Activity, DollarSign, FileText, ArrowUpCircle, AlertCircle } from 'lucide-react';
+import {
+  Star, CheckCircle, Award, Briefcase, MapPin, Calendar, Mail, Phone, LogOut,
+  MessageSquare, User, Upload, Camera, X, Crown, Check, Zap, Shield, Activity,
+  DollarSign, FileText, ArrowUpCircle, AlertCircle, Lock, Eye, EyeOff, Key,
+  BarChart3, Menu, Edit
+} from 'lucide-react';
 import Nav from "../../components/Nav";
-import '../../styles/entrepreneur/profilepageentrepreneur.css';
+import '../../styles/entrepreneur/profilepageentrepreneur-modern.css';
 import '../../styles/entrepreneur/subscriptionpage.css';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -10,7 +15,8 @@ import SubscriptionPaymentForm from '../../components/SubscriptionPaymentModal'
 import '../../styles/entrepreneur/subscriptionmodal.css'
 
 function ProfilePageEntrepreneur() {
-  const [activeTab, setActiveTab] = useState('subscription');
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const [activeTab, setActiveTab] = useState('account');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [profile, setProfile] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -25,7 +31,23 @@ function ProfilePageEntrepreneur() {
   const [showPlansModal, setShowPlansModal] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [selectedPlanType, setSelectedPlanType] = useState('')
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const navigate = useNavigate();
+
+  // Password change states
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  })
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false
+  })
+  const [passwordError, setPasswordError] = useState('')
+  const [passwordSuccess, setPasswordSuccess] = useState('')
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -38,10 +60,17 @@ function ProfilePageEntrepreneur() {
     specializations: []
   });
 
+  // Tab labels for mobile header
+  const tabLabels = {
+    account: 'Account',
+    subscription: 'Subscription',
+    performance: 'Performance & Reviews',
+    security: 'Security'
+  }
+
   useEffect(() => {
     fetchEntreprenuerProfile()
 
-    // Load user profile and subscription data
     const uProfile = localStorage.getItem('userProfile')
     if (uProfile) {
       const u = JSON.parse(uProfile)
@@ -95,7 +124,6 @@ function ProfilePageEntrepreneur() {
   };
 
   const fetchEntreprenuerProfile = async () => {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
     const userProfile = localStorage.getItem('userProfile')
 
     if(userProfile) {
@@ -131,14 +159,12 @@ function ProfilePageEntrepreneur() {
       setProfile(newEntrepData)
       setIsLoading(false)
 
-      // Fetch reviews after profile is loaded
       fetchReviews(user.id, user.token)
     }
   }
 
   const fetchReviews = async (userId, token) => {
     setReviewsLoading(true)
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
     try {
       const reviewsResponse = await fetch(`${API_BASE_URL}/api/reviews/reviewed/${userId}`, {
@@ -160,7 +186,6 @@ function ProfilePageEntrepreneur() {
     }
   }
 
-  // Calculate average rating from reviews
   const calculateAverageRating = () => {
     if (reviews.length === 0) return 0
     const sum = reviews.reduce((acc, review) => acc + review.rating, 0)
@@ -211,13 +236,11 @@ function ProfilePageEntrepreneur() {
   const handleImageSelect = (e) => {
     const file = e.target.files[0]
     if (file) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         toast.error('Please select a valid image file')
         return
       }
 
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast.error('Image size should not exceed 5MB')
         return
@@ -245,7 +268,6 @@ function ProfilePageEntrepreneur() {
     }
 
     setIsUpdating(true)
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
     const userProfile = localStorage.getItem('userProfile')
     let imageUploadFailed = false
 
@@ -253,7 +275,6 @@ function ProfilePageEntrepreneur() {
       if (userProfile) {
         const user = JSON.parse(userProfile)
 
-        // 1. Update profile picture if new image selected (non-blocking)
         if (profileImage) {
           setIsUploadingImage(true)
           const imageFormData = new FormData()
@@ -280,7 +301,6 @@ function ProfilePageEntrepreneur() {
           setIsUploadingImage(false)
         }
 
-        // 2. Update entrepreneur profile
         const profileResponse = await fetch(`${API_BASE_URL}/api/users/entrepreneur/profile`, {
           method: 'PUT',
           headers: {
@@ -301,7 +321,6 @@ function ProfilePageEntrepreneur() {
           throw new Error('Failed to update profile')
         }
 
-        // 3. Update phone number if different
         if (formData.phone !== profile.phone) {
           await fetch(`${API_BASE_URL}/api/users/phone`, {
             method: 'PUT',
@@ -315,10 +334,8 @@ function ProfilePageEntrepreneur() {
           })
         }
 
-        // Refresh profile data
         await fetchEntreprenuerProfile()
 
-        // Reset image states
         setProfileImage(null)
         setProfileImagePreview(null)
 
@@ -345,23 +362,19 @@ function ProfilePageEntrepreneur() {
     navigate("/");
   };
 
-  // Handle selecting a plan from the plans modal
   const handleSelectPlan = (planType) => {
     setSelectedPlanType(planType)
     setShowPlansModal(false)
     setShowPaymentModal(true)
   }
 
-  // Handle payment modal close and refresh subscription data
   const handlePaymentModalClose = async (success) => {
     setShowPaymentModal(false)
     setSelectedPlanType('')
     if (success) {
-      // Refresh subscription data from API
       const uProf = localStorage.getItem('userProfile')
       if (uProf) {
         const u = JSON.parse(uProf)
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
         try {
           const response = await fetch(`${API_BASE_URL}/api/payments/subscription`, {
             method: 'GET',
@@ -373,7 +386,6 @@ function ProfilePageEntrepreneur() {
             const subscriptionData = await response.json()
             setSubscription(subscriptionData.subscription || {})
 
-            // Update localStorage with new subscription data
             const updatedProfile = {
               ...u,
               entrepProfile: {
@@ -391,6 +403,118 @@ function ProfilePageEntrepreneur() {
     }
   };
 
+  // Password change handlers
+  const handlePasswordInputChange = (e) => {
+    const { name, value } = e.target
+    setPasswordForm(prev => ({
+      ...prev,
+      [name]: value
+    }))
+    setPasswordError('')
+    setPasswordSuccess('')
+  }
+
+  const togglePasswordVisibility = (field) => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }))
+  }
+
+  const getPasswordStrength = (password) => {
+    let strength = 0
+    if (password.length >= 8) strength++
+    if (/[A-Z]/.test(password)) strength++
+    if (/[a-z]/.test(password)) strength++
+    if (/[0-9]/.test(password)) strength++
+    if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++
+    return strength
+  }
+
+  const getStrengthLabel = (strength) => {
+    const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong']
+    return labels[Math.min(strength, 4)]
+  }
+
+  const getStrengthColor = (strength) => {
+    const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#16a34a']
+    return colors[Math.min(strength, 4)]
+  }
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault()
+    setPasswordError('')
+    setPasswordSuccess('')
+
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      setPasswordError('All fields are required')
+      return
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('New passwords do not match')
+      return
+    }
+
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordError('Password must be at least 8 characters long')
+      return
+    }
+
+    const strength = getPasswordStrength(passwordForm.newPassword)
+    if (strength < 4) {
+      setPasswordError('Password must contain uppercase, lowercase, number, and special character')
+      return
+    }
+
+    setIsChangingPassword(true)
+
+    try {
+      const uProfile = localStorage.getItem('userProfile')
+      if (!uProfile) {
+        throw new Error('Please log in again')
+      }
+
+      const user = JSON.parse(uProfile)
+
+      const response = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`
+        },
+        body: JSON.stringify({
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+          confirmPassword: passwordForm.confirmPassword
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to change password')
+      }
+
+      setPasswordSuccess('Password changed successfully!')
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      })
+      toast.success('Password changed successfully!')
+    } catch (error) {
+      setPasswordError(error.message)
+    } finally {
+      setIsChangingPassword(false)
+    }
+  }
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab)
+    setIsMobileSidebarOpen(false)
+  }
+
   if(isLoading) {
     return (
       <>
@@ -403,256 +527,258 @@ function ProfilePageEntrepreneur() {
   }
 
   return (
-    <div className="entrepreneur-app-layout">
-      {!isEditModalOpen && <Nav />}
-      <div className="entrepreneur-profile-container">
-        {/* Gradient Background */}
-        <div className="entrepreneur-gradient-bg"></div>
-        
-        {/* Content Wrapper */}
-        <div className="entrepreneur-content-wrapper">
-          {/* Profile Header Card */}
-          <div className="entrepreneur-profile-header">
-            <div className="entrepreneur-profile-header-left">
-              <div className="entrepreneur-profile-image-container">
-                <img
-                  src={profile.image || "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=200"}
-                  alt={profile.companyName}
-                  className="entrepreneur-company-logo"
-                  onError={(e) => {
-                    e.target.src = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=200"
-                  }}
-                />
-              </div>
-              <div className="entrepreneur-profile-info">
-                <h1 className="entrepreneur-profile-title">{profile.companyName}</h1>
-                <span className="entrepreneur-license-verified">
-                  {profile.licenseNumber} <CheckCircle size={16} />
-                </span>
-                
-                {/* Additional Details */}
-                <div className="entrepreneur-header-details">
-                  <div className="entrepreneur-header-detail-item">
-                    <div className="entrepreneur-header-detail-label">
-                      Years in Business
-                    </div>
-                    <div className="entrepreneur-header-detail-value">
-                      {profile.yearsInBusiness} years
-                    </div>
-                  </div>
-                  <div className="entrepreneur-header-detail-item">
-                    <div className="entrepreneur-header-detail-label">
-                      Employees
-                    </div>
-                    <div className="entrepreneur-header-detail-value">
-                      {profile.numEmployees} employees
-                    </div>
-                  </div>
-                  <div className="entrepreneur-header-detail-item">
-                    <div className="entrepreneur-header-detail-label">
-                      <Phone size={12} />
-                      Phone
-                    </div>
-                    <div className="entrepreneur-header-detail-value light">
-                      {profile.phone}
-                    </div>
-                  </div>
-                  <div className="entrepreneur-header-detail-item">
-                    <div className="entrepreneur-header-detail-label">
-                      <Mail size={12} />
-                      Email
-                    </div>
-                    <div className="entrepreneur-header-detail-value light">
-                      {profile.email}
-                    </div>
-                  </div>
-                  <div className="entrepreneur-header-detail-item entrepreneur-header-address">
-                    <div className="entrepreneur-header-detail-label">
-                      <MapPin size={12} />
-                      Address
-                    </div>
-                    <div className="entrepreneur-header-detail-value light">
-                      {profile.address}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="entrepreneur-header-actions">
+    <div className="ep-profile-page-modern">
+      <Nav />
+
+      <div className="ep-layout">
+        {/* Mobile Header */}
+        <div className="ep-mobile-header">
+          <button
+            className="ep-mobile-menu-btn"
+            onClick={() => setIsMobileSidebarOpen(true)}
+          >
+            <Menu size={20} />
+          </button>
+          <span className="ep-mobile-title">{tabLabels[activeTab]}</span>
+          <div className="ep-mobile-actions">
+            {activeTab === 'account' && (
               <button
-                className="entrepreneur-edit-button"
+                className="ep-mobile-action-btn"
                 onClick={() => setIsEditModalOpen(true)}
+                title="Edit Profile"
               >
-                Edit Profile
+                <Edit size={18} />
               </button>
-              <button
-                className="entrepreneur-logout-button"
-                onClick={() => handleLogout()}
-              >
-                <LogOut size={18} />
-                Logout
-              </button>
+            )}
+            <button
+              className="ep-mobile-action-btn ep-mobile-logout-btn"
+              onClick={handleLogout}
+              title="Logout"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Overlay */}
+        {isMobileSidebarOpen && (
+          <div
+            className="ep-mobile-overlay"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar */}
+        <aside className={`ep-sidebar ${isMobileSidebarOpen ? 'ep-sidebar-open' : ''}`}>
+          <button
+            className="ep-sidebar-close"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          >
+            <X size={18} />
+          </button>
+
+          <div className="ep-sidebar-header">
+            <div className="ep-sidebar-avatar">
+              {profile.image ? (
+                <img src={profile.image} alt={profile.companyName} />
+              ) : (
+                <Briefcase size={24} />
+              )}
+            </div>
+            <div className="ep-sidebar-user">
+              <h3>{profile.companyName}</h3>
+              <span>Entrepreneur</span>
             </div>
           </div>
 
-          {/* Tab Navigation */}
-          <div className="entrepreneur-tab-navigation">
+          <nav className="ep-sidebar-nav">
             <button
-              className={`entrepreneur-tab-button ${activeTab === 'subscription' ? 'active' : ''}`}
-              onClick={() => setActiveTab('subscription')}
+              className={`ep-nav-item ${activeTab === 'account' ? 'ep-nav-active' : ''}`}
+              onClick={() => handleTabChange('account')}
             >
-              <Crown size={18} style={{marginRight: '8px'}} />
-              Subscription
+              <User size={18} />
+              <span>Account</span>
             </button>
             <button
-              className={`entrepreneur-tab-button ${activeTab === 'specialization' ? 'active' : ''}`}
-              onClick={() => setActiveTab('specialization')}
+              className={`ep-nav-item ${activeTab === 'subscription' ? 'ep-nav-active' : ''}`}
+              onClick={() => handleTabChange('subscription')}
             >
-              Specialization
+              <Crown size={18} />
+              <span>Subscription</span>
             </button>
             <button
-              className={`entrepreneur-tab-button ${activeTab === 'metrics' ? 'active' : ''}`}
-              onClick={() => setActiveTab('metrics')}
+              className={`ep-nav-item ${activeTab === 'performance' ? 'ep-nav-active' : ''}`}
+              onClick={() => handleTabChange('performance')}
             >
-              Performance & Reviews
+              <BarChart3 size={18} />
+              <span>Performance & Reviews</span>
+              {reviews.length > 0 && (
+                <span className="ep-nav-badge">{reviews.length}</span>
+              )}
+            </button>
+            <button
+              className={`ep-nav-item ${activeTab === 'security' ? 'ep-nav-active' : ''}`}
+              onClick={() => handleTabChange('security')}
+            >
+              <Shield size={18} />
+              <span>Security</span>
+            </button>
+          </nav>
+
+          <div className="ep-sidebar-footer">
+            <button className="ep-nav-item ep-nav-logout" onClick={handleLogout}>
+              <LogOut size={18} />
+              <span>Logout</span>
             </button>
           </div>
+        </aside>
 
-          {/* Tab Content */}
-          <div className="entrepreneur-tab-content">
-            {/* Specialization Tab */}
-            {activeTab === 'specialization' && (
-              <div className="entrepreneur-tab-panel">
-                <h2 className="entrepreneur-section-title">Specializations</h2>
-                <div className="entrepreneur-specialization-grid">
-                  <div className="entrepreneur-card">
-                    <div className="entrepreneur-card-body">
-                      <div className="entrepreneur-specializations-display">
-                        {profile.specializations.map((spec) => (
-                          <span key={spec} className="entrepreneur-spec-badge">{spec}</span>
-                        ))}
-                      </div>
-                    </div>
+        {/* Main Content */}
+        <main className="ep-main-content">
+          <div className="ep-tab-content">
+            {/* Account Tab */}
+            {activeTab === 'account' && (
+              <>
+                <div className="ep-content-header">
+                  <div className="ep-content-header-left">
+                    <h2>Account Information</h2>
+                    <p>Manage your company profile and contact details</p>
                   </div>
+                  <button className="ep-btn ep-btn-primary ep-desktop-only" onClick={() => setIsEditModalOpen(true)}>
+                    <Edit size={16} />
+                    Edit Profile
+                  </button>
                 </div>
-              </div>
-            )}
 
-            {/* Performance Metrics Tab */}
-            {activeTab === 'metrics' && (
-              <div className="entrepreneur-tab-panel">
-                <h2 className="entrepreneur-section-title">Performance Metrics</h2>
-                <div className="entrepreneur-metrics-container">
-                  <div className="entrepreneur-metrics-grid">
-                    <div className="entrepreneur-metric-card">
-                      <Star size={24} color="#F39C12" fill="#F39C12" />
-                      <div>
-                        <div className="entrepreneur-metric-label">Average Rating</div>
-                        <div className="entrepreneur-metric-value">{calculateAverageRating() || 'N/A'}</div>
+                {/* Profile Card */}
+                <div className="ep-profile-card-modern">
+                  <div className="ep-profile-card-left">
+                    <div className="ep-avatar-container">
+                      <div className="ep-avatar-modern">
+                        {profile.image ? (
+                          <img src={profile.image} alt={profile.companyName} />
+                        ) : (
+                          <Briefcase size={36} />
+                        )}
                       </div>
                     </div>
-                    <div className="entrepreneur-metric-card">
-                      <Award size={24} color="#2ECC71" />
-                      <div>
-                        <div className="entrepreneur-metric-label">Total Reviews</div>
-                        <div className="entrepreneur-metric-value">{reviews.length}</div>
-                      </div>
-                    </div>
-                    <div className="entrepreneur-metric-card">
-                      <CheckCircle size={24} color="#00A5A9" />
-                      <div>
-                        <div className="entrepreneur-metric-label">Experience</div>
-                        <div className="entrepreneur-metric-value">{profile.yearsInBusiness} Years</div>
-                      </div>
-                    </div>
-                    <div className="entrepreneur-metric-card">
-                      <Briefcase size={24} color="#3498DB" />
-                      <div>
-                        <div className="entrepreneur-metric-label">Employees</div>
-                        <div className="entrepreneur-metric-value">{profile.numEmployees}</div>
+                    <div className="ep-profile-info-modern">
+                      <h3>{profile.companyName}</h3>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        <span className="ep-role-tag-modern">
+                          <Briefcase size={12} />
+                          Entrepreneur
+                        </span>
+                        <span className="ep-license-badge">
+                          <CheckCircle size={12} />
+                          {profile.licenseNumber}
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Reviews Section */}
-                <h2 className="entrepreneur-section-title" style={{ marginTop: '2rem' }}>Reviews</h2>
-                {reviewsLoading ? (
-                  <div className="entrepreneur-reviews-loading">
-                    <div className="entrepreneur-loader"></div>
-                    <p>Loading reviews...</p>
-                  </div>
-                ) : reviews.length > 0 ? (
-                  <div className="entrepreneur-reviews-grid">
-                    {reviews.map((review) => (
-                      <div key={review.id} className="entrepreneur-review-card">
-                        <div className="entrepreneur-review-header">
-                          <div className="entrepreneur-review-author">
-                            <div className="entrepreneur-review-avatar">
-                              <User size={20} />
-                            </div>
-                            <div>
-                              <div className="entrepreneur-review-author-name">
-                                {review.reviewer_first_name} {review.reviewer_last_name}
-                              </div>
-                              <div className="entrepreneur-review-date">
-                                {new Date(review.created_at).toLocaleDateString('en-US', {
-                                  month: 'short',
-                                  day: 'numeric',
-                                  year: 'numeric'
-                                })}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="entrepreneur-review-rating">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                size={16}
-                                fill={i < review.rating ? '#F39C12' : 'none'}
-                                color="#F39C12"
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        {review.job_title && (
-                          <div className="entrepreneur-review-job">
-                            <Briefcase size={14} />
-                            <span>{review.job_title}</span>
-                          </div>
-                        )}
-                        <p className="entrepreneur-review-comment">{review.comment}</p>
-                        {review.images && review.images.length > 0 && (
-                          <div className="entrepreneur-review-images">
-                            {review.images.map((image, idx) => (
-                              <img
-                                key={image.id}
-                                src={image.image_url}
-                                alt={`Review ${idx + 1}`}
-                                className="entrepreneur-review-image"
-                                onClick={() => window.open(image.image_url, '_blank')}
-                              />
-                            ))}
-                          </div>
-                        )}
+                {/* Company Information */}
+                <div className="ep-info-section">
+                  <h4 className="ep-info-section-title">Company Information</h4>
+                  <div className="ep-info-grid-modern">
+                    <div className="ep-info-item-modern">
+                      <div className="ep-info-icon-modern">
+                        <Briefcase size={18} />
                       </div>
+                      <div className="ep-info-details">
+                        <label>Company Name</label>
+                        <span>{profile.companyName}</span>
+                      </div>
+                    </div>
+                    <div className="ep-info-item-modern">
+                      <div className="ep-info-icon-modern">
+                        <Award size={18} />
+                      </div>
+                      <div className="ep-info-details">
+                        <label>License Number</label>
+                        <span>{profile.licenseNumber}</span>
+                      </div>
+                    </div>
+                    <div className="ep-info-item-modern">
+                      <div className="ep-info-icon-modern">
+                        <Calendar size={18} />
+                      </div>
+                      <div className="ep-info-details">
+                        <label>Years in Business</label>
+                        <span>{profile.yearsInBusiness} years</span>
+                      </div>
+                    </div>
+                    <div className="ep-info-item-modern">
+                      <div className="ep-info-icon-modern">
+                        <User size={18} />
+                      </div>
+                      <div className="ep-info-details">
+                        <label>Number of Employees</label>
+                        <span>{profile.numEmployees}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact Information */}
+                <div className="ep-info-section">
+                  <h4 className="ep-info-section-title">Contact Information</h4>
+                  <div className="ep-info-grid-modern">
+                    <div className="ep-info-item-modern">
+                      <div className="ep-info-icon-modern">
+                        <Mail size={18} />
+                      </div>
+                      <div className="ep-info-details">
+                        <label>Email</label>
+                        <span>{profile.email}</span>
+                      </div>
+                    </div>
+                    <div className="ep-info-item-modern">
+                      <div className="ep-info-icon-modern">
+                        <Phone size={18} />
+                      </div>
+                      <div className="ep-info-details">
+                        <label>Phone</label>
+                        <span>{profile.phone}</span>
+                      </div>
+                    </div>
+                    <div className="ep-info-item-modern ep-info-full-width">
+                      <div className="ep-info-icon-modern">
+                        <MapPin size={18} />
+                      </div>
+                      <div className="ep-info-details">
+                        <label>Address</label>
+                        <span>{profile.address}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Specializations */}
+                <div className="ep-specializations-section">
+                  <h4 className="ep-info-section-title">Specializations</h4>
+                  <div className="ep-specializations-grid">
+                    {profile.specializations.map((spec) => (
+                      <span key={spec} className="ep-spec-badge">
+                        <CheckCircle size={14} />
+                        {spec}
+                      </span>
                     ))}
                   </div>
-                ) : (
-                  <div className="entrepreneur-no-reviews">
-                    <MessageSquare size={48} color="#ccc" />
-                    <p>No reviews yet</p>
-                    <span>Complete jobs to receive reviews from clients</span>
-                  </div>
-                )}
-              </div>
+                </div>
+              </>
             )}
 
             {/* Subscription Tab */}
             {activeTab === 'subscription' && (
-              <div className="entrepreneur-tab-panel">
-                <h2 className="entrepreneur-section-title">Subscription Management</h2>
+              <>
+                <div className="ep-content-header">
+                  <div className="ep-content-header-left">
+                    <h2>Subscription Management</h2>
+                    <p>Manage your subscription plan and billing</p>
+                  </div>
+                </div>
 
                 {/* No Subscription State */}
                 {!userProfile?.entrepProfile?.subscription?.hasSubscription ? (
@@ -673,386 +799,494 @@ function ProfilePageEntrepreneur() {
                         View Subscription Plans
                       </button>
                     </div>
-
-                    {/* Feature Comparison Table for non-subscribers */}
-                    <div className="comparison-section">
-                      <div className="section-header">
-                        <div className="section-icon">
-                          <Crown size={24} />
-                        </div>
-                        <div className="section-text">
-                          <h2 className="section-title">Feature Comparison</h2>
-                          <p className="section-subtitle">See what you can unlock with a subscription</p>
-                        </div>
-                      </div>
-
-                      <div className="comparison-table-wrapper">
-                        <table className="comparison-table">
-                          <thead>
-                            <tr>
-                              <th className="feature-col">Feature</th>
-                              <th className="tier-col">No Subscription</th>
-                              <th className="tier-col">Basic Plan</th>
-                              <th className="tier-col premium-col">Premium Plan</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr>
-                              <td className="feature-name">Browse construction jobs</td>
-                              <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
-                              <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
-                              <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
-                            </tr>
-                            <tr>
-                              <td className="feature-name">View job details & specs</td>
-                              <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
-                              <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
-                              <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
-                            </tr>
-                            <tr>
-                              <td className="feature-name">Submit bids</td>
-                              <td className="tier-cell"><X className="icon-no" size={20} /></td>
-                              <td className="tier-cell">
-                                <Check className="icon-yes" size={20} />
-                                <span className="feature-note">(30 max)</span>
-                              </td>
-                              <td className="tier-cell premium-cell">
-                                <Check className="icon-yes" size={20} />
-                                <span className="feature-note">(unlimited)</span>
-                              </td>
-                            </tr>
-                            <tr>
-                              <td className="feature-name">Unlock project budgets</td>
-                              <td className="tier-cell"><X className="icon-no" size={20} /></td>
-                              <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
-                              <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
-                            </tr>
-                            <tr>
-                              <td className="feature-name">Message on approved projects</td>
-                              <td className="tier-cell"><X className="icon-no" size={20} /></td>
-                              <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
-                              <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
-                            </tr>
-                            <tr>
-                              <td className="feature-name">Priority support</td>
-                              <td className="tier-cell"><X className="icon-no" size={20} /></td>
-                              <td className="tier-cell"><X className="icon-no" size={20} /></td>
-                              <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
                   </div>
                 ) : (
                   <>
-                {/* Trial Banner - Only show during trial */}
-                {subscription.is_trial && getTrialInfo() && (
-                  <div className="status-banner trial-banner">
-                    <div className="banner-content">
-                      <div className="banner-icon-wrapper">
-                        <Zap size={28} />
+                    {/* Trial Banner */}
+                    {subscription.is_trial && getTrialInfo() && (
+                      <div className="status-banner trial-banner">
+                        <div className="banner-content">
+                          <div className="banner-icon-wrapper">
+                            <Zap size={28} />
+                          </div>
+                          <div className="banner-info">
+                            <div className="banner-header">
+                              <h3 className="banner-title">Premium Trial Active</h3>
+                              <div className="trial-badge">Trial Period</div>
+                            </div>
+                            <p className="banner-text">
+                              {getTrialInfo().daysRemaining} {getTrialInfo().daysRemaining === 1 ? 'day' : 'days'} remaining
+                            </p>
+                            <p className="banner-subtext">
+                              Trial ends on {formatDate(subscription.trial_end)}
+                            </p>
+                            <div className="trial-progress-bar">
+                              <div
+                                className="trial-progress-fill"
+                                style={{ width: `${getTrialInfo().percentage}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                          <div className="trial-countdown">
+                            <div className="countdown-number">{getTrialInfo().daysRemaining}</div>
+                            <div className="countdown-label">Days Left</div>
+                          </div>
+                        </div>
                       </div>
-                      <div className="banner-info">
-                        <div className="banner-header">
-                          <h3 className="banner-title">Premium Trial Active</h3>
-                          <div className="trial-badge">Trial Period</div>
-                        </div>
-                        <p className="banner-text">
-                          {getTrialInfo().daysRemaining} {getTrialInfo().daysRemaining === 1 ? 'day' : 'days'}, {getTrialInfo().hoursRemaining} {getTrialInfo().hoursRemaining === 1 ? 'hour' : 'hours'}, {getTrialInfo().minutesRemaining} {getTrialInfo().minutesRemaining === 1 ? 'minute' : 'minutes'} remaining
-                        </p>
-                        <p className="banner-subtext">
-                          Trial ends on {formatDate(subscription.trial_end)}
-                        </p>
-                        <div className="trial-progress-bar">
-                          <div
-                            className="trial-progress-fill"
-                            style={{ width: `${getTrialInfo().percentage}%` }}
-                          ></div>
-                        </div>
-                        <div className="trial-progress-label">
-                          {getTrialInfo().daysRemaining} of {getTrialInfo().totalDays} days remaining ({Math.round(getTrialInfo().percentage)}%)
+                    )}
+
+                    {/* Current Plan Display */}
+                    {!subscription.is_trial && subscription.plan_type && (
+                      <div className="current-plan-section">
+                        <div className="plan-overview-grid">
+                          <div className="plan-info-card">
+                            <div className="card-header">
+                              <div className="card-icon">
+                                <Shield size={24} />
+                              </div>
+                              <div className="status-indicator active">
+                                <span className="status-dot"></span>
+                                Active
+                              </div>
+                            </div>
+                            <h2 className="plan-name">{subscription.plan_type === 'premium' ? 'Premium' : 'Basic'} Plan</h2>
+                            <p className="plan-desc">
+                              {subscription.plan_type === 'premium' ? 'Best for professionals' : 'Perfect for getting started'}
+                            </p>
+                            <div className="plan-price">
+                              <span className="price-symbol">$</span>
+                              <span className="price-value">{subscription.price || (subscription.plan_type === 'premium' ? 429 : 250)}</span>
+                              <span className="price-period">/month</span>
+                            </div>
+                          </div>
+
+                          <div className="billing-timeline-card">
+                            <div className="card-header">
+                              <div className="card-icon">
+                                <Calendar size={24} />
+                              </div>
+                              <h3 className="card-title">Billing Cycle</h3>
+                            </div>
+                            <div className="timeline-content">
+                              <div className="timeline-dates">
+                                <div className="date-item">
+                                  <span className="date-label">Started</span>
+                                  <span className="date-value">{formatDate(subscription.start_date || subscription.start)}</span>
+                                </div>
+                                <div className="date-item">
+                                  <span className="date-label">Next Billing</span>
+                                  <span className="date-value">{formatDate(subscription.current_period_end)}</span>
+                                </div>
+                              </div>
+                              {getSubscriptionDuration() && (
+                                <div className="timeline-progress">
+                                  <div className="progress-bar-container">
+                                    <div
+                                      className="progress-bar-fill"
+                                      style={{ width: `${getSubscriptionDuration().percentage}%` }}
+                                    ></div>
+                                  </div>
+                                  <div className="progress-info">
+                                    <span className="progress-text">{getSubscriptionDuration().daysRemaining} days until renewal</span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </div>
-                      <div className="trial-countdown">
-                        <div className="countdown-number">{getTrialInfo().daysRemaining}</div>
-                        <div className="countdown-label">Days Left</div>
-                        {getTrialInfo().hoursRemaining > 0 && (
-                          <div className="countdown-hours">{getTrialInfo().hoursRemaining}h {getTrialInfo().minutesRemaining}m</div>
-                        )}
+                    )}
+
+                    {/* View Plans Button */}
+                    <div className="upgrade-section">
+                      <div className="upgrade-card">
+                        <div className="upgrade-content">
+                          <div className="upgrade-icon">
+                            <ArrowUpCircle size={32} />
+                          </div>
+                          <div className="upgrade-info">
+                            <h3 className="upgrade-title">
+                              {subscription.plan_type === 'premium' ? 'You\'re on Premium' : 'View Subscription Plans'}
+                            </h3>
+                            <p className="upgrade-description">
+                              {subscription.plan_type === 'premium'
+                                ? 'You have access to unlimited bids and priority support'
+                                : 'Explore available plans and upgrade to get more features'}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          className="upgrade-btn"
+                          onClick={() => setShowPlansModal(true)}
+                        >
+                          <Crown size={18} />
+                          View Plans
+                        </button>
                       </div>
                     </div>
-                  </div>
-                )}
 
-                {/* Current Plan Display - Only show if not on trial */}
-                {!subscription.is_trial && subscription.plan_type && (
-                  <div className="current-plan-section">
-                    <div className="plan-overview-grid">
-                      {/* Plan Info Card */}
-                      <div className="plan-info-card">
-                        <div className="card-header">
-                          <div className="card-icon">
-                            <Shield size={24} />
-                          </div>
-                          <div className="status-indicator active">
-                            <span className="status-dot"></span>
-                            Active
-                          </div>
+                    {/* Usage Stats */}
+                    <div className="dashboard-section">
+                      <div className="section-header">
+                        <div className="section-icon">
+                          <Activity size={24} />
                         </div>
-                        <h2 className="plan-name">{subscription.plan_type === 'premium' ? 'Premium' : 'Basic'} Plan</h2>
-                        <p className="plan-desc">
-                          {subscription.plan_type === 'premium' ? 'Best for professionals' : 'Perfect for getting started'}
-                        </p>
-                        <div className="plan-price">
-                          <span className="price-symbol">$</span>
-                          <span className="price-value">{subscription.price || (subscription.plan_type === 'premium' ? 429 : 250)}</span>
-                          <span className="price-period">/month</span>
+                        <div className="section-text">
+                          <h2 className="section-title">Usage Analytics</h2>
+                          <p className="section-subtitle">Monitor your monthly bidding activity</p>
                         </div>
                       </div>
 
-                      {/* Billing Timeline Card */}
-                      <div className="billing-timeline-card">
-                        <div className="card-header">
-                          <div className="card-icon">
-                            <Calendar size={24} />
+                      <div className="stats-grid subs">
+                        <div className="stat-card subs">
+                          <div className="stat-header subs">
+                            <div className="stat-icon bids">
+                              <FileText size={22} />
+                            </div>
+                            <span className="stat-label">Bids Submitted</span>
                           </div>
-                          <h3 className="card-title">Billing Cycle</h3>
+                          <div className="stat-value subsval">
+                            {subscription?.bids?.used || 0}
+                            {subscription?.bids?.limit !== 'unlimited' && subscription?.bids?.limit && (
+                              <span className="stat-total"> / {subscription.bids.limit}</span>
+                            )}
+                          </div>
                         </div>
-                        <div className="timeline-content">
-                          <div className="timeline-dates">
-                            <div className="date-item">
-                              <span className="date-label">Started</span>
-                              <span className="date-value">{formatDate(subscription.start_date || subscription.start)}</span>
+
+                        <div className="stat-card subs">
+                          <div className="stat-header subs">
+                            <div className="stat-icon remaining">
+                              <Zap size={22} />
                             </div>
-                            <div className="date-item">
-                              <span className="date-label">Next Billing</span>
-                              <span className="date-value">{formatDate(subscription.current_period_end)}</span>
+                            <span className="stat-label">Remaining Bids</span>
+                          </div>
+                          <div className="stat-value accent subsval">
+                            {subscription?.bids?.remaining === 'unlimited'
+                              ? '∞'
+                              : subscription?.bids?.remaining || '∞'}
+                          </div>
+                        </div>
+
+                        <div className="stat-card subs">
+                          <div className="stat-header subs">
+                            <div className="stat-icon budget">
+                              <DollarSign size={22} />
+                            </div>
+                            <span className="stat-label">Budget Unlocks</span>
+                          </div>
+                          <div className="stat-value subsval">Unlimited</div>
+                        </div>
+
+                        <div className="stat-card subs">
+                          <div className="stat-header subs">
+                            <div className="stat-icon messages">
+                              <MessageSquare size={22} />
+                            </div>
+                            <span className="stat-label">Active Chats</span>
+                          </div>
+                          <div className="stat-value subsval">Unlimited</div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+
+            {/* Performance & Reviews Tab */}
+            {activeTab === 'performance' && (
+              <>
+                <div className="ep-content-header">
+                  <div className="ep-content-header-left">
+                    <h2>Performance & Reviews</h2>
+                    <p>View your performance metrics and client reviews</p>
+                  </div>
+                </div>
+
+                {/* Metrics Grid */}
+                <div className="ep-metrics-grid">
+                  <div className="ep-metric-card">
+                    <div className="ep-metric-icon rating">
+                      <Star size={24} />
+                    </div>
+                    <div className="ep-metric-content">
+                      <div className="ep-metric-label">Average Rating</div>
+                      <div className="ep-metric-value">{calculateAverageRating() || 'N/A'}</div>
+                    </div>
+                  </div>
+                  <div className="ep-metric-card">
+                    <div className="ep-metric-icon reviews">
+                      <Award size={24} />
+                    </div>
+                    <div className="ep-metric-content">
+                      <div className="ep-metric-label">Total Reviews</div>
+                      <div className="ep-metric-value">{reviews.length}</div>
+                    </div>
+                  </div>
+                  <div className="ep-metric-card">
+                    <div className="ep-metric-icon experience">
+                      <CheckCircle size={24} />
+                    </div>
+                    <div className="ep-metric-content">
+                      <div className="ep-metric-label">Experience</div>
+                      <div className="ep-metric-value">{profile.yearsInBusiness} Years</div>
+                    </div>
+                  </div>
+                  <div className="ep-metric-card">
+                    <div className="ep-metric-icon employees">
+                      <Briefcase size={24} />
+                    </div>
+                    <div className="ep-metric-content">
+                      <div className="ep-metric-label">Employees</div>
+                      <div className="ep-metric-value">{profile.numEmployees}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Reviews Section */}
+                <div className="ep-reviews-section">
+                  <h4 className="ep-info-section-title">Client Reviews</h4>
+                  {reviewsLoading ? (
+                    <div className="ep-no-reviews">
+                      <div className="ep-spinner"></div>
+                      <p>Loading reviews...</p>
+                    </div>
+                  ) : reviews.length > 0 ? (
+                    <div className="ep-reviews-grid">
+                      {reviews.map((review) => (
+                        <div key={review.id} className="ep-review-card">
+                          <div className="ep-review-header">
+                            <div className="ep-review-author">
+                              <div className="ep-review-avatar">
+                                <User size={20} />
+                              </div>
+                              <div>
+                                <div className="ep-review-author-name">
+                                  {review.reviewer_first_name} {review.reviewer_last_name}
+                                </div>
+                                <div className="ep-review-date">
+                                  {new Date(review.created_at).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="ep-review-rating">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  size={16}
+                                  fill={i < review.rating ? '#F39C12' : 'none'}
+                                  color="#F39C12"
+                                />
+                              ))}
                             </div>
                           </div>
-                          {getSubscriptionDuration() && (
-                            <div className="timeline-progress">
-                              <div className="progress-bar-container">
-                                <div
-                                  className="progress-bar-fill"
-                                  style={{ width: `${getSubscriptionDuration().percentage}%` }}
-                                ></div>
-                              </div>
-                              <div className="progress-info">
-                                <span className="progress-text">{getSubscriptionDuration().daysRemaining} days until renewal</span>
-                                <span className="progress-percentage">{Math.round(getSubscriptionDuration().percentage)}%</span>
-                              </div>
+                          {review.job_title && (
+                            <div className="ep-review-job">
+                              <Briefcase size={14} />
+                              <span>{review.job_title}</span>
+                            </div>
+                          )}
+                          <p className="ep-review-comment">{review.comment}</p>
+                          {review.images && review.images.length > 0 && (
+                            <div className="ep-review-images">
+                              {review.images.map((image, idx) => (
+                                <img
+                                  key={image.id}
+                                  src={image.image_url}
+                                  alt={`Review ${idx + 1}`}
+                                  className="ep-review-image"
+                                  onClick={() => window.open(image.image_url, '_blank')}
+                                />
+                              ))}
                             </div>
                           )}
                         </div>
-                      </div>
+                      ))}
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <div className="ep-no-reviews">
+                      <MessageSquare size={48} />
+                      <p>No reviews yet</p>
+                      <span>Complete jobs to receive reviews from clients</span>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
 
-                {/* View Plans Button - Show for all users to view/change plans */}
-                <div className="upgrade-section">
-                  <div className="upgrade-card">
-                    <div className="upgrade-content">
-                      <div className="upgrade-icon">
-                        <ArrowUpCircle size={32} />
-                      </div>
-                      <div className="upgrade-info">
-                        <h3 className="upgrade-title">
-                          {subscription.plan_type === 'premium' ? 'You\'re on Premium' : 'View Subscription Plans'}
-                        </h3>
-                        <p className="upgrade-description">
-                          {subscription.plan_type === 'premium'
-                            ? 'You have access to unlimited bids and priority support'
-                            : 'Explore available plans and upgrade to get more features'}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      className="upgrade-btn"
-                      onClick={() => setShowPlansModal(true)}
-                    >
-                      <Crown size={18} />
-                      View Plans
-                    </button>
+            {/* Security Tab */}
+            {activeTab === 'security' && (
+              <>
+                <div className="ep-content-header">
+                  <div className="ep-content-header-left">
+                    <h2>Security Settings</h2>
+                    <p>Manage your password and security preferences</p>
                   </div>
                 </div>
 
-                {/* Usage Stats */}
-                <div className="dashboard-section">
-                  <div className="section-header">
-                    <div className="section-icon">
-                      <Activity size={24} />
-                    </div>
-                    <div className="section-text">
-                      <h2 className="section-title">Usage Analytics</h2>
-                      <p className="section-subtitle">Monitor your monthly bidding activity</p>
+                {/* Password Change Section */}
+                <div className="ep-security-section">
+                  <div className="ep-security-header">
+                    <div className="ep-security-header-left">
+                      <div className="ep-security-icon">
+                        <Key size={20} />
+                      </div>
+                      <div>
+                        <h3 className="ep-security-title">Change Password</h3>
+                        <p className="ep-security-subtitle">Update your account password</p>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="stats-grid subs">
-                    <div className="stat-card subs">
-                      <div className="stat-header subs">
-                        <div className="stat-icon bids">
-                          <FileText size={22} />
-                        </div>
-                        <span className="stat-label">Bids Submitted</span>
+                  <form onSubmit={handleChangePassword} className="ep-password-form-modern">
+                    {passwordError && (
+                      <div className="ep-alert ep-alert-error">
+                        <AlertCircle size={18} />
+                        {passwordError}
                       </div>
-                      <div className="stat-value subsval">
-                        {subscription?.bids?.used || 0}
-                        {subscription?.bids?.limit !== 'unlimited' && subscription?.bids?.limit && (
-                          <span className="stat-total"> / {subscription.bids.limit}</span>
-                        )}
+                    )}
+                    {passwordSuccess && (
+                      <div className="ep-alert ep-alert-success">
+                        <Check size={18} />
+                        {passwordSuccess}
                       </div>
-                      {subscription?.bids?.limit !== 'unlimited' && subscription?.bids?.limit && (
-                        <div className="stat-progress">
-                          <div
-                            className="stat-progress-fill"
-                            style={{ width: `${(subscription.bids.used / subscription.bids.limit) * 100}%` }}
-                          ></div>
-                        </div>
+                    )}
+
+                    <div className="ep-form-group">
+                      <label>Current Password</label>
+                      <div className="ep-input-wrapper">
+                        <input
+                          type={showPasswords.current ? 'text' : 'password'}
+                          name="currentPassword"
+                          value={passwordForm.currentPassword}
+                          onChange={handlePasswordInputChange}
+                          placeholder="Enter current password"
+                        />
+                        <button
+                          type="button"
+                          className="ep-input-toggle"
+                          onClick={() => togglePasswordVisibility('current')}
+                        >
+                          {showPasswords.current ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="ep-form-group">
+                      <label>New Password</label>
+                      <div className="ep-input-wrapper">
+                        <input
+                          type={showPasswords.new ? 'text' : 'password'}
+                          name="newPassword"
+                          value={passwordForm.newPassword}
+                          onChange={handlePasswordInputChange}
+                          placeholder="Enter new password"
+                        />
+                        <button
+                          type="button"
+                          className="ep-input-toggle"
+                          onClick={() => togglePasswordVisibility('new')}
+                        >
+                          {showPasswords.new ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
+                      {passwordForm.newPassword && (
+                        <>
+                          <div className="ep-strength-indicator">
+                            <div className="ep-strength-bar-modern">
+                              <div
+                                className="ep-strength-fill-modern"
+                                style={{
+                                  width: `${(getPasswordStrength(passwordForm.newPassword) / 5) * 100}%`,
+                                  backgroundColor: getStrengthColor(getPasswordStrength(passwordForm.newPassword))
+                                }}
+                              />
+                            </div>
+                            <span style={{ color: getStrengthColor(getPasswordStrength(passwordForm.newPassword)) }}>
+                              {getStrengthLabel(getPasswordStrength(passwordForm.newPassword))}
+                            </span>
+                          </div>
+                          <div className="ep-requirements-grid">
+                            <span className={`ep-req-item ${passwordForm.newPassword.length >= 8 ? 'ep-req-met' : ''}`}>
+                              <Check size={12} /> 8+ characters
+                            </span>
+                            <span className={`ep-req-item ${/[A-Z]/.test(passwordForm.newPassword) ? 'ep-req-met' : ''}`}>
+                              <Check size={12} /> Uppercase
+                            </span>
+                            <span className={`ep-req-item ${/[a-z]/.test(passwordForm.newPassword) ? 'ep-req-met' : ''}`}>
+                              <Check size={12} /> Lowercase
+                            </span>
+                            <span className={`ep-req-item ${/[0-9]/.test(passwordForm.newPassword) ? 'ep-req-met' : ''}`}>
+                              <Check size={12} /> Number
+                            </span>
+                            <span className={`ep-req-item ${/[!@#$%^&*(),.?":{}|<>]/.test(passwordForm.newPassword) ? 'ep-req-met' : ''}`}>
+                              <Check size={12} /> Special char
+                            </span>
+                          </div>
+                        </>
                       )}
                     </div>
 
-                    <div className="stat-card subs">
-                      <div className="stat-header subs">
-                        <div className="stat-icon remaining">
-                          <Zap size={22} />
-                        </div>
-                        <span className="stat-label">Remaining Bids</span>
+                    <div className="ep-form-group">
+                      <label>Confirm New Password</label>
+                      <div className="ep-input-wrapper">
+                        <input
+                          type={showPasswords.confirm ? 'text' : 'password'}
+                          name="confirmPassword"
+                          value={passwordForm.confirmPassword}
+                          onChange={handlePasswordInputChange}
+                          placeholder="Confirm new password"
+                        />
+                        <button
+                          type="button"
+                          className="ep-input-toggle"
+                          onClick={() => togglePasswordVisibility('confirm')}
+                        >
+                          {showPasswords.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
                       </div>
-                      <div className="stat-value accent subsval">
-                        {subscription?.bids?.remaining === 'unlimited'
-                          ? '∞'
-                          : subscription?.bids?.remaining || '∞'}
-                      </div>
+                      {passwordForm.confirmPassword && passwordForm.newPassword !== passwordForm.confirmPassword && (
+                        <span className="ep-input-error">Passwords do not match</span>
+                      )}
                     </div>
 
-                    <div className="stat-card subs">
-                      <div className="stat-header subs">
-                        <div className="stat-icon budget">
-                          <DollarSign size={22} />
-                        </div>
-                        <span className="stat-label">Budget Unlocks</span>
-                      </div>
-                      <div className="stat-value subsval">Unlimited</div>
+                    <div className="ep-form-actions">
+                      <button
+                        type="button"
+                        className="ep-btn ep-btn-ghost"
+                        onClick={() => setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })}
+                        disabled={isChangingPassword}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="ep-btn ep-btn-primary"
+                        disabled={isChangingPassword}
+                      >
+                        {isChangingPassword ? (
+                          <>
+                            <span className="ep-spinner"></span>
+                            Changing...
+                          </>
+                        ) : (
+                          <>
+                            <Lock size={16} />
+                            Change Password
+                          </>
+                        )}
+                      </button>
                     </div>
-
-                    <div className="stat-card subs">
-                      <div className="stat-header subs">
-                        <div className="stat-icon messages">
-                          <MessageSquare size={22} />
-                        </div>
-                        <span className="stat-label">Active Chats</span>
-                      </div>
-                      <div className="stat-value subsval">Unlimited</div>
-                    </div>
-                  </div>
+                  </form>
                 </div>
-
-                {/* Feature Comparison Table */}
-                <div className="comparison-section">
-                  <div className="section-header">
-                    <div className="section-icon">
-                      <Crown size={24} />
-                    </div>
-                    <div className="section-text">
-                      <h2 className="section-title">Feature Comparison</h2>
-                      <p className="section-subtitle">Compare all features across subscription tiers</p>
-                    </div>
-                  </div>
-
-                  <div className="comparison-table-wrapper">
-                    <table className="comparison-table">
-                      <thead>
-                        <tr>
-                          <th className="feature-col">Feature</th>
-                          <th className="tier-col">No Subscription</th>
-                          <th className="tier-col">Trial (Basic)</th>
-                          <th className="tier-col premium-col">Trial (Premium)</th>
-                          <th className="tier-col">Active Basic</th>
-                          <th className="tier-col premium-col">Active Premium</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td className="feature-name">Browse construction jobs</td>
-                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
-                          <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
-                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
-                          <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
-                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
-                        </tr>
-                        <tr>
-                          <td className="feature-name">View job details & specs</td>
-                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
-                          <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
-                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
-                          <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
-                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
-                        </tr>
-                        <tr>
-                          <td className="feature-name">Submit bids</td>
-                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
-                          <td className="tier-cell">
-                            <Check className="icon-yes" size={20} />
-                            <span className="feature-note">(30 max)</span>
-                          </td>
-                          <td className="tier-cell premium-cell">
-                            <Check className="icon-yes" size={20} />
-                            <span className="feature-note">(unlimited)</span>
-                          </td>
-                          <td className="tier-cell">
-                            <Check className="icon-yes" size={20} />
-                            <span className="feature-note">(30 max)</span>
-                          </td>
-                          <td className="tier-cell premium-cell">
-                            <Check className="icon-yes" size={20} />
-                            <span className="feature-note">(unlimited)</span>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="feature-name">Unlock project budgets</td>
-                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
-                          <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
-                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
-                          <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
-                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
-                        </tr>
-                        <tr>
-                          <td className="feature-name">Message on approved projects</td>
-                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
-                          <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
-                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
-                          <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
-                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
-                        </tr>
-                        <tr>
-                          <td className="feature-name">Priority support</td>
-                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
-                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
-                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
-                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
-                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
-                        </tr>
-                        <tr>
-                          <td className="feature-name">Advanced analytics</td>
-                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
-                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
-                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
-                          <td className="tier-cell"><X className="icon-no" size={20} /></td>
-                          <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-                  </>
-                )}
-              </div>
+              </>
             )}
           </div>
-        </div>
+        </main>
       </div>
 
       {/* Edit Company Form Modal */}

@@ -1072,3 +1072,27 @@
     margin-left: 0;
   }
 }
+
+/* ==================== CLICKABLE PROFILE ELEMENTS ==================== */
+
+/* Clickable avatar */
+.fav-avatar-clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fav-avatar-clickable:hover {
+  transform: scale(1.08);
+  box-shadow: 0 2px 8px rgba(0, 165, 169, 0.3);
+}
+
+/* Clickable contractor name */
+.fav-contractor-name-clickable {
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.fav-contractor-name-clickable:hover {
+  color: #00A5A9;
+  text-decoration: underline;
+}

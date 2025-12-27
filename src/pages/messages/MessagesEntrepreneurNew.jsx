@@ -27,6 +27,9 @@ import {
   getMessages,
   markConversationAsRead,
 } from "../../utils/api";
+import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal";
+import PropertyManagerProfileModal from "../../components/modal/PropertyManagerProfileModal";
+import SupplierProfileModal from "../../components/modal/SupplierProfileModal";
 
 function MessagesEntrepreneurNew() {
   const { socket } = useSocket();
@@ -42,8 +45,21 @@ function MessagesEntrepreneurNew() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [showMobileChat, setShowMobileChat] = useState(false);
-  const [userFilter, setUserFilter] = useState("all"); // "all", "property_manager", "supplier"
+  const [userFilter, setUserFilter] = useState("all"); // "all", "property_manager", "supplier", "entrepreneur"
   const [showJobInfo, setShowJobInfo] = useState(false); // Toggle for job/bid info dropdown
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+
+  // Property Manager Profile Modal states
+  const [showManagerModal, setShowManagerModal] = useState(false);
+  const [selectedManagerProfile, setSelectedManagerProfile] = useState(null);
+  const [isLoadingManagerProfile, setIsLoadingManagerProfile] = useState(false);
+
+  // Supplier Profile Modal states
+  const [showSupplierModal, setShowSupplierModal] = useState(false);
+  const [selectedSupplierProfile, setSelectedSupplierProfile] = useState(null);
+  const [isLoadingSupplierProfile, setIsLoadingSupplierProfile] = useState(false);
 
   const currentUserId = localStorage.getItem("userId");
   const messagesEndRef = useRef(null);
@@ -539,6 +555,121 @@ function MessagesEntrepreneurNew() {
       : parts[0][0].toUpperCase();
   };
 
+  // Fetch entrepreneur profile and show modal
+  const handleViewEntrepreneurProfile = async (userId) => {
+    if (!userId || isLoadingProfile) return;
+
+    setIsLoadingProfile(true);
+    try {
+      const userProfile = localStorage.getItem("userProfile");
+      if (!userProfile) return;
+
+      const token = JSON.parse(userProfile)?.token;
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/users/entrepreneur/user/${userId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch profile");
+      }
+
+      const data = await response.json();
+      setSelectedProfile(data.profile);
+      setShowProfileModal(true);
+    } catch (error) {
+      console.error("Error fetching entrepreneur profile:", error);
+      toast.error("Failed to load profile");
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
+  // Handle viewing property manager profile
+  const handleViewManagerProfile = async (userId) => {
+    if (!userId || isLoadingManagerProfile) return;
+
+    setIsLoadingManagerProfile(true);
+    try {
+      const userProfile = localStorage.getItem("userProfile");
+      if (!userProfile) return;
+
+      const token = JSON.parse(userProfile)?.token;
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/users/manager/${userId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch manager profile");
+      }
+
+      const data = await response.json();
+      setSelectedManagerProfile(data.profile);
+      setShowManagerModal(true);
+    } catch (error) {
+      console.error("Error fetching manager profile:", error);
+      toast.error("Failed to load profile");
+    } finally {
+      setIsLoadingManagerProfile(false);
+    }
+  };
+
+  // Handle viewing supplier profile
+  const handleViewSupplierProfile = async (userId, userName) => {
+    if (!userId || isLoadingSupplierProfile) return;
+
+    setIsLoadingSupplierProfile(true);
+    try {
+      const userProfile = localStorage.getItem("userProfile");
+      if (!userProfile) return;
+
+      const token = JSON.parse(userProfile)?.token;
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/users/supplier/${userId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch supplier profile");
+      }
+
+      const data = await response.json();
+      setSelectedSupplierProfile({
+        ...data.profile,
+        first_name: userName?.split(' ')[0] || '',
+        last_name: userName?.split(' ').slice(1).join(' ') || '',
+      });
+      setShowSupplierModal(true);
+    } catch (error) {
+      console.error("Error fetching supplier profile:", error);
+      toast.error("Failed to load supplier profile");
+    } finally {
+      setIsLoadingSupplierProfile(false);
+    }
+  };
+
   return (
     <div className="messages-page-fullscreen">
       <Nav />
@@ -576,6 +707,12 @@ function MessagesEntrepreneurNew() {
                 onClick={() => setUserFilter("supplier")}
               >
                 Supplier
+              </button>
+              <button
+                className={`filter-bubble-btn ${userFilter === "entrepreneur" ? "active" : ""}`}
+                onClick={() => setUserFilter("entrepreneur")}
+              >
+                Entrepreneur
               </button>
             </div>
           </div>
@@ -641,11 +778,37 @@ function MessagesEntrepreneurNew() {
                 >
                   <ArrowLeft size={24} />
                 </button>
-                <div className="chat-header-avatar">
+                <div
+                  className={`chat-header-avatar ${['entrepreneur', 'property_manager', 'supplier'].includes(selectedChat.other_user_role) ? 'clickable' : ''}`}
+                  onClick={() => {
+                    if (selectedChat.other_user_role === 'entrepreneur') {
+                      handleViewEntrepreneurProfile(selectedChat.other_user_id);
+                    } else if (selectedChat.other_user_role === 'property_manager') {
+                      handleViewManagerProfile(selectedChat.other_user_id);
+                    } else if (selectedChat.other_user_role === 'supplier') {
+                      handleViewSupplierProfile(selectedChat.other_user_id, selectedChat.other_user_name);
+                    }
+                  }}
+                  title={['entrepreneur', 'property_manager', 'supplier'].includes(selectedChat.other_user_role) ? 'View profile' : ''}
+                >
                   {getInitials(selectedChat.other_user_name)}
                 </div>
                 <div className="chat-header-info">
-                  <h3 className="chat-header-name">{selectedChat.other_user_name}</h3>
+                  <h3
+                    className={`chat-header-name ${['entrepreneur', 'property_manager', 'supplier'].includes(selectedChat.other_user_role) ? 'clickable' : ''}`}
+                    onClick={() => {
+                      if (selectedChat.other_user_role === 'entrepreneur') {
+                        handleViewEntrepreneurProfile(selectedChat.other_user_id);
+                      } else if (selectedChat.other_user_role === 'property_manager') {
+                        handleViewManagerProfile(selectedChat.other_user_id);
+                      } else if (selectedChat.other_user_role === 'supplier') {
+                        handleViewSupplierProfile(selectedChat.other_user_id, selectedChat.other_user_name);
+                      }
+                    }}
+                    title={['entrepreneur', 'property_manager', 'supplier'].includes(selectedChat.other_user_role) ? 'View profile' : ''}
+                  >
+                    {selectedChat.other_user_name}
+                  </h3>
                   <p className="chat-header-role">
                     {formatUserRole(selectedChat.other_user_role)}
                   </p>
@@ -913,6 +1076,30 @@ function MessagesEntrepreneurNew() {
           )}
         </div>
       </div>
+
+      {/* Entrepreneur Profile Modal */}
+      <EntrepreneurProfileModal
+        isOpen={showProfileModal}
+        onClose={() => setShowProfileModal(false)}
+        profile={selectedProfile}
+      />
+
+      {/* Property Manager Profile Modal */}
+      <PropertyManagerProfileModal
+        isOpen={showManagerModal}
+        onClose={() => setShowManagerModal(false)}
+        profile={selectedManagerProfile}
+      />
+
+      {/* Supplier Profile Modal */}
+      <SupplierProfileModal
+        isOpen={showSupplierModal}
+        onClose={() => {
+          setShowSupplierModal(false);
+          setSelectedSupplierProfile(null);
+        }}
+        profile={selectedSupplierProfile}
+      />
     </div>
   );
 }

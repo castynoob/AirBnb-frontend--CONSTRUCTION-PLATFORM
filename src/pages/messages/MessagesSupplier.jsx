@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSocket } from '../../contexts/SocketContext';
-import { Image as ImageIcon, Paperclip, X, File, Download, Loader2, Search, ArrowLeft } from 'lucide-react';
+import { Image as ImageIcon, Paperclip, X, File, Download, Loader2, Search, ArrowLeft, ChevronRight } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Nav from '../../components/Nav';
+import EntrepreneurProfileModal from '../../components/modal/EntrepreneurProfileModal';
 import '../../styles/supplier/messagessupplier.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -77,6 +79,11 @@ const MessagesSupplier = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
+
+  // Entrepreneur Profile Modal states
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [selectedProfile, setSelectedProfile] = useState(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
   const messagesContainerRef = useRef(null);
   const imageInputRef = useRef(null);
@@ -489,6 +496,45 @@ const MessagesSupplier = () => {
       : parts[0][0].toUpperCase();
   };
 
+  // Handle viewing entrepreneur profile
+  const handleViewEntrepreneurProfile = async (conversation) => {
+    const userId = conversation.other_user_id;
+    if (!userId || isLoadingProfile) return;
+
+    setIsLoadingProfile(true);
+    try {
+      const userProfile = JSON.parse(localStorage.getItem('userProfile'));
+      if (!userProfile?.token) return;
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/users/entrepreneur/user/${userId}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${userProfile.token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch entrepreneur profile');
+      }
+
+      const data = await response.json();
+      setSelectedProfile({
+        ...data.profile,
+        first_name: conversation.other_user_name?.split(' ')[0] || '',
+        last_name: conversation.other_user_name?.split(' ').slice(1).join(' ') || '',
+      });
+      setShowProfileModal(true);
+    } catch (error) {
+      console.error('Error fetching entrepreneur profile:', error);
+      toast.error('Failed to load entrepreneur profile');
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
   return (
     <div className="messages-supplier-page-fullscreen">
       <Nav />
@@ -541,7 +587,11 @@ const MessagesSupplier = () => {
                   onClick={() => selectConversation(conv)}
                 >
                   <div className="chat-avatar-supplier">
-                    <div className="avatar-circle-supplier">
+                    <div
+                      className="avatar-circle-supplier clickable"
+                      onClick={(e) => { e.stopPropagation(); handleViewEntrepreneurProfile(conv); }}
+                      title="View entrepreneur profile"
+                    >
                       {getInitials(conv.other_user_name || conv.company_name)}
                     </div>
                     {conv.unread_count > 0 && (
@@ -550,7 +600,13 @@ const MessagesSupplier = () => {
                   </div>
                   <div className="chat-info-supplier">
                     <div className="chat-top-supplier">
-                      <h4 className="chat-name-supplier">{conv.other_user_name || conv.company_name}</h4>
+                      <h4
+                        className="chat-name-supplier clickable"
+                        onClick={(e) => { e.stopPropagation(); handleViewEntrepreneurProfile(conv); }}
+                        title="View entrepreneur profile"
+                      >
+                        {conv.other_user_name || conv.company_name}
+                      </h4>
                     </div>
                     <p className="chat-role-supplier">Entrepreneur</p>
                     <p className="chat-preview-supplier">{conv.last_message || 'No messages yet'}</p>
@@ -589,7 +645,11 @@ const MessagesSupplier = () => {
                 >
                   <ArrowLeft size={20} />
                 </button>
-                <div className="header-info-supplier">
+                <div
+                  className="header-info-supplier clickable-header"
+                  onClick={() => handleViewEntrepreneurProfile(activeConversation)}
+                  title="View entrepreneur profile"
+                >
                   <div className="header-avatar-wrapper-supplier">
                     <div className="header-avatar-supplier">
                       {getInitials(activeConversation.other_user_name || activeConversation.company_name)}
@@ -601,6 +661,7 @@ const MessagesSupplier = () => {
                     </h3>
                     <p className="user-status-text-supplier">Entrepreneur</p>
                   </div>
+                  <ChevronRight size={18} className="header-chevron-supplier" />
                 </div>
               </div>
 
@@ -752,6 +813,16 @@ const MessagesSupplier = () => {
           )}
         </div>
       </div>
+
+      {/* Entrepreneur Profile Modal */}
+      <EntrepreneurProfileModal
+        isOpen={showProfileModal}
+        onClose={() => {
+          setShowProfileModal(false);
+          setSelectedProfile(null);
+        }}
+        profile={selectedProfile}
+      />
     </div>
   );
 };

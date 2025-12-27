@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import PropertyManagerProfileModal from '../../components/modal/PropertyManagerProfileModal';
 
 const SubmittedBids = () => {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -32,6 +33,11 @@ const SubmittedBids = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedBid, setSelectedBid] = useState(null);
+
+  // Property Manager Profile Modal states
+  const [showManagerModal, setShowManagerModal] = useState(false);
+  const [selectedManagerProfile, setSelectedManagerProfile] = useState(null);
+  const [isLoadingManagerProfile, setIsLoadingManagerProfile] = useState(false);
 
   const navigate = useNavigate()
 
@@ -222,6 +228,49 @@ const SubmittedBids = () => {
       toast.error('Failed to open messages. Please try again.');
     }
   }
+
+  // Handle viewing property manager profile
+  const handleViewManagerProfile = async (bid) => {
+    const userId = bid.manager_user_id;
+    if (!userId || isLoadingManagerProfile) return;
+
+    setIsLoadingManagerProfile(true);
+    try {
+      const userProfile = localStorage.getItem('userProfile');
+      if (!userProfile) return;
+
+      const user = JSON.parse(userProfile);
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/users/manager/${userId}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch manager profile');
+      }
+
+      const data = await response.json();
+      setSelectedManagerProfile({
+        ...data.profile,
+        first_name: bid.manager_first_name,
+        last_name: bid.manager_last_name,
+        email: bid.manager_email,
+        phone: bid.manager_phone,
+      });
+      setShowManagerModal(true);
+    } catch (error) {
+      console.error('Error fetching manager profile:', error);
+      toast.error('Failed to load manager profile');
+    } finally {
+      setIsLoadingManagerProfile(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -474,39 +523,28 @@ const SubmittedBids = () => {
                       <User size={20} />
                       Property Manager
                     </h3>
-                    <div className="bid-info-grid">
-                      {(selectedBid.manager_first_name || selectedBid.manager_last_name) && (
-                        <div className="bid-info-item">
-                          <label>
-                            <User size={14} /> Manager Name
-                          </label>
-                          <p>{`${selectedBid.manager_first_name || ''} ${selectedBid.manager_last_name || ''}`.trim()}</p>
-                        </div>
-                      )}
-                      {selectedBid.manager_company_name && (
-                        <div className="bid-info-item">
-                          <label>
-                            <Building2 size={14} /> Company
-                          </label>
-                          <p>{selectedBid.manager_company_name}</p>
-                        </div>
-                      )}
-                      {selectedBid.manager_email && (
-                        <div className="bid-info-item">
-                          <label>
-                            <Mail size={14} /> Email
-                          </label>
-                          <p>{selectedBid.manager_email}</p>
-                        </div>
-                      )}
-                      {selectedBid.manager_phone && (
-                        <div className="bid-info-item">
-                          <label>
-                            <Phone size={14} /> Phone
-                          </label>
-                          <p>{selectedBid.manager_phone}</p>
-                        </div>
-                      )}
+                    <div
+                      className="bid-manager-card"
+                      onClick={() => handleViewManagerProfile(selectedBid)}
+                      title="View property manager profile"
+                    >
+                      <div className="bid-manager-avatar">
+                        {selectedBid.manager_company_name?.charAt(0) || selectedBid.manager_first_name?.charAt(0) || 'P'}
+                      </div>
+                      <div className="bid-manager-info">
+                        <span className="bid-manager-name">
+                          {selectedBid.manager_company_name || `${selectedBid.manager_first_name || ''} ${selectedBid.manager_last_name || ''}`.trim()}
+                        </span>
+                        {selectedBid.manager_first_name && selectedBid.manager_company_name && (
+                          <span className="bid-manager-contact">
+                            {`${selectedBid.manager_first_name} ${selectedBid.manager_last_name || ''}`.trim()}
+                          </span>
+                        )}
+                        {selectedBid.manager_email && (
+                          <span className="bid-manager-email">{selectedBid.manager_email}</span>
+                        )}
+                      </div>
+                      <ChevronRight size={18} className="bid-manager-chevron" />
                     </div>
                   </section>
                 )}
@@ -574,6 +612,13 @@ const SubmittedBids = () => {
             </div>
           </div>
         )}
+
+        {/* Property Manager Profile Modal */}
+        <PropertyManagerProfileModal
+          isOpen={showManagerModal}
+          onClose={() => setShowManagerModal(false)}
+          profile={selectedManagerProfile}
+        />
       </div>
     </div>
   );
