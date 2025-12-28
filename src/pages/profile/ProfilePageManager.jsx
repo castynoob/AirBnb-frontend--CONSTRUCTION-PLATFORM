@@ -690,6 +690,13 @@ function ProfilePageManager() {
             <Menu size={24} />
           </button>
           <span className="mp-mobile-title">{currentTab?.label || 'Profile'}</span>
+          <button
+            className="mp-mobile-logout-btn"
+            onClick={handelLogout}
+            title="Logout"
+          >
+            <LogOut size={20} />
+          </button>
         </div>
 
         {/* Mobile Sidebar Overlay */}

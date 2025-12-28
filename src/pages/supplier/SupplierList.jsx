@@ -410,7 +410,7 @@ function SupplierList() {
       const user = JSON.parse(userProfile);
 
       const response = await fetch(
-        `${API_BASE_URL}/api/users/supplier/${userId}`,
+        `${API_BASE_URL}/api/users/supplier/user/${userId}`,
         {
           method: 'GET',
           headers: {

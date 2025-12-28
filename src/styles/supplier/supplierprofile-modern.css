@@ -1812,7 +1812,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 10000;
   padding: 20px;
   animation: spModalFadeIn 0.2s ease;
 }
@@ -2272,6 +2272,350 @@
 
   .sp-edit-button-group {
     padding: 14px 16px;
+  }
+}
+
+/* ==================== COMPACT EDIT MODAL ==================== */
+
+.sp-edit-compact {
+  max-width: 540px;
+}
+
+.sp-edit-compact .sp-edit-modal-header {
+  padding: 16px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.sp-edit-compact .sp-edit-modal-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.sp-edit-compact .sp-edit-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+}
+
+.sp-edit-compact .sp-edit-modal-body {
+  padding: 16px 20px;
+  gap: 16px;
+}
+
+/* Uploads Row */
+.sp-edit-uploads-row {
+  display: flex;
+  gap: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.sp-edit-upload-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.sp-edit-image-preview-compact {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.sp-edit-image-preview-compact img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sp-edit-catalog-preview {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: #f0f9ff;
+  border: 1px solid #e0f2fe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0ea5e9;
+  flex-shrink: 0;
+}
+
+.sp-edit-upload-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sp-edit-upload-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: #00a5a9;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.sp-edit-upload-link:hover {
+  color: #008a8d;
+  text-decoration: underline;
+}
+
+.sp-edit-remove-link {
+  font-size: 12px;
+  color: #ef4444;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sp-edit-remove-link:hover {
+  text-decoration: underline;
+}
+
+/* Form Grid */
+.sp-edit-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.sp-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sp-edit-field.sp-edit-full {
+  grid-column: 1 / -1;
+}
+
+.sp-edit-field label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.sp-edit-field label span {
+  color: #ef4444;
+}
+
+.sp-edit-field input,
+.sp-edit-field textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1f2937;
+  background: #ffffff;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.sp-edit-field input:focus,
+.sp-edit-field textarea:focus {
+  outline: none;
+  border-color: #00a5a9;
+  box-shadow: 0 0 0 2px rgba(0, 165, 169, 0.1);
+}
+
+.sp-edit-field input::placeholder,
+.sp-edit-field textarea::placeholder {
+  color: #9ca3af;
+}
+
+.sp-edit-field textarea {
+  resize: none;
+  min-height: 50px;
+}
+
+/* Delivery Compact */
+.sp-edit-delivery-compact {
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.sp-edit-delivery-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.sp-edit-delivery-header label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.sp-edit-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: #00a5a9;
+  background: #f0fdfa;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.sp-edit-delivery-input {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.sp-edit-delivery-input input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.sp-edit-delivery-input input:focus {
+  outline: none;
+  border-color: #00a5a9;
+}
+
+.sp-edit-delivery-input button {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 6px;
+  background: #00a5a9;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.sp-edit-delivery-input button:hover:not(:disabled) {
+  background: #008a8d;
+}
+
+.sp-edit-delivery-input button:disabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.sp-edit-delivery-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sp-edit-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: #f3f4f6;
+  border-radius: 14px;
+  font-size: 12px;
+  color: #374151;
+}
+
+.sp-edit-tag button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.sp-edit-tag button:hover {
+  color: #ef4444;
+}
+
+/* Modal Footer */
+.sp-edit-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 20px;
+  border-top: 1px solid #e5e7eb;
+  background: #fafafa;
+}
+
+.sp-edit-btn-cancel {
+  padding: 8px 16px;
+  background: #ffffff;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.sp-edit-btn-cancel:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.sp-edit-btn-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sp-edit-btn-save {
+  padding: 8px 20px;
+  background: #00a5a9;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.sp-edit-btn-save:hover:not(:disabled) {
+  background: #008a8d;
+}
+
+.sp-edit-btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Compact Modal Responsive */
+@media (max-width: 580px) {
+  .sp-edit-compact {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .sp-edit-uploads-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sp-edit-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sp-edit-field.sp-edit-full {
+    grid-column: 1;
   }
 }
 

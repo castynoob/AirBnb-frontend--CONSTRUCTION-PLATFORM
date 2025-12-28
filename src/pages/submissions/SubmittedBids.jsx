@@ -73,33 +73,29 @@ const SubmittedBids = () => {
 
         const data = await bidsResponse.json();
 
-        // Backend doesn't group accepted bids, so we filter them from "all"
-        const allBids = data.bids.all || [];
+        // Backend returns: { bids: { all, pending, approved, declined }, summary: { total, pending, approved, declined } }
+        const allBids = data.bids?.all || [];
+        const pendingBids = data.bids?.pending || [];
+        const approvedBids = data.bids?.approved || [];
+        const declinedBids = data.bids?.declined || [];
 
-        // Filter bids by status from the "all" array
-        // Inside fetchBids:
-        const acceptedBids = allBids.filter(bid => bid.status?.toLowerCase() === 'approved' || bid.status?.toLowerCase() === 'accepted');  // Changed from 'accepted'
-        const pendingBids = data.bids.pending || [];
-        const declinedBids = data.bids.declined || [];
-
-        // Calculate accurate counts
-        const acceptedCount = acceptedBids.length;
-        const pendingCount = pendingBids.length;
-        const declinedCount = declinedBids.length;
-
+        // Use backend summary if available, otherwise calculate from arrays
         const mappedBids = {
           all: allBids,
           pending: pendingBids,
-          accepted: acceptedBids,
+          accepted: approvedBids, // Map 'approved' from backend to 'accepted' for UI
           declined: declinedBids
         };
 
         const mappedSummary = {
-          total: allBids.length,
-          pending: pendingCount,
-          accepted: acceptedCount,
-          declined: declinedCount
+          total: data.summary?.total || allBids.length,
+          pending: data.summary?.pending || pendingBids.length,
+          accepted: data.summary?.approved || approvedBids.length,
+          declined: data.summary?.declined || declinedBids.length
         };
+
+        // Calculate accepted count for Stripe check
+        const acceptedCount = mappedSummary.accepted;
 
         console.log(mappedBids)
         setBids(mappedBids);

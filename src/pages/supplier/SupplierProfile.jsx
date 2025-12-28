@@ -141,16 +141,16 @@ function SupplierProfile() {
 
         const supplierData = {
           userId: user.id,
-          companyName: data.profile.company_name,
-          businessLicense: data.profile.business_license,
-          yearsInBusiness: data.profile.years_in_business,
-          address: data.profile.address,
+          companyName: data.profile.company_name || '',
+          businessLicense: data.profile.business_license || '',
+          yearsInBusiness: data.profile.years_in_business || 0,
+          address: data.profile.address || '',
           phone: data.profile.phone || 'Not provided',
-          email: data.profile.email,
+          email: data.profile.email || '',
           website: data.profile.website || 'Not provided',
           deliveryAreas: data.profile.delivery_areas || [],
-          catalogUrl: data.profile.catalog_pdf_url,
-          image: data.profile.profile_image_url || data.profile.catalog_pdf_url
+          catalogUrl: data.profile.catalog_pdf_url || null,
+          image: data.profile.profile_image_url || null
         };
 
         setProfile(supplierData);
@@ -1060,291 +1060,181 @@ function SupplierProfile() {
         </main>
       </div>
 
-      {/* Edit Supplier Profile Modal */}
+      {/* Edit Supplier Profile Modal - Compact & Formal */}
       {isEditModalOpen && (
         <div className="sp-edit-modal-backdrop">
-          <div className="sp-edit-modal-container">
+          <div className="sp-edit-modal-container sp-edit-compact">
             <div className="sp-edit-modal-header">
-              <div className="sp-edit-header-content">
-                <h2 className="sp-edit-modal-title">Edit Supplier Profile</h2>
-                <p className="sp-edit-modal-subtitle">Update your business information</p>
-              </div>
+              <h2 className="sp-edit-modal-title">Edit Profile</h2>
               <button onClick={() => setIsEditModalOpen(false)} className="sp-edit-close-btn">
-                <X size={24} />
+                <X size={18} />
               </button>
             </div>
 
             <div className="sp-edit-modal-body">
-              {/* Profile Image Upload */}
-              <div className="sp-edit-section">
-                <div className="sp-edit-section-header">
-                  <Camera size={18} className="sp-edit-section-icon" />
-                  <span>Company Logo</span>
-                </div>
-                <div className="sp-edit-image-upload-container">
-                  <div className="sp-edit-image-preview">
+              {/* Logo & Catalog Row */}
+              <div className="sp-edit-uploads-row">
+                <div className="sp-edit-upload-item">
+                  <div className="sp-edit-image-preview-compact">
                     {profileImagePreview ? (
-                      <img src={profileImagePreview} alt="Preview" className="sp-edit-preview-img" />
+                      <img src={profileImagePreview} alt="Preview" />
                     ) : profile?.image ? (
-                      <img src={profile.image} alt="Current" className="sp-edit-preview-img" />
+                      <img src={profile.image} alt="Current" />
                     ) : (
-                      <div className="sp-edit-no-image">
-                        <Camera size={40} />
-                        <span>No image</span>
-                      </div>
+                      <Camera size={24} />
                     )}
                   </div>
-                  <div className="sp-edit-image-actions">
-                    <label className="sp-edit-upload-btn">
-                      <Upload size={18} />
-                      {profileImage ? 'Change Image' : 'Upload Image'}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageSelect}
-                        style={{ display: 'none' }}
-                      />
+                  <div className="sp-edit-upload-actions">
+                    <label className="sp-edit-upload-link">
+                      {profileImage ? 'Change' : 'Upload Logo'}
+                      <input type="file" accept="image/*" onChange={handleImageSelect} hidden />
                     </label>
                     {(profileImage || profileImagePreview) && (
-                      <button
-                        type="button"
-                        className="sp-edit-remove-btn"
-                        onClick={handleRemoveImage}
-                      >
-                        <X size={18} />
+                      <button type="button" className="sp-edit-remove-link" onClick={handleRemoveImage}>
                         Remove
                       </button>
                     )}
                   </div>
-                  <p className="sp-edit-image-hint">Recommended: Square image, max 5MB (JPG, PNG)</p>
+                </div>
+                <div className="sp-edit-upload-item">
+                  <div className="sp-edit-catalog-preview">
+                    <FileText size={24} />
+                  </div>
+                  <div className="sp-edit-upload-actions">
+                    <label className="sp-edit-upload-link">
+                      {catalogFile ? catalogFile.name.substring(0, 15) + '...' : 'Upload Catalog'}
+                      <input type="file" accept="application/pdf" onChange={handleCatalogSelect} hidden />
+                    </label>
+                    {catalogFile && (
+                      <button type="button" className="sp-edit-remove-link" onClick={() => setCatalogFile(null)}>
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Catalog Upload */}
-              <div className="sp-edit-section">
-                <div className="sp-edit-section-header">
-                  <FileText size={18} className="sp-edit-section-icon" />
-                  <span>Product Catalog (PDF)</span>
-                </div>
-                <div className="sp-edit-catalog-upload">
-                  <label className="sp-edit-catalog-upload-btn">
-                    <FileText size={20} />
-                    {catalogFile ? catalogFile.name : 'Upload Catalog PDF'}
-                    <input
-                      type="file"
-                      accept="application/pdf"
-                      onChange={handleCatalogSelect}
-                      style={{ display: 'none' }}
-                    />
-                  </label>
-                  {catalogFile && (
-                    <button
-                      type="button"
-                      className="sp-edit-remove-btn"
-                      onClick={() => setCatalogFile(null)}
-                    >
-                      <X size={18} />
-                      Remove
-                    </button>
-                  )}
-                </div>
-                <p className="sp-edit-image-hint">Upload your product catalog (PDF, max 50MB)</p>
-              </div>
-
-              {/* Company Information Section */}
-              <div className="sp-edit-section">
-                <div className="sp-edit-section-header">
-                  <Building2 size={18} className="sp-edit-section-icon" />
-                  <span>Company Information</span>
-                </div>
-
-                <div className="sp-edit-form-group">
-                  <label className="sp-edit-form-label">
-                    <Building2 size={14} />
-                    Company Name <span className="sp-edit-required">*</span>
-                  </label>
+              {/* Form Grid */}
+              <div className="sp-edit-form-grid">
+                <div className="sp-edit-field sp-edit-full">
+                  <label>Company Name <span>*</span></label>
                   <input
                     type="text"
                     name="company_name"
                     value={formData.company_name}
                     onChange={handleInputChange}
-                    className="sp-edit-form-input"
-                    placeholder="Enter your company name"
+                    placeholder="Company name"
                   />
                 </div>
 
-                <div className="sp-edit-form-group">
-                  <label className="sp-edit-form-label">
-                    <Award size={14} />
-                    Business License <span className="sp-edit-required">*</span>
-                  </label>
+                <div className="sp-edit-field">
+                  <label>Business License <span>*</span></label>
                   <input
                     type="text"
                     name="business_license"
                     value={formData.business_license}
                     onChange={handleInputChange}
-                    className="sp-edit-form-input"
-                    placeholder="Enter business license number"
+                    placeholder="License number"
                   />
                 </div>
 
-                <div className="sp-edit-form-row">
-                  <div className="sp-edit-form-group">
-                    <label className="sp-edit-form-label">
-                      <Calendar size={14} />
-                      Years in Business
-                    </label>
-                    <input
-                      type="number"
-                      name="years_in_business"
-                      value={formData.years_in_business}
-                      onChange={handleInputChange}
-                      className="sp-edit-form-input"
-                      placeholder="0"
-                      min="0"
-                    />
-                  </div>
-                  <div className="sp-edit-form-group">
-                    <label className="sp-edit-form-label">
-                      <Phone size={14} />
-                      Phone
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="sp-edit-form-input"
-                      placeholder="+63 XXX XXX XXXX"
-                    />
-                  </div>
+                <div className="sp-edit-field">
+                  <label>Years in Business</label>
+                  <input
+                    type="number"
+                    name="years_in_business"
+                    value={formData.years_in_business}
+                    onChange={handleInputChange}
+                    placeholder="0"
+                    min="0"
+                  />
                 </div>
 
-                <div className="sp-edit-form-row">
-                  <div className="sp-edit-form-group">
-                    <label className="sp-edit-form-label">
-                      <Mail size={14} />
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="sp-edit-form-input"
-                      placeholder="email@example.com"
-                    />
-                  </div>
-                  <div className="sp-edit-form-group">
-                    <label className="sp-edit-form-label">
-                      <Globe size={14} />
-                      Website
-                    </label>
-                    <input
-                      type="url"
-                      name="website"
-                      value={formData.website}
-                      onChange={handleInputChange}
-                      className="sp-edit-form-input"
-                      placeholder="https://www.yourcompany.com"
-                    />
-                  </div>
+                <div className="sp-edit-field">
+                  <label>Phone</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    placeholder="+63 XXX XXX XXXX"
+                  />
                 </div>
 
-                <div className="sp-edit-form-group">
-                  <label className="sp-edit-form-label">
-                    <MapPin size={14} />
-                    Business Address <span className="sp-edit-required">*</span>
-                  </label>
+                <div className="sp-edit-field">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="email@company.com"
+                  />
+                </div>
+
+                <div className="sp-edit-field sp-edit-full">
+                  <label>Website</label>
+                  <input
+                    type="url"
+                    name="website"
+                    value={formData.website}
+                    onChange={handleInputChange}
+                    placeholder="https://www.company.com"
+                  />
+                </div>
+
+                <div className="sp-edit-field sp-edit-full">
+                  <label>Business Address <span>*</span></label>
                   <textarea
                     name="address"
                     value={formData.address}
                     onChange={handleInputChange}
-                    className="sp-edit-form-textarea"
-                    placeholder="Enter your business address"
-                    rows="3"
+                    placeholder="Full business address"
+                    rows="2"
                   />
                 </div>
               </div>
 
-              {/* Delivery Areas Section */}
-              <div className="sp-edit-section">
-                <div className="sp-edit-section-header">
-                  <Truck size={18} className="sp-edit-section-icon" />
-                  <span>Delivery Areas</span>
-                  <span className="sp-edit-selected-count">
-                    {formData.delivery_areas.length} added
-                  </span>
+              {/* Delivery Areas - Compact */}
+              <div className="sp-edit-delivery-compact">
+                <div className="sp-edit-delivery-header">
+                  <label>Delivery Areas</label>
+                  <span className="sp-edit-count">{formData.delivery_areas.length}</span>
                 </div>
-
-                {/* Add new delivery area input */}
-                <div className="sp-delivery-input-container">
+                <div className="sp-edit-delivery-input">
                   <input
                     type="text"
                     value={newDeliveryArea}
                     onChange={(e) => setNewDeliveryArea(e.target.value)}
                     onKeyPress={handleDeliveryAreaKeyPress}
-                    placeholder="Enter delivery area (e.g., Manila, Cebu City)"
-                    className="sp-delivery-input"
+                    placeholder="Add area..."
                   />
-                  <button
-                    type="button"
-                    onClick={addDeliveryArea}
-                    className="sp-delivery-add-btn"
-                    disabled={!newDeliveryArea.trim()}
-                  >
-                    <Plus size={18} />
-                    Add
+                  <button type="button" onClick={addDeliveryArea} disabled={!newDeliveryArea.trim()}>
+                    <Plus size={16} />
                   </button>
                 </div>
-
-                {/* List of added delivery areas */}
-                <div className="sp-delivery-areas-list">
-                  {formData.delivery_areas.length > 0 ? (
-                    formData.delivery_areas.map((area, index) => (
-                      <div key={index} className="sp-delivery-area-item">
-                        <div className="sp-delivery-area-content">
-                          <MapPin size={14} />
-                          <span>{area}</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeDeliveryArea(area)}
-                          className="sp-delivery-remove-btn"
-                          title="Remove area"
-                        >
-                          <Minus size={16} />
+                {formData.delivery_areas.length > 0 && (
+                  <div className="sp-edit-delivery-tags">
+                    {formData.delivery_areas.map((area, index) => (
+                      <span key={index} className="sp-edit-tag">
+                        {area}
+                        <button type="button" onClick={() => removeDeliveryArea(area)}>
+                          <X size={12} />
                         </button>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="sp-delivery-empty-text">No delivery areas added yet</p>
-                  )}
-                </div>
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
+            </div>
 
-              <div className="sp-edit-button-group">
-                <button
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="sp-edit-cancel-btn"
-                  disabled={isUpdating}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSubmit}
-                  className="sp-edit-submit-btn"
-                  disabled={isUpdating}
-                >
-                  {isUpdating ? (
-                    <>
-                      {isUploadingImage ? 'Uploading Image...' : isUploadingCatalog ? 'Uploading Catalog...' : 'Saving Changes...'}
-                    </>
-                  ) : (
-                    'Save Changes'
-                  )}
-                </button>
-              </div>
+            <div className="sp-edit-modal-footer">
+              <button onClick={() => setIsEditModalOpen(false)} className="sp-edit-btn-cancel" disabled={isUpdating}>
+                Cancel
+              </button>
+              <button onClick={handleSubmit} className="sp-edit-btn-save" disabled={isUpdating}>
+                {isUpdating ? 'Saving...' : 'Save Changes'}
+              </button>
             </div>
           </div>
         </div>

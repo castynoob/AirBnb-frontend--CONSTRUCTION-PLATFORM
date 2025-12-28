@@ -1284,6 +1284,31 @@
     font-size: 18px !important;
     font-weight: 600 !important;
     color: #0f223d !important;
+    flex: 1 !important;
+  }
+
+  .mp-profile-page-modern .mp-mobile-logout-btn {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 40px !important;
+    height: 40px !important;
+    border: none !important;
+    background: #fef2f2 !important;
+    border-radius: 10px !important;
+    color: #ef4444 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    margin-left: auto !important;
+  }
+
+  .mp-profile-page-modern .mp-mobile-logout-btn:hover {
+    background: #fee2e2 !important;
+    color: #dc2626 !important;
+  }
+
+  .mp-profile-page-modern .mp-mobile-logout-btn:active {
+    transform: scale(0.95) !important;
   }
 
   /* Mobile Overlay - Shown on mobile when sidebar is open */
@@ -1485,6 +1510,11 @@
 
   .mp-profile-page-modern .mp-mobile-title {
     font-size: 16px !important;
+  }
+
+  .mp-profile-page-modern .mp-mobile-logout-btn {
+    width: 36px !important;
+    height: 36px !important;
   }
 
   /* Narrower sidebar on extra small screens */

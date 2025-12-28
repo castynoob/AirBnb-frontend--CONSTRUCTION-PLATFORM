@@ -642,7 +642,7 @@ function MessagesEntrepreneurNew() {
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
       const response = await fetch(
-        `${API_BASE_URL}/api/users/supplier/${userId}`,
+        `${API_BASE_URL}/api/users/supplier/user/${userId}`,
         {
           method: "GET",
           headers: {
@@ -708,12 +708,12 @@ function MessagesEntrepreneurNew() {
               >
                 Supplier
               </button>
-              <button
+              {/* <button
                 className={`filter-bubble-btn ${userFilter === "entrepreneur" ? "active" : ""}`}
                 onClick={() => setUserFilter("entrepreneur")}
               >
                 Entrepreneur
-              </button>
+              </button> */}
             </div>
           </div>
 

@@ -258,9 +258,7 @@ const MembersResident = () => {
                       </div>
                     )}
 
-                    {resident.bio && (
-                      <p className="member-bio">{resident.bio}</p>
-                    )}
+                    
 
                     {resident.show_move_in_date && resident.move_in_date && (
                       <p className="member-move-in">
@@ -271,25 +269,7 @@ const MembersResident = () => {
 
                   {/* Contact Options */}
                   <div className="member-contact-options">
-                    {resident.contact_via_email && resident.show_email && resident.email && (
-                      <button
-                        className="contact-btn"
-                        onClick={() => handleContact(resident, 'email')}
-                        title="Send email"
-                      >
-                        <Mail size={18} />
-                      </button>
-                    )}
-
-                    {resident.contact_via_phone && resident.show_phone && resident.phone && (
-                      <button
-                        className="contact-btn"
-                        onClick={() => handleContact(resident, 'phone')}
-                        title="Call"
-                      >
-                        <Phone size={18} />
-                      </button>
-                    )}
+                    
 
                     {/* Show DM button for all members including property manager */}
                     {resident.contact_via_message && resident.allow_messages && (

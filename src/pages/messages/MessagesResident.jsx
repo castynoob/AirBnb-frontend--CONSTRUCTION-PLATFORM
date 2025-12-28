@@ -827,14 +827,14 @@ const MessagesResident = () => {
             </div>
 
             {/* Create Group Button - Only show on group tab */}
-            {activeTab === 'group' && (
+            {/* {activeTab === 'group' && (
               <button
                 className="create-group-btn-sidebar"
                 onClick={() => setShowCreateGroupModal(true)}
               >
                 + Create Group
               </button>
-            )}
+            )} */}
           </div>
 
           {/* Chat List */}

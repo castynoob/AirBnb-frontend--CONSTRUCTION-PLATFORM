@@ -186,6 +186,9 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 /* ============================================
@@ -414,6 +417,14 @@
 
   .announcements-list {
     gap: 0.875rem;
+    padding: 0;
+    margin: 0 -0.25rem;
+    width: calc(100% + 0.5rem);
+  }
+
+  .announcements-list .announcement-card {
+    margin: 0 0.25rem;
+    width: calc(100% - 0.5rem);
   }
 }
 
@@ -458,6 +469,18 @@
   .connection-status {
     padding: 5px 10px;
     font-size: 0.6875rem;
+  }
+
+  .announcements-list {
+    gap: 0.75rem;
+    margin: 0;
+    width: 100%;
+  }
+
+  .announcements-list .announcement-card {
+    margin: 0;
+    width: 100%;
+    border-radius: 8px;
   }
 }
 
