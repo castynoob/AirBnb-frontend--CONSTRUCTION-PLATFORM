@@ -458,12 +458,35 @@ function MessagesEntrepreneurNew() {
         return;
       }
 
-      // Set up error handler
-      const errorHandler = (error) => {
+      // Track retry attempts for authorization errors
+      let retryCount = 0;
+      const maxRetries = 2;
+
+      // Set up error handler with retry logic for authorization errors
+      const errorHandler = async (error) => {
         console.error("❌ Message send error:", error);
         console.error("Full error object:", JSON.stringify(error, null, 2));
         const errorMessage = error?.message || "Failed to send message";
         const errorDetails = error?.details || error?.error;
+
+        // Check if it's an authorization error and we haven't exhausted retries
+        const isAuthError = errorMessage.toLowerCase().includes('not authorized') ||
+                           errorMessage.toLowerCase().includes('approved bid');
+
+        if (isAuthError && retryCount < maxRetries) {
+          retryCount++;
+          console.log(`🔄 Authorization error - retrying (${retryCount}/${maxRetries}) after 1 second...`);
+
+          // Wait 1 second and retry
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+          // Re-emit the message
+          socket.once("error", errorHandler);
+          socket.once("message_sent", successHandler);
+          socket.emit("send_message", messageData);
+          return;
+        }
+
         const fullMessage = errorDetails ? `${errorMessage}: ${errorDetails}` : errorMessage;
         toast.error(fullMessage);
         setIsSending(false);

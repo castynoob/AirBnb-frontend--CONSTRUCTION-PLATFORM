@@ -15,6 +15,7 @@ import {
   validateName,
   validatePasswordConfirmation
 } from "../../utils/validation";
+import { useSocket } from "../../contexts/SocketContext";
 
 export default function LandingPage() {
   // ===== STATE MANAGEMENT =====
@@ -28,6 +29,7 @@ export default function LandingPage() {
   const [verificationMessage, setVerificationMessage] = useState(null)
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { reinitializeSocket } = useSocket()
 
   // Login state
   const [loginFormData, setLoginFormData] = useState({
@@ -318,6 +320,9 @@ export default function LandingPage() {
       localStorage.setItem("userId", userProfile.id);
       localStorage.setItem("userProfile", JSON.stringify(userProfile))
 
+      // Reinitialize socket connection after login
+      reinitializeSocket()
+
       setShowLoginModal(false)
       navigate(`/homepage/${userProfile.role}`)
     } catch (error) {
@@ -390,6 +395,9 @@ export default function LandingPage() {
 
       localStorage.setItem("userId", userProfile.id);
       localStorage.setItem("userProfile", JSON.stringify(userProfile))
+
+      // Reinitialize socket connection after login
+      reinitializeSocket()
 
       setShowLoginModal(false)
       navigate(`/homepage/${userProfile.role}`)
@@ -668,6 +676,9 @@ export default function LandingPage() {
                 localStorage.setItem('refreshToken', loginData.refreshToken);
                 localStorage.setItem('userId', userProfile.id);
                 localStorage.setItem('userProfile', JSON.stringify(userProfile));
+
+                // Reinitialize socket connection after login
+                reinitializeSocket()
 
                 // Redirect to role-specific homepage
                 navigate(`/homepage/${userProfile.role}`);

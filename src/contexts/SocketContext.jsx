@@ -36,8 +36,17 @@ export const SocketProvider = ({ children }) => {
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
   const { showNotification, requestPermission } = useNotifications();
 
+  // Auth version - increment this to trigger socket re-initialization after login
+  const [authVersion, setAuthVersion] = useState(0);
+
   // Track if we've already shown login toasts (to avoid showing on every reconnect)
   const hasShownLoginToastsRef = useRef(false);
+
+  // Function to reinitialize socket (call this after login)
+  const reinitializeSocket = useCallback(() => {
+    console.log("🔄 Reinitializing socket connection...");
+    setAuthVersion(prev => prev + 1);
+  }, []);
 
   // Use refs to avoid stale closures in socket listeners
   const showNotificationRef = useRef(showNotification);
@@ -802,7 +811,7 @@ export const SocketProvider = ({ children }) => {
       newSocket.disconnect();
       setIsConnected(false);
     };
-  }, [fetchNotifications]);
+  }, [fetchNotifications, authVersion]);
 
   return (
     <SocketContext.Provider value={{
@@ -816,6 +825,7 @@ export const SocketProvider = ({ children }) => {
       markAllAsRead,
       clearNotifications,
       fetchNotifications,
+      reinitializeSocket,
     }}>
       {children}
     </SocketContext.Provider>
