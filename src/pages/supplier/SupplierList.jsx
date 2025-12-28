@@ -23,6 +23,7 @@ import {
 import toast from 'react-hot-toast';
 import Nav from "../../components/Nav";
 import SupplierProfileModal from "../../components/modal/SupplierProfileModal";
+import ViewMyRequestsModal from "../../components/modal/ViewMyRequestsModal";
 import '../../styles/manager/submissions.css';
 
 // Custom Select Component
@@ -94,6 +95,7 @@ function SupplierList() {
   const [showFilters, setShowFilters] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [myRequests, setMyRequests] = useState([]);
+  const [showMyRequestsModal, setShowMyRequestsModal] = useState(false);
 
   // Supplier Profile Modal states
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -378,6 +380,8 @@ function SupplierList() {
 
         toast.success('Material request submitted successfully! The supplier will review and create an invoice for you.');
         closeRequestModal();
+        // Refresh requests list
+        fetchMyRequests();
       }
     } catch (error) {
       console.error('Error submitting request:', error);
@@ -465,6 +469,22 @@ function SupplierList() {
             </div>
           </div>
           <div className="subs-header-actions">
+            <button
+              className="subs-btn subs-btn-primary"
+              onClick={() => setShowMyRequestsModal(true)}
+              style={{
+                background: 'linear-gradient(135deg, #00a5a9 0%, #008b8f 100%)',
+                color: '#fff',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}
+            >
+              <Send size={18} />
+              <span>My Requests {myRequests.length > 0 && `(${myRequests.length})`}</span>
+            </button>
             <div className="subs-btn subs-btn-secondary">
               <Package size={18} />
               <span>{suppliers.length} Total</span>
@@ -993,6 +1013,15 @@ function SupplierList() {
             openRequestModal(supplier);
           }
         }}
+      />
+
+      {/* View My Requests Modal */}
+      <ViewMyRequestsModal
+        isOpen={showMyRequestsModal}
+        onClose={() => setShowMyRequestsModal(false)}
+        requests={myRequests}
+        onChatWithSupplier={handleChatWithSupplier}
+        onRefresh={fetchMyRequests}
       />
     </div>
   );
