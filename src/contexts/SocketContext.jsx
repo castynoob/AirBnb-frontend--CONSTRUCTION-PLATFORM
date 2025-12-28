@@ -10,6 +10,15 @@ import toast from 'react-hot-toast';
 import { useNotifications } from '../hooks/useNotifications';
 import { playNotificationSound } from '../utils/notificationSound';
 
+// Public pages where notifications should NOT be shown (user is not truly "logged in" to the app)
+const PUBLIC_PAGES = ['/', '/landing', '/login', '/register', '/forgot-password', '/reset-password'];
+
+// Helper function to check if current path is a public page
+const checkIsPublicPage = () => {
+  const pathname = window.location.pathname;
+  return PUBLIC_PAGES.some(page => pathname === page || pathname.startsWith(page + '/'));
+};
+
 const SocketContext = createContext(null);
 
 export const useSocket = () => {
@@ -32,6 +41,7 @@ export const SocketProvider = ({ children }) => {
 
   // Use refs to avoid stale closures in socket listeners
   const showNotificationRef = useRef(showNotification);
+
   useEffect(() => {
     showNotificationRef.current = showNotification;
   }, [showNotification]);
@@ -104,10 +114,12 @@ export const SocketProvider = ({ children }) => {
           unreadCount: unreadNotifications.length,
           userRole,
           hasShownBefore: hasShownLoginToastsRef.current,
-          shouldShowToast: unreadNotifications.length > 0 && !hasShownLoginToastsRef.current
+          isPublicPage: checkIsPublicPage(),
+          shouldShowToast: unreadNotifications.length > 0 && !hasShownLoginToastsRef.current && !checkIsPublicPage()
         });
 
-        if (unreadNotifications.length > 0 && !hasShownLoginToastsRef.current) {
+        // Don't show toasts on public pages (landing, login, etc.)
+        if (unreadNotifications.length > 0 && !hasShownLoginToastsRef.current && !checkIsPublicPage()) {
           hasShownLoginToastsRef.current = true; // Mark as shown
 
           // Play sound once for all unread notifications
@@ -295,9 +307,12 @@ export const SocketProvider = ({ children }) => {
     }
   }, []);
 
-  // Clear all notifications
+  // Clear all notifications (called on logout)
   const clearNotifications = useCallback(() => {
     setNotifications([]);
+    // Reset the toast flag so new user will see their notifications
+    hasShownLoginToastsRef.current = false;
+    console.log("🧹 Notifications cleared and toast flag reset");
   }, []);
 
   // Get unread count
@@ -386,6 +401,12 @@ export const SocketProvider = ({ children }) => {
         conversationId: data.conversationId,
       }, ...prev]);
 
+      // Skip toasts/sounds on public pages
+      if (checkIsPublicPage()) {
+        console.log("📬 Skipping toast - user is on public page");
+        return;
+      }
+
       // Play notification sound
       playNotificationSound();
 
@@ -444,6 +465,12 @@ export const SocketProvider = ({ children }) => {
         submissionDate: new Date().toISOString(),
       }, ...prev]);
 
+      // Skip toasts/sounds on public pages
+      if (checkIsPublicPage()) {
+        console.log("📋 Skipping toast - user is on public page");
+        return;
+      }
+
       // Play notification sound
       playNotificationSound();
 
@@ -496,6 +523,12 @@ export const SocketProvider = ({ children }) => {
         startDate: new Date().toISOString(),
       }, ...prev]);
 
+      // Skip toasts/sounds on public pages
+      if (checkIsPublicPage()) {
+        console.log("🔨 Skipping toast - user is on public page");
+        return;
+      }
+
       // Play notification sound
       playNotificationSound();
 
@@ -547,6 +580,12 @@ export const SocketProvider = ({ children }) => {
         apartment: data.unitName || '',
         completionDate: new Date().toISOString(),
       }, ...prev]);
+
+      // Skip toasts/sounds on public pages
+      if (checkIsPublicPage()) {
+        console.log("✅ Skipping toast - user is on public page");
+        return;
+      }
 
       // Play notification sound
       playNotificationSound();
@@ -601,6 +640,12 @@ export const SocketProvider = ({ children }) => {
         content: data.message,
       }, ...prev]);
 
+      // Skip toasts/sounds on public pages
+      if (checkIsPublicPage()) {
+        console.log("🎉 Skipping toast - user is on public page");
+        return;
+      }
+
       // Play notification sound
       playNotificationSound();
 
@@ -654,6 +699,12 @@ export const SocketProvider = ({ children }) => {
         reason: data.reason, // 'another_accepted' or 'manager_declined'
       }, ...prev]);
 
+      // Skip toasts/sounds on public pages
+      if (checkIsPublicPage()) {
+        console.log("❌ Skipping toast - user is on public page");
+        return;
+      }
+
       // Play notification sound
       playNotificationSound();
 
@@ -679,6 +730,66 @@ export const SocketProvider = ({ children }) => {
             body: data.message || `Your bid for ${jobTitle} was not selected.`,
             tag: 'bid-declined-notification',
             requireInteraction: false,
+          }
+        );
+      }
+    });
+
+    // Listen for payout received notifications (for entrepreneurs)
+    // Use a ref to track recent payouts and prevent duplicate toasts
+    const recentPayoutsRef = { current: new Set() };
+
+    newSocket.on("payout_received", (data) => {
+      console.log("💰 Payout received notification:");
+      console.log("   Contract ID:", data.contractId);
+      console.log("   Job ID:", data.jobId);
+      console.log("   Amount:", data.amount);
+
+      // Prevent duplicate notifications for the same contract
+      const payoutKey = `${data.contractId}-${data.jobId}`;
+      if (recentPayoutsRef.current.has(payoutKey)) {
+        console.log("💰 Skipping duplicate payout notification for:", payoutKey);
+        return;
+      }
+      recentPayoutsRef.current.add(payoutKey);
+
+      // Clear from set after 10 seconds to allow future notifications
+      setTimeout(() => {
+        recentPayoutsRef.current.delete(payoutKey);
+      }, 10000);
+
+      // Skip toasts/sounds on public pages
+      if (checkIsPublicPage()) {
+        console.log("💰 Skipping toast - user is on public page");
+        return;
+      }
+
+      // Play notification sound
+      playNotificationSound();
+
+      // Show toast notification with success styling
+      const amountFormatted = data.amount ? `$${Number(data.amount).toLocaleString()}` : 'Payment';
+      toast.success(
+        `${amountFormatted} has been released to your account!`,
+        {
+          duration: 8000,
+          icon: '💰',
+          style: {
+            borderRadius: '10px',
+            background: '#059669',
+            color: '#fff',
+          },
+        }
+      );
+
+      // Show desktop notification
+      if (showNotificationRef.current) {
+        showNotificationRef.current(
+          `Payment Received! 💰`,
+          {
+            body: `${amountFormatted} has been released to your account!`,
+            tag: `payout-${data.contractId}`,
+            requireInteraction: true,
           }
         );
       }

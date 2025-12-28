@@ -21,6 +21,10 @@ import {
   Minimize2,
   ChevronRight,
   User,
+  CreditCard,
+  Wallet,
+  AlertCircle,
+  Banknote,
 } from "lucide-react"
 import toast from "react-hot-toast"
 import PropertyManagerProfileModal from "../../components/modal/PropertyManagerProfileModal"
@@ -96,16 +100,17 @@ function EntrepreneurJobs() {
         data.jobs.map(async (job) => {
           try {
             const review = await getReview(job.id, user)
-            return { ...job, review }
+            const contract = await getContractForJob(job.id, user)
+            return { ...job, review, contract }
           } catch (err) {
-            console.error(`Failed to fetch review for job ${job.id}`, err)
-            return { ...job, review: null }
+            console.error(`Failed to fetch data for job ${job.id}`, err)
+            return { ...job, review: null, contract: null }
           }
         }),
       )
 
       setJobs(newJobsData)
-      console.log("✅ Jobs and reviews loaded:", newJobsData)
+      console.log("✅ Jobs, reviews, and contracts loaded:", newJobsData)
       setIsLoading(false)
     }
   }
@@ -134,6 +139,33 @@ function EntrepreneurJobs() {
     } catch (error) {
       console.error("Error fetching review:", error)
       throw error
+    }
+  }
+
+  const getContractForJob = async (jobId, user) => {
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+      const response = await fetch(`${API_BASE_URL}/api/contracts/job/${jobId}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${user?.token}`,
+          "Content-Type": "application/json",
+        },
+      })
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null
+        }
+        return null
+      }
+
+      const data = await response.json()
+      return data.contract || null
+    } catch (error) {
+      console.error("Error fetching contract:", error)
+      return null
     }
   }
 
@@ -181,18 +213,62 @@ function EntrepreneurJobs() {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
     const user = JSON.parse(localStorage.getItem("userProfile"))
 
-    const res = await fetch(`${API_BASE_URL}/api/jobs/${selectedJob.id}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${user.token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ status: "completed" }),
-    })
+    try {
+      // Step 1: Update job status to completed
+      const res = await fetch(`${API_BASE_URL}/api/jobs/${selectedJob.id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: "completed" }),
+      })
 
-    if (!res.ok) throw new Error("Failed to complete job")
-    await fetchJobs()
-    setIsConfirming(false)
+      if (!res.ok) throw new Error("Failed to complete job")
+
+      // Step 2: Try to mark contract work as complete (if contract exists)
+      // This will notify the manager to review and release funds
+      try {
+        // First get the contract for this job
+        const contractRes = await fetch(`${API_BASE_URL}/api/contracts/job/${selectedJob.id}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        })
+
+        if (contractRes.ok) {
+          const contractData = await contractRes.json()
+
+          if (contractData.contract && contractData.contract.id) {
+            // Mark work as complete on the contract
+            const completeRes = await fetch(`${API_BASE_URL}/api/contracts/${contractData.contract.id}/complete`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${user.token}`,
+                "Content-Type": "application/json",
+              },
+            })
+
+            if (completeRes.ok) {
+              console.log("Contract work marked complete, manager notified")
+            } else {
+              console.warn("Could not mark contract complete, but job status updated")
+            }
+          }
+        }
+      } catch (contractErr) {
+        // Contract notification is optional - job completion still succeeded
+        console.warn("Could not notify contract system:", contractErr)
+      }
+
+      await fetchJobs()
+    } catch (error) {
+      console.error("Error completing job:", error)
+      alert("Failed to complete job. Please try again.")
+    } finally {
+      setIsConfirming(false)
+    }
   }
 
   const handleImageSelect = (e) => {
@@ -430,6 +506,31 @@ function EntrepreneurJobs() {
     }).format(amount)
   }
 
+  // Get payment/contract status info for display
+  const getPaymentStatusInfo = (contract) => {
+    if (!contract) {
+      return { class: "payment-pending", icon: Clock, label: "Awaiting Payment", description: "Manager has not yet paid for this job" }
+    }
+
+    const status = contract.status
+    switch (status) {
+      case "pending_payment":
+        return { class: "payment-pending", icon: Clock, label: "Awaiting Payment", description: "Manager has not yet completed payment" }
+      case "paid":
+        return { class: "payment-escrow", icon: Wallet, label: "Payment in Escrow", description: "Payment is held securely until work is approved" }
+      case "work_completed":
+        return { class: "payment-review", icon: AlertCircle, label: "Awaiting Approval", description: "Work marked complete, waiting for manager to approve and release funds" }
+      case "completed":
+        return { class: "payment-released", icon: Banknote, label: "Funds Released", description: "Payment has been released to your account" }
+      case "refunded":
+        return { class: "payment-refunded", icon: AlertCircle, label: "Refunded", description: "Payment was refunded to the manager" }
+      case "disputed":
+        return { class: "payment-disputed", icon: AlertCircle, label: "Disputed", description: "There is a dispute regarding this contract" }
+      default:
+        return { class: "payment-unknown", icon: CreditCard, label: "Unknown", description: "Payment status unknown" }
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="subs-submissions-container">
@@ -516,6 +617,8 @@ function EntrepreneurJobs() {
               }
               const statusInfo = getStatusInfo(job.status)
               const StatusIcon = statusInfo.icon
+              const paymentInfo = getPaymentStatusInfo(job.contract)
+              const PaymentIcon = paymentInfo.icon
 
               return (
                 <div className="subs-bid-card" key={job.id} onClick={() => handleViewDetails(job)}>
@@ -535,6 +638,15 @@ function EntrepreneurJobs() {
 
                   {/* Job Title */}
                   <h3 className="subs-job-title">{job.title}</h3>
+
+                  {/* Payment Status Badge */}
+                  <div className={`ej-payment-status-badge ${paymentInfo.class}`} title={paymentInfo.description}>
+                    <PaymentIcon size={14} />
+                    <span>{paymentInfo.label}</span>
+                    {job.contract && (
+                      <span className="ej-payment-amount">{formatCurrency(job.contract.contract_amount || job.bid_amount || 0)}</span>
+                    )}
+                  </div>
 
                   {/* Info Row */}
                   <div className="subs-card-info">
@@ -1001,6 +1113,81 @@ function EntrepreneurJobs() {
                   )}
                 </section>
               )}
+
+              {/* Payment & Contract Status Section */}
+              <section className="bid-modal-section ej-payment-section">
+                <h3 className="bid-section-title">
+                  <CreditCard size={20} />
+                  Payment Status
+                </h3>
+                {(() => {
+                  const paymentInfo = getPaymentStatusInfo(detailsJob.contract)
+                  const PaymentIcon = paymentInfo.icon
+                  return (
+                    <>
+                      <div className={`ej-payment-status-card ${paymentInfo.class}`}>
+                        <div className="ej-payment-status-header">
+                          <PaymentIcon size={24} />
+                          <div className="ej-payment-status-text">
+                            <span className="ej-payment-status-label">{paymentInfo.label}</span>
+                            <span className="ej-payment-status-desc">{paymentInfo.description}</span>
+                          </div>
+                        </div>
+                        {detailsJob.contract && (
+                          <div className="ej-payment-details">
+                            <div className="ej-payment-detail-row">
+                              <span>Contract Amount</span>
+                              <span className="ej-payment-detail-value">{formatCurrency(detailsJob.contract.contract_amount || detailsJob.bid_amount || 0)}</span>
+                            </div>
+                            {detailsJob.contract.status === 'completed' && detailsJob.contract.payout_amount && (
+                              <div className="ej-payment-detail-row">
+                                <span>Your Payout (after fees)</span>
+                                <span className="ej-payment-detail-value ej-payout-amount">{formatCurrency(detailsJob.contract.payout_amount)}</span>
+                              </div>
+                            )}
+                            {detailsJob.contract.paid_at && (
+                              <div className="ej-payment-detail-row">
+                                <span>Payment Received</span>
+                                <span className="ej-payment-detail-value">{formatDate(detailsJob.contract.paid_at)}</span>
+                              </div>
+                            )}
+                            {detailsJob.contract.completed_at && (
+                              <div className="ej-payment-detail-row">
+                                <span>Funds Released</span>
+                                <span className="ej-payment-detail-value">{formatDate(detailsJob.contract.completed_at)}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      {!detailsJob.contract && (
+                        <p className="ej-payment-note">
+                          <AlertCircle size={14} />
+                          The property manager has not yet made a payment for this job. Payment is required before work can begin.
+                        </p>
+                      )}
+                      {detailsJob.contract?.status === 'paid' && (
+                        <p className="ej-payment-note ej-payment-note-escrow">
+                          <Wallet size={14} />
+                          Funds are held securely in escrow. They will be released to you once you complete the work and the manager approves it.
+                        </p>
+                      )}
+                      {detailsJob.contract?.status === 'work_completed' && (
+                        <p className="ej-payment-note ej-payment-note-pending">
+                          <Clock size={14} />
+                          You've marked this job complete. Waiting for the property manager to review and release payment.
+                        </p>
+                      )}
+                      {detailsJob.contract?.status === 'completed' && (
+                        <p className="ej-payment-note ej-payment-note-success">
+                          <CheckCircle size={14} />
+                          Payment has been released! Funds should arrive in your connected bank account within 2-3 business days.
+                        </p>
+                      )}
+                    </>
+                  )
+                })()}
+              </section>
 
               {/* Property Manager Information */}
               {detailsJob.manager_id && (

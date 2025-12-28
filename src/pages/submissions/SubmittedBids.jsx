@@ -22,6 +22,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import PropertyManagerProfileModal from '../../components/modal/PropertyManagerProfileModal';
+import StripeConnectModal from '../../components/StripeConnectModal';
+import { getConnectStatus } from '../../utils/stripeConnectApi';
 
 const SubmittedBids = () => {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -38,6 +40,10 @@ const SubmittedBids = () => {
   const [showManagerModal, setShowManagerModal] = useState(false);
   const [selectedManagerProfile, setSelectedManagerProfile] = useState(null);
   const [isLoadingManagerProfile, setIsLoadingManagerProfile] = useState(false);
+
+  // Stripe Connect Modal state
+  const [showStripeConnectModal, setShowStripeConnectModal] = useState(false);
+  const [stripeStatus, setStripeStatus] = useState(null);
 
   const navigate = useNavigate()
 
@@ -100,6 +106,26 @@ const SubmittedBids = () => {
         console.log("Mapped bids: ", mappedBids)
         setSummary(mappedSummary);
         setLoading(false);
+
+        // Check if there are approved bids and user hasn't completed Stripe onboarding
+        if (acceptedCount > 0) {
+          try {
+            const status = await getConnectStatus();
+            setStripeStatus(status);
+
+            // Show prompt if not onboarded and hasn't been shown recently for approved bids
+            const lastPromptTime = localStorage.getItem('stripe_approved_bid_prompt_shown');
+            const shouldShowPrompt = !lastPromptTime ||
+              (new Date() - new Date(lastPromptTime)) > 24 * 60 * 60 * 1000; // 24 hours
+
+            if (!status.onboarding_complete && shouldShowPrompt) {
+              localStorage.setItem('stripe_approved_bid_prompt_shown', new Date().toISOString());
+              setShowStripeConnectModal(true);
+            }
+          } catch (stripeErr) {
+            console.log('Stripe status check skipped:', stripeErr.message);
+          }
+        }
       } catch (err) {
         console.error('Fetch error:', err);
         setError(err.message);
@@ -619,6 +645,19 @@ const SubmittedBids = () => {
           onClose={() => setShowManagerModal(false)}
           profile={selectedManagerProfile}
         />
+
+        {/* Stripe Connect Onboarding Modal - shown when approved bids exist but not onboarded */}
+        {showStripeConnectModal && (
+          <StripeConnectModal
+            onClose={() => setShowStripeConnectModal(false)}
+            showSkipButton={true}
+            isApprovedBid={true}
+            onComplete={() => {
+              setShowStripeConnectModal(false);
+              toast.success('Payment setup complete! You can now receive payments for your jobs.');
+            }}
+          />
+        )}
       </div>
     </div>
   );

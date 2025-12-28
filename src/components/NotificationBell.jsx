@@ -145,7 +145,14 @@ function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="notification-dropdown">
+        <>
+          {/* Mobile backdrop overlay */}
+          <div
+            className="notification-backdrop-mobile"
+            onClick={() => setIsOpen(false)}
+            aria-hidden="true"
+          />
+          <div className="notification-dropdown">
           <div className="notification-dropdown-header">
             <h3>Notifications</h3>
             {unreadCount > 0 && (
@@ -205,6 +212,7 @@ function NotificationBell() {
             </div>
           )}
         </div>
+        </>
       )}
     </div>
   );

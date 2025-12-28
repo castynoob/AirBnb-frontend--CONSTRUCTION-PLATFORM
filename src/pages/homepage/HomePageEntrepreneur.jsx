@@ -45,6 +45,8 @@ import SubscriptionModal from "../../components/SubcriptionModal"
 import UnlockBudgetForm from '../../components/UnlockBudgetForm'
 import NotificationBell from '../../components/NotificationBell'
 import PropertyManagerProfileModal from '../../components/modal/PropertyManagerProfileModal'
+import StripeConnectModal from '../../components/StripeConnectModal'
+import { getConnectStatus } from '../../utils/stripeConnectApi'
 
 
 // Map Controller Component for programmatic map control
@@ -226,6 +228,7 @@ function HomePageEntrepreneur() {
   const [showUnlockBudgetModal, setShowUnlockBudgetModal] = useState(false)
   const [budgetJobId, setBudgetJobId] = useState('')
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
+  const [showStripeConnectModal, setShowStripeConnectModal] = useState(false)
 
   // View/Edit Bid Modal states
   const [viewBidModalOpen, setViewBidModalOpen] = useState(false)
@@ -480,6 +483,41 @@ function HomePageEntrepreneur() {
       }
     );
   }, [])
+
+  // Check if should show Stripe Connect onboarding modal (after registration or first visit)
+  useEffect(() => {
+    const checkStripeOnboarding = async () => {
+      try {
+        // Check if user has skipped onboarding before
+        const skippedAt = localStorage.getItem('stripe_onboarding_skipped_at');
+        const isNewSession = !localStorage.getItem('stripe_modal_shown_this_session');
+
+        // If skipped more than 7 days ago, show again
+        const shouldShowAgain = skippedAt ?
+          (new Date() - new Date(skippedAt)) > 7 * 24 * 60 * 60 * 1000 : true;
+
+        if (!shouldShowAgain || !isNewSession) {
+          return;
+        }
+
+        // Check Stripe status
+        const status = await getConnectStatus();
+
+        // If not onboarded, show the modal
+        if (!status.onboarding_complete) {
+          // Mark that we've shown the modal this session
+          localStorage.setItem('stripe_modal_shown_this_session', 'true');
+          setShowStripeConnectModal(true);
+        }
+      } catch (err) {
+        console.log('Stripe status check skipped:', err.message);
+      }
+    };
+
+    // Delay slightly to let page load first
+    const timer = setTimeout(checkStripeOnboarding, 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Get open jobs count for each property
   const getPropertyOpenJobsCount = (propertyId) => {
@@ -1330,6 +1368,18 @@ function HomePageEntrepreneur() {
           refresher={refresher}
           onClose={handleCloseSubscriptionModal}
           showCloseButton={true}
+        />
+      )}
+
+      {showStripeConnectModal && (
+        <StripeConnectModal
+          onClose={() => setShowStripeConnectModal(false)}
+          showSkipButton={true}
+          isApprovedBid={false}
+          onComplete={() => {
+            setShowStripeConnectModal(false);
+            toast.success('Payment setup complete!');
+          }}
         />
       )}
 

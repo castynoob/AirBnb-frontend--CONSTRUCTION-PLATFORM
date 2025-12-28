@@ -3,7 +3,7 @@ import {
   Star, CheckCircle, Award, Briefcase, MapPin, Calendar, Mail, Phone, LogOut,
   MessageSquare, User, Upload, Camera, X, Crown, Check, Zap, Shield, Activity,
   DollarSign, FileText, ArrowUpCircle, AlertCircle, Lock, Eye, EyeOff, Key,
-  BarChart3, Menu, Edit
+  BarChart3, Menu, Edit, CreditCard, ExternalLink
 } from 'lucide-react';
 import Nav from "../../components/Nav";
 import '../../styles/entrepreneur/profilepageentrepreneur-modern.css';
@@ -13,6 +13,7 @@ import toast from 'react-hot-toast';
 import EntrepreneurProfileSkeleton from '../../components/loading/EntrepreneurProfileSkeleton'
 import SubscriptionPaymentForm from '../../components/SubscriptionPaymentModal'
 import '../../styles/entrepreneur/subscriptionmodal.css'
+import { getConnectStatus, startOnboarding, getDashboardLink } from '../../utils/stripeConnectApi'
 
 function ProfilePageEntrepreneur() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -49,6 +50,11 @@ function ProfilePageEntrepreneur() {
   const [passwordSuccess, setPasswordSuccess] = useState('')
   const [isChangingPassword, setIsChangingPassword] = useState(false)
 
+  // Stripe Connect states
+  const [stripeStatus, setStripeStatus] = useState(null)
+  const [isLoadingStripe, setIsLoadingStripe] = useState(true)
+  const [isConnectingStripe, setIsConnectingStripe] = useState(false)
+
   const [formData, setFormData] = useState({
     company_name: '',
     license_number: '',
@@ -70,6 +76,7 @@ function ProfilePageEntrepreneur() {
 
   useEffect(() => {
     fetchEntreprenuerProfile()
+    fetchStripeStatus()
 
     const uProfile = localStorage.getItem('userProfile')
     if (uProfile) {
@@ -80,6 +87,56 @@ function ProfilePageEntrepreneur() {
       }
     }
   }, [])
+
+  // Fetch Stripe Connect status
+  const fetchStripeStatus = async () => {
+    try {
+      setIsLoadingStripe(true)
+      const status = await getConnectStatus()
+      setStripeStatus(status)
+    } catch (err) {
+      console.log('Could not fetch Stripe status:', err.message)
+      setStripeStatus(null)
+    } finally {
+      setIsLoadingStripe(false)
+    }
+  }
+
+  // Handle Stripe Connect onboarding
+  const handleStripeConnect = async () => {
+    try {
+      setIsConnectingStripe(true)
+      const result = await startOnboarding()
+
+      if (result.already_complete) {
+        toast.success('Your payment account is already set up!')
+        fetchStripeStatus()
+        return
+      }
+
+      if (result.url) {
+        window.location.href = result.url
+      }
+    } catch (err) {
+      console.error('Stripe connect error:', err)
+      toast.error(err.message || 'Failed to start payment setup')
+    } finally {
+      setIsConnectingStripe(false)
+    }
+  }
+
+  // Handle Stripe Dashboard access
+  const handleStripeDashboard = async () => {
+    try {
+      const result = await getDashboardLink()
+      if (result.url) {
+        window.open(result.url, '_blank')
+      }
+    } catch (err) {
+      console.error('Dashboard error:', err)
+      toast.error('Failed to open Stripe dashboard')
+    }
+  }
 
   // Subscription helper functions
   const formatDate = (dateString) => {
@@ -675,6 +732,49 @@ function ProfilePageEntrepreneur() {
                         </span>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Stripe Connect Status */}
+                  <div className="ep-stripe-status-section">
+                    {isLoadingStripe ? (
+                      <div className="ep-stripe-status-loading">
+                        <div className="ep-stripe-spinner"></div>
+                      </div>
+                    ) : stripeStatus?.onboarding_complete ? (
+                      <div className="ep-stripe-status-card connected">
+                        <div className="ep-stripe-status-icon success">
+                          <CreditCard size={20} />
+                        </div>
+                        <div className="ep-stripe-status-info">
+                          <span className="ep-stripe-status-label">Payment Account</span>
+                          <span className="ep-stripe-status-value success">Connected</span>
+                        </div>
+                        <button
+                          className="ep-stripe-dashboard-btn"
+                          onClick={handleStripeDashboard}
+                          title="View Stripe Dashboard"
+                        >
+                          <ExternalLink size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="ep-stripe-status-card pending">
+                        <div className="ep-stripe-status-icon pending">
+                          <CreditCard size={20} />
+                        </div>
+                        <div className="ep-stripe-status-info">
+                          <span className="ep-stripe-status-label">Payment Account</span>
+                          <span className="ep-stripe-status-value pending">Not Connected</span>
+                        </div>
+                        <button
+                          className="ep-stripe-connect-btn"
+                          onClick={handleStripeConnect}
+                          disabled={isConnectingStripe}
+                        >
+                          {isConnectingStripe ? 'Connecting...' : 'Set Up'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 

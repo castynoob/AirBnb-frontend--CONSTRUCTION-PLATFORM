@@ -12,7 +12,7 @@ function Nav() {
   const [userProfile, setUserProfile] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
-  const { socket } = useSocket();
+  const { socket, clearNotifications } = useSocket();
 
   useEffect(() => {
     const profileString = localStorage.getItem('userProfile');
@@ -77,9 +77,17 @@ function Nav() {
   }, [userProfile])
 
   const handleLogout = () => {
+    // Clear notifications and disconnect socket before removing userProfile
+    if (clearNotifications) {
+      clearNotifications();
+    }
+    if (socket) {
+      socket.disconnect();
+    }
     localStorage.removeItem("userProfile");
-    localStorage.removeItem("selectedPropertyId")
-    navigate("/");
+    localStorage.removeItem("selectedPropertyId");
+    // Force a page reload to ensure all state is reset
+    window.location.href = "/";
   };
 
   return (

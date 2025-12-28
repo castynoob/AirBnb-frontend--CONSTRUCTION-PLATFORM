@@ -3709,6 +3709,30 @@
   text-transform: capitalize;
 }
 
+.details-status-message.details-status-success {
+  color: #166534;
+  background: #dcfce7;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #bbf7d0;
+}
+
+.details-status-message.details-status-success strong {
+  color: #15803d;
+}
+
+/* Slide to Confirm Wrapper */
+.details-slider-wrapper {
+  flex: 1;
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.details-slider-wrapper.details-slider-full {
+  max-width: 100%;
+  width: 100%;
+}
+
 /* Responsive */
 @media (max-width: 640px) {
   .details-overlay {
@@ -3787,6 +3811,11 @@
   }
 
   .details-btn {
+    width: 100%;
+  }
+
+  .details-slider-wrapper {
+    max-width: 100%;
     width: 100%;
   }
 }
@@ -4196,4 +4225,273 @@
 
 .bid-manager-card:hover .bid-manager-chevron {
   transform: translateX(3px);
+}
+
+/* ============================================
+   ENTREPRENEUR PAYMENT STATUS STYLES
+   ============================================ */
+
+/* Payment Status Badge on Job Cards */
+.ej-payment-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin: 8px 0;
+  transition: all 0.2s ease;
+}
+
+.ej-payment-status-badge svg {
+  flex-shrink: 0;
+}
+
+.ej-payment-amount {
+  margin-left: auto;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+/* Payment Status Color Variations */
+.ej-payment-status-badge.payment-pending {
+  background: linear-gradient(135deg, rgba(241, 196, 15, 0.08), rgba(241, 196, 15, 0.15));
+  border: 1px solid rgba(241, 196, 15, 0.3);
+  color: #b7950b;
+}
+
+.ej-payment-status-badge.payment-escrow {
+  background: linear-gradient(135deg, rgba(0, 165, 169, 0.08), rgba(0, 165, 169, 0.15));
+  border: 1px solid rgba(0, 165, 169, 0.3);
+  color: #00838f;
+}
+
+.ej-payment-status-badge.payment-review {
+  background: linear-gradient(135deg, rgba(52, 152, 219, 0.08), rgba(52, 152, 219, 0.15));
+  border: 1px solid rgba(52, 152, 219, 0.3);
+  color: #2471a3;
+}
+
+.ej-payment-status-badge.payment-released {
+  background: linear-gradient(135deg, rgba(46, 204, 113, 0.08), rgba(46, 204, 113, 0.15));
+  border: 1px solid rgba(46, 204, 113, 0.3);
+  color: #229954;
+}
+
+.ej-payment-status-badge.payment-refunded {
+  background: linear-gradient(135deg, rgba(231, 76, 60, 0.08), rgba(231, 76, 60, 0.15));
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  color: #c0392b;
+}
+
+.ej-payment-status-badge.payment-disputed {
+  background: linear-gradient(135deg, rgba(155, 89, 182, 0.08), rgba(155, 89, 182, 0.15));
+  border: 1px solid rgba(155, 89, 182, 0.3);
+  color: #7d3c98;
+}
+
+.ej-payment-status-badge.payment-unknown {
+  background: linear-gradient(135deg, rgba(149, 165, 166, 0.08), rgba(149, 165, 166, 0.15));
+  border: 1px solid rgba(149, 165, 166, 0.3);
+  color: #5d6d7e;
+}
+
+/* Payment Section in Details Modal */
+.ej-payment-section {
+  background: linear-gradient(135deg, #f8fafc 0%, #f0f9ff 100%);
+  border: 1px solid #e0e7ff;
+}
+
+.ej-payment-status-card {
+  padding: 20px;
+  border-radius: 12px;
+  margin-top: 12px;
+}
+
+.ej-payment-status-card.payment-pending {
+  background: linear-gradient(135deg, rgba(241, 196, 15, 0.05), rgba(241, 196, 15, 0.12));
+  border: 2px solid rgba(241, 196, 15, 0.25);
+}
+
+.ej-payment-status-card.payment-escrow {
+  background: linear-gradient(135deg, rgba(0, 165, 169, 0.05), rgba(0, 165, 169, 0.12));
+  border: 2px solid rgba(0, 165, 169, 0.25);
+}
+
+.ej-payment-status-card.payment-review {
+  background: linear-gradient(135deg, rgba(52, 152, 219, 0.05), rgba(52, 152, 219, 0.12));
+  border: 2px solid rgba(52, 152, 219, 0.25);
+}
+
+.ej-payment-status-card.payment-released {
+  background: linear-gradient(135deg, rgba(46, 204, 113, 0.05), rgba(46, 204, 113, 0.12));
+  border: 2px solid rgba(46, 204, 113, 0.25);
+}
+
+.ej-payment-status-card.payment-refunded {
+  background: linear-gradient(135deg, rgba(231, 76, 60, 0.05), rgba(231, 76, 60, 0.12));
+  border: 2px solid rgba(231, 76, 60, 0.25);
+}
+
+.ej-payment-status-card.payment-disputed {
+  background: linear-gradient(135deg, rgba(155, 89, 182, 0.05), rgba(155, 89, 182, 0.12));
+  border: 2px solid rgba(155, 89, 182, 0.25);
+}
+
+.ej-payment-status-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.ej-payment-status-header svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ej-payment-status-card.payment-pending .ej-payment-status-header svg { color: #b7950b; }
+.ej-payment-status-card.payment-escrow .ej-payment-status-header svg { color: #00838f; }
+.ej-payment-status-card.payment-review .ej-payment-status-header svg { color: #2471a3; }
+.ej-payment-status-card.payment-released .ej-payment-status-header svg { color: #229954; }
+.ej-payment-status-card.payment-refunded .ej-payment-status-header svg { color: #c0392b; }
+.ej-payment-status-card.payment-disputed .ej-payment-status-header svg { color: #7d3c98; }
+
+.ej-payment-status-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ej-payment-status-label {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0F223D;
+}
+
+.ej-payment-status-desc {
+  font-size: 0.875rem;
+  color: #5D6D7E;
+  line-height: 1.4;
+}
+
+.ej-payment-details {
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.ej-payment-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  font-size: 0.9rem;
+}
+
+.ej-payment-detail-row:not(:last-child) {
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.06);
+}
+
+.ej-payment-detail-row span:first-child {
+  color: #5D6D7E;
+}
+
+.ej-payment-detail-value {
+  font-weight: 600;
+  color: #0F223D;
+}
+
+.ej-payout-amount {
+  color: #229954 !important;
+  font-size: 1rem;
+}
+
+/* Payment Notes */
+.ej-payment-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  background: rgba(241, 196, 15, 0.08);
+  border: 1px solid rgba(241, 196, 15, 0.2);
+  color: #856404;
+}
+
+.ej-payment-note svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ej-payment-note.ej-payment-note-escrow {
+  background: rgba(0, 165, 169, 0.08);
+  border-color: rgba(0, 165, 169, 0.2);
+  color: #00838f;
+}
+
+.ej-payment-note.ej-payment-note-pending {
+  background: rgba(52, 152, 219, 0.08);
+  border-color: rgba(52, 152, 219, 0.2);
+  color: #2471a3;
+}
+
+.ej-payment-note.ej-payment-note-success {
+  background: rgba(46, 204, 113, 0.08);
+  border-color: rgba(46, 204, 113, 0.2);
+  color: #229954;
+}
+
+/* Responsive Adjustments for Payment Status */
+@media (max-width: 480px) {
+  .ej-payment-status-badge {
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    font-size: 0.75rem;
+  }
+
+  .ej-payment-amount {
+    width: 100%;
+    text-align: right;
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(0, 0, 0, 0.1);
+    margin-left: 0;
+  }
+
+  .ej-payment-status-card {
+    padding: 16px;
+  }
+
+  .ej-payment-status-header {
+    gap: 12px;
+  }
+
+  .ej-payment-status-header svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .ej-payment-status-label {
+    font-size: 1rem;
+  }
+
+  .ej-payment-status-desc {
+    font-size: 0.8125rem;
+  }
+
+  .ej-payment-detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 8px 0;
+  }
+
+  .ej-payment-note {
+    padding: 12px;
+    font-size: 0.8rem;
+  }
 }

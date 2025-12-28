@@ -25,6 +25,7 @@ import MessagesResident from "./pages/messages/MessagesResident";
 import MembersResident from "./pages/members/MembersResident";
 import ProfilePageResident from "./pages/profile/ProfilePageResident";
 import MessagesSupplier from "./pages/messages/MessagesSupplier";
+import StripeOnboardingCallback from "./pages/stripe/StripeOnboardingCallback";
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -34,11 +35,16 @@ function App() {
     <Router>
       <Toaster
         position="top-right"
+        containerStyle={{
+          zIndex: 99999,
+          isolation: 'isolate',
+        }}
         toastOptions={{
           duration: 4000,
           style: {
             background: '#363636',
             color: '#fff',
+            zIndex: 99999,
           },
           success: {
             duration: 3000,
@@ -100,6 +106,10 @@ function ProtectedRoutes() {
       <Route
         path="/homepage/entrepreneur"
         element={<ProtectedRoute element={<HomePageEntrepreneur />} />}
+      />
+      <Route
+        path="/entrepreneur/stripe-onboarding"
+        element={<ProtectedRoute element={<StripeOnboardingCallback />} />}
       />
       <Route
         path="/messages/entrepreneur"

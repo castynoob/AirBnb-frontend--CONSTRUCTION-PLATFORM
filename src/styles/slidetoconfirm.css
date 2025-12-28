@@ -1,0 +1,230 @@
+/* ============================================
+   Slide to Confirm Component
+   ============================================ */
+
+.stc-container {
+  width: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.stc-track {
+  position: relative;
+  height: 56px;
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Primary variant (teal) */
+.stc-container.primary .stc-track {
+  background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%);
+}
+
+.stc-container.primary .stc-progress {
+  background: linear-gradient(135deg, #00a5a9 0%, #008b8f 100%);
+}
+
+.stc-container.primary .stc-thumb {
+  background: linear-gradient(135deg, #00a5a9 0%, #007a7d 100%);
+  box-shadow: 0 4px 12px rgba(0, 165, 169, 0.4);
+}
+
+.stc-container.primary .stc-thumb:hover {
+  background: linear-gradient(135deg, #00b8bc 0%, #008b8f 100%);
+}
+
+/* Success variant (green) */
+.stc-container.success .stc-track {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+}
+
+.stc-container.success .stc-progress {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.stc-container.success .stc-thumb {
+  background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
+}
+
+.stc-container.success .stc-thumb:hover {
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+}
+
+/* Danger variant (red) */
+.stc-container.danger .stc-track {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+}
+
+.stc-container.danger .stc-progress {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.stc-container.danger .stc-thumb {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.stc-container.danger .stc-thumb:hover {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+}
+
+/* Progress fill */
+.stc-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 28px;
+  transition: width 0.05s ease-out;
+}
+
+/* Label */
+.stc-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.stc-arrow {
+  animation: slideArrow 1.5s ease-in-out infinite;
+  opacity: 0.6;
+}
+
+.stc-arrow:nth-child(2) {
+  animation-delay: 0.15s;
+  margin-left: -8px;
+}
+
+@keyframes slideArrow {
+  0%, 100% {
+    transform: translateX(0);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateX(4px);
+    opacity: 0.8;
+  }
+}
+
+/* Confirmed label */
+.stc-confirmed-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Thumb */
+.stc-thumb {
+  position: absolute;
+  top: 4px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: grab;
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+  z-index: 10;
+}
+
+.stc-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.05);
+}
+
+.stc-thumb:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* Spinner animation */
+.stc-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Disabled state */
+.stc-container.disabled .stc-track {
+  background: #e2e8f0;
+  cursor: not-allowed;
+}
+
+.stc-container.disabled .stc-thumb {
+  background: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.stc-container.disabled .stc-label {
+  color: #94a3b8;
+}
+
+/* Processing state */
+.stc-container.processing .stc-thumb {
+  cursor: wait;
+}
+
+/* Confirmed state */
+.stc-container.confirmed .stc-progress {
+  width: 100% !important;
+}
+
+.stc-container.confirmed .stc-thumb {
+  left: calc(100% - 52px) !important;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .stc-track {
+    height: 52px;
+  }
+
+  .stc-thumb {
+    width: 44px;
+    height: 44px;
+  }
+
+  .stc-label {
+    font-size: 13px;
+  }
+
+  .stc-confirmed-label {
+    font-size: 13px;
+  }
+}
