@@ -118,6 +118,30 @@ export async function getDashboardLink() {
 }
 
 /**
+ * Get payouts summary and transaction history
+ * GET /api/contracts/connect/payouts-summary
+ */
+export async function getPayoutsSummary() {
+  const token = getToken();
+  if (!token) throw new Error('Not authenticated');
+
+  const response = await fetch(`${API_BASE_URL}/api/contracts/connect/payouts-summary`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || data.error || 'Failed to get payouts summary');
+  }
+
+  return data;
+}
+
+/**
  * Full onboarding flow - creates account if needed, then returns onboarding link
  */
 export async function startOnboarding() {
@@ -154,5 +178,6 @@ export default {
   getOnboardingLink,
   getConnectStatus,
   getDashboardLink,
+  getPayoutsSummary,
   startOnboarding
 };

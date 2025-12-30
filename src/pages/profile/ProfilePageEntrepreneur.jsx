@@ -3,7 +3,8 @@ import {
   Star, CheckCircle, Award, Briefcase, MapPin, Calendar, Mail, Phone, LogOut,
   MessageSquare, User, Upload, Camera, X, Crown, Check, Zap, Shield, Activity,
   DollarSign, FileText, ArrowUpCircle, AlertCircle, Lock, Eye, EyeOff, Key,
-  BarChart3, Menu, Edit, CreditCard, ExternalLink
+  BarChart3, Menu, Edit, CreditCard, ExternalLink, Wallet, TrendingUp, ArrowDownCircle,
+  Percent, ChevronDown, ChevronUp, Clock, Building
 } from 'lucide-react';
 import Nav from "../../components/Nav";
 import '../../styles/entrepreneur/profilepageentrepreneur-modern.css';
@@ -13,7 +14,7 @@ import toast from 'react-hot-toast';
 import EntrepreneurProfileSkeleton from '../../components/loading/EntrepreneurProfileSkeleton'
 import SubscriptionPaymentForm from '../../components/SubscriptionPaymentModal'
 import '../../styles/entrepreneur/subscriptionmodal.css'
-import { getConnectStatus, startOnboarding, getDashboardLink } from '../../utils/stripeConnectApi'
+import { getConnectStatus, startOnboarding, getDashboardLink, getPayoutsSummary } from '../../utils/stripeConnectApi'
 import { logout } from '../../utils/api'
 
 function ProfilePageEntrepreneur() {
@@ -56,6 +57,12 @@ function ProfilePageEntrepreneur() {
   const [isLoadingStripe, setIsLoadingStripe] = useState(true)
   const [isConnectingStripe, setIsConnectingStripe] = useState(false)
 
+  // Payouts states
+  const [payoutsSummary, setPayoutsSummary] = useState(null)
+  const [isLoadingPayouts, setIsLoadingPayouts] = useState(false)
+  const [chartPeriod, setChartPeriod] = useState('monthly') // 'monthly' or 'weekly'
+  const [expandedTransaction, setExpandedTransaction] = useState(null)
+
   const [formData, setFormData] = useState({
     company_name: '',
     license_number: '',
@@ -71,6 +78,7 @@ function ProfilePageEntrepreneur() {
   const tabLabels = {
     account: 'Account',
     subscription: 'Subscription',
+    payouts: 'Payouts',
     performance: 'Performance & Reviews',
     security: 'Security'
   }
@@ -100,6 +108,20 @@ function ProfilePageEntrepreneur() {
       setStripeStatus(null)
     } finally {
       setIsLoadingStripe(false)
+    }
+  }
+
+  // Fetch payouts summary
+  const fetchPayoutsSummary = async () => {
+    try {
+      setIsLoadingPayouts(true)
+      const data = await getPayoutsSummary()
+      setPayoutsSummary(data)
+    } catch (err) {
+      console.log('Could not fetch payouts summary:', err.message)
+      setPayoutsSummary(null)
+    } finally {
+      setIsLoadingPayouts(false)
     }
   }
 
@@ -579,6 +601,11 @@ function ProfilePageEntrepreneur() {
   const handleTabChange = (tab) => {
     setActiveTab(tab)
     setIsMobileSidebarOpen(false)
+
+    // Fetch payouts when switching to payouts tab
+    if (tab === 'payouts' && !payoutsSummary && stripeStatus?.onboarding_complete) {
+      fetchPayoutsSummary()
+    }
   }
 
   if(isLoading) {
@@ -671,6 +698,13 @@ function ProfilePageEntrepreneur() {
             >
               <Crown size={18} />
               <span>Subscription</span>
+            </button>
+            <button
+              className={`ep-nav-item ${activeTab === 'payouts' ? 'ep-nav-active' : ''}`}
+              onClick={() => handleTabChange('payouts')}
+            >
+              <Wallet size={18} />
+              <span>Payouts</span>
             </button>
             <button
               className={`ep-nav-item ${activeTab === 'performance' ? 'ep-nav-active' : ''}`}
@@ -1224,6 +1258,305 @@ function ProfilePageEntrepreneur() {
                     </div>
                   )}
                 </div>
+              </>
+            )}
+
+            {/* Payouts Tab */}
+            {activeTab === 'payouts' && (
+              <>
+                <div className="ep-content-header">
+                  <div className="ep-content-header-left">
+                    <h2>Payouts & Earnings</h2>
+                    <p>View your earnings, payouts, and transaction history</p>
+                  </div>
+                  {stripeStatus?.onboarding_complete && (
+                    <button
+                      className="ep-btn ep-btn-secondary"
+                      onClick={async () => {
+                        try {
+                          const result = await getDashboardLink()
+                          window.open(result.url, '_blank')
+                        } catch (err) {
+                          toast.error('Could not open Stripe dashboard')
+                        }
+                      }}
+                    >
+                      <ExternalLink size={16} />
+                      Stripe Dashboard
+                    </button>
+                  )}
+                </div>
+
+                {/* Stripe Connect Status */}
+                {!stripeStatus?.onboarding_complete ? (
+                  <div className="ep-payouts-setup">
+                    <div className="ep-payouts-setup-icon">
+                      <Wallet size={48} />
+                    </div>
+                    <h3>Set Up Payouts</h3>
+                    <p>Connect your Stripe account to receive payments from completed contracts</p>
+                    <button
+                      className="ep-btn ep-btn-primary"
+                      onClick={handleStripeConnect}
+                      disabled={isConnectingStripe}
+                    >
+                      {isConnectingStripe ? (
+                        <>
+                          <span className="ep-spinner"></span>
+                          Connecting...
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard size={16} />
+                          Connect Stripe Account
+                        </>
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {/* Earnings Summary Cards */}
+                    {isLoadingPayouts ? (
+                      <div className="ep-payouts-loading">
+                        <span className="ep-spinner-lg"></span>
+                        <p>Loading earnings data...</p>
+                      </div>
+                    ) : payoutsSummary ? (
+                      <>
+                        {/* Summary Cards Row */}
+                        <div className="ep-payouts-summary">
+                          <div className="ep-payout-card ep-payout-total">
+                            <div className="ep-payout-card-icon">
+                              <DollarSign size={24} />
+                            </div>
+                            <div className="ep-payout-card-content">
+                              <span className="ep-payout-label">Net Earnings</span>
+                              <span className="ep-payout-amount">${payoutsSummary.total_earnings?.toLocaleString('en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
+                            </div>
+                          </div>
+                          <div className="ep-payout-card ep-payout-pending">
+                            <div className="ep-payout-card-icon">
+                              <Clock size={24} />
+                            </div>
+                            <div className="ep-payout-card-content">
+                              <span className="ep-payout-label">Pending Payouts</span>
+                              <span className="ep-payout-amount">${payoutsSummary.pending_amount?.toLocaleString('en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
+                            </div>
+                          </div>
+                          <div className="ep-payout-card ep-payout-received">
+                            <div className="ep-payout-card-icon">
+                              <ArrowDownCircle size={24} />
+                            </div>
+                            <div className="ep-payout-card-content">
+                              <span className="ep-payout-label">Total Received</span>
+                              <span className="ep-payout-amount">${payoutsSummary.total_paid?.toLocaleString('en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
+                            </div>
+                          </div>
+                          <div className="ep-payout-card ep-payout-contracts">
+                            <div className="ep-payout-card-icon">
+                              <FileText size={24} />
+                            </div>
+                            <div className="ep-payout-card-content">
+                              <span className="ep-payout-label">Contracts</span>
+                              <span className="ep-payout-amount">{payoutsSummary.completed_contracts || 0} / {payoutsSummary.total_contracts || 0}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Platform Fee Breakdown */}
+                        <div className="ep-fee-breakdown">
+                          <div className="ep-fee-breakdown-header">
+                            <div className="ep-fee-icon">
+                              <Percent size={20} />
+                            </div>
+                            <div>
+                              <h3>Platform Fee Breakdown</h3>
+                              <p>Overview of contract amounts and platform fees</p>
+                            </div>
+                          </div>
+                          <div className="ep-fee-breakdown-content">
+                            <div className="ep-fee-row">
+                              <span className="ep-fee-label">Gross Contract Value</span>
+                              <span className="ep-fee-value">${payoutsSummary.gross_earnings?.toLocaleString('en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
+                            </div>
+                            <div className="ep-fee-row ep-fee-deduction">
+                              <span className="ep-fee-label">Platform Fee ({payoutsSummary.platform_fee_percentage || 7.6}%)</span>
+                              <span className="ep-fee-value">-${payoutsSummary.total_platform_fees?.toLocaleString('en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
+                            </div>
+                            <div className="ep-fee-row ep-fee-total">
+                              <span className="ep-fee-label">Your Net Earnings</span>
+                              <span className="ep-fee-value">${payoutsSummary.total_earnings?.toLocaleString('en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Revenue Chart */}
+                        <div className="ep-revenue-chart">
+                          <div className="ep-chart-header">
+                            <h3>Revenue Overview</h3>
+                            <div className="ep-chart-toggle">
+                              <button
+                                className={`ep-toggle-btn ${chartPeriod === 'weekly' ? 'ep-toggle-active' : ''}`}
+                                onClick={() => setChartPeriod('weekly')}
+                              >
+                                Weekly
+                              </button>
+                              <button
+                                className={`ep-toggle-btn ${chartPeriod === 'monthly' ? 'ep-toggle-active' : ''}`}
+                                onClick={() => setChartPeriod('monthly')}
+                              >
+                                Monthly
+                              </button>
+                            </div>
+                          </div>
+                          <div className="ep-chart-container">
+                            {(chartPeriod === 'monthly' ? payoutsSummary.monthly_chart : payoutsSummary.weekly_chart)?.length > 0 ? (
+                              <div className="ep-bar-chart">
+                                {(chartPeriod === 'monthly' ? payoutsSummary.monthly_chart : payoutsSummary.weekly_chart).map((item, index) => {
+                                  const maxEarnings = Math.max(...(chartPeriod === 'monthly' ? payoutsSummary.monthly_chart : payoutsSummary.weekly_chart).map(i => i.earnings));
+                                  const heightPercent = maxEarnings > 0 ? (item.earnings / maxEarnings) * 100 : 0;
+                                  return (
+                                    <div key={index} className="ep-bar-item">
+                                      <div className="ep-bar-value">${item.earnings.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
+                                      <div className="ep-bar-wrapper">
+                                        <div
+                                          className="ep-bar"
+                                          style={{ height: `${Math.max(heightPercent, 5)}%` }}
+                                        />
+                                      </div>
+                                      <div className="ep-bar-label">{item.label}</div>
+                                      <div className="ep-bar-contracts">{item.contracts} job{item.contracts !== 1 ? 's' : ''}</div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <div className="ep-chart-empty">
+                                <BarChart3 size={48} />
+                                <p>No data for this period</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Transaction History Table */}
+                        <div className="ep-payouts-transactions">
+                          <div className="ep-transactions-header">
+                            <h3>Transaction History</h3>
+                            <span className="ep-transactions-count">{payoutsSummary.transactions?.length || 0} transactions</span>
+                          </div>
+                          {payoutsSummary.transactions && payoutsSummary.transactions.length > 0 ? (
+                            <div className="ep-transactions-table">
+                              <div className="ep-table-header">
+                                <span className="ep-th-job">Job</span>
+                                <span className="ep-th-client">Client</span>
+                                <span className="ep-th-amount">Contract</span>
+                                <span className="ep-th-fee">Fee</span>
+                                <span className="ep-th-net">Net</span>
+                                <span className="ep-th-status">Status</span>
+                                <span className="ep-th-date">Date</span>
+                              </div>
+                              <div className="ep-transactions-list">
+                                {payoutsSummary.transactions.map((tx) => (
+                                  <div key={tx.id} className="ep-transaction-row-wrapper">
+                                    <div
+                                      className={`ep-transaction-row ${expandedTransaction === tx.id ? 'ep-row-expanded' : ''}`}
+                                      onClick={() => setExpandedTransaction(expandedTransaction === tx.id ? null : tx.id)}
+                                    >
+                                      <span className="ep-td-job" title={tx.job_title}>
+                                        {tx.job_title?.length > 25 ? tx.job_title.substring(0, 25) + '...' : tx.job_title}
+                                      </span>
+                                      <span className="ep-td-client">{tx.manager_name}</span>
+                                      <span className="ep-td-amount">${tx.contract_amount?.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</span>
+                                      <span className="ep-td-fee">-${tx.platform_fee?.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</span>
+                                      <span className="ep-td-net ep-amount-green">+${tx.amount?.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</span>
+                                      <span className={`ep-td-status ${tx.status === 'completed' ? 'ep-status-completed' : 'ep-status-pending'}`}>
+                                        {tx.status === 'completed' ? 'Paid' : 'Pending'}
+                                      </span>
+                                      <span className="ep-td-date">
+                                        {new Date(tx.date).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                      </span>
+                                      <span className="ep-td-expand">
+                                        {expandedTransaction === tx.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                      </span>
+                                    </div>
+                                    {expandedTransaction === tx.id && (
+                                      <div className="ep-transaction-details">
+                                        <div className="ep-detail-row">
+                                          <span className="ep-detail-label">Contract Amount:</span>
+                                          <span className="ep-detail-value">${tx.contract_amount?.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</span>
+                                        </div>
+                                        <div className="ep-detail-row">
+                                          <span className="ep-detail-label">Platform Fee ({tx.platform_fee_percentage}%):</span>
+                                          <span className="ep-detail-value ep-amount-red">-${tx.platform_fee?.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</span>
+                                        </div>
+                                        <div className="ep-detail-row ep-detail-total">
+                                          <span className="ep-detail-label">Your Payout:</span>
+                                          <span className="ep-detail-value ep-amount-green">${tx.amount?.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</span>
+                                        </div>
+                                        {tx.paid_at && (
+                                          <div className="ep-detail-row">
+                                            <span className="ep-detail-label">Payment Received:</span>
+                                            <span className="ep-detail-value">{new Date(tx.paid_at).toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                                          </div>
+                                        )}
+                                        {tx.payout_completed_at && (
+                                          <div className="ep-detail-row">
+                                            <span className="ep-detail-label">Payout Completed:</span>
+                                            <span className="ep-detail-value">{new Date(tx.payout_completed_at).toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="ep-no-transactions">
+                              <FileText size={48} />
+                              <p>No transactions yet</p>
+                              <span>Complete contracts to see your transaction history</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Payout Schedule Info */}
+                        <div className="ep-payout-schedule">
+                          <div className="ep-schedule-header">
+                            <Calendar size={20} />
+                            <h3>Payout Schedule</h3>
+                          </div>
+                          <div className="ep-schedule-content">
+                            <div className="ep-schedule-item">
+                              <span className="ep-schedule-label">Payout Frequency</span>
+                              <span className="ep-schedule-value">After work approval</span>
+                            </div>
+                            <div className="ep-schedule-item">
+                              <span className="ep-schedule-label">Processing Time</span>
+                              <span className="ep-schedule-value">1-2 business days</span>
+                            </div>
+                            <div className="ep-schedule-item">
+                              <span className="ep-schedule-label">Minimum Payout</span>
+                              <span className="ep-schedule-value">No minimum</span>
+                            </div>
+                            <p className="ep-schedule-note">
+                              Payouts are automatically transferred to your connected bank account after the property manager approves completed work.
+                            </p>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="ep-payouts-error">
+                        <AlertCircle size={48} />
+                        <p>Could not load earnings data</p>
+                        <button className="ep-btn ep-btn-secondary" onClick={fetchPayoutsSummary}>
+                          Try Again
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
               </>
             )}
 
