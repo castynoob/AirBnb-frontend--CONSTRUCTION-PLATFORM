@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom'
 import EditManagerProfileModal from '../../components/modal/EditManagerProfileModal'
 import EditPropertyModal from '../../components/modal/EditPropertyModal'
 import ManagerProfileSkeleton from '../../components/loading/ManagerProfileSkeleton'
+import { logout } from '../../utils/api'
 
 // Lazy load PropertyMap component to prevent Leaflet initialization errors
 const PropertyMap = lazy(() => import('../../components/map/PropertyMap'))
@@ -94,8 +95,16 @@ function ProfilePageManager() {
     setSelectedProperty(null)
   }
 
-  const handelLogout = () => {
+  const handelLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
     localStorage.removeItem('userProfile')
+    localStorage.removeItem('token')
+    localStorage.removeItem('refreshToken')
+    localStorage.removeItem('userId')
     navigate("/");
   }
 

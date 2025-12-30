@@ -21,6 +21,7 @@ import {
 import Nav from '../../components/Nav';
 import toast from 'react-hot-toast';
 import '../../styles/resident/profilepageresident.css';
+import { logout } from '../../utils/api';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -178,8 +179,16 @@ const ProfilePageResident = () => {
     setIsEditing(false);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
     localStorage.removeItem('userProfile');
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('userId');
     navigate('/');
   };
 

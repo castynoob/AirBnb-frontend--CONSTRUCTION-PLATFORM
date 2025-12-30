@@ -27,6 +27,18 @@ import ProfilePageResident from "./pages/profile/ProfilePageResident";
 import MessagesSupplier from "./pages/messages/MessagesSupplier";
 import StripeOnboardingCallback from "./pages/stripe/StripeOnboardingCallback";
 
+// Admin imports
+import { AdminAuthProvider } from "./admin/context/AdminAuthContext";
+import AdminLogin from "./admin/pages/AdminLogin";
+import AdminLayout from "./admin/components/AdminLayout";
+import Dashboard from "./admin/pages/Dashboard";
+import Users from "./admin/pages/Users";
+import Jobs from "./admin/pages/Jobs";
+import Bids from "./admin/pages/Bids";
+import Properties from "./admin/pages/Properties";
+import Payments from "./admin/pages/Payments";
+import Subscriptions from "./admin/pages/Subscriptions";
+
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -62,6 +74,16 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
+          {/* ===== ADMIN ROUTES ===== */}
+          <Route
+            path="/admin/*"
+            element={
+              <AdminAuthProvider>
+                <AdminRoutes />
+              </AdminAuthProvider>
+            }
+          />
+
           {/* ===== PROTECTED ROUTES ===== */}
           <Route
             path="/*"
@@ -70,6 +92,32 @@ function App() {
         </Routes>
       </div>
     </Router>
+  );
+}
+
+function AdminRoutes() {
+  return (
+    <Routes>
+      {/* Admin Login (public) */}
+      <Route path="/login" element={<AdminLogin />} />
+
+      {/* Admin Protected Routes */}
+      <Route element={<AdminLayout />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/users" element={<Users />} />
+        <Route path="/jobs" element={<Jobs />} />
+        <Route path="/bids" element={<Bids />} />
+        <Route path="/properties" element={<Properties />} />
+        <Route path="/payments" element={<Payments />} />
+        <Route path="/subscriptions" element={<Subscriptions />} />
+        {/* <Route path="/audit-logs" element={<AuditLogs />} /> */}
+      </Route>
+
+      {/* Redirect /admin to /admin/dashboard */}
+      <Route path="/" element={<AdminLayout />}>
+        <Route index element={<Dashboard />} />
+      </Route>
+    </Routes>
   );
 }
 

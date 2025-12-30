@@ -1,0 +1,851 @@
+/* ===== Admin Subscriptions Page ===== */
+.admin-subscriptions {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* KPI Grid */
+.admin-subscriptions-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 1200px) {
+  .admin-subscriptions-kpi-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+.admin-kpi-card-highlight {
+  background: linear-gradient(135deg, rgba(0, 165, 169, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+  border-color: rgba(0, 165, 169, 0.3);
+}
+
+.admin-kpi-card-highlight .admin-kpi-value {
+  color: #00a5a9;
+}
+
+/* KPI Icon Variants */
+.admin-kpi-icon-basic {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.admin-kpi-icon-premium {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.admin-kpi-icon-danger {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+/* Charts Section */
+.admin-subscriptions-charts {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+  .admin-subscriptions-charts {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-subscriptions-growth-chart {
+  min-height: 350px;
+}
+
+.admin-subscriptions-pie-chart {
+  min-height: 350px;
+}
+
+.admin-pie-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-chart-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: #94a3b8;
+  text-align: center;
+  padding: 2rem;
+}
+
+.admin-chart-empty svg {
+  opacity: 0.5;
+}
+
+.admin-chart-empty p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+/* Toolbar */
+.admin-subscriptions-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.admin-subscriptions-search {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 300px;
+}
+
+/* Filters */
+.admin-subscriptions-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Error Banner */
+.admin-subscriptions-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  color: #dc2626;
+  font-size: 0.875rem;
+}
+
+.admin-subscriptions-error-banner button {
+  margin-left: auto;
+  padding: 0.375rem 0.75rem;
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.admin-subscriptions-error-banner button:hover {
+  background: #b91c1c;
+}
+
+/* User Cell */
+.admin-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00a5a9 0%, #10b981 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.admin-user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.admin-user-name {
+  font-weight: 500;
+  color: #1e293b;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-user-email {
+  font-size: 0.75rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Plan Badges */
+.admin-badge-premium {
+  background: rgba(139, 92, 246, 0.1);
+  color: #7c3aed;
+}
+
+.admin-badge-basic {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+}
+
+.admin-badge-lg {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* Date Cell */
+.admin-date-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #475569;
+}
+
+.admin-text-warning {
+  color: #d97706;
+  font-weight: 500;
+}
+
+.admin-text-danger {
+  color: #dc2626;
+}
+
+/* Stripe ID */
+.admin-stripe-id {
+  font-family: "SF Mono", "Monaco", "Inconsolata", "Fira Mono", monospace;
+  font-size: 0.75rem;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+/* Modal Overlay - ensure it's defined */
+.admin-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+/* Modal */
+.admin-subscription-modal {
+  background: white;
+  border-radius: 0.75rem;
+  width: 90%;
+  max-width: 600px;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.admin-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.admin-modal-header h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.admin-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 0.375rem;
+  transition: all 0.15s;
+}
+
+.admin-modal-close:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.admin-modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Subscription Details */
+.admin-subscription-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.admin-subscription-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 0.5rem;
+}
+
+.admin-subscription-plan-display {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-plan-icon-premium {
+  color: #8b5cf6;
+}
+
+.admin-plan-icon-basic {
+  color: #3b82f6;
+}
+
+.admin-subscription-plan-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-subscription-plan-name {
+  font-weight: 600;
+  font-size: 1.125rem;
+  color: #1e293b;
+}
+
+.admin-subscription-plan-price {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+.admin-subscription-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.admin-subscription-section h4 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.admin-subscription-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 640px) {
+  .admin-subscription-info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-subscription-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+}
+
+.admin-subscription-info-item svg {
+  color: #64748b;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.admin-subscription-info-item > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.admin-subscription-info-item label {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.admin-subscription-info-item span {
+  font-size: 0.875rem;
+  color: #1e293b;
+  word-break: break-all;
+}
+
+.admin-subscription-actions {
+  display: flex;
+  gap: 0.75rem;
+  padding-top: 1.25rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.admin-subscription-actions .admin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+/* User Card */
+.admin-user-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+}
+
+.admin-user-card-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00a5a9 0%, #10b981 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.admin-user-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.admin-user-card-name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.9375rem;
+}
+
+.admin-user-card-company {
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.admin-user-card-meta {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  word-break: break-all;
+}
+
+/* Amount styling */
+.admin-amount {
+  font-weight: 600;
+  color: #059669;
+}
+
+/* Action Menu */
+.admin-action-menu-wrapper {
+  position: relative;
+}
+
+.admin-action-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 100;
+  min-width: 220px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  padding: 0.5rem;
+  animation: menuFadeIn 0.15s ease-out;
+}
+
+@keyframes menuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.admin-action-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  background: none;
+  border: none;
+  color: #374151;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-radius: 0.5rem;
+}
+
+.admin-action-menu-item:hover {
+  background: #f1f5f9;
+}
+
+.admin-action-menu-item svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.admin-action-menu-item:hover svg {
+  opacity: 1;
+}
+
+.admin-action-menu-item-success {
+  color: #059669;
+}
+
+.admin-action-menu-item-success:hover {
+  background: rgba(5, 150, 105, 0.1);
+}
+
+.admin-action-menu-item-warning {
+  color: #b45309;
+}
+
+.admin-action-menu-item-warning:hover {
+  background: rgba(217, 119, 6, 0.1);
+}
+
+.admin-action-menu-item-danger {
+  color: #dc2626;
+}
+
+.admin-action-menu-item-danger:hover {
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.admin-action-menu-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 0.5rem 0.25rem;
+}
+
+/* Quick Actions in Modal */
+.admin-subscription-quick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem;
+  margin-top: 0.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+}
+
+.admin-subscription-quick-actions h4 {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.admin-quick-actions-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+}
+
+.admin-quick-actions-grid .admin-btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  transition: all 0.15s;
+}
+
+.admin-quick-actions-grid .admin-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Button Variants */
+.admin-btn-success {
+  background: #059669;
+  color: white;
+  border-color: #059669;
+}
+
+.admin-btn-success:hover {
+  background: #047857;
+  border-color: #047857;
+}
+
+.admin-btn-warning {
+  background: #d97706;
+  color: white;
+  border-color: #d97706;
+}
+
+.admin-btn-warning:hover {
+  background: #b45309;
+  border-color: #b45309;
+}
+
+.admin-btn-danger {
+  background: #dc2626;
+  color: white;
+  border-color: #dc2626;
+}
+
+.admin-btn-danger:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+/* Confirmation Modal */
+.admin-confirm-modal {
+  background: white;
+  border-radius: 1rem;
+  width: 90%;
+  max-width: 480px;
+  padding: 0;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  animation: modalSlideIn 0.2s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.admin-confirm-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 1.5rem 1rem;
+  background: linear-gradient(to bottom, #f8fafc, white);
+}
+
+.admin-confirm-modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.admin-confirm-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.admin-confirm-icon-primary {
+  background: linear-gradient(135deg, rgba(0, 165, 169, 0.15) 0%, rgba(0, 165, 169, 0.05) 100%);
+  color: #00a5a9;
+}
+
+.admin-confirm-icon-success {
+  background: linear-gradient(135deg, rgba(5, 150, 105, 0.15) 0%, rgba(5, 150, 105, 0.05) 100%);
+  color: #059669;
+}
+
+.admin-confirm-icon-warning {
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.15) 0%, rgba(217, 119, 6, 0.05) 100%);
+  color: #d97706;
+}
+
+.admin-confirm-icon-danger {
+  background: linear-gradient(135deg, rgba(220, 38, 38, 0.15) 0%, rgba(220, 38, 38, 0.05) 100%);
+  color: #dc2626;
+}
+
+.admin-confirm-modal-body {
+  padding: 0 1.5rem 1.5rem;
+}
+
+.admin-confirm-modal-body p {
+  margin: 0;
+  color: #475569;
+  line-height: 1.7;
+  font-size: 0.9375rem;
+}
+
+.admin-confirm-modal-body strong {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.admin-form-group {
+  margin-top: 1.25rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.admin-form-group label {
+  display: block;
+  margin-bottom: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.admin-form-group .admin-select {
+  width: 100%;
+}
+
+.admin-confirm-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem 1.5rem;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.admin-confirm-modal-actions .admin-btn {
+  min-width: 120px;
+  padding: 0.75rem 1.25rem;
+  font-weight: 500;
+}
+
+.admin-confirm-modal-actions .admin-btn-ghost {
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+.admin-confirm-modal-actions .admin-btn-ghost:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+/* Danger text in modal body */
+.admin-confirm-modal-body .admin-text-danger {
+  color: #dc2626;
+}
+
+.admin-confirm-modal-body .admin-text-danger strong {
+  color: #dc2626;
+}
+
+/* Loading state for modal buttons */
+.admin-confirm-modal-actions .admin-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Subscription ID display */
+.admin-item-id {
+  font-family: "SF Mono", "Monaco", "Inconsolata", "Fira Mono", monospace;
+  font-size: 0.8125rem;
+  word-break: break-all;
+}
+
+/* Mobile responsive fixes for modals */
+@media (max-width: 640px) {
+  .admin-confirm-modal {
+    width: 95%;
+    max-width: none;
+    margin: 0.5rem;
+  }
+
+  .admin-confirm-modal-header {
+    padding: 1.25rem 1.25rem 0.75rem;
+  }
+
+  .admin-confirm-modal-header h3 {
+    font-size: 1.125rem;
+  }
+
+  .admin-confirm-modal-body {
+    padding: 0 1.25rem 1.25rem;
+  }
+
+  .admin-confirm-modal-actions {
+    padding: 1rem 1.25rem 1.25rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .admin-confirm-modal-actions .admin-btn {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .admin-subscription-modal {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .admin-quick-actions-grid {
+    flex-direction: column;
+  }
+
+  .admin-quick-actions-grid .admin-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

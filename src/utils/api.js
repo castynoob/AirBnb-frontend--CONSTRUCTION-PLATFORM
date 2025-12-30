@@ -146,6 +146,39 @@ async function apiRequest(endpoint, options = {}) {
 }
 
 // ============================================
+// AUTH ENDPOINTS
+// ============================================
+
+/**
+ * Logout user - invalidates refresh token and logs activity
+ * POST /api/auth/logout
+ */
+export async function logout() {
+  const refreshToken = localStorage.getItem('refreshToken');
+
+  if (!refreshToken) {
+    // No refresh token, just clear local storage
+    return { success: true };
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    return { success: response.ok };
+  } catch (error) {
+    console.error('Logout API error:', error);
+    // Even if API fails, we'll clear local storage
+    return { success: false, error: error.message };
+  }
+}
+
+// ============================================
 // CONVERSATION ENDPOINTS
 // ============================================
 
@@ -426,6 +459,7 @@ await removeFavorite(bidId);
 */
 
 export default {
+  logout,
   getConversations,
   startConversation,
   getMessages,

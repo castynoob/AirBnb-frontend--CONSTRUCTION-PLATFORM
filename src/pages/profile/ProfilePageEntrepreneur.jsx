@@ -14,6 +14,7 @@ import EntrepreneurProfileSkeleton from '../../components/loading/EntrepreneurPr
 import SubscriptionPaymentForm from '../../components/SubscriptionPaymentModal'
 import '../../styles/entrepreneur/subscriptionmodal.css'
 import { getConnectStatus, startOnboarding, getDashboardLink } from '../../utils/stripeConnectApi'
+import { logout } from '../../utils/api'
 
 function ProfilePageEntrepreneur() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -413,9 +414,17 @@ function ProfilePageEntrepreneur() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
     localStorage.removeItem("userProfile");
-    localStorage.removeItem("selectedPropertyId")
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("selectedPropertyId");
     navigate("/");
   };
 
@@ -955,7 +964,7 @@ function ProfilePageEntrepreneur() {
                             </p>
                             <div className="plan-price">
                               <span className="price-symbol">$</span>
-                              <span className="price-value">{subscription.price || (subscription.plan_type === 'premium' ? 429 : 250)}</span>
+                              <span className="price-value">{subscription.plan_type === 'premium' ? 429 : 250}</span>
                               <span className="price-period">/month</span>
                             </div>
                           </div>

@@ -33,6 +33,7 @@ import Nav from "../../components/Nav";
 import '../../styles/supplier/supplierprofile-modern.css';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { logout } from '../../utils/api';
 
 function SupplierProfile() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -339,8 +340,16 @@ function SupplierProfile() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
     localStorage.removeItem("userProfile");
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("userId");
     localStorage.removeItem("selectedPropertyId");
     navigate("/");
   };

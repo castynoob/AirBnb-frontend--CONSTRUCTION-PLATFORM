@@ -1,0 +1,872 @@
+/* Jobs Management Styles */
+
+/* ============================================
+   TOOLBAR
+   ============================================ */
+.admin-jobs-toolbar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.admin-jobs-search {
+  display: flex;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 280px;
+}
+
+.admin-jobs-search .admin-input-group {
+  flex: 1;
+}
+
+@media (max-width: 640px) {
+  .admin-jobs-search {
+    flex-direction: column;
+    width: 100%;
+  }
+}
+
+/* ============================================
+   FILTERS
+   ============================================ */
+.admin-jobs-filters {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+/* ============================================
+   ERROR STATES
+   ============================================ */
+.admin-jobs-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 1rem;
+  color: var(--admin-text-muted);
+}
+
+.admin-jobs-error h2 {
+  margin: 0;
+  color: var(--admin-text);
+}
+
+.admin-jobs-error p {
+  margin: 0;
+}
+
+.admin-jobs-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--admin-danger);
+  border-radius: var(--admin-radius);
+  color: var(--admin-danger);
+  margin-bottom: 1rem;
+}
+
+.admin-jobs-error-banner button {
+  margin-left: auto;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--admin-danger);
+  background: transparent;
+  border: 1px solid var(--admin-danger);
+  border-radius: var(--admin-radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-jobs-error-banner button:hover {
+  background: var(--admin-danger);
+  color: white;
+}
+
+/* ============================================
+   TABLE CELLS
+   ============================================ */
+.admin-job-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-flag-icon {
+  color: var(--admin-warning);
+  flex-shrink: 0;
+}
+
+.admin-job-info {
+  min-width: 0;
+}
+
+.admin-job-title {
+  font-weight: 500;
+  color: var(--admin-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.admin-job-location {
+  font-size: 0.8125rem;
+  color: var(--admin-text-muted);
+}
+
+.admin-manager-cell {
+  min-width: 0;
+}
+
+.admin-manager-name {
+  font-weight: 500;
+  color: var(--admin-text);
+}
+
+.admin-manager-company {
+  font-size: 0.8125rem;
+  color: var(--admin-text-muted);
+}
+
+.admin-budget-cell {
+  font-family: var(--admin-font-mono);
+  font-size: 0.8125rem;
+}
+
+.admin-budget-hidden {
+  color: var(--admin-text-muted);
+  font-style: italic;
+}
+
+.admin-bid-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--admin-primary);
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 14px;
+}
+
+.flagged-row {
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.admin-btn-warning-text:hover {
+  color: var(--admin-warning) !important;
+  background: rgba(245, 158, 11, 0.1) !important;
+}
+
+/* ============================================
+   JOB MODAL
+   ============================================ */
+.admin-job-modal {
+  background: var(--admin-surface);
+  border-radius: var(--admin-radius-lg);
+  box-shadow: var(--admin-shadow-lg);
+  width: 800px;
+  height: 650px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 860px) {
+  .admin-job-modal {
+    width: 95vw;
+    height: 90vh;
+  }
+}
+
+.admin-job-modal .admin-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.admin-modal-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  gap: 1rem;
+  color: var(--admin-text-muted);
+}
+
+/* ============================================
+   JOB DETAILS TAB
+   ============================================ */
+.admin-job-details {
+  padding: 1.5rem;
+}
+
+.admin-job-detail-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-job-header-info h3 {
+  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--admin-text);
+}
+
+.admin-job-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.admin-job-section {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--admin-border);
+}
+
+.admin-job-section h4 {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--admin-text);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.admin-job-description {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--admin-text-secondary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.admin-job-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 600px) {
+  .admin-job-info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-job-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--admin-bg);
+  border-radius: var(--admin-radius);
+}
+
+.admin-job-info-item > svg {
+  color: var(--admin-text-muted);
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.admin-job-info-item > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.admin-job-info-item label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--admin-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.admin-job-info-item span {
+  font-size: 0.875rem;
+  color: var(--admin-text);
+  word-break: break-word;
+}
+
+/* ============================================
+   BIDS TAB
+   ============================================ */
+.admin-job-bids {
+  padding: 1.5rem;
+}
+
+.admin-bids-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  gap: 1rem;
+  color: var(--admin-text-muted);
+}
+
+.admin-bids-empty p {
+  margin: 0;
+}
+
+.admin-bids-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-bid-item {
+  padding: 1rem;
+  background: var(--admin-bg);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+}
+
+.admin-bid-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.admin-bid-entrepreneur {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.admin-entrepreneur-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-light));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.admin-entrepreneur-info {
+  min-width: 0;
+}
+
+.admin-entrepreneur-name {
+  font-weight: 500;
+  color: var(--admin-text);
+}
+
+.admin-entrepreneur-company {
+  font-size: 0.8125rem;
+  color: var(--admin-text-muted);
+}
+
+.admin-bid-amount {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--admin-success);
+  font-family: var(--admin-font-mono);
+}
+
+.admin-bid-details {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.admin-bid-status {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.admin-bid-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.8125rem;
+  color: var(--admin-text-muted);
+}
+
+.admin-bid-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--admin-warning);
+}
+
+.admin-bid-message {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--admin-border);
+}
+
+.admin-bid-message svg {
+  color: var(--admin-text-muted);
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.admin-bid-message p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--admin-text-secondary);
+  line-height: 1.5;
+}
+
+/* ============================================
+   MODERATION TAB
+   ============================================ */
+.admin-job-moderation {
+  padding: 1.5rem;
+}
+
+.admin-moderation-section {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-moderation-section:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.admin-moderation-section h4 {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--admin-text);
+}
+
+.admin-flag-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: var(--admin-bg);
+  border-radius: var(--admin-radius-md);
+  border: 1px solid var(--admin-border);
+}
+
+.admin-flag-status.flagged {
+  background: rgba(245, 158, 11, 0.05);
+  border-color: var(--admin-warning);
+}
+
+.admin-flag-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.admin-flag-info > svg {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.admin-flag-status.flagged .admin-flag-info svg {
+  color: var(--admin-warning);
+}
+
+.admin-flag-status:not(.flagged) .admin-flag-info svg {
+  color: var(--admin-success);
+}
+
+.admin-flag-info strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--admin-text);
+}
+
+.admin-flag-info p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--admin-text-secondary);
+}
+
+.admin-notes-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-notes-content {
+  margin: 0;
+  padding: 1rem;
+  background: var(--admin-bg);
+  border-radius: var(--admin-radius-md);
+  border: 1px solid var(--admin-border);
+  font-size: 0.875rem;
+  color: var(--admin-text-secondary);
+  white-space: pre-wrap;
+  min-height: 60px;
+}
+
+.admin-close-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-close-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid var(--admin-danger);
+  border-radius: var(--admin-radius-md);
+  font-size: 0.875rem;
+  color: var(--admin-danger);
+}
+
+.admin-close-warning svg {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+/* ============================================
+   ACTION MODALS
+   ============================================ */
+.admin-action-modal {
+  background: var(--admin-surface);
+  border-radius: var(--admin-radius-lg);
+  box-shadow: var(--admin-shadow-lg);
+  width: 500px;
+  max-width: 95vw;
+}
+
+.admin-action-modal .admin-modal-body {
+  padding: 1.5rem;
+}
+
+.admin-action-modal .admin-modal-body p {
+  margin: 0 0 1rem;
+  font-size: 0.9375rem;
+  color: var(--admin-text-secondary);
+}
+
+.admin-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--admin-text);
+  background: var(--admin-bg);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  resize: vertical;
+  font-family: inherit;
+}
+
+.admin-textarea:focus {
+  outline: none;
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.admin-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: var(--admin-bg);
+  border-top: 1px solid var(--admin-border);
+}
+
+.admin-warning-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid var(--admin-danger);
+  border-radius: var(--admin-radius-md);
+  margin-bottom: 1rem;
+}
+
+.admin-warning-message svg {
+  color: var(--admin-danger);
+  flex-shrink: 0;
+}
+
+.admin-warning-message p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--admin-danger);
+}
+
+/* ============================================
+   BUTTON VARIANTS
+   ============================================ */
+.admin-btn-warning {
+  background: var(--admin-warning);
+  color: white;
+}
+
+.admin-btn-warning:hover:not(:disabled) {
+  background: #d97706;
+}
+
+/* ============================================
+   MANAGER CARD (Clickable)
+   ============================================ */
+.admin-manager-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--admin-bg);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-md);
+}
+
+.admin-manager-card.clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.admin-manager-card.clickable:hover {
+  border-color: var(--admin-primary);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.admin-manager-card-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-light));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.admin-manager-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-manager-card-name {
+  font-weight: 600;
+  color: var(--admin-text);
+  margin-bottom: 0.125rem;
+}
+
+.admin-manager-card-company {
+  font-size: 0.875rem;
+  color: var(--admin-text-secondary);
+}
+
+.admin-manager-card-email {
+  font-size: 0.8125rem;
+  color: var(--admin-text-muted);
+  margin-top: 0.25rem;
+}
+
+.admin-manager-card-action {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--admin-primary);
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: var(--admin-radius);
+  flex-shrink: 0;
+}
+
+/* ============================================
+   MANAGER DETAILS MODAL
+   ============================================ */
+.admin-manager-modal {
+  background: var(--admin-surface);
+  border-radius: var(--admin-radius-lg);
+  box-shadow: var(--admin-shadow-lg);
+  width: 550px;
+  height: 520px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 600px) {
+  .admin-manager-modal {
+    width: 95vw;
+    height: 90vh;
+  }
+}
+
+.admin-manager-modal .admin-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.admin-manager-details {
+  padding: 1.5rem;
+}
+
+.admin-manager-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-manager-avatar-lg {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--admin-primary), var(--admin-primary-light));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.admin-manager-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-manager-header-info h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--admin-text);
+}
+
+.admin-manager-header-info .admin-badge {
+  width: fit-content;
+}
+
+.admin-manager-section {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--admin-border);
+}
+
+.admin-manager-section:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.admin-manager-section h4 {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--admin-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.admin-manager-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 500px) {
+  .admin-manager-info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-manager-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.625rem;
+  background: var(--admin-bg);
+  border-radius: var(--admin-radius);
+}
+
+.admin-manager-info-item > svg {
+  color: var(--admin-text-muted);
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.admin-manager-info-item > svg.text-success {
+  color: var(--admin-success);
+}
+
+.admin-manager-info-item > svg.text-warning {
+  color: var(--admin-warning);
+}
+
+.admin-manager-info-item > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.admin-manager-info-item label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: var(--admin-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.admin-manager-info-item span {
+  font-size: 0.8125rem;
+  color: var(--admin-text);
+  word-break: break-word;
+}
+
+.admin-modal-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  gap: 1rem;
+  color: var(--admin-text-muted);
+}
+
+.admin-modal-error p {
+  margin: 0;
+}

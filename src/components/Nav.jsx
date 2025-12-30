@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Home, MessageSquare, User, LogOut, Heart, FileText, Crown, Wrench, ShoppingCart, Users } from "lucide-react";
+import { Home, MessageSquare, User, LogOut, Heart, FileText, Crown, Wrench, ShoppingCart, Users, Flag, ChevronUp, Headphones } from "lucide-react";
 import logo from '../assets/logo-light.png'
 import '../styles/nav.css'
-import { getUnreadCount } from '../utils/api';
+import { getUnreadCount, logout } from '../utils/api';
 import { useSocket } from '../contexts/SocketContext';
 
 function Nav() {
@@ -12,6 +12,8 @@ function Nav() {
   const [userProfile, setUserProfile] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const profileMenuRef = useRef(null);
   const { socket, clearNotifications } = useSocket();
 
   useEffect(() => {
@@ -76,7 +78,26 @@ function Nav() {
     return () => clearInterval(interval);
   }, [userProfile])
 
-  const handleLogout = () => {
+  // Close profile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = async () => {
+    // Call backend logout API to log activity and invalidate refresh token
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout API error:", error);
+    }
+
     // Clear notifications and disconnect socket before removing userProfile
     if (clearNotifications) {
       clearNotifications();
@@ -84,10 +105,51 @@ function Nav() {
     if (socket) {
       socket.disconnect();
     }
+
+    // Clear all auth-related localStorage items
     localStorage.removeItem("userProfile");
+    localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("userId");
     localStorage.removeItem("selectedPropertyId");
+
     // Force a page reload to ensure all state is reset
     window.location.href = "/";
+  };
+
+  const handleViewProfile = () => {
+    setShowProfileMenu(false);
+    navigate('/profile/' + role);
+  };
+
+  const handleReport = () => {
+    setShowProfileMenu(false);
+    // TODO: Implement report functionality or navigate to report page
+    alert('Report feature coming soon!');
+  };
+
+  const handleCustomerService = () => {
+    setShowProfileMenu(false);
+    // TODO: Implement customer service chat or navigate to support page
+    alert('Customer Service feature coming soon!');
+  };
+
+  const getUserInitials = () => {
+    if (!userProfile) return 'U';
+    const first = userProfile.first_name?.[0] || '';
+    const last = userProfile.last_name?.[0] || '';
+    return (first + last).toUpperCase() || 'U';
+  };
+
+  const getUserFullName = () => {
+    if (!userProfile) return 'User';
+    return `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() || 'User';
+  };
+
+  const getRoleDisplay = () => {
+    if (role === 'property_manager') return 'Property Manager';
+    if (role === 'supplier') return 'Supplier';
+    return role[0].toUpperCase() + role.substring(1);
   };
 
   return (
@@ -229,29 +291,48 @@ function Nav() {
             </ul>
           </div>
 
-          <div className="nav-section account">
-            <span className="section-label">Account</span>
-            <ul className="nav-links">
-              <li>
-                <NavLink
-                  to={'/profile/' + role}
-                  className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
-                >
-                  <div className="nav-icon">
-                    <User size={20} />
-                  </div>
-                  <span className="nav-text">Profile</span>
-                </NavLink>
-              </li>
-            </ul>
-          </div>
-
-          <button className="logout-btn" onClick={handleLogout}>
-            <div className="nav-icon">
-              <LogOut size={20} />
+          {/* Sidebar Footer with User Profile */}
+          <div className="sidebar-footer" ref={profileMenuRef}>
+            <div
+              className={`sidebar-user ${showProfileMenu ? 'active' : ''}`}
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+            >
+              <div className="sidebar-avatar">
+                {getUserInitials()}
+              </div>
+              <div className="sidebar-user-info">
+                <div className="sidebar-user-name">{getUserFullName()}</div>
+                <div className="sidebar-user-role">{getRoleDisplay()}</div>
+              </div>
+              <ChevronUp
+                size={18}
+                className={`sidebar-chevron ${showProfileMenu ? 'open' : ''}`}
+              />
             </div>
-            <span className="nav-text">Log out</span>
-          </button>
+
+            {/* Dropdown Menu */}
+            {showProfileMenu && (
+              <div className="sidebar-dropdown">
+                <button className="sidebar-dropdown-item" onClick={handleViewProfile}>
+                  <User size={18} />
+                  <span>View Profile</span>
+                </button>
+                <button className="sidebar-dropdown-item" onClick={handleCustomerService}>
+                  <Headphones size={18} />
+                  <span>Customer Service</span>
+                </button>
+                <button className="sidebar-dropdown-item" onClick={handleReport}>
+                  <Flag size={18} />
+                  <span>Report</span>
+                </button>
+                <div className="sidebar-dropdown-divider" />
+                <button className="sidebar-dropdown-item logout" onClick={handleLogout}>
+                  <LogOut size={18} />
+                  <span>Log out</span>
+                </button>
+              </div>
+            )}
+          </div>
         </nav>
       }
     </>
