@@ -26,6 +26,7 @@ import MembersResident from "./pages/members/MembersResident";
 import ProfilePageResident from "./pages/profile/ProfilePageResident";
 import MessagesSupplier from "./pages/messages/MessagesSupplier";
 import StripeOnboardingCallback from "./pages/stripe/StripeOnboardingCallback";
+import LegalPage from "./pages/legal/LegalPage";
 
 // Admin imports
 import { AdminAuthProvider } from "./admin/context/AdminAuthContext";
@@ -71,6 +72,7 @@ function App() {
         <Routes>
           {/* ===== PUBLIC ROUTES ===== */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/legal" element={<LegalPage />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
