@@ -1536,119 +1536,126 @@
   background: #9ca3af;
 }
 
-/* ==================== PAYOUTS TAB STYLES ==================== */
+/* ==================== BILLING HISTORY TAB ==================== */
 
-/* Setup State */
-.ep-payouts-setup {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 4rem 2rem;
-  background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  text-align: center;
-  margin-top: 1rem;
-}
-
-.ep-payouts-setup-icon {
-  width: 80px;
-  height: 80px;
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1.5rem;
-  color: #16a34a;
-}
-
-.ep-payouts-setup h3 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #111827;
-  margin-bottom: 0.5rem;
-}
-
-.ep-payouts-setup p {
-  color: #6b7280;
-  max-width: 400px;
-  margin-bottom: 1.5rem;
-}
-
-/* Loading State */
-.ep-payouts-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 4rem 2rem;
-  background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  margin-top: 1rem;
-}
-
-.ep-payouts-loading p {
-  color: #6b7280;
-  margin-top: 1rem;
-}
-
-.ep-spinner-lg {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #e5e7eb;
-  border-top-color: #16a34a;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-/* Error State */
-.ep-payouts-error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 4rem 2rem;
-  background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  text-align: center;
-  margin-top: 1rem;
-}
-
-.ep-payouts-error svg {
-  color: #ef4444;
-  margin-bottom: 1rem;
-}
-
-.ep-payouts-error p {
-  color: #6b7280;
-  margin-bottom: 1rem;
-}
-
-/* Summary Cards */
-.ep-payouts-summary {
+/* Billing Summary Cards */
+.ep-billing-summary {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin-top: 1rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
-.ep-payout-card {
+.ep-billing-stat-card {
   background: #ffffff;
-  border-radius: 12px;
   border: 1px solid #e5e7eb;
-  padding: 1.25rem;
+  border-radius: 12px;
+  padding: 20px;
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.2s ease;
 }
 
-.ep-payout-card-icon {
+.ep-billing-stat-card:hover {
+  border-color: #00A5A9;
+  box-shadow: 0 4px 12px rgba(0, 165, 169, 0.1);
+}
+
+.ep-billing-stat-icon {
   width: 48px;
   height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ep-billing-stat-icon.total {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.ep-billing-stat-icon.subscription {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+}
+
+.ep-billing-stat-icon.unlock {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+}
+
+.ep-billing-stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ep-billing-stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.ep-billing-stat-label {
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+/* Billing Section */
+.ep-billing-section {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+/* Billing Loading */
+.ep-billing-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  gap: 16px;
+  color: #64748b;
+}
+
+/* Billing List */
+.ep-billing-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ep-billing-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.ep-billing-item:hover {
+  border-color: #00a5a9;
+  background: #ffffff;
+}
+
+.ep-billing-item-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+}
+
+.ep-billing-icon {
+  width: 40px;
+  height: 40px;
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -1656,711 +1663,341 @@
   flex-shrink: 0;
 }
 
-.ep-payout-total .ep-payout-card-icon {
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-  color: #16a34a;
+.ep-billing-icon.subscription {
+  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+  color: #7c3aed;
 }
 
-.ep-payout-pending .ep-payout-card-icon {
+.ep-billing-icon.budget_unlock {
   background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
   color: #d97706;
 }
 
-.ep-payout-received .ep-payout-card-icon {
-  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-  color: #2563eb;
-}
-
-.ep-payout-contracts .ep-payout-card-icon {
-  background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
-  color: #9333ea;
-}
-
-.ep-payout-card-content {
+.ep-billing-details {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 4px;
 }
 
-.ep-payout-label {
-  font-size: 0.8rem;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.ep-payout-amount {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #111827;
-}
-
-/* Transactions Section */
-.ep-payouts-transactions {
-  background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  margin-top: 1.5rem;
-  overflow: hidden;
-}
-
-.ep-transactions-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.ep-transactions-header h3 {
-  font-size: 1rem;
+.ep-billing-description {
+  font-size: 0.9375rem;
   font-weight: 600;
-  color: #111827;
-  margin: 0;
+  color: #1e293b;
 }
 
-.ep-transactions-count {
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-
-.ep-transactions-list {
-  max-height: 400px;
-  overflow-y: auto;
-}
-
-.ep-transaction-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #f3f4f6;
-  transition: background-color 0.15s ease;
-}
-
-.ep-transaction-item:last-child {
-  border-bottom: none;
-}
-
-.ep-transaction-item:hover {
-  background-color: #f9fafb;
-}
-
-.ep-transaction-left {
+.ep-billing-meta {
   display: flex;
   align-items: center;
-  gap: 0.875rem;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
-.ep-transaction-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+.ep-billing-date,
+.ep-billing-period,
+.ep-billing-category,
+.ep-billing-stripe-id {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: #64748b;
 }
 
-.ep-tx-success {
-  background: #dcfce7;
-  color: #16a34a;
+.ep-billing-date svg,
+.ep-billing-period svg,
+.ep-billing-category svg,
+.ep-billing-stripe-id svg {
+  color: #94a3b8;
 }
 
-.ep-tx-pending {
-  background: #fef3c7;
-  color: #d97706;
+.ep-billing-stripe-id {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+  background: #f1f5f9;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s ease;
 }
 
-.ep-transaction-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
+.ep-billing-stripe-id:hover {
+  background: #e2e8f0;
 }
 
-.ep-transaction-title {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #111827;
-}
-
-.ep-transaction-date {
-  font-size: 0.8rem;
-  color: #9ca3af;
-}
-
-.ep-transaction-right {
+.ep-billing-item-right {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.125rem;
+  gap: 4px;
 }
 
-.ep-transaction-amount {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #16a34a;
+.ep-billing-amount {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1e293b;
 }
 
-.ep-transaction-status {
+.ep-billing-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 0.75rem;
-  padding: 0.125rem 0.5rem;
-  border-radius: 999px;
   font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 6px;
 }
 
-.ep-status-completed {
+.ep-billing-status.active,
+.ep-billing-status.succeeded {
   background: #dcfce7;
   color: #16a34a;
 }
 
-.ep-status-pending {
+.ep-billing-status.trialing {
   background: #fef3c7;
   color: #d97706;
 }
 
-/* No Transactions State */
-.ep-no-transactions {
+.ep-billing-status.canceled,
+.ep-billing-status.failed {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Billing Empty State */
+.ep-billing-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem 2rem;
+  padding: 48px 24px;
   text-align: center;
+  color: #94a3b8;
 }
 
-.ep-no-transactions svg {
-  color: #d1d5db;
-  margin-bottom: 1rem;
+.ep-billing-empty svg {
+  margin-bottom: 16px;
+  opacity: 0.5;
 }
 
-.ep-no-transactions p {
-  font-size: 1rem;
-  font-weight: 500;
-  color: #6b7280;
-  margin-bottom: 0.25rem;
+.ep-billing-empty h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #64748b;
+  margin: 0 0 8px 0;
 }
 
-.ep-no-transactions span {
+.ep-billing-empty p {
   font-size: 0.875rem;
-  color: #9ca3af;
+  color: #94a3b8;
+  margin: 0;
+  max-width: 300px;
 }
 
-/* Responsive Payouts */
-@media (max-width: 1200px) {
-  .ep-payouts-summary {
+/* Billing Responsive */
+@media (max-width: 1024px) {
+  .ep-billing-summary {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 768px) {
-  .ep-payouts-summary {
+@media (max-width: 640px) {
+  .ep-billing-summary {
     grid-template-columns: 1fr;
   }
 
-  .ep-payout-card {
-    flex-direction: row;
-    align-items: center;
+  .ep-billing-stat-card {
+    padding: 16px;
   }
 
-  .ep-payout-amount {
+  .ep-billing-stat-value {
     font-size: 1.25rem;
   }
+
+  .ep-billing-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .ep-billing-item-right {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid #e5e7eb;
+  }
 }
 
-/* ==================== PLATFORM FEE BREAKDOWN ==================== */
-
-.ep-fee-breakdown {
+/* Secondary button style */
+.ep-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
   background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  margin-top: 1.5rem;
-  overflow: hidden;
-}
-
-.ep-fee-breakdown-header {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f9fafb;
-}
-
-.ep-fee-icon {
-  width: 40px;
-  height: 40px;
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #d97706;
-  flex-shrink: 0;
-}
-
-.ep-fee-breakdown-header h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #111827;
-  margin: 0 0 0.25rem 0;
-}
-
-.ep-fee-breakdown-header p {
-  font-size: 0.85rem;
-  color: #6b7280;
-  margin: 0;
-}
-
-.ep-fee-breakdown-content {
-  padding: 1.25rem 1.5rem;
-}
-
-.ep-fee-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.ep-fee-row:last-child {
-  border-bottom: none;
-}
-
-.ep-fee-label {
-  font-size: 0.9rem;
-  color: #4b5563;
-}
-
-.ep-fee-value {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #111827;
-}
-
-.ep-fee-deduction .ep-fee-value {
-  color: #ef4444;
-}
-
-.ep-fee-total {
-  border-top: 2px solid #e5e7eb;
-  margin-top: 0.5rem;
-  padding-top: 1rem;
-}
-
-.ep-fee-total .ep-fee-label {
-  font-weight: 600;
-  color: #111827;
-}
-
-.ep-fee-total .ep-fee-value {
-  font-size: 1.1rem;
-  color: #16a34a;
-}
-
-/* ==================== REVENUE CHART ==================== */
-
-.ep-revenue-chart {
-  background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  margin-top: 1.5rem;
-  overflow: hidden;
-}
-
-.ep-chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.ep-chart-header h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #111827;
-  margin: 0;
-}
-
-.ep-chart-toggle {
-  display: flex;
-  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
-  padding: 3px;
-}
-
-.ep-toggle-btn {
-  padding: 0.4rem 0.875rem;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   font-weight: 500;
-  color: #6b7280;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.ep-toggle-btn:hover {
-  color: #111827;
-}
-
-.ep-toggle-active {
-  background: #ffffff;
-  color: #111827;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.ep-chart-container {
-  padding: 1.5rem;
-  min-height: 250px;
-}
-
-.ep-bar-chart {
-  display: flex;
-  justify-content: space-around;
-  align-items: flex-end;
-  height: 200px;
-  gap: 0.5rem;
-}
-
-.ep-bar-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 1;
-  max-width: 80px;
-}
-
-.ep-bar-value {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #16a34a;
-  margin-bottom: 0.5rem;
-  white-space: nowrap;
-}
-
-.ep-bar-wrapper {
-  width: 100%;
-  height: 140px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-
-.ep-bar {
-  width: 40px;
-  background: linear-gradient(180deg, #16a34a 0%, #22c55e 100%);
-  border-radius: 6px 6px 0 0;
-  min-height: 8px;
-  transition: height 0.3s ease;
-}
-
-.ep-bar-label {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #6b7280;
-  margin-top: 0.5rem;
-}
-
-.ep-bar-contracts {
-  font-size: 0.7rem;
-  color: #9ca3af;
-}
-
-.ep-chart-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
-  color: #9ca3af;
-}
-
-.ep-chart-empty svg {
-  margin-bottom: 0.75rem;
-  opacity: 0.5;
-}
-
-.ep-chart-empty p {
-  font-size: 0.9rem;
-}
-
-/* ==================== TRANSACTION TABLE ==================== */
-
-.ep-transactions-table {
-  overflow-x: auto;
-}
-
-.ep-table-header {
-  display: grid;
-  grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr 0.8fr 1fr 40px;
-  gap: 0.5rem;
-  padding: 0.875rem 1.5rem;
+.ep-btn-secondary:hover:not(:disabled) {
   background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.ep-btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ==================== BILLING HISTORY STYLES ==================== */
+
+.ep-billing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.ep-billing-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.ep-billing-stat {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.ep-billing-stat-label {
   font-size: 0.75rem;
-  font-weight: 600;
   color: #6b7280;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
 }
 
-.ep-transaction-row-wrapper {
+.ep-billing-stat-value {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.ep-billing-stat-value.success {
+  color: #16a34a;
+}
+
+.ep-billing-list {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.ep-billing-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
   border-bottom: 1px solid #f3f4f6;
+  transition: background 0.2s ease;
 }
 
-.ep-transaction-row-wrapper:last-child {
+.ep-billing-item:last-child {
   border-bottom: none;
 }
 
-.ep-transaction-row {
-  display: grid;
-  grid-template-columns: 2fr 1.5fr 1fr 1fr 1fr 0.8fr 1fr 40px;
-  gap: 0.5rem;
-  padding: 1rem 1.5rem;
-  align-items: center;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
+.ep-billing-item:hover {
+  background: #f9fafb;
 }
 
-.ep-transaction-row:hover {
-  background-color: #f9fafb;
-}
-
-.ep-row-expanded {
-  background-color: #f0fdf4;
-}
-
-.ep-td-job {
-  font-weight: 500;
-  color: #111827;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ep-td-client {
-  color: #6b7280;
-}
-
-.ep-td-amount,
-.ep-td-fee,
-.ep-td-net {
-  font-family: 'SF Mono', 'Menlo', monospace;
-  font-size: 0.85rem;
-}
-
-.ep-td-fee {
-  color: #ef4444;
-}
-
-.ep-amount-green {
-  color: #16a34a !important;
-  font-weight: 600;
-}
-
-.ep-amount-red {
-  color: #ef4444 !important;
-}
-
-.ep-td-status {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 999px;
-  font-weight: 500;
-  text-align: center;
-  width: fit-content;
-}
-
-.ep-td-date {
-  color: #6b7280;
-  font-size: 0.8rem;
-}
-
-.ep-td-expand {
-  color: #9ca3af;
+.ep-billing-item-left {
   display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ep-billing-item-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
   justify-content: center;
-}
-
-.ep-transaction-details {
-  background: #f9fafb;
-  padding: 1rem 1.5rem 1rem 3rem;
-  border-top: 1px solid #e5e7eb;
-}
-
-.ep-detail-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.5rem 0;
-  font-size: 0.875rem;
-}
-
-.ep-detail-label {
+  background: #f3f4f6;
   color: #6b7280;
 }
 
-.ep-detail-value {
+.ep-billing-item-icon.success {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.ep-billing-item-icon.pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.ep-billing-item-details h4 {
+  font-size: 0.9375rem;
   font-weight: 500;
   color: #111827;
+  margin-bottom: 0.25rem;
 }
 
-.ep-detail-total {
-  border-top: 1px dashed #d1d5db;
-  margin-top: 0.5rem;
-  padding-top: 0.75rem;
-}
-
-.ep-detail-total .ep-detail-label,
-.ep-detail-total .ep-detail-value {
-  font-weight: 600;
-}
-
-/* ==================== PAYOUT SCHEDULE ==================== */
-
-.ep-payout-schedule {
-  background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  margin-top: 1.5rem;
-  overflow: hidden;
-}
-
-.ep-schedule-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
-  background: #f9fafb;
-}
-
-.ep-schedule-header svg {
+.ep-billing-item-details span {
+  font-size: 0.8125rem;
   color: #6b7280;
 }
 
-.ep-schedule-header h3 {
+.ep-billing-item-right {
+  text-align: right;
+}
+
+.ep-billing-item-amount {
   font-size: 1rem;
   font-weight: 600;
   color: #111827;
-  margin: 0;
 }
 
-.ep-schedule-content {
-  padding: 1.25rem 1.5rem;
+.ep-billing-item-status {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  margin-top: 0.25rem;
+  display: inline-block;
 }
 
-.ep-schedule-item {
+.ep-billing-item-status.paid {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.ep-billing-item-status.pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.ep-billing-empty {
   display: flex;
-  justify-content: space-between;
-  padding: 0.625rem 0;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.ep-schedule-item:last-of-type {
-  border-bottom: none;
-}
-
-.ep-schedule-label {
-  font-size: 0.9rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  text-align: center;
   color: #6b7280;
 }
 
-.ep-schedule-value {
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: #111827;
-}
-
-.ep-schedule-note {
-  margin-top: 1rem;
-  padding: 0.875rem 1rem;
-  background: #f0fdf4;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  color: #166534;
-  line-height: 1.5;
-}
-
-/* ==================== RESPONSIVE - NEW SECTIONS ==================== */
-
-@media (max-width: 1024px) {
-  .ep-table-header,
-  .ep-transaction-row {
-    grid-template-columns: 1.5fr 1fr 1fr 1fr 0.8fr 40px;
-  }
-
-  .ep-th-client,
-  .ep-td-client,
-  .ep-th-fee,
-  .ep-td-fee {
-    display: none;
-  }
-}
-
-@media (max-width: 768px) {
-  .ep-chart-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: flex-start;
-  }
-
-  .ep-bar-chart {
-    gap: 0.25rem;
-  }
-
-  .ep-bar {
-    width: 28px;
-  }
-
-  .ep-bar-value {
-    font-size: 0.65rem;
-  }
-
-  .ep-table-header {
-    display: none;
-  }
-
-  .ep-transaction-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    padding: 1rem;
-  }
-
-  .ep-td-job {
-    flex: 1 1 100%;
-    font-size: 0.95rem;
-  }
-
-  .ep-td-net {
-    font-size: 1rem;
-  }
-
-  .ep-td-status {
-    order: -1;
-  }
-
-  .ep-td-date {
-    flex: 1;
-  }
-
-  .ep-td-amount {
-    display: none;
-  }
-
-  .ep-transaction-details {
-    padding: 1rem;
-  }
-
-  .ep-fee-breakdown-header {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .ep-fee-icon {
-    margin: 0 auto;
-  }
+.ep-billing-empty svg {
+  margin-bottom: 1rem;
+  opacity: 0.5;
 }

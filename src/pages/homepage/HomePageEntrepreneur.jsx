@@ -926,13 +926,8 @@ function HomePageEntrepreneur() {
       }
 
       const data = await response.json()
-      // Merge the fetched profile with the basic info we already have
-      setSelectedManagerProfile({
-        ...data.profile,
-        first_name: property.managerFirstName,
-        last_name: property.managerLastName,
-        email: property.managerEmail,
-      })
+      // Use the profile data directly - it now includes all user fields from the backend
+      setSelectedManagerProfile(data.profile)
       setShowManagerModal(true)
     } catch (error) {
       console.error('Error fetching manager profile:', error)

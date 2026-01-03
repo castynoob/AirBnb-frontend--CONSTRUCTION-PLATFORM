@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   X,
   User,
@@ -13,17 +13,74 @@ import {
   Users,
   Shield,
   CheckCircle,
+  MessageSquare,
+  Loader2,
+  Home,
 } from "lucide-react";
 import "../../styles/modal/entrepreneurprofilemodal.css";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
   const [activeTab, setActiveTab] = useState("account");
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewStats, setReviewStats] = useState({
+    averageRating: 0,
+    totalReviews: 0,
+    ratingDistribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+  });
+
+  // Fetch reviews when modal opens
+  useEffect(() => {
+    if (isOpen && profile?.id) {
+      fetchReviews(profile.id);
+    }
+  }, [isOpen, profile?.id]);
+
+  const fetchReviews = async (userId) => {
+    setReviewsLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE_URL}/api/reviews/reviewed/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setReviews(data);
+
+        // Calculate stats
+        if (data.length > 0) {
+          const total = data.reduce((sum, r) => sum + r.rating, 0);
+          const avg = total / data.length;
+          const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+          data.forEach(r => {
+            if (distribution[r.rating] !== undefined) {
+              distribution[r.rating]++;
+            }
+          });
+          setReviewStats({
+            averageRating: avg,
+            totalReviews: data.length,
+            ratingDistribution: distribution
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
 
   if (!isOpen || !profile) return null;
 
   const tabs = [
     { id: "account", label: "Account", icon: User },
     { id: "performance", label: "Performance", icon: Star },
+    { id: "reviews", label: "Reviews", icon: MessageSquare, badge: reviews.length > 0 ? reviews.length : undefined },
     { id: "specializations", label: "Specializations", icon: Briefcase },
     { id: "contact", label: "Contact", icon: Phone },
     { id: "company", label: "Company", icon: Building2 },
@@ -168,6 +225,109 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
                 track record in the construction industry.
               </p>
             </div>
+          </div>
+        );
+
+      case "reviews":
+        return (
+          <div className="epm-tab-content">
+            <div className="epm-section-header">
+              <MessageSquare size={20} />
+              <h4>Reviews from Property Managers</h4>
+            </div>
+
+            {reviewsLoading ? (
+              <div className="epm-reviews-loading">
+                <Loader2 size={24} className="epm-spinner" />
+                <span>Loading reviews...</span>
+              </div>
+            ) : reviews.length > 0 ? (
+              <>
+                {/* Rating Summary */}
+                <div className="epm-reviews-summary">
+                  <div className="epm-reviews-rating-box">
+                    <span className="epm-reviews-avg">
+                      {reviewStats.averageRating.toFixed(1)}
+                    </span>
+                    <div className="epm-reviews-stars">
+                      {renderStars(reviewStats.averageRating)}
+                    </div>
+                    <span className="epm-reviews-count">
+                      {reviewStats.totalReviews} review{reviewStats.totalReviews !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="epm-rating-bars">
+                    {[5, 4, 3, 2, 1].map(star => {
+                      const count = reviewStats.ratingDistribution[star];
+                      const percentage = reviewStats.totalReviews > 0
+                        ? (count / reviewStats.totalReviews) * 100
+                        : 0;
+                      return (
+                        <div key={star} className="epm-rating-bar-row">
+                          <span className="epm-rating-bar-label">{star}</span>
+                          <Star size={12} fill="#facc15" stroke="#facc15" />
+                          <div className="epm-rating-bar-track">
+                            <div
+                              className="epm-rating-bar-fill"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                          <span className="epm-rating-bar-count">{count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Reviews List */}
+                <div className="epm-reviews-list">
+                  {reviews.map((review) => (
+                    <div key={review.id} className="epm-review-card">
+                      <div className="epm-review-header">
+                        <div className="epm-review-avatar">
+                          {review.reviewer?.profile_picture ? (
+                            <img
+                              src={review.reviewer.profile_picture}
+                              alt={review.reviewer?.company_name || 'Reviewer'}
+                            />
+                          ) : (
+                            review.reviewer?.company_name?.charAt(0) || 'R'
+                          )}
+                        </div>
+                        <div className="epm-review-meta">
+                          <h5>{review.reviewer?.company_name || 'Anonymous'}</h5>
+                          <div className="epm-review-rating">
+                            {renderStars(review.rating)}
+                            <span className="epm-review-date">
+                              {new Date(review.created_at).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      {review.job && (
+                        <div className="epm-review-job">
+                          <Home size={14} />
+                          <span>{review.job.title}</span>
+                        </div>
+                      )}
+                      {review.comment && (
+                        <p className="epm-review-comment">{review.comment}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="epm-reviews-empty">
+                <MessageSquare size={40} />
+                <h4>No Reviews Yet</h4>
+                <p>This entrepreneur hasn't received any reviews from property managers yet.</p>
+              </div>
+            )}
           </div>
         );
 

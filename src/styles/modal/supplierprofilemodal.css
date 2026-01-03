@@ -897,3 +897,257 @@
     padding: 0.875rem;
   }
 }
+
+/* ========================================
+   REVIEWS TAB STYLES
+   ======================================== */
+
+/* Loading State */
+.spm-reviews-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3rem 1rem;
+  color: #64748b;
+}
+
+.spm-spinner {
+  animation: spm-spin 1s linear infinite;
+  color: #00A5A9;
+}
+
+@keyframes spm-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Reviews Summary */
+.spm-reviews-summary {
+  display: flex;
+  gap: 1.5rem;
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%);
+  border-radius: 12px;
+  margin-bottom: 1.25rem;
+}
+
+.spm-reviews-rating-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 100px;
+}
+
+.spm-reviews-avg {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #00A5A9;
+  line-height: 1;
+}
+
+.spm-reviews-stars {
+  display: flex;
+  gap: 0.125rem;
+}
+
+.spm-reviews-count {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+
+/* Rating Bars */
+.spm-rating-bars {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.spm-rating-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.spm-rating-bar-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  width: 12px;
+  text-align: center;
+}
+
+.spm-rating-bar-track {
+  flex: 1;
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.spm-rating-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00A5A9, #00c4c9);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.spm-rating-bar-count {
+  font-size: 0.6875rem;
+  color: #64748b;
+  width: 20px;
+  text-align: right;
+}
+
+/* Reviews List */
+.spm-reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.spm-reviews-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.spm-reviews-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 2px;
+}
+
+.spm-reviews-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
+}
+
+/* Review Card */
+.spm-review-card {
+  padding: 1rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  transition: border-color 0.2s ease;
+}
+
+.spm-review-card:hover {
+  border-color: #00A5A9;
+}
+
+.spm-review-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.625rem;
+}
+
+.spm-review-avatar {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #00A5A9 0%, #008B8F 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffffff;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.spm-review-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.spm-review-meta {
+  flex: 1;
+}
+
+.spm-review-meta h5 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 0.25rem 0;
+}
+
+.spm-review-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.spm-review-date {
+  font-size: 0.6875rem;
+  color: #94a3b8;
+}
+
+.spm-review-comment {
+  font-size: 0.8125rem;
+  color: #475569;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Empty State */
+.spm-reviews-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.spm-reviews-empty svg {
+  margin-bottom: 0.75rem;
+  opacity: 0.5;
+}
+
+.spm-reviews-empty h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #64748b;
+  margin: 0 0 0.375rem 0;
+}
+
+.spm-reviews-empty p {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  margin: 0;
+  max-width: 280px;
+}
+
+/* Responsive - Reviews Tab */
+@media (max-width: 640px) {
+  .spm-reviews-summary {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .spm-reviews-rating-box {
+    flex-direction: row;
+    gap: 0.75rem;
+  }
+
+  .spm-reviews-avg {
+    font-size: 1.75rem;
+  }
+
+  .spm-reviews-list {
+    max-height: 220px;
+  }
+
+  .spm-review-card {
+    padding: 0.875rem;
+  }
+}

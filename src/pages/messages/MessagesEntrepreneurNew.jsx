@@ -679,11 +679,8 @@ function MessagesEntrepreneurNew() {
       }
 
       const data = await response.json();
-      setSelectedSupplierProfile({
-        ...data.profile,
-        first_name: userName?.split(' ')[0] || '',
-        last_name: userName?.split(' ').slice(1).join(' ') || '',
-      });
+      // Use the profile data directly - it now includes all user fields from the backend
+      setSelectedSupplierProfile(data.profile);
       setShowSupplierModal(true);
     } catch (error) {
       console.error("Error fetching supplier profile:", error);

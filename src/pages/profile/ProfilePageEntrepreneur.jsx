@@ -4,7 +4,7 @@ import {
   MessageSquare, User, Upload, Camera, X, Crown, Check, Zap, Shield, Activity,
   DollarSign, FileText, ArrowUpCircle, AlertCircle, Lock, Eye, EyeOff, Key,
   BarChart3, Menu, Edit, CreditCard, ExternalLink, Wallet, TrendingUp, ArrowDownCircle,
-  Percent, ChevronDown, ChevronUp, Clock, Building
+  Percent, ChevronDown, ChevronUp, Clock, Building, Receipt, Unlock
 } from 'lucide-react';
 import Nav from "../../components/Nav";
 import '../../styles/entrepreneur/profilepageentrepreneur-modern.css';
@@ -63,6 +63,11 @@ function ProfilePageEntrepreneur() {
   const [chartPeriod, setChartPeriod] = useState('monthly') // 'monthly' or 'weekly'
   const [expandedTransaction, setExpandedTransaction] = useState(null)
 
+  // Billing history states
+  const [billingHistory, setBillingHistory] = useState([])
+  const [billingSummary, setBillingSummary] = useState(null)
+  const [billingLoading, setBillingLoading] = useState(false)
+
   const [formData, setFormData] = useState({
     company_name: '',
     license_number: '',
@@ -79,6 +84,7 @@ function ProfilePageEntrepreneur() {
     account: 'Account',
     subscription: 'Subscription',
     payouts: 'Payouts',
+    billing: 'Billing History',
     performance: 'Performance & Reviews',
     security: 'Security'
   }
@@ -271,6 +277,42 @@ function ProfilePageEntrepreneur() {
     const sum = reviews.reduce((acc, review) => acc + review.rating, 0)
     return (sum / reviews.length).toFixed(1)
   }
+
+  // Fetch billing history
+  const fetchBillingHistory = async () => {
+    setBillingLoading(true)
+    try {
+      const uProfile = localStorage.getItem('userProfile')
+      if (!uProfile) return
+
+      const user = JSON.parse(uProfile)
+      const response = await fetch(`${API_BASE_URL}/api/payments/billing-history`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setBillingHistory(data.payments || [])
+        setBillingSummary(data.summary || null)
+      }
+    } catch (error) {
+      console.error('Error fetching billing history:', error)
+      setBillingHistory([])
+      setBillingSummary(null)
+    } finally {
+      setBillingLoading(false)
+    }
+  }
+
+  // Fetch billing history when tab changes to billing
+  useEffect(() => {
+    if (activeTab === 'billing' && billingHistory.length === 0 && !billingLoading) {
+      fetchBillingHistory()
+    }
+  }, [activeTab])
 
   useEffect(() => {
     if (isEditModalOpen) {
@@ -707,6 +749,13 @@ function ProfilePageEntrepreneur() {
               <span>Payouts</span>
             </button>
             <button
+              className={`ep-nav-item ${activeTab === 'billing' ? 'ep-nav-active' : ''}`}
+              onClick={() => handleTabChange('billing')}
+            >
+              <Receipt size={18} />
+              <span>Billing History</span>
+            </button>
+            <button
               className={`ep-nav-item ${activeTab === 'performance' ? 'ep-nav-active' : ''}`}
               onClick={() => handleTabChange('performance')}
             >
@@ -1133,6 +1182,143 @@ function ProfilePageEntrepreneur() {
                     </div>
                   </>
                 )}
+              </>
+            )}
+
+            {/* Billing History Tab */}
+            {activeTab === 'billing' && (
+              <>
+                <div className="ep-content-header">
+                  <div className="ep-content-header-left">
+                    <h2>Billing History</h2>
+                    <p>View your subscription payments and budget unlock history</p>
+                  </div>
+                  <button
+                    className="ep-btn ep-btn-secondary"
+                    onClick={fetchBillingHistory}
+                    disabled={billingLoading}
+                  >
+                    {billingLoading ? 'Refreshing...' : 'Refresh'}
+                  </button>
+                </div>
+
+                {/* Summary Cards */}
+                {billingSummary && (
+                  <div className="ep-billing-summary">
+                    <div className="ep-billing-stat-card">
+                      <div className="ep-billing-stat-icon total">
+                        <DollarSign size={24} />
+                      </div>
+                      <div className="ep-billing-stat-content">
+                        <span className="ep-billing-stat-value">
+                          ${billingSummary.total_spent?.toFixed(2) || '0.00'}
+                        </span>
+                        <span className="ep-billing-stat-label">Total Spent</span>
+                      </div>
+                    </div>
+                    <div className="ep-billing-stat-card">
+                      <div className="ep-billing-stat-icon subscription">
+                        <Crown size={24} />
+                      </div>
+                      <div className="ep-billing-stat-content">
+                        <span className="ep-billing-stat-value">
+                          ${billingSummary.subscription_spent?.toFixed(2) || '0.00'}
+                        </span>
+                        <span className="ep-billing-stat-label">Subscription Payments</span>
+                      </div>
+                    </div>
+                    <div className="ep-billing-stat-card">
+                      <div className="ep-billing-stat-icon unlock">
+                        <Unlock size={24} />
+                      </div>
+                      <div className="ep-billing-stat-content">
+                        <span className="ep-billing-stat-value">
+                          ${billingSummary.budget_unlock_spent?.toFixed(2) || '0.00'}
+                        </span>
+                        <span className="ep-billing-stat-label">Budget Unlocks ({billingSummary.total_budget_unlocks || 0})</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Payment History List */}
+                <div className="ep-billing-section">
+                  <h4 className="ep-info-section-title">Payment History</h4>
+
+                  {billingLoading ? (
+                    <div className="ep-billing-loading">
+                      <div className="ep-spinner"></div>
+                      <p>Loading billing history...</p>
+                    </div>
+                  ) : billingHistory.length > 0 ? (
+                    <div className="ep-billing-list">
+                      {billingHistory.map((payment) => (
+                        <div key={payment.id} className={`ep-billing-item ${payment.type}`}>
+                          <div className="ep-billing-item-left">
+                            <div className={`ep-billing-icon ${payment.type}`}>
+                              {payment.type === 'subscription' ? (
+                                <Crown size={20} />
+                              ) : (
+                                <Unlock size={20} />
+                              )}
+                            </div>
+                            <div className="ep-billing-details">
+                              <span className="ep-billing-description">{payment.description}</span>
+                              <div className="ep-billing-meta">
+                                <span className="ep-billing-date">
+                                  <Clock size={12} />
+                                  {new Date(payment.date).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric'
+                                  })}
+                                </span>
+                                {payment.type === 'subscription' && payment.period_end && (
+                                  <span className="ep-billing-period">
+                                    <Calendar size={12} />
+                                    Period ends {new Date(payment.period_end).toLocaleDateString()}
+                                  </span>
+                                )}
+                                {payment.job_category && (
+                                  <span className="ep-billing-category">
+                                    <Briefcase size={12} />
+                                    {payment.job_category}
+                                  </span>
+                                )}
+                                {payment.stripe_id && (
+                                  <span className="ep-billing-stripe-id" title={payment.stripe_id}>
+                                    <FileText size={12} />
+                                    {payment.stripe_id.length > 20
+                                      ? `${payment.stripe_id.substring(0, 20)}...`
+                                      : payment.stripe_id}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="ep-billing-item-right">
+                            <span className="ep-billing-amount">${payment.amount?.toFixed(2)}</span>
+                            <span className={`ep-billing-status ${payment.status}`}>
+                              {payment.status === 'active' || payment.status === 'succeeded' ? (
+                                <><CheckCircle size={12} /> Paid</>
+                              ) : payment.status === 'trialing' ? (
+                                <><Zap size={12} /> Trial</>
+                              ) : (
+                                <>{payment.status}</>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="ep-billing-empty">
+                      <Receipt size={48} />
+                      <h3>No Payment History</h3>
+                      <p>Your subscription and budget unlock payments will appear here</p>
+                    </div>
+                  )}
+                </div>
               </>
             )}
 

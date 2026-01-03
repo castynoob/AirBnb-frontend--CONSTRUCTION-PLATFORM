@@ -307,6 +307,8 @@ export default function LandingPage() {
 
       const userProfile = {
         id: data.user.id || 101,
+        first_name: data.user.first_name || "",
+        last_name: data.user.last_name || "",
         name: data.user.name || `${data.user.first_name || ""} ${data.user.last_name || ""}`.trim(),
         email: data.user.email || loginFormData.email,
         role: data.user.role,
@@ -386,6 +388,8 @@ export default function LandingPage() {
 
       const userProfile = {
         id: data.user.id,
+        first_name: data.user.first_name || "",
+        last_name: data.user.last_name || "",
         name: `${data.user.first_name || ""} ${data.user.last_name || ""}`.trim(),
         email: data.user.email,
         role: data.user.role,
@@ -490,17 +494,13 @@ export default function LandingPage() {
       setShowAddressSuggestions(true);
 
       try {
-        // Using Nominatim (OpenStreetMap) API - completely free, no API key needed
+        // Using backend proxy to avoid CORS issues with Nominatim
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(value)}&limit=5&addressdetails=1`,
-          {
-            headers: {
-              'User-Agent': 'INTERVOS Construction Platform' // Required by Nominatim
-            }
-          }
+          `${API_BASE_URL}/api/geocode/search?q=${encodeURIComponent(value)}`
         );
         const data = await response.json();
-        setAddressSuggestions(data);
+        setAddressSuggestions(data.results || []);
       } catch (error) {
         console.error('Error fetching address suggestions:', error);
         setAddressSuggestions([]);
@@ -664,6 +664,8 @@ export default function LandingPage() {
                 // Create userProfile object matching login format
                 const userProfile = {
                     id: loginData.user.id,
+                    first_name: loginData.user.first_name || "",
+                    last_name: loginData.user.last_name || "",
                     name: loginData.user.name || `${loginData.user.first_name || ""} ${loginData.user.last_name || ""}`.trim(),
                     email: loginData.user.email,
                     role: loginData.user.role,

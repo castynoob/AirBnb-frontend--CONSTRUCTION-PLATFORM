@@ -26,6 +26,7 @@ import MembersResident from "./pages/members/MembersResident";
 import ProfilePageResident from "./pages/profile/ProfilePageResident";
 import MessagesSupplier from "./pages/messages/MessagesSupplier";
 import StripeOnboardingCallback from "./pages/stripe/StripeOnboardingCallback";
+import CustomerService from "./pages/customerservice/CustomerService";
 
 // Admin imports
 import { AdminAuthProvider } from "./admin/context/AdminAuthContext";
@@ -38,6 +39,8 @@ import Bids from "./admin/pages/Bids";
 import Properties from "./admin/pages/Properties";
 import Payments from "./admin/pages/Payments";
 import Subscriptions from "./admin/pages/Subscriptions";
+import Reports from "./admin/pages/Reports";
+import Disputes from "./admin/pages/Disputes";
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -110,6 +113,8 @@ function AdminRoutes() {
         <Route path="/properties" element={<Properties />} />
         <Route path="/payments" element={<Payments />} />
         <Route path="/subscriptions" element={<Subscriptions />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/disputes" element={<Disputes />} />
         {/* <Route path="/audit-logs" element={<AuditLogs />} /> */}
       </Route>
 
@@ -213,6 +218,12 @@ function ProtectedRoutes() {
       <Route
         path="/profile/resident"
         element={<ProtectedRoute element={<ProfilePageResident />} />}
+      />
+
+      {/* Customer Service - accessible to all user types */}
+      <Route
+        path="/customer-service"
+        element={<ProtectedRoute element={<CustomerService />} />}
       />
     </Routes>
   );

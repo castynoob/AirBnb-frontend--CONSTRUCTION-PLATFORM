@@ -6,17 +6,15 @@ import {
   FileText,
   CreditCard,
   Shield,
-  Settings,
   Building2,
   ClipboardList,
   MessageSquare,
   Flag,
-  Bell,
 } from "lucide-react";
 import { useAdminAuth } from "../context/AdminAuthContext";
 
 function AdminSidebar({ isOpen, onClose }) {
-  const { admin, canManageUsers, canViewAuditLogs, canManageSettings } = useAdminAuth();
+  const { admin, canManageUsers } = useAdminAuth();
 
   const navSections = [
     {
@@ -77,34 +75,11 @@ function AdminSidebar({ isOpen, onClose }) {
           to: "/admin/reports",
           icon: Flag,
           label: "Reports",
-          badge: "3",
         },
         {
           to: "/admin/disputes",
           icon: MessageSquare,
           label: "Disputes",
-        },
-      ],
-    },
-    {
-      title: "System",
-      items: [
-        {
-          to: "/admin/audit-logs",
-          icon: Shield,
-          label: "Audit Logs",
-          show: canViewAuditLogs(),
-        },
-        {
-          to: "/admin/announcements",
-          icon: Bell,
-          label: "Announcements",
-        },
-        {
-          to: "/admin/settings",
-          icon: Settings,
-          label: "Settings",
-          show: canManageSettings(),
         },
       ],
     },

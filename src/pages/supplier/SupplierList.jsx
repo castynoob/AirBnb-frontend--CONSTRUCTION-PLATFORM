@@ -18,13 +18,16 @@ import {
   ChevronRight,
   Briefcase,
   Shield,
-  MessageSquare
+  MessageSquare,
+  Building2,
+  Truck
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Nav from "../../components/Nav";
 import SupplierProfileModal from "../../components/modal/SupplierProfileModal";
 import ViewMyRequestsModal from "../../components/modal/ViewMyRequestsModal";
-import '../../styles/manager/submissions.css';
+import '../../styles/supplier/supplierlist.css';
+import '../../styles/manager/submissions.css'; // For modal styles
 
 // Custom Select Component
 function CustomSelect({ value, onChange, options, icon: Icon, placeholder }) {
@@ -46,21 +49,21 @@ function CustomSelect({ value, onChange, options, icon: Icon, placeholder }) {
     : options.find(opt => opt.value === value)?.label || placeholder;
 
   return (
-    <div className="subs-custom-select" ref={selectRef}>
-      <div className="subs-select-trigger" onClick={() => setIsOpen(!isOpen)}>
+    <div className="sl-custom-select" ref={selectRef}>
+      <div className="sl-select-trigger" onClick={() => setIsOpen(!isOpen)}>
         {Icon && <Icon size={16} />}
-        <span className="subs-select-value">{displayValue}</span>
-        <ChevronDown size={14} className={`subs-select-arrow ${isOpen ? 'open' : ''}`} />
+        <span className="sl-select-value">{displayValue}</span>
+        <ChevronDown size={14} className={`sl-select-arrow ${isOpen ? 'open' : ''}`} />
       </div>
       {isOpen && (
-        <div className="subs-select-dropdown">
+        <div className="sl-select-dropdown">
           {options.map((option, index) => {
             const optValue = typeof option === 'string' ? option : option.value;
             const optLabel = typeof option === 'string' ? option : option.label;
             return (
               <div
                 key={index}
-                className={`subs-select-option ${value === optValue ? 'selected' : ''}`}
+                className={`sl-select-option ${value === optValue ? 'selected' : ''}`}
                 onClick={() => {
                   onChange(optValue);
                   setIsOpen(false);
@@ -424,12 +427,8 @@ function SupplierList() {
       }
 
       const data = await response.json();
-      setSelectedProfile({
-        ...data.profile,
-        first_name: supplier.first_name,
-        last_name: supplier.last_name,
-        email: supplier.email,
-      });
+      // Use the profile data directly - it now includes all user fields from the backend
+      setSelectedProfile(data.profile);
       setShowProfileModal(true);
     } catch (error) {
       console.error('Error fetching supplier profile:', error);
@@ -442,59 +441,107 @@ function SupplierList() {
   const hasActiveFilters = selectedArea !== 'All Areas' || selectedMaterial !== 'All Materials' ||
     selectedYearsFilter !== 'All' || certificationFilter !== 'All';
 
-  if (isLoading) {
-    return (
-      <div className="subs-submissions-container">
-        <Nav />
-        <div className="subs-submissions-content">
-          <div className="subs-loading-state">
-            <div className="subs-spinner"></div>
-            <p>Loading suppliers...</p>
+  // Get initials for avatar
+  const getInitials = (name) => {
+    if (!name) return 'S';
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  };
+
+  // Skeleton Loading Component
+  const SupplierListSkeleton = () => (
+    <div className="supplier-list-container">
+      <Nav />
+      <div className="supplier-list-content">
+        {/* Header Skeleton */}
+        <header className="sl-page-header">
+          <div className="sl-header-left">
+            <div className="sl-header-title-group">
+              <div className="sl-skeleton" style={{ width: '220px', height: '32px' }}></div>
+              <div className="sl-skeleton" style={{ width: '100px', height: '24px', borderRadius: '20px' }}></div>
+            </div>
           </div>
+          <div className="sl-header-actions">
+            <div className="sl-skeleton" style={{ width: '140px', height: '40px' }}></div>
+            <div className="sl-skeleton" style={{ width: '100px', height: '40px' }}></div>
+          </div>
+        </header>
+
+        {/* Controls Bar Skeleton */}
+        <div className="sl-controls-bar">
+          <div className="sl-skeleton" style={{ flex: 1, height: '44px' }}></div>
+          <div className="sl-skeleton" style={{ width: '100px', height: '44px' }}></div>
+        </div>
+
+        {/* Suppliers Grid Skeleton */}
+        <div className="sl-suppliers-grid">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="sl-supplier-card sl-skeleton-card">
+              {/* Card Header */}
+              <div className="sl-card-header">
+                <div className="sl-skeleton" style={{ width: '52px', height: '52px', borderRadius: '12px' }}></div>
+                <div className="sl-header-info">
+                  <div className="sl-skeleton" style={{ width: '70%', height: '20px', marginBottom: '8px' }}></div>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <div className="sl-skeleton" style={{ width: '60px', height: '20px' }}></div>
+                    <div className="sl-skeleton" style={{ width: '50px', height: '20px' }}></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card Body */}
+              <div className="sl-card-body">
+                <div className="sl-skeleton" style={{ width: '100%', height: '16px' }}></div>
+                <div className="sl-skeleton" style={{ width: '80%', height: '16px' }}></div>
+                <div className="sl-skeleton" style={{ width: '60%', height: '16px' }}></div>
+              </div>
+
+              {/* Card Actions */}
+              <div className="sl-card-actions">
+                <div className="sl-skeleton" style={{ flex: 1, height: '36px' }}></div>
+                <div className="sl-skeleton" style={{ width: '36px', height: '36px' }}></div>
+                <div className="sl-skeleton" style={{ flex: 1, height: '36px' }}></div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
-    );
+    </div>
+  );
+
+  if (isLoading) {
+    return <SupplierListSkeleton />;
   }
 
   return (
-    <div className="subs-submissions-container">
+    <div className="supplier-list-container">
       <Nav />
-      <div className="subs-submissions-content">
+      <div className="supplier-list-content">
         {/* Page Header */}
-        <header className="subs-page-header">
-          <div className="subs-header-left">
-            <div className="subs-header-title-group">
-              <h1>MATERIAL SUPPLIERS</h1>
-              <span className="subs-submission-count">{filteredSuppliers.length} suppliers</span>
+        <header className="sl-page-header">
+          <div className="sl-header-left">
+            <div className="sl-header-title-group">
+              <h1>Material Suppliers</h1>
+              <span className="sl-supplier-count">{filteredSuppliers.length} suppliers</span>
             </div>
           </div>
-          <div className="subs-header-actions">
+          <div className="sl-header-actions">
             <button
-              className="subs-btn subs-btn-primary"
+              className="sl-header-btn sl-header-btn-primary"
               onClick={() => setShowMyRequestsModal(true)}
-              style={{
-                background: 'linear-gradient(135deg, #00a5a9 0%, #008b8f 100%)',
-                color: '#fff',
-                border: 'none',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}
             >
-              <Send size={18} />
+              <Send size={16} />
               <span>My Requests {myRequests.length > 0 && `(${myRequests.length})`}</span>
             </button>
-            <div className="subs-btn subs-btn-secondary">
-              <Package size={18} />
+            <div className="sl-header-btn sl-header-btn-secondary">
+              <Package size={16} />
               <span>{suppliers.length} Total</span>
             </div>
           </div>
         </header>
 
         {/* Controls Bar */}
-        <div className="subs-controls-bar">
-          <div className="subs-search-box">
+        <div className="sl-controls-bar">
+          <div className="sl-search-box">
             <Search size={18} />
             <input
               type="text"
@@ -503,14 +550,14 @@ function SupplierList() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             {searchTerm && (
-              <button className="subs-clear-btn" onClick={() => setSearchTerm('')}>
+              <button className="sl-clear-search" onClick={() => setSearchTerm('')}>
                 <X size={16} />
               </button>
             )}
           </div>
 
           <button
-            className={`subs-filter-btn ${showFilters ? 'active' : ''}`}
+            className={`sl-filter-toggle ${showFilters ? 'active' : ''}`}
             onClick={() => setShowFilters(!showFilters)}
           >
             <Filter size={18} />
@@ -521,9 +568,9 @@ function SupplierList() {
 
         {/* Filter Panel */}
         {showFilters && (
-          <div className="subs-filters-panel">
-            <div className="subs-filters-grid">
-              <div className="subs-filter-item">
+          <div className="sl-filters-panel">
+            <div className="sl-filters-grid">
+              <div className="sl-filter-item">
                 <label>Location</label>
                 <CustomSelect
                   value={selectedArea}
@@ -534,7 +581,7 @@ function SupplierList() {
                 />
               </div>
 
-              <div className="subs-filter-item">
+              <div className="sl-filter-item">
                 <label>Material Type</label>
                 <CustomSelect
                   value={selectedMaterial}
@@ -545,7 +592,7 @@ function SupplierList() {
                 />
               </div>
 
-              <div className="subs-filter-item">
+              <div className="sl-filter-item">
                 <label>Years in Business</label>
                 <CustomSelect
                   value={selectedYearsFilter}
@@ -556,7 +603,7 @@ function SupplierList() {
                 />
               </div>
 
-              <div className="subs-filter-item">
+              <div className="sl-filter-item">
                 <label>Certification</label>
                 <CustomSelect
                   value={certificationFilter}
@@ -569,7 +616,7 @@ function SupplierList() {
             </div>
 
             <button
-              className="subs-clear-all-btn"
+              className="sl-clear-filters"
               onClick={() => {
                 setSelectedArea('All Areas');
                 setSelectedMaterial('All Materials');
@@ -585,74 +632,91 @@ function SupplierList() {
 
         {/* Suppliers Grid */}
         {filteredSuppliers.length === 0 ? (
-          <div className="subs-empty-state">
+          <div className="sl-empty-state">
             <Package size={48} />
             <h3>No suppliers found</h3>
             <p>Try adjusting your search or filter criteria</p>
           </div>
         ) : (
-          <div className="subs-bids-grid">
+          <div className="sl-suppliers-grid">
             {filteredSuppliers.map(supplier => (
-              <div key={supplier.id} className="subs-bid-card" onClick={() => handleViewSupplierProfile(supplier)}>
-                {/* Top Row: Certification + Years */}
-                <div className="subs-card-top">
-                  {supplier.business_license ? (
-                    <div className="subs-status-badge-subs status-accepted">
-                      <Award size={12} />
-                      Certified
+              <div key={supplier.id} className="sl-supplier-card" onClick={() => handleViewSupplierProfile(supplier)}>
+                {/* Card Header with Avatar */}
+                <div className="sl-card-header">
+                  <div className="sl-supplier-avatar">
+                    {getInitials(supplier.company_name)}
+                  </div>
+                  <div className="sl-header-info">
+                    <h3 className="sl-company-name">{supplier.company_name}</h3>
+                    <div className="sl-header-badges">
+                      {supplier.business_license ? (
+                        <span className="sl-cert-badge certified">
+                          <Award size={10} />
+                          Certified
+                        </span>
+                      ) : (
+                        <span className="sl-cert-badge not-certified">
+                          <Shield size={10} />
+                          Not Certified
+                        </span>
+                      )}
+                      <span className="sl-years-badge">
+                        <Calendar size={10} />
+                        {supplier.years_in_business || 0} yrs
+                      </span>
                     </div>
-                  ) : (
-                    <div className="subs-status-badge-subs status-pending">
-                      <Shield size={12} />
-                      Not Certified
-                    </div>
-                  )}
-                  <div className="subs-card-top-right">
-                    <span className="subs-bid-amount">
-                      <Calendar size={12} />
-                      {supplier.years_in_business || 0} yrs
-                    </span>
                   </div>
                 </div>
 
-                {/* Company Name */}
-                <h3 className="subs-job-title">{supplier.company_name}</h3>
+                {/* Card Body */}
+                <div className="sl-card-body">
+                  <div className="sl-contact-info">
+                    {supplier.phone && (
+                      <div className="sl-contact-row">
+                        <Phone size={14} />
+                        <span>{supplier.phone}</span>
+                      </div>
+                    )}
+                    {supplier.email && (
+                      <div className="sl-contact-row">
+                        <Mail size={14} />
+                        <span>{supplier.email}</span>
+                      </div>
+                    )}
+                  </div>
 
-                {/* Info Row */}
-                <div className="subs-card-info">
-                  {supplier.phone && (
-                    <div className="subs-info-item">
-                      <Phone size={12} />
-                      <span>{supplier.phone}</span>
-                    </div>
-                  )}
-                  {supplier.email && (
-                    <div className="subs-info-item">
-                      <Mail size={12} />
-                      <span>{supplier.email}</span>
-                    </div>
-                  )}
+                  {/* Delivery Areas */}
                   {supplier.delivery_areas && supplier.delivery_areas.length > 0 && (
-                    <div className="subs-info-item">
-                      <MapPin size={12} />
-                      <span>
-                        {supplier.delivery_areas.slice(0, 2).join(', ')}
-                        {supplier.delivery_areas.length > 2 && ` +${supplier.delivery_areas.length - 2}`}
-                      </span>
+                    <div className="sl-delivery-section">
+                      <div className="sl-section-label">
+                        <Truck size={12} />
+                        Delivery Areas
+                      </div>
+                      <div className="sl-area-tags">
+                        {supplier.delivery_areas.slice(0, 3).map((area, idx) => (
+                          <span key={idx} className="sl-area-tag">{area}</span>
+                        ))}
+                        {supplier.delivery_areas.length > 3 && (
+                          <span className="sl-area-tag more">+{supplier.delivery_areas.length - 3}</span>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
 
-                {/* Action Row */}
-                <div className="subs-card-actions">
-                  <button className="subs-details-btn" onClick={(e) => { e.stopPropagation(); handleViewSupplierProfile(supplier); }}>
+                {/* Card Actions */}
+                <div className="sl-card-actions">
+                  <button
+                    className="sl-action-btn sl-details-btn"
+                    onClick={(e) => { e.stopPropagation(); handleViewSupplierProfile(supplier); }}
+                  >
                     Details
                     <ChevronRight size={14} />
                   </button>
 
                   {supplier.catalog_pdf_url && (
                     <button
-                      className="subs-expand-btn"
+                      className="sl-action-btn sl-catalog-btn"
                       onClick={(e) => { e.stopPropagation(); handleDownloadCatalog(supplier.catalog_pdf_url); }}
                       title="View Catalog"
                     >
@@ -662,7 +726,7 @@ function SupplierList() {
 
                   {canChatWithSupplier(supplier.id) && (
                     <button
-                      className="subs-chat-btn"
+                      className="sl-action-btn sl-chat-btn"
                       onClick={(e) => { e.stopPropagation(); handleChatWithSupplier(supplier); }}
                       title="Chat with Supplier"
                     >
@@ -671,7 +735,7 @@ function SupplierList() {
                   )}
 
                   <button
-                    className="subs-accept-btn"
+                    className="sl-action-btn sl-request-btn"
                     onClick={(e) => { e.stopPropagation(); openRequestModal(supplier); }}
                   >
                     <Package size={14} />

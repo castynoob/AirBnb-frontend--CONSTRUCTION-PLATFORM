@@ -278,13 +278,8 @@ const SubmittedBids = () => {
       }
 
       const data = await response.json();
-      setSelectedManagerProfile({
-        ...data.profile,
-        first_name: bid.manager_first_name,
-        last_name: bid.manager_last_name,
-        email: bid.manager_email,
-        phone: bid.manager_phone,
-      });
+      // Use the profile data directly - it now includes all user fields from the backend
+      setSelectedManagerProfile(data.profile);
       setShowManagerModal(true);
     } catch (error) {
       console.error('Error fetching manager profile:', error);
@@ -294,18 +289,70 @@ const SubmittedBids = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="subs-submissions-container">
-        <Nav />
-        <div className="subs-submissions-content">
-          <div className="subs-loading-state">
-            <div className="subs-spinner"></div>
-            <p>Loading your bids...</p>
+  // Skeleton Loading Component
+  const SubmittedBidsSkeleton = () => (
+    <div className="subs-submissions-container">
+      <Nav />
+      <div className="subs-submissions-content">
+        {/* Header Skeleton */}
+        <header className="subs-page-header">
+          <div className="subs-header-left">
+            <div className="subs-header-title-group">
+              <div className="skeleton skeleton-title" style={{ width: '200px', height: '32px' }}></div>
+              <div className="skeleton skeleton-text" style={{ width: '80px', height: '24px', marginLeft: '12px' }}></div>
+            </div>
           </div>
+          <div className="subs-header-actions">
+            <div className="skeleton skeleton-button" style={{ width: '120px', height: '40px', borderRadius: '8px' }}></div>
+          </div>
+        </header>
+
+        {/* Tabs Skeleton */}
+        <div className="subs-tabs-container">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="skeleton skeleton-tab" style={{ width: '100px', height: '40px', borderRadius: '8px' }}></div>
+          ))}
+        </div>
+
+        {/* Search Bar Skeleton */}
+        <div className="subs-controls-bar">
+          <div className="skeleton skeleton-search" style={{ width: '100%', maxWidth: '400px', height: '44px', borderRadius: '8px' }}></div>
+        </div>
+
+        {/* Bids Grid Skeleton */}
+        <div className="subs-bids-grid">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="subs-bid-card skeleton-card">
+              {/* Top Row */}
+              <div className="subs-card-top">
+                <div className="skeleton" style={{ width: '80px', height: '24px', borderRadius: '12px' }}></div>
+                <div className="skeleton" style={{ width: '100px', height: '24px', borderRadius: '4px' }}></div>
+              </div>
+
+              {/* Title */}
+              <div className="skeleton" style={{ width: '85%', height: '24px', marginTop: '12px', borderRadius: '4px' }}></div>
+
+              {/* Info Items */}
+              <div className="subs-card-info" style={{ marginTop: '16px' }}>
+                <div className="skeleton" style={{ width: '100px', height: '16px', borderRadius: '4px' }}></div>
+                <div className="skeleton" style={{ width: '150px', height: '16px', borderRadius: '4px' }}></div>
+                <div className="skeleton" style={{ width: '80px', height: '16px', borderRadius: '4px' }}></div>
+              </div>
+
+              {/* Actions */}
+              <div className="subs-card-actions" style={{ marginTop: '16px' }}>
+                <div className="skeleton" style={{ width: '80px', height: '32px', borderRadius: '6px' }}></div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
-    );
+
+    </div>
+  );
+
+  if (loading) {
+    return <SubmittedBidsSkeleton />;
   }
 
   if (error) {

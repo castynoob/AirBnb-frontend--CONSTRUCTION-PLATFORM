@@ -5,7 +5,8 @@ import "../../styles/manager/profilepagemanager.css"
 import {
   User, Mail, Shield, Home, Plus, MapPin, Calendar, X, LogOut,
   Package, Building2, ChevronRight, Briefcase, Phone, Camera,
-  Lock, Eye, EyeOff, Key, Check, AlertCircle, BarChart3, Settings, Menu, Edit
+  Lock, Eye, EyeOff, Key, Check, AlertCircle, BarChart3, Settings, Menu, Edit,
+  Star, MessageSquare, TrendingUp, Award, ThumbsUp
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import EditManagerProfileModal from '../../components/modal/EditManagerProfileModal'
@@ -28,6 +29,15 @@ function ProfilePageManager() {
   const [isEditingProperty, setIsEditingProperty] = useState(false)
   const [activeTab, setActiveTab] = useState('account')
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+
+  // Reviews state
+  const [reviews, setReviews] = useState([])
+  const [reviewsLoading, setReviewsLoading] = useState(false)
+  const [reviewStats, setReviewStats] = useState({
+    averageRating: 0,
+    totalReviews: 0,
+    ratingDistribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+  })
 
   // Password change states
   const [passwordForm, setPasswordForm] = useState({
@@ -75,11 +85,63 @@ function ProfilePageManager() {
         if (!propertiesRes.ok) throw new Error('Error getting properties')
         const propertiesData = await propertiesRes.json()
         setProperties(propertiesData.properties || [])
+
+        // Fetch reviews received by this manager
+        await fetchReviews(userData.id, userData.token)
       } catch (error) {
         console.error(error.message)
       } finally {
         setIsLoading(false)
       }
+    }
+  }
+
+  // Fetch reviews received by this manager
+  const fetchReviews = async (userId, token) => {
+    setReviewsLoading(true)
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/reviews/reviewed/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          setReviews([])
+          return
+        }
+        throw new Error('Failed to fetch reviews')
+      }
+
+      const data = await response.json()
+      const reviewsData = data.reviews || []
+      setReviews(reviewsData)
+
+      // Calculate stats
+      if (reviewsData.length > 0) {
+        const totalRating = reviewsData.reduce((sum, r) => sum + (r.rating || 0), 0)
+        const avgRating = totalRating / reviewsData.length
+
+        const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+        reviewsData.forEach(r => {
+          if (r.rating >= 1 && r.rating <= 5) {
+            distribution[r.rating]++
+          }
+        })
+
+        setReviewStats({
+          averageRating: avgRating,
+          totalReviews: reviewsData.length,
+          ratingDistribution: distribution
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching reviews:', error)
+      setReviews([])
+    } finally {
+      setReviewsLoading(false)
     }
   }
 
@@ -203,6 +265,7 @@ function ProfilePageManager() {
     { id: 'account', label: 'Account', icon: User },
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'properties', label: 'Properties', icon: Building2, badge: properties.length },
+    { id: 'reviews', label: 'Reviews', icon: Star, badge: reviews.length > 0 ? reviews.length : undefined },
     { id: 'security', label: 'Security', icon: Lock },
   ]
 
@@ -493,6 +556,176 @@ function ProfilePageManager() {
                   Add Property
                 </button>
               </div>
+            )}
+          </div>
+        )
+
+      case 'reviews':
+        return (
+          <div className="mp-tab-content">
+            <div className="mp-content-header">
+              <h2>Reviews & Performance</h2>
+              <p>See what contractors say about working with you</p>
+            </div>
+
+            {reviewsLoading ? (
+              <div className="mp-reviews-loading">
+                <div className="mp-spinner"></div>
+                <p>Loading reviews...</p>
+              </div>
+            ) : (
+              <>
+                {/* Performance Stats */}
+                <div className="mp-review-stats-grid">
+                  <div className="mp-review-stat-card mp-stat-rating">
+                    <div className="mp-review-stat-icon">
+                      <Star size={28} />
+                    </div>
+                    <div className="mp-review-stat-content">
+                      <span className="mp-review-stat-value">
+                        {reviewStats.averageRating.toFixed(1)}
+                      </span>
+                      <span className="mp-review-stat-label">Average Rating</span>
+                      <div className="mp-review-stars">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            size={16}
+                            fill={star <= Math.round(reviewStats.averageRating) ? '#facc15' : 'none'}
+                            stroke="#facc15"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mp-review-stat-card mp-stat-total">
+                    <div className="mp-review-stat-icon">
+                      <MessageSquare size={28} />
+                    </div>
+                    <div className="mp-review-stat-content">
+                      <span className="mp-review-stat-value">{reviewStats.totalReviews}</span>
+                      <span className="mp-review-stat-label">Total Reviews</span>
+                    </div>
+                  </div>
+
+                  <div className="mp-review-stat-card mp-stat-positive">
+                    <div className="mp-review-stat-icon">
+                      <ThumbsUp size={28} />
+                    </div>
+                    <div className="mp-review-stat-content">
+                      <span className="mp-review-stat-value">
+                        {reviewStats.totalReviews > 0
+                          ? Math.round(((reviewStats.ratingDistribution[4] + reviewStats.ratingDistribution[5]) / reviewStats.totalReviews) * 100)
+                          : 0}%
+                      </span>
+                      <span className="mp-review-stat-label">Positive Reviews</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rating Distribution */}
+                {reviewStats.totalReviews > 0 && (
+                  <div className="mp-rating-distribution">
+                    <h4 className="mp-info-section-title">Rating Breakdown</h4>
+                    <div className="mp-rating-bars">
+                      {[5, 4, 3, 2, 1].map((rating) => {
+                        const count = reviewStats.ratingDistribution[rating]
+                        const percentage = reviewStats.totalReviews > 0
+                          ? (count / reviewStats.totalReviews) * 100
+                          : 0
+                        return (
+                          <div key={rating} className="mp-rating-bar-row">
+                            <span className="mp-rating-label">
+                              {rating} <Star size={12} fill="#facc15" stroke="#facc15" />
+                            </span>
+                            <div className="mp-rating-bar-track">
+                              <div
+                                className="mp-rating-bar-fill"
+                                style={{ width: `${percentage}%` }}
+                              />
+                            </div>
+                            <span className="mp-rating-count">{count}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Reviews List */}
+                <div className="mp-reviews-section">
+                  <h4 className="mp-info-section-title">Recent Reviews</h4>
+                  {reviews.length > 0 ? (
+                    <div className="mp-reviews-list">
+                      {reviews.map((review) => (
+                        <div key={review.id} className="mp-review-card">
+                          <div className="mp-review-header">
+                            <div className="mp-review-author">
+                              <div className="mp-review-avatar">
+                                {review.reviewer_first_name?.charAt(0) || 'U'}
+                              </div>
+                              <div className="mp-review-author-info">
+                                <span className="mp-review-name">
+                                  {review.reviewer_first_name} {review.reviewer_last_name}
+                                </span>
+                                <span className="mp-review-date">
+                                  {new Date(review.created_at).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="mp-review-rating">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  size={16}
+                                  fill={star <= review.rating ? '#facc15' : 'none'}
+                                  stroke="#facc15"
+                                />
+                              ))}
+                            </div>
+                          </div>
+
+                          {review.job_title && (
+                            <div className="mp-review-job">
+                              <Briefcase size={14} />
+                              <span>{review.job_title}</span>
+                            </div>
+                          )}
+
+                          <p className="mp-review-comment">{review.comment}</p>
+
+                          {review.images && review.images.length > 0 && (
+                            <div className="mp-review-images">
+                              {review.images.map((img, idx) => (
+                                <img
+                                  key={idx}
+                                  src={img.image_url}
+                                  alt={`Review ${idx + 1}`}
+                                  className="mp-review-image"
+                                  onClick={() => window.open(img.image_url, '_blank')}
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mp-empty-reviews">
+                      <div className="mp-empty-icon-modern">
+                        <Star size={48} />
+                      </div>
+                      <h3>No reviews yet</h3>
+                      <p>Reviews from contractors will appear here after they complete jobs with you</p>
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         )

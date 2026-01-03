@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import "../../styles/entrepreneur/entrepreneurjobs.css"
 import "../../styles/manager/submissions.css"
 import Nav from "../../components/Nav"
 import {
@@ -265,7 +266,7 @@ function EntrepreneurJobs() {
       await fetchJobs()
     } catch (error) {
       console.error("Error completing job:", error)
-      alert("Failed to complete job. Please try again.")
+      toast.error("Failed to complete job. Please try again.")
     } finally {
       setIsConfirming(false)
     }
@@ -275,7 +276,7 @@ function EntrepreneurJobs() {
     const files = Array.from(e.target.files)
 
     if (files.length + reviewImages.length > 5) {
-      alert("You can only upload up to 5 images")
+      toast.error("You can only upload up to 5 images")
       return
     }
 
@@ -298,17 +299,17 @@ function EntrepreneurJobs() {
   const handleSubmitReview = async () => {
     // Validation
     if (!reviewForm.rating || reviewForm.rating < 1 || reviewForm.rating > 5) {
-      alert("Please provide a rating between 1 and 5 stars")
+      toast.error("Please provide a rating between 1 and 5 stars")
       return
     }
 
     if (!reviewForm.comment || !reviewForm.comment.trim()) {
-      alert("Please write a comment for your review")
+      toast.error("Please write a comment for your review")
       return
     }
 
     if (reviewForm.comment.trim().length < 10) {
-      alert("Please write a more detailed review (at least 10 characters)")
+      toast.error("Please write a more detailed review (at least 10 characters)")
       return
     }
 
@@ -358,7 +359,7 @@ function EntrepreneurJobs() {
       }
 
       const responseData = await res.json()
-      alert(responseData.message || "Review added successfully!")
+      toast.success(responseData.message || "Review added successfully!")
 
       // Reset form
       setOpenReviewModal(false)
@@ -373,7 +374,7 @@ function EntrepreneurJobs() {
       await fetchJobs()
     } catch (error) {
       console.error("Error submitting review:", error)
-      alert(error.message || "Failed to submit review. Please try again.")
+      toast.error(error.message || "Failed to submit review. Please try again.")
     } finally {
       setIsSubmittingReview(false)
     }
@@ -427,7 +428,7 @@ function EntrepreneurJobs() {
       const managerId = data.manager_user_id || data.manager_id
 
       if (!managerId || managerId === userProfile.id) {
-        alert("Error: Cannot find property manager for this job")
+        toast.error("Cannot find property manager for this job")
         return
       }
 
@@ -437,7 +438,7 @@ function EntrepreneurJobs() {
       navigate('/messages/entrepreneur')
     } catch (err) {
       console.error('Error navigating to messages:', err)
-      alert('Failed to open messages. Please try again.')
+      toast.error('Failed to open messages. Please try again.')
     }
   }
 
@@ -470,12 +471,8 @@ function EntrepreneurJobs() {
       }
 
       const data = await response.json()
-      setSelectedManagerProfile({
-        ...data.profile,
-        first_name: job.manager_first_name,
-        last_name: job.manager_last_name,
-        email: job.manager_email,
-      })
+      // Use the profile data directly - it now includes all user fields from the backend
+      setSelectedManagerProfile(data.profile)
       setShowManagerModal(true)
     } catch (error) {
       console.error("Error fetching manager profile:", error)
@@ -531,34 +528,96 @@ function EntrepreneurJobs() {
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="subs-submissions-container">
-        <Nav />
-        <div className="subs-submissions-content">
-          <div className="subs-loading-state">
-            <div className="subs-spinner"></div>
-            <p>Loading projects...</p>
+  // Skeleton Loading Component
+  const ProjectsSkeleton = () => (
+    <div className="ej-container">
+      <Nav />
+      <div className="ej-content">
+        {/* Header Skeleton */}
+        <header className="ej-page-header">
+          <div className="ej-header-left">
+            <div className="ej-header-title-group">
+              <div className="skeleton" style={{ width: '180px', height: '32px' }}></div>
+              <div className="skeleton" style={{ width: '100px', height: '24px', marginLeft: '12px' }}></div>
+            </div>
           </div>
+          <div className="ej-header-actions">
+            <div className="skeleton" style={{ width: '100px', height: '40px', borderRadius: '8px' }}></div>
+          </div>
+        </header>
+
+        {/* Tabs Skeleton */}
+        <div className="ej-tabs-container">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="skeleton" style={{ width: '110px', height: '40px', borderRadius: '8px', marginRight: '8px' }}></div>
+          ))}
+        </div>
+
+        {/* Search Bar Skeleton */}
+        <div className="ej-controls-bar">
+          <div className="skeleton" style={{ width: '100%', maxWidth: '400px', height: '44px', borderRadius: '8px' }}></div>
+        </div>
+
+        {/* Jobs Grid Skeleton - Matching new card design */}
+        <div className="ej-projects-grid">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="ej-project-card skeleton-card" style={{ pointerEvents: 'none' }}>
+              {/* Card Header */}
+              <div className="ej-card-header">
+                <div className="skeleton" style={{ width: '90px', height: '28px', borderRadius: '6px' }}></div>
+              </div>
+
+              {/* Card Body */}
+              <div className="ej-card-body">
+                {/* Title & Category */}
+                <div className="ej-title-section">
+                  <div className="skeleton" style={{ width: '85%', height: '22px', borderRadius: '4px' }}></div>
+                  <div className="skeleton" style={{ width: '80px', height: '22px', borderRadius: '4px' }}></div>
+                </div>
+
+                {/* Payment Card Skeleton */}
+                <div className="skeleton" style={{ width: '100%', height: '60px', borderRadius: '8px' }}></div>
+
+                {/* Meta Row */}
+                <div className="ej-meta-row">
+                  <div className="skeleton" style={{ width: '100px', height: '16px', borderRadius: '4px' }}></div>
+                  <div className="skeleton" style={{ width: '120px', height: '16px', borderRadius: '4px' }}></div>
+                </div>
+              </div>
+
+              {/* Card Footer */}
+              <div className="ej-card-footer">
+                <div className="ej-secondary-actions">
+                  <div className="skeleton" style={{ width: '36px', height: '36px', borderRadius: '8px' }}></div>
+                  <div className="skeleton" style={{ width: '36px', height: '36px', borderRadius: '8px' }}></div>
+                </div>
+                <div className="skeleton" style={{ width: '120px', height: '36px', borderRadius: '8px' }}></div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
-    )
+    </div>
+  )
+
+  if (isLoading) {
+    return <ProjectsSkeleton />
   }
 
   return (
-    <div className="subs-submissions-container">
+    <div className="ej-container">
       <Nav />
-      <div className="subs-submissions-content">
+      <div className="ej-content">
         {/* Page Header */}
-        <header className="subs-page-header">
-          <div className="subs-header-left">
-            <div className="subs-header-title-group">
+        <header className="ej-page-header">
+          <div className="ej-header-left">
+            <div className="ej-header-title-group">
               <h1>MY PROJECTS</h1>
-              <span className="subs-submission-count">{jobs.length} projects</span>
+              <span className="ej-project-count">{jobs.length} projects</span>
             </div>
           </div>
-          <div className="subs-header-actions">
-            <div className="subs-btn subs-btn-secondary">
+          <div className="ej-header-actions">
+            <div className="ej-btn-header">
               <PlayCircle size={18} />
               <span>{jobs.filter((j) => j.status === "ongoing").length} Active</span>
             </div>
@@ -566,22 +625,22 @@ function EntrepreneurJobs() {
         </header>
 
         {/* Tabs */}
-        <div className="subs-tabs-container">
+        <div className="ej-tabs-container">
           {["accepted", "ongoing", "completed"].map((status) => (
             <button
               key={status}
-              className={`subs-tab-btn ${activeStatus === status ? "active" : ""}`}
+              className={`ej-tab-btn ${activeStatus === status ? "active" : ""}`}
               onClick={() => setActiveStatus(status)}
             >
               {status.charAt(0).toUpperCase() + status.slice(1)}
-              <span className="subs-tab-count">{getStatusCount(status)}</span>
+              <span className="ej-tab-count">{getStatusCount(status)}</span>
             </button>
           ))}
         </div>
 
         {/* Search Bar */}
-        <div className="subs-controls-bar">
-          <div className="subs-search-box">
+        <div className="ej-controls-bar">
+          <div className="ej-search-box">
             <Search size={18} />
             <input
               type="text"
@@ -590,7 +649,7 @@ function EntrepreneurJobs() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             {searchTerm && (
-              <button className="subs-clear-btn" onClick={() => setSearchTerm("")}>
+              <button className="ej-clear-btn" onClick={() => setSearchTerm("")}>
                 <X size={16} />
               </button>
             )}
@@ -599,13 +658,13 @@ function EntrepreneurJobs() {
 
         {/* Jobs Grid */}
         {filteredJobs.length === 0 ? (
-          <div className="subs-empty-state">
+          <div className="ej-empty-state">
             <FileText size={48} />
             <h3>No {activeStatus} projects found</h3>
             <p>Try adjusting your search or check other tabs</p>
           </div>
         ) : (
-          <div className="subs-bids-grid">
+          <div className="ej-projects-grid">
             {filteredJobs.map((job) => {
               const getStatusInfo = (status) => {
                 const statusMap = {
@@ -621,72 +680,82 @@ function EntrepreneurJobs() {
               const PaymentIcon = paymentInfo.icon
 
               return (
-                <div className="subs-bid-card" key={job.id} onClick={() => handleViewDetails(job)}>
-                  {/* Top Row: Status + Category */}
-                  <div className="subs-card-top">
-                    <div className={`subs-status-badge-subs ${statusInfo.class}`}>
-                      <StatusIcon size={12} />
-                      {statusInfo.label}
+                <div className="ej-project-card" key={job.id} onClick={() => handleViewDetails(job)}>
+                  {/* Card Header */}
+                  <div className="ej-card-header">
+                    <div className={`ej-status-badge ${statusInfo.class}`}>
+                      <StatusIcon size={14} />
+                      <span>{statusInfo.label}</span>
                     </div>
-                    <div className="subs-card-top-right">
-                      {job.is_emergency && (
-                        <span className="subs-urgency urgent">Urgent</span>
-                      )}
-                      <span className="subs-bid-amount">{job.category}</span>
-                    </div>
-                  </div>
-
-                  {/* Job Title */}
-                  <h3 className="subs-job-title">{job.title}</h3>
-
-                  {/* Payment Status Badge */}
-                  <div className={`ej-payment-status-badge ${paymentInfo.class}`} title={paymentInfo.description}>
-                    <PaymentIcon size={14} />
-                    <span>{paymentInfo.label}</span>
-                    {job.contract && (
-                      <span className="ej-payment-amount">{formatCurrency(job.contract.contract_amount || job.bid_amount || 0)}</span>
+                    {job.is_emergency && (
+                      <span className="ej-urgent-badge">
+                        <AlertCircle size={12} />
+                        Urgent
+                      </span>
                     )}
                   </div>
 
-                  {/* Info Row */}
-                  <div className="subs-card-info">
-                    <div className="subs-info-item">
-                      <Calendar size={12} />
-                      <span>Due: {formatDate(job.due_date)}</span>
+                  {/* Card Body */}
+                  <div className="ej-card-body">
+                    {/* Title & Category */}
+                    <div className="ej-title-section">
+                      <h3 className="ej-project-title">{job.title}</h3>
+                      <span className="ej-category-tag">{job.category}</span>
                     </div>
-                    {job.budget_min && job.budget_max && (
-                      <div className="subs-info-item">
-                        <DollarSign size={12} />
-                        <span>{formatCurrency(job.budget_min)} - {formatCurrency(job.budget_max)}</span>
+
+                    {/* Payment Status - Only show for ongoing/completed jobs */}
+                    {(job.status === "ongoing" || job.status === "completed") && (
+                      <div className={`ej-payment-card ${paymentInfo.class}`}>
+                        <div className="ej-payment-icon">
+                          <PaymentIcon size={18} />
+                        </div>
+                        <div className="ej-payment-info">
+                          <span className="ej-payment-label">{paymentInfo.label}</span>
+                          {job.contract && (
+                            <span className="ej-payment-value">{formatCurrency(job.contract.contract_amount || job.bid_amount || 0)}</span>
+                          )}
+                        </div>
                       </div>
                     )}
+
+                    {/* Meta Info */}
+                    <div className="ej-meta-row">
+                      <div className="ej-meta-item">
+                        <Calendar size={14} />
+                        <span>Due {formatDate(job.due_date)}</span>
+                      </div>
+                      {job.budget_min && job.budget_max && (
+                        <div className="ej-meta-item">
+                          <DollarSign size={14} />
+                          <span>{formatCurrency(job.budget_min)} - {formatCurrency(job.budget_max)}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Action Row - Redesigned */}
-                  <div className="ej-card-actions-redesign">
-                    {/* Left: Icon buttons */}
-                    <div className="ej-card-icon-buttons">
+                  {/* Card Footer */}
+                  <div className="ej-card-footer">
+                    <div className="ej-secondary-actions">
                       <button
-                        className="ej-icon-btn ej-icon-details"
+                        className="ej-icon-action"
                         onClick={(e) => { e.stopPropagation(); handleViewDetails(job); }}
                         title="View Details"
                       >
                         <FileText size={16} />
                       </button>
                       <button
-                        className="ej-icon-btn ej-icon-chat"
+                        className="ej-icon-action"
                         onClick={(e) => { e.stopPropagation(); handleChatManager(job); }}
-                        title="Chat with Manager"
+                        title="Message Manager"
                       >
                         <MessageSquare size={16} />
                       </button>
                     </div>
 
-                    {/* Right: Primary action button */}
-                    <div className="ej-card-primary-action">
+                    <div className="ej-primary-action">
                       {job.status === "accepted" && (
                         <button
-                          className="ej-action-btn ej-action-start"
+                          className="ej-btn ej-btn-start"
                           onClick={(e) => { e.stopPropagation(); openModal(job, "start"); }}
                         >
                           <PlayCircle size={16} />
@@ -696,7 +765,7 @@ function EntrepreneurJobs() {
 
                       {job.status === "ongoing" && (
                         <button
-                          className="ej-action-btn ej-action-complete"
+                          className="ej-btn ej-btn-complete"
                           onClick={(e) => { e.stopPropagation(); openModal(job, "done"); }}
                         >
                           <CheckCircle size={16} />
@@ -706,7 +775,7 @@ function EntrepreneurJobs() {
 
                       {job.status === "completed" && (
                         <button
-                          className="ej-action-btn ej-action-review"
+                          className="ej-btn ej-btn-review"
                           onClick={(e) => {
                             e.stopPropagation()
                             setSelectedJob(job)

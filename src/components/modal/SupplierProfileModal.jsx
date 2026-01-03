@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   X,
   User,
@@ -18,17 +18,73 @@ import {
   ExternalLink,
   CheckCircle,
   Send,
+  MessageSquare,
+  Loader2,
 } from "lucide-react";
 import "../../styles/modal/supplierprofilemodal.css";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) => {
   const [activeTab, setActiveTab] = useState("company");
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewStats, setReviewStats] = useState({
+    averageRating: 0,
+    totalReviews: 0,
+    ratingDistribution: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+  });
+
+  // Fetch reviews when modal opens
+  useEffect(() => {
+    if (isOpen && profile?.id) {
+      fetchReviews(profile.id);
+    }
+  }, [isOpen, profile?.id]);
+
+  const fetchReviews = async (userId) => {
+    setReviewsLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_BASE_URL}/api/reviews/reviewed/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setReviews(data);
+
+        // Calculate stats
+        if (data.length > 0) {
+          const total = data.reduce((sum, r) => sum + r.rating, 0);
+          const avg = total / data.length;
+          const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+          data.forEach(r => {
+            if (distribution[r.rating] !== undefined) {
+              distribution[r.rating]++;
+            }
+          });
+          setReviewStats({
+            averageRating: avg,
+            totalReviews: data.length,
+            ratingDistribution: distribution
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
 
   if (!isOpen || !profile) return null;
 
   const tabs = [
     { id: "company", label: "Company Info", icon: Building2 },
     { id: "contact", label: "Contact", icon: Phone },
+    { id: "reviews", label: "Reviews", icon: MessageSquare, badge: reviews.length > 0 ? reviews.length : undefined },
     { id: "delivery", label: "Delivery Areas", icon: Truck },
     { id: "business", label: "Business Overview", icon: Briefcase },
     { id: "catalog", label: "Product Catalog", icon: Package },
@@ -216,6 +272,103 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
                 </div>
               </div>
             </div>
+          </div>
+        );
+
+      case "reviews":
+        return (
+          <div className="spm-tab-content">
+            <div className="spm-section-header">
+              <MessageSquare size={20} />
+              <h4>Customer Reviews</h4>
+            </div>
+
+            {reviewsLoading ? (
+              <div className="spm-reviews-loading">
+                <Loader2 size={24} className="spm-spinner" />
+                <span>Loading reviews...</span>
+              </div>
+            ) : reviews.length > 0 ? (
+              <>
+                {/* Rating Summary */}
+                <div className="spm-reviews-summary">
+                  <div className="spm-reviews-rating-box">
+                    <span className="spm-reviews-avg">
+                      {reviewStats.averageRating.toFixed(1)}
+                    </span>
+                    <div className="spm-reviews-stars">
+                      {renderStars(reviewStats.averageRating)}
+                    </div>
+                    <span className="spm-reviews-count">
+                      {reviewStats.totalReviews} review{reviewStats.totalReviews !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="spm-rating-bars">
+                    {[5, 4, 3, 2, 1].map(star => {
+                      const count = reviewStats.ratingDistribution[star];
+                      const percentage = reviewStats.totalReviews > 0
+                        ? (count / reviewStats.totalReviews) * 100
+                        : 0;
+                      return (
+                        <div key={star} className="spm-rating-bar-row">
+                          <span className="spm-rating-bar-label">{star}</span>
+                          <Star size={12} fill="#facc15" stroke="#facc15" />
+                          <div className="spm-rating-bar-track">
+                            <div
+                              className="spm-rating-bar-fill"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                          <span className="spm-rating-bar-count">{count}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Reviews List */}
+                <div className="spm-reviews-list">
+                  {reviews.map((review) => (
+                    <div key={review.id} className="spm-review-card">
+                      <div className="spm-review-header">
+                        <div className="spm-review-avatar">
+                          {review.reviewer?.profile_picture ? (
+                            <img
+                              src={review.reviewer.profile_picture}
+                              alt={review.reviewer?.company_name || 'Reviewer'}
+                            />
+                          ) : (
+                            review.reviewer?.company_name?.charAt(0) || 'R'
+                          )}
+                        </div>
+                        <div className="spm-review-meta">
+                          <h5>{review.reviewer?.company_name || 'Anonymous'}</h5>
+                          <div className="spm-review-rating">
+                            {renderStars(review.rating)}
+                            <span className="spm-review-date">
+                              {new Date(review.created_at).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      {review.comment && (
+                        <p className="spm-review-comment">{review.comment}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="spm-reviews-empty">
+                <MessageSquare size={40} />
+                <h4>No Reviews Yet</h4>
+                <p>This supplier hasn't received any reviews yet.</p>
+              </div>
+            )}
           </div>
         );
 

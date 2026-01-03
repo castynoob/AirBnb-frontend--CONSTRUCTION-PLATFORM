@@ -399,6 +399,57 @@ export async function updateFavoriteNotes(favoriteId, notes) {
 }
 
 // ============================================
+// SUPPORT TICKET ENDPOINTS
+// ============================================
+
+/**
+ * Create a new support ticket
+ * POST /api/support/tickets
+ */
+export async function createSupportTicket(ticketData) {
+  return apiRequest('/api/support/tickets', {
+    method: 'POST',
+    body: JSON.stringify(ticketData),
+  });
+}
+
+/**
+ * Get user's support tickets
+ * GET /api/support/tickets
+ */
+export async function getSupportTickets(status = null) {
+  const queryParams = status ? `?status=${status}` : '';
+  return apiRequest(`/api/support/tickets${queryParams}`);
+}
+
+/**
+ * Get a single support ticket by ID
+ * GET /api/support/tickets/:ticketId
+ */
+export async function getSupportTicket(ticketId) {
+  return apiRequest(`/api/support/tickets/${ticketId}`);
+}
+
+/**
+ * Add a message to a support ticket
+ * POST /api/support/tickets/:ticketId/messages
+ */
+export async function addTicketMessage(ticketId, message) {
+  return apiRequest(`/api/support/tickets/${ticketId}/messages`, {
+    method: 'POST',
+    body: JSON.stringify({ message }),
+  });
+}
+
+/**
+ * Get messages for a support ticket
+ * GET /api/support/tickets/:ticketId/messages
+ */
+export async function getTicketMessages(ticketId) {
+  return apiRequest(`/api/support/tickets/${ticketId}/messages`);
+}
+
+// ============================================
 // USAGE EXAMPLES
 // ============================================
 

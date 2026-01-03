@@ -5,6 +5,7 @@ import logo from '../assets/logo-light.png'
 import '../styles/nav.css'
 import { getUnreadCount, logout } from '../utils/api';
 import { useSocket } from '../contexts/SocketContext';
+import ReportModal from './modal/ReportModal';
 
 function Nav() {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ function Nav() {
   const [isLoading, setIsLoading] = useState(true)
   const [unreadCount, setUnreadCount] = useState(0)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [showReportModal, setShowReportModal] = useState(false)
   const profileMenuRef = useRef(null);
   const { socket, clearNotifications } = useSocket();
 
@@ -124,14 +126,12 @@ function Nav() {
 
   const handleReport = () => {
     setShowProfileMenu(false);
-    // TODO: Implement report functionality or navigate to report page
-    alert('Report feature coming soon!');
+    setShowReportModal(true);
   };
 
   const handleCustomerService = () => {
     setShowProfileMenu(false);
-    // TODO: Implement customer service chat or navigate to support page
-    alert('Customer Service feature coming soon!');
+    navigate('/customer-service');
   };
 
   const getUserInitials = () => {
@@ -154,6 +154,14 @@ function Nav() {
 
   return (
     <>
+      {/* Report Modal */}
+      {showReportModal && (
+        <ReportModal
+          onClose={() => setShowReportModal(false)}
+          userRole={role}
+        />
+      )}
+
       {
         isLoading?
         <div className="sidebar"></div>:
@@ -284,7 +292,7 @@ function Nav() {
                   <div className="nav-icon">
                     <User size={20} />
                   </div>
-                  <span className="nav-text">Profile</span>
+                  <span className="nav-text">{userProfile?.first_name || 'Profile'}</span>
                 </NavLink>
               </li>
               
@@ -301,7 +309,7 @@ function Nav() {
                 {getUserInitials()}
               </div>
               <div className="sidebar-user-info">
-                <div className="sidebar-user-name">{getUserFullName()}</div>
+                <div className="sidebar-user-name">{userProfile?.first_name || 'User'}</div>
                 <div className="sidebar-user-role">{getRoleDisplay()}</div>
               </div>
               <ChevronUp

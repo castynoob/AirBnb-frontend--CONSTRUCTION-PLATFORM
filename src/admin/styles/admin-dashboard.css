@@ -391,8 +391,9 @@
 
 /* ============================================
    DATE FILTER MODAL
+   Scoped within .admin-app to prevent CSS conflicts
    ============================================ */
-.admin-modal-overlay {
+.admin-app .admin-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -406,7 +407,7 @@
   padding: 1rem;
 }
 
-.admin-modal {
+.admin-app .admin-modal {
   background: var(--admin-surface);
   border-radius: var(--admin-radius-lg);
   box-shadow: var(--admin-shadow-lg);
@@ -418,7 +419,7 @@
   flex-direction: column;
 }
 
-.admin-modal-header {
+.admin-app .admin-modal-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -426,14 +427,17 @@
   border-bottom: 1px solid var(--admin-border);
 }
 
-.admin-modal-title {
+.admin-app .admin-modal-title {
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--admin-text);
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.admin-modal-close {
+.admin-app .admin-modal-close {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -447,17 +451,17 @@
   transition: all 0.2s ease;
 }
 
-.admin-modal-close:hover {
+.admin-app .admin-modal-close:hover {
   background: var(--admin-bg);
   color: var(--admin-text);
 }
 
-.admin-modal-body {
+.admin-app .admin-modal-body {
   padding: 1.25rem;
   overflow-y: auto;
 }
 
-.admin-modal-footer {
+.admin-app .admin-modal-footer {
   display: flex;
   align-items: center;
   justify-content: flex-end;
