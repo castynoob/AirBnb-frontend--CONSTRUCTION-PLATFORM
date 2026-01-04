@@ -16,12 +16,15 @@ import {
   Key,
   Check,
   AlertCircle,
-  Menu
+  Menu,
+  Settings,
+  Globe
 } from 'lucide-react';
 import Nav from '../../components/Nav';
 import toast from 'react-hot-toast';
 import '../../styles/resident/profilepageresident.css';
 import { logout } from '../../utils/api';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -67,10 +70,13 @@ const ProfilePageResident = () => {
     contact_via_message: true
   });
 
+  // Language context
+  const { language, changeLanguage, languages } = useLanguage();
+
   // Tab labels for mobile header
   const tabLabels = {
     account: 'Account',
-    security: 'Security'
+    settings: 'Settings'
   };
 
   useEffect(() => {
@@ -421,11 +427,11 @@ const ProfilePageResident = () => {
               <span>Account</span>
             </button>
             <button
-              className={`rp-nav-item ${activeTab === 'security' ? 'rp-nav-active' : ''}`}
-              onClick={() => handleTabChange('security')}
+              className={`rp-nav-item ${activeTab === 'settings' ? 'rp-nav-active' : ''}`}
+              onClick={() => handleTabChange('settings')}
             >
-              <Shield size={18} />
-              <span>Security</span>
+              <Settings size={18} />
+              <span>Settings</span>
             </button>
           </nav>
         </aside>
@@ -717,173 +723,207 @@ const ProfilePageResident = () => {
               </>
             )}
 
-            {/* Security Tab */}
-            {activeTab === 'security' && (
+            {/* Settings Tab */}
+            {activeTab === 'settings' && (
               <>
                 <div className="rp-content-header">
                   <div className="rp-content-header-left">
-                    <h2>Security Settings</h2>
-                    <p>Manage your password and security preferences</p>
+                    <h2>Settings</h2>
+                    <p>Customize your preferences and security</p>
                   </div>
                 </div>
 
-                {/* Password Change Section */}
-                <div className="rp-security-section">
-                  <div className="rp-security-header">
-                    <div className="rp-security-header-left">
-                      <div className="rp-security-icon">
+                {/* Language Settings */}
+                <div className="rp-settings-section">
+                  <div className="rp-settings-card">
+                    <div className="rp-settings-card-header">
+                      <div className="rp-settings-icon">
+                        <Globe size={20} />
+                      </div>
+                      <div>
+                        <h3 className="rp-settings-title">Language</h3>
+                        <p className="rp-settings-subtitle">Select your preferred language</p>
+                      </div>
+                    </div>
+
+                    <div className="rp-language-options">
+                      {Object.values(languages).map((lang) => (
+                        <button
+                          key={lang.code}
+                          className={`rp-language-option ${language === lang.code ? 'rp-language-active' : ''}`}
+                          onClick={() => changeLanguage(lang.code)}
+                        >
+                          <span className="rp-language-flag">{lang.flag}</span>
+                          <div className="rp-language-info">
+                            <span className="rp-language-name">{lang.name}</span>
+                            <span className="rp-language-native">{lang.nativeName}</span>
+                          </div>
+                          {language === lang.code && (
+                            <Check size={18} className="rp-language-check" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Security Settings */}
+                <div className="rp-settings-section">
+                  <div className="rp-settings-card">
+                    <div className="rp-settings-card-header">
+                      <div className="rp-settings-icon">
                         <Key size={20} />
                       </div>
                       <div>
-                        <h3 className="rp-security-title">Change Password</h3>
-                        <p className="rp-security-subtitle">Update your account password</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <form onSubmit={handleChangePassword} className="rp-password-form">
-                    {passwordError && (
-                      <div className="rp-alert rp-alert-error">
-                        <AlertCircle size={18} />
-                        {passwordError}
-                      </div>
-                    )}
-                    {passwordSuccess && (
-                      <div className="rp-alert rp-alert-success">
-                        <Check size={18} />
-                        {passwordSuccess}
-                      </div>
-                    )}
-
-                    <div className="rp-form-group">
-                      <label className="rp-form-label">Current Password</label>
-                      <div className="rp-input-wrapper">
-                        <input
-                          type={showPasswords.current ? 'text' : 'password'}
-                          name="currentPassword"
-                          value={passwordForm.currentPassword}
-                          onChange={handlePasswordInputChange}
-                          placeholder="Enter current password"
-                          className="rp-form-input"
-                        />
-                        <button
-                          type="button"
-                          className="rp-input-toggle"
-                          onClick={() => togglePasswordVisibility('current')}
-                        >
-                          {showPasswords.current ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
+                        <h3 className="rp-settings-title">Change Password</h3>
+                        <p className="rp-settings-subtitle">Update your account password</p>
                       </div>
                     </div>
 
-                    <div className="rp-form-group">
-                      <label className="rp-form-label">New Password</label>
-                      <div className="rp-input-wrapper">
-                        <input
-                          type={showPasswords.new ? 'text' : 'password'}
-                          name="newPassword"
-                          value={passwordForm.newPassword}
-                          onChange={handlePasswordInputChange}
-                          placeholder="Enter new password"
-                          className="rp-form-input"
-                        />
-                        <button
-                          type="button"
-                          className="rp-input-toggle"
-                          onClick={() => togglePasswordVisibility('new')}
-                        >
-                          {showPasswords.new ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
+                    <form onSubmit={handleChangePassword} className="rp-password-form">
+                      {passwordError && (
+                        <div className="rp-alert rp-alert-error">
+                          <AlertCircle size={18} />
+                          {passwordError}
+                        </div>
+                      )}
+                      {passwordSuccess && (
+                        <div className="rp-alert rp-alert-success">
+                          <Check size={18} />
+                          {passwordSuccess}
+                        </div>
+                      )}
+
+                      <div className="rp-form-group">
+                        <label className="rp-form-label">Current Password</label>
+                        <div className="rp-input-wrapper">
+                          <input
+                            type={showPasswords.current ? 'text' : 'password'}
+                            name="currentPassword"
+                            value={passwordForm.currentPassword}
+                            onChange={handlePasswordInputChange}
+                            placeholder="Enter current password"
+                            className="rp-form-input"
+                          />
+                          <button
+                            type="button"
+                            className="rp-input-toggle"
+                            onClick={() => togglePasswordVisibility('current')}
+                          >
+                            {showPasswords.current ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
+                        </div>
                       </div>
-                      {passwordForm.newPassword && (
-                        <>
-                          <div className="rp-strength-indicator">
-                            <div className="rp-strength-bar">
-                              <div
-                                className="rp-strength-fill"
-                                style={{
-                                  width: `${(getPasswordStrength(passwordForm.newPassword) / 5) * 100}%`,
-                                  backgroundColor: getStrengthColor(getPasswordStrength(passwordForm.newPassword))
-                                }}
-                              />
+
+                      <div className="rp-form-group">
+                        <label className="rp-form-label">New Password</label>
+                        <div className="rp-input-wrapper">
+                          <input
+                            type={showPasswords.new ? 'text' : 'password'}
+                            name="newPassword"
+                            value={passwordForm.newPassword}
+                            onChange={handlePasswordInputChange}
+                            placeholder="Enter new password"
+                            className="rp-form-input"
+                          />
+                          <button
+                            type="button"
+                            className="rp-input-toggle"
+                            onClick={() => togglePasswordVisibility('new')}
+                          >
+                            {showPasswords.new ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
+                        </div>
+                        {passwordForm.newPassword && (
+                          <>
+                            <div className="rp-strength-indicator">
+                              <div className="rp-strength-bar">
+                                <div
+                                  className="rp-strength-fill"
+                                  style={{
+                                    width: `${(getPasswordStrength(passwordForm.newPassword) / 5) * 100}%`,
+                                    backgroundColor: getStrengthColor(getPasswordStrength(passwordForm.newPassword))
+                                  }}
+                                />
+                              </div>
+                              <span style={{ color: getStrengthColor(getPasswordStrength(passwordForm.newPassword)) }}>
+                                {getStrengthLabel(getPasswordStrength(passwordForm.newPassword))}
+                              </span>
                             </div>
-                            <span style={{ color: getStrengthColor(getPasswordStrength(passwordForm.newPassword)) }}>
-                              {getStrengthLabel(getPasswordStrength(passwordForm.newPassword))}
-                            </span>
-                          </div>
-                          <div className="rp-requirements-grid">
-                            <span className={`rp-req-item ${passwordForm.newPassword.length >= 8 ? 'rp-req-met' : ''}`}>
-                              <Check size={12} /> 8+ characters
-                            </span>
-                            <span className={`rp-req-item ${/[A-Z]/.test(passwordForm.newPassword) ? 'rp-req-met' : ''}`}>
-                              <Check size={12} /> Uppercase
-                            </span>
-                            <span className={`rp-req-item ${/[a-z]/.test(passwordForm.newPassword) ? 'rp-req-met' : ''}`}>
-                              <Check size={12} /> Lowercase
-                            </span>
-                            <span className={`rp-req-item ${/[0-9]/.test(passwordForm.newPassword) ? 'rp-req-met' : ''}`}>
-                              <Check size={12} /> Number
-                            </span>
-                            <span className={`rp-req-item ${/[!@#$%^&*(),.?":{}|<>]/.test(passwordForm.newPassword) ? 'rp-req-met' : ''}`}>
-                              <Check size={12} /> Special char
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    <div className="rp-form-group">
-                      <label className="rp-form-label">Confirm New Password</label>
-                      <div className="rp-input-wrapper">
-                        <input
-                          type={showPasswords.confirm ? 'text' : 'password'}
-                          name="confirmPassword"
-                          value={passwordForm.confirmPassword}
-                          onChange={handlePasswordInputChange}
-                          placeholder="Confirm new password"
-                          className="rp-form-input"
-                        />
-                        <button
-                          type="button"
-                          className="rp-input-toggle"
-                          onClick={() => togglePasswordVisibility('confirm')}
-                        >
-                          {showPasswords.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
-                      </div>
-                      {passwordForm.confirmPassword && passwordForm.newPassword !== passwordForm.confirmPassword && (
-                        <span className="rp-input-error">Passwords do not match</span>
-                      )}
-                    </div>
-
-                    <div className="rp-form-actions">
-                      <button
-                        type="button"
-                        className="rp-btn rp-btn-ghost"
-                        onClick={() => setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })}
-                        disabled={isChangingPassword}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        className="rp-btn rp-btn-primary"
-                        disabled={isChangingPassword}
-                      >
-                        {isChangingPassword ? (
-                          <>
-                            <span className="rp-spinner"></span>
-                            Changing...
-                          </>
-                        ) : (
-                          <>
-                            <Lock size={16} />
-                            Change Password
+                            <div className="rp-requirements-grid">
+                              <span className={`rp-req-item ${passwordForm.newPassword.length >= 8 ? 'rp-req-met' : ''}`}>
+                                <Check size={12} /> 8+ characters
+                              </span>
+                              <span className={`rp-req-item ${/[A-Z]/.test(passwordForm.newPassword) ? 'rp-req-met' : ''}`}>
+                                <Check size={12} /> Uppercase
+                              </span>
+                              <span className={`rp-req-item ${/[a-z]/.test(passwordForm.newPassword) ? 'rp-req-met' : ''}`}>
+                                <Check size={12} /> Lowercase
+                              </span>
+                              <span className={`rp-req-item ${/[0-9]/.test(passwordForm.newPassword) ? 'rp-req-met' : ''}`}>
+                                <Check size={12} /> Number
+                              </span>
+                              <span className={`rp-req-item ${/[!@#$%^&*(),.?":{}|<>]/.test(passwordForm.newPassword) ? 'rp-req-met' : ''}`}>
+                                <Check size={12} /> Special char
+                              </span>
+                            </div>
                           </>
                         )}
-                      </button>
-                    </div>
-                  </form>
+                      </div>
+
+                      <div className="rp-form-group">
+                        <label className="rp-form-label">Confirm New Password</label>
+                        <div className="rp-input-wrapper">
+                          <input
+                            type={showPasswords.confirm ? 'text' : 'password'}
+                            name="confirmPassword"
+                            value={passwordForm.confirmPassword}
+                            onChange={handlePasswordInputChange}
+                            placeholder="Confirm new password"
+                            className="rp-form-input"
+                          />
+                          <button
+                            type="button"
+                            className="rp-input-toggle"
+                            onClick={() => togglePasswordVisibility('confirm')}
+                          >
+                            {showPasswords.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
+                        </div>
+                        {passwordForm.confirmPassword && passwordForm.newPassword !== passwordForm.confirmPassword && (
+                          <span className="rp-input-error">Passwords do not match</span>
+                        )}
+                      </div>
+
+                      <div className="rp-form-actions">
+                        <button
+                          type="button"
+                          className="rp-btn rp-btn-ghost"
+                          onClick={() => setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })}
+                          disabled={isChangingPassword}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="rp-btn rp-btn-primary"
+                          disabled={isChangingPassword}
+                        >
+                          {isChangingPassword ? (
+                            <>
+                              <span className="rp-spinner"></span>
+                              Changing...
+                            </>
+                          ) : (
+                            <>
+                              <Lock size={16} />
+                              Change Password
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
                 </div>
               </>
             )}

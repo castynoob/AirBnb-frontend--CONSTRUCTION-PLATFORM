@@ -2,14 +2,16 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, Building2, ArrowLeft, Save, X } from "lucide-react";
 import Nav from "../../components/Nav";
+import { useLanguage } from "../../contexts/LanguageContext";
 import "../../styles/manager/addpropertypagemanager.css";
 
 function AddPropertyPage() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const mapRef = useRef(null);
   const markerRef = useRef(null);
   const [map, setMap] = useState(null);
-  
+
   const [formData, setFormData] = useState({
     building_name: "",
     address: "",
@@ -25,19 +27,20 @@ function AddPropertyPage() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Building types with value (stored in DB) and translation key
   const buildingTypes = [
-    "Apartment",
-    "Condominium",
-    "High-Rise",
-    "Townhouse",
-    "Duplex",
-    "Triplex",
-    "Single Family",
-    "Multi-Family",
-    "Commercial Building",
-    "Mixed-Use",
-    "Student Housing",
-    "Senior Living"
+    { value: "Apartment", key: "apartment" },
+    { value: "Condominium", key: "condominium" },
+    { value: "High-Rise", key: "highRise" },
+    { value: "Townhouse", key: "townhouse" },
+    { value: "Duplex", key: "duplex" },
+    { value: "Triplex", key: "triplex" },
+    { value: "Single Family", key: "singleFamily" },
+    { value: "Multi-Family", key: "multiFamily" },
+    { value: "Commercial Building", key: "commercialBuilding" },
+    { value: "Mixed-Use", key: "mixedUse" },
+    { value: "Student Housing", key: "studentHousing" },
+    { value: "Senior Living", key: "seniorLiving" }
   ];
 
   useEffect(() => {
@@ -196,15 +199,15 @@ function AddPropertyPage() {
     const newErrors = {};
 
     if (!formData.address.trim()) {
-      newErrors.address = "Address is required";
+      newErrors.address = t('addPropertyPage.addressRequired');
     }
 
     if (!formData.city.trim()) {
-      newErrors.city = "City is required";
+      newErrors.city = t('addPropertyPage.cityRequired');
     }
 
     if (formData.num_units < 0) {
-      newErrors.num_units = "Number of units cannot be negative";
+      newErrors.num_units = t('addPropertyPage.unitsNegativeError');
     }
 
     setErrors(newErrors);
@@ -241,10 +244,10 @@ function AddPropertyPage() {
         const data = await response.json();
 
         if(!response.ok) {
-            throw new Error(data.message || "Failed to create property");
+            throw new Error(data.message || t('addPropertyPage.addFailed'));
         }
 
-        alert('Property added')
+        alert(t('addPropertyPage.propertyAdded'))
       }
       
       // Simulate API call
@@ -257,14 +260,14 @@ function AddPropertyPage() {
       
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert("Failed to add property. Please try again.");
+      alert(t('addPropertyPage.addFailed'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleCancel = () => {
-    if (window.confirm("Are you sure you want to cancel? All unsaved changes will be lost.")) {
+    if (window.confirm(t('addPropertyPage.cancelConfirm'))) {
       navigate('/profile/property_manager');
     }
   };
@@ -279,14 +282,14 @@ function AddPropertyPage() {
           <div className="header-title-ap">
             <button className="back-button" onClick={() => navigate('/profile/property_manager')}>
                 <ArrowLeft size={20} />
-                <span>Back to Profile</span>
+                <span>{t('addPropertyPage.backToProfile')}</span>
             </button>
-            
+
           </div>
           <div className="add-title-ap">
-            <h1 className="page-title ap">Add New Property</h1>
+            <h1 className="page-title ap">{t('addPropertyPage.title')}</h1>
             <p className="page-subtitle ap">
-                Fill in the details below to add a new property to your portfolio
+                {t('addPropertyPage.subtitle')}
             </p>
           </div>
         </div>
@@ -299,14 +302,14 @@ function AddPropertyPage() {
               <div className="form-section">
                 <h2 className="section-title">
                   <Building2 size={20} />
-                  Property Details
+                  {t('addPropertyPage.propertyDetails')}
                 </h2>
 
                 <div className="form-fields">
                   {/* Building name */}
                   <div className="form-group">
                     <label className="form-label">
-                      Building name <span className="required">*</span>
+                      {t('addPropertyPage.buildingName')} <span className="required">*</span>
                     </label>
                     <input
                       type="text"
@@ -314,7 +317,7 @@ function AddPropertyPage() {
                       className={`form-input ${errors.name ? 'error' : ''}`}
                       value={formData.name}
                       onChange={handleInputChange}
-                      placeholder="Building name"
+                      placeholder={t('addPropertyPage.buildingNamePlaceholder')}
                     />
                     {errors.address && (
                       <span className="error-message">{errors.name}</span>
@@ -324,7 +327,7 @@ function AddPropertyPage() {
                   {/* Address */}
                   <div className="form-group">
                     <label className="form-label">
-                      Address <span className="required">*</span>
+                      {t('addPropertyPage.address')} <span className="required">*</span>
                     </label>
                     <input
                       type="text"
@@ -332,7 +335,7 @@ function AddPropertyPage() {
                       className={`form-input ${errors.address ? 'error' : ''}`}
                       value={formData.address}
                       onChange={handleInputChange}
-                      placeholder="e.g., 456 Oak Avenue"
+                      placeholder={t('addPropertyPage.addressPlaceholder')}
                     />
                     {errors.address && (
                       <span className="error-message">{errors.address}</span>
@@ -343,7 +346,7 @@ function AddPropertyPage() {
                   <div className="form-row">
                     <div className="form-group">
                       <label className="form-label">
-                        City <span className="required">*</span>
+                        {t('addPropertyPage.city')} <span className="required">*</span>
                       </label>
                       <input
                         type="text"
@@ -351,7 +354,7 @@ function AddPropertyPage() {
                         className={`form-input ${errors.city ? 'error' : ''}`}
                         value={formData.city}
                         onChange={handleInputChange}
-                        placeholder="e.g., Metro City"
+                        placeholder={t('addPropertyPage.cityPlaceholder')}
                       />
                       {errors.city && (
                         <span className="error-message">{errors.city}</span>
@@ -359,14 +362,14 @@ function AddPropertyPage() {
                     </div>
 
                     <div className="form-group">
-                      <label className="form-label">Province</label>
+                      <label className="form-label">{t('addPropertyPage.province')}</label>
                       <input
                         type="text"
                         name="province"
                         className="form-input"
                         value={formData.province}
                         onChange={handleInputChange}
-                        placeholder="e.g., Central Province"
+                        placeholder={t('addPropertyPage.provincePlaceholder')}
                       />
                     </div>
                   </div>
@@ -374,19 +377,19 @@ function AddPropertyPage() {
                   {/* Postal Code and Building Type */}
                   <div className="form-row">
                     <div className="form-group">
-                      <label className="form-label">Postal Code</label>
+                      <label className="form-label">{t('addPropertyPage.postalCode')}</label>
                       <input
                         type="text"
                         name="postal_code"
                         className="form-input"
                         value={formData.postal_code}
                         onChange={handleInputChange}
-                        placeholder="e.g., 12345"
+                        placeholder={t('addPropertyPage.postalCodePlaceholder')}
                       />
                     </div>
 
                     <div className="form-group">
-                      <label className="form-label">Building Type</label>
+                      <label className="form-label">{t('addPropertyPage.buildingType')}</label>
                       <select
                         name="building_type"
                         className="form-select"
@@ -394,7 +397,7 @@ function AddPropertyPage() {
                         onChange={handleInputChange}
                       >
                         {buildingTypes.map(type => (
-                          <option key={type} value={type}>{type}</option>
+                          <option key={type.value} value={type.value}>{t(`addPropertyPage.${type.key}`)}</option>
                         ))}
                       </select>
                     </div>
@@ -402,7 +405,7 @@ function AddPropertyPage() {
 
                   {/* Number of Units */}
                   <div className="form-group">
-                    <label className="form-label">Number of Units</label>
+                    <label className="form-label">{t('addPropertyPage.numberOfUnits')}</label>
                     <input
                       type="number"
                       name="num_units"
@@ -410,7 +413,7 @@ function AddPropertyPage() {
                       value={formData.num_units}
                       onChange={handleInputChange}
                       min="0"
-                      placeholder="e.g., 24"
+                      placeholder={t('addPropertyPage.unitsPlaceholder')}
                     />
                     {errors.num_units && (
                       <span className="error-message">{errors.num_units}</span>
@@ -423,11 +426,11 @@ function AddPropertyPage() {
               <div className="coordinates-section">
                 <h3 className="coordinates-title">
                   <MapPin size={18} />
-                  Coordinates
+                  {t('addPropertyPage.coordinates')}
                 </h3>
                 <div className="coordinates-grid">
                   <div className="coordinate-field">
-                    <label className="coordinate-label">Latitude</label>
+                    <label className="coordinate-label">{t('addPropertyPage.latitude')}</label>
                     <input
                       type="number"
                       step="any"
@@ -437,7 +440,7 @@ function AddPropertyPage() {
                     />
                   </div>
                   <div className="coordinate-field">
-                    <label className="coordinate-label">Longitude</label>
+                    <label className="coordinate-label">{t('addPropertyPage.longitude')}</label>
                     <input
                       type="number"
                       step="any"
@@ -455,12 +458,12 @@ function AddPropertyPage() {
               <div className="map-section">
                 <h2 className="section-title">
                   <MapPin size={20} />
-                  Property Location
+                  {t('addPropertyPage.propertyLocation')}
                 </h2>
                 <p className="map-instruction">
-                  Click on the map or drag the marker to set the property location
+                  {t('addPropertyPage.mapInstruction')}
                 </p>
-                
+
                 <div ref={mapRef} className="map-container" />
               </div>
             </div>
@@ -474,16 +477,16 @@ function AddPropertyPage() {
               onClick={handleCancel}
             >
               <X size={16} />
-              Cancel
+              {t('addPropertyPage.cancel')}
             </button>
-            
+
             <button
               type="submit"
               className="btn-submit"
               disabled={isSubmitting}
             >
               <Save size={16} />
-              {isSubmitting ? 'Adding Property...' : 'Add Property'}
+              {isSubmitting ? t('addPropertyPage.addingProperty') : t('addPropertyPage.addProperty')}
             </button>
           </div>
         </form>

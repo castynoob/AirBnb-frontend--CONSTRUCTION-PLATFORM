@@ -1,21 +1,24 @@
 import { Building2, CheckCircle, ClipboardList, TrendingUp, TrendingDown } from "lucide-react";
+import { useLanguage } from '../contexts/LanguageContext';
 
 function SummarySection({ totalProperties, totalBidsApproved, totalJobs }) {
+  const { t } = useLanguage();
+
   // Placeholder trend data - can be replaced with real data later
-  const propertyTrend = { direction: 'up', value: '+2', label: 'this month' };
-  const bidTrend = { direction: 'up', value: '+15%', label: 'this month' };
-  const jobTrend = { direction: 'down', value: '-3', label: 'this month' };
+  const propertyTrend = { direction: 'up', value: '+2' };
+  const bidTrend = { direction: 'up', value: '+15%' };
+  const jobTrend = { direction: 'down', value: '-3' };
 
   return (
     <section className="pm-summary-section">
       {/* Total Properties Card */}
       <div className="pm-summary-card pm-card-red">
         <div className="pm-card-left-content">
-          <span className="pm-card-title">Total Properties</span>
+          <span className="pm-card-title">{t('summary.totalProperties')}</span>
           <div className="pm-card-value-row">
             <h3 className="pm-metric-value">{totalProperties}</h3>
           </div>
-          <span className="pm-metric-label">{propertyTrend.label}</span>
+          <span className="pm-metric-label">{t('summary.thisMonth')}</span>
         </div>
         <div className="pm-card-right-column">
           <div className="pm-card-icon-circle pm-icon-red">
@@ -31,11 +34,11 @@ function SummarySection({ totalProperties, totalBidsApproved, totalJobs }) {
       {/* Total Bids Approved Card */}
       <div className="pm-summary-card pm-card-teal">
         <div className="pm-card-left-content">
-          <span className="pm-card-title">Bids Approved</span>
+          <span className="pm-card-title">{t('summary.bidsApproved')}</span>
           <div className="pm-card-value-row">
             <h3 className="pm-metric-value">{totalBidsApproved}</h3>
           </div>
-          <span className="pm-metric-label">{bidTrend.label}</span>
+          <span className="pm-metric-label">{t('summary.thisMonth')}</span>
         </div>
         <div className="pm-card-right-column">
           <div className="pm-card-icon-circle pm-icon-teal">
@@ -51,11 +54,11 @@ function SummarySection({ totalProperties, totalBidsApproved, totalJobs }) {
       {/* Total Jobs Card */}
       <div className="pm-summary-card pm-card-navy">
         <div className="pm-card-left-content">
-          <span className="pm-card-title">Total Jobs</span>
+          <span className="pm-card-title">{t('summary.totalJobs')}</span>
           <div className="pm-card-value-row">
             <h3 className="pm-metric-value">{totalJobs}</h3>
           </div>
-          <span className="pm-metric-label">{jobTrend.label}</span>
+          <span className="pm-metric-label">{t('summary.thisMonth')}</span>
         </div>
         <div className="pm-card-right-column">
           <div className="pm-card-icon-circle pm-icon-navy">

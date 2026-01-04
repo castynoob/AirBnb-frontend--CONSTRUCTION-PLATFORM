@@ -4,7 +4,7 @@ import {
   MessageSquare, User, Upload, Camera, X, Crown, Check, Zap, Shield, Activity,
   DollarSign, FileText, ArrowUpCircle, AlertCircle, Lock, Eye, EyeOff, Key,
   BarChart3, Menu, Edit, CreditCard, ExternalLink, Wallet, TrendingUp, ArrowDownCircle,
-  Percent, ChevronDown, ChevronUp, Clock, Building, Receipt, Unlock
+  Percent, ChevronDown, ChevronUp, Clock, Building, Receipt, Unlock, Settings, Globe
 } from 'lucide-react';
 import Nav from "../../components/Nav";
 import '../../styles/entrepreneur/profilepageentrepreneur-modern.css';
@@ -16,9 +16,11 @@ import SubscriptionPaymentForm from '../../components/SubscriptionPaymentModal'
 import '../../styles/entrepreneur/subscriptionmodal.css'
 import { getConnectStatus, startOnboarding, getDashboardLink, getPayoutsSummary } from '../../utils/stripeConnectApi'
 import { logout } from '../../utils/api'
+import { useLanguage, LANGUAGES } from '../../contexts/LanguageContext'
 
 function ProfilePageEntrepreneur() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const { language, changeLanguage, languages } = useLanguage();
   const [activeTab, setActiveTab] = useState('account');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [profile, setProfile] = useState(null)
@@ -86,7 +88,7 @@ function ProfilePageEntrepreneur() {
     payouts: 'Payouts',
     billing: 'Billing History',
     performance: 'Performance & Reviews',
-    security: 'Security'
+    settings: 'Settings'
   }
 
   useEffect(() => {
@@ -766,11 +768,11 @@ function ProfilePageEntrepreneur() {
               )}
             </button>
             <button
-              className={`ep-nav-item ${activeTab === 'security' ? 'ep-nav-active' : ''}`}
-              onClick={() => handleTabChange('security')}
+              className={`ep-nav-item ${activeTab === 'settings' ? 'ep-nav-active' : ''}`}
+              onClick={() => handleTabChange('settings')}
             >
-              <Shield size={18} />
-              <span>Security</span>
+              <Settings size={18} />
+              <span>Settings</span>
             </button>
           </nav>
 
@@ -1746,170 +1748,203 @@ function ProfilePageEntrepreneur() {
               </>
             )}
 
-            {/* Security Tab */}
-            {activeTab === 'security' && (
+            {/* Settings Tab */}
+            {activeTab === 'settings' && (
               <>
                 <div className="ep-content-header">
                   <div className="ep-content-header-left">
-                    <h2>Security Settings</h2>
-                    <p>Manage your password and security preferences</p>
+                    <h2>Settings</h2>
+                    <p>Manage your preferences and security</p>
                   </div>
                 </div>
 
-                {/* Password Change Section */}
-                <div className="ep-security-section">
-                  <div className="ep-security-header">
-                    <div className="ep-security-header-left">
-                      <div className="ep-security-icon">
-                        <Key size={20} />
+                {/* Language Settings */}
+                <div className="ep-settings-section">
+                  <div className="ep-settings-card">
+                    <div className="ep-settings-card-header">
+                      <div className="ep-settings-icon">
+                        <Globe size={20} />
                       </div>
-                      <div>
-                        <h3 className="ep-security-title">Change Password</h3>
-                        <p className="ep-security-subtitle">Update your account password</p>
+                      <div className="ep-settings-info">
+                        <h3>Language</h3>
+                        <p>Choose your preferred language for the app</p>
                       </div>
+                    </div>
+                    <div className="ep-language-options">
+                      {Object.values(languages).map((lang) => (
+                        <button
+                          key={lang.code}
+                          className={`ep-language-option ${language === lang.code ? 'active' : ''}`}
+                          onClick={() => changeLanguage(lang.code)}
+                        >
+                          <span className="ep-language-flag">{lang.flag}</span>
+                          <div className="ep-language-details">
+                            <span className="ep-language-name">{lang.name}</span>
+                            <span className="ep-language-native">{lang.nativeName}</span>
+                          </div>
+                          {language === lang.code && (
+                            <Check size={18} className="ep-language-check" />
+                          )}
+                        </button>
+                      ))}
                     </div>
                   </div>
+                </div>
 
-                  <form onSubmit={handleChangePassword} className="ep-password-form-modern">
-                    {passwordError && (
-                      <div className="ep-alert ep-alert-error">
-                        <AlertCircle size={18} />
-                        {passwordError}
+                {/* Security Settings */}
+                <div className="ep-settings-section">
+                  <div className="ep-settings-card">
+                    <div className="ep-settings-card-header">
+                      <div className="ep-settings-icon">
+                        <Key size={20} />
                       </div>
-                    )}
-                    {passwordSuccess && (
-                      <div className="ep-alert ep-alert-success">
-                        <Check size={18} />
-                        {passwordSuccess}
-                      </div>
-                    )}
-
-                    <div className="ep-form-group">
-                      <label>Current Password</label>
-                      <div className="ep-input-wrapper">
-                        <input
-                          type={showPasswords.current ? 'text' : 'password'}
-                          name="currentPassword"
-                          value={passwordForm.currentPassword}
-                          onChange={handlePasswordInputChange}
-                          placeholder="Enter current password"
-                        />
-                        <button
-                          type="button"
-                          className="ep-input-toggle"
-                          onClick={() => togglePasswordVisibility('current')}
-                        >
-                          {showPasswords.current ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
+                      <div className="ep-settings-info">
+                        <h3>Change Password</h3>
+                        <p>Update your account password</p>
                       </div>
                     </div>
 
-                    <div className="ep-form-group">
-                      <label>New Password</label>
-                      <div className="ep-input-wrapper">
-                        <input
-                          type={showPasswords.new ? 'text' : 'password'}
-                          name="newPassword"
-                          value={passwordForm.newPassword}
-                          onChange={handlePasswordInputChange}
-                          placeholder="Enter new password"
-                        />
-                        <button
-                          type="button"
-                          className="ep-input-toggle"
-                          onClick={() => togglePasswordVisibility('new')}
-                        >
-                          {showPasswords.new ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
+                    <form onSubmit={handleChangePassword} className="ep-password-form-modern">
+                      {passwordError && (
+                        <div className="ep-alert ep-alert-error">
+                          <AlertCircle size={18} />
+                          {passwordError}
+                        </div>
+                      )}
+                      {passwordSuccess && (
+                        <div className="ep-alert ep-alert-success">
+                          <Check size={18} />
+                          {passwordSuccess}
+                        </div>
+                      )}
+
+                      <div className="ep-form-group">
+                        <label>Current Password</label>
+                        <div className="ep-input-wrapper">
+                          <input
+                            type={showPasswords.current ? 'text' : 'password'}
+                            name="currentPassword"
+                            value={passwordForm.currentPassword}
+                            onChange={handlePasswordInputChange}
+                            placeholder="Enter current password"
+                          />
+                          <button
+                            type="button"
+                            className="ep-input-toggle"
+                            onClick={() => togglePasswordVisibility('current')}
+                          >
+                            {showPasswords.current ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
+                        </div>
                       </div>
-                      {passwordForm.newPassword && (
-                        <>
-                          <div className="ep-strength-indicator">
-                            <div className="ep-strength-bar-modern">
-                              <div
-                                className="ep-strength-fill-modern"
-                                style={{
-                                  width: `${(getPasswordStrength(passwordForm.newPassword) / 5) * 100}%`,
-                                  backgroundColor: getStrengthColor(getPasswordStrength(passwordForm.newPassword))
-                                }}
-                              />
+
+                      <div className="ep-form-group">
+                        <label>New Password</label>
+                        <div className="ep-input-wrapper">
+                          <input
+                            type={showPasswords.new ? 'text' : 'password'}
+                            name="newPassword"
+                            value={passwordForm.newPassword}
+                            onChange={handlePasswordInputChange}
+                            placeholder="Enter new password"
+                          />
+                          <button
+                            type="button"
+                            className="ep-input-toggle"
+                            onClick={() => togglePasswordVisibility('new')}
+                          >
+                            {showPasswords.new ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
+                        </div>
+                        {passwordForm.newPassword && (
+                          <>
+                            <div className="ep-strength-indicator">
+                              <div className="ep-strength-bar-modern">
+                                <div
+                                  className="ep-strength-fill-modern"
+                                  style={{
+                                    width: `${(getPasswordStrength(passwordForm.newPassword) / 5) * 100}%`,
+                                    backgroundColor: getStrengthColor(getPasswordStrength(passwordForm.newPassword))
+                                  }}
+                                />
+                              </div>
+                              <span style={{ color: getStrengthColor(getPasswordStrength(passwordForm.newPassword)) }}>
+                                {getStrengthLabel(getPasswordStrength(passwordForm.newPassword))}
+                              </span>
                             </div>
-                            <span style={{ color: getStrengthColor(getPasswordStrength(passwordForm.newPassword)) }}>
-                              {getStrengthLabel(getPasswordStrength(passwordForm.newPassword))}
-                            </span>
-                          </div>
-                          <div className="ep-requirements-grid">
-                            <span className={`ep-req-item ${passwordForm.newPassword.length >= 8 ? 'ep-req-met' : ''}`}>
-                              <Check size={12} /> 8+ characters
-                            </span>
-                            <span className={`ep-req-item ${/[A-Z]/.test(passwordForm.newPassword) ? 'ep-req-met' : ''}`}>
-                              <Check size={12} /> Uppercase
-                            </span>
-                            <span className={`ep-req-item ${/[a-z]/.test(passwordForm.newPassword) ? 'ep-req-met' : ''}`}>
-                              <Check size={12} /> Lowercase
-                            </span>
-                            <span className={`ep-req-item ${/[0-9]/.test(passwordForm.newPassword) ? 'ep-req-met' : ''}`}>
-                              <Check size={12} /> Number
-                            </span>
-                            <span className={`ep-req-item ${/[!@#$%^&*(),.?":{}|<>]/.test(passwordForm.newPassword) ? 'ep-req-met' : ''}`}>
-                              <Check size={12} /> Special char
-                            </span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    <div className="ep-form-group">
-                      <label>Confirm New Password</label>
-                      <div className="ep-input-wrapper">
-                        <input
-                          type={showPasswords.confirm ? 'text' : 'password'}
-                          name="confirmPassword"
-                          value={passwordForm.confirmPassword}
-                          onChange={handlePasswordInputChange}
-                          placeholder="Confirm new password"
-                        />
-                        <button
-                          type="button"
-                          className="ep-input-toggle"
-                          onClick={() => togglePasswordVisibility('confirm')}
-                        >
-                          {showPasswords.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
-                      </div>
-                      {passwordForm.confirmPassword && passwordForm.newPassword !== passwordForm.confirmPassword && (
-                        <span className="ep-input-error">Passwords do not match</span>
-                      )}
-                    </div>
-
-                    <div className="ep-form-actions">
-                      <button
-                        type="button"
-                        className="ep-btn ep-btn-ghost"
-                        onClick={() => setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })}
-                        disabled={isChangingPassword}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        className="ep-btn ep-btn-primary"
-                        disabled={isChangingPassword}
-                      >
-                        {isChangingPassword ? (
-                          <>
-                            <span className="ep-spinner"></span>
-                            Changing...
-                          </>
-                        ) : (
-                          <>
-                            <Lock size={16} />
-                            Change Password
+                            <div className="ep-requirements-grid">
+                              <span className={`ep-req-item ${passwordForm.newPassword.length >= 8 ? 'ep-req-met' : ''}`}>
+                                <Check size={12} /> 8+ characters
+                              </span>
+                              <span className={`ep-req-item ${/[A-Z]/.test(passwordForm.newPassword) ? 'ep-req-met' : ''}`}>
+                                <Check size={12} /> Uppercase
+                              </span>
+                              <span className={`ep-req-item ${/[a-z]/.test(passwordForm.newPassword) ? 'ep-req-met' : ''}`}>
+                                <Check size={12} /> Lowercase
+                              </span>
+                              <span className={`ep-req-item ${/[0-9]/.test(passwordForm.newPassword) ? 'ep-req-met' : ''}`}>
+                                <Check size={12} /> Number
+                              </span>
+                              <span className={`ep-req-item ${/[!@#$%^&*(),.?":{}|<>]/.test(passwordForm.newPassword) ? 'ep-req-met' : ''}`}>
+                                <Check size={12} /> Special char
+                              </span>
+                            </div>
                           </>
                         )}
-                      </button>
-                    </div>
-                  </form>
+                      </div>
+
+                      <div className="ep-form-group">
+                        <label>Confirm New Password</label>
+                        <div className="ep-input-wrapper">
+                          <input
+                            type={showPasswords.confirm ? 'text' : 'password'}
+                            name="confirmPassword"
+                            value={passwordForm.confirmPassword}
+                            onChange={handlePasswordInputChange}
+                            placeholder="Confirm new password"
+                          />
+                          <button
+                            type="button"
+                            className="ep-input-toggle"
+                            onClick={() => togglePasswordVisibility('confirm')}
+                          >
+                            {showPasswords.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                          </button>
+                        </div>
+                        {passwordForm.confirmPassword && passwordForm.newPassword !== passwordForm.confirmPassword && (
+                          <span className="ep-input-error">Passwords do not match</span>
+                        )}
+                      </div>
+
+                      <div className="ep-form-actions">
+                        <button
+                          type="button"
+                          className="ep-btn ep-btn-ghost"
+                          onClick={() => setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })}
+                          disabled={isChangingPassword}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="ep-btn ep-btn-primary"
+                          disabled={isChangingPassword}
+                        >
+                          {isChangingPassword ? (
+                            <>
+                              <span className="ep-spinner"></span>
+                              Changing...
+                            </>
+                          ) : (
+                            <>
+                              <Lock size={16} />
+                              Change Password
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
                 </div>
               </>
             )}

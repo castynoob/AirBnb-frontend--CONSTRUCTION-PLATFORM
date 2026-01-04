@@ -1,7 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Building2, Home, DollarSign, Users, Grid3x3, List, ChevronDown, Filter, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 function RepairList({ repairs, handleRepairClicked }) {
+  const { t } = useLanguage();
   const PLACEHOLDER_IMAGE = "/defaultjobs.png";
   const [imagesLoaded, setImagesLoaded] = useState({});
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
@@ -125,7 +127,7 @@ function RepairList({ repairs, handleRepairClicked }) {
           <div className="hp-filters-row">
             <div className="hp-property-filter-dropdown">
               <span className="hp-select-label">
-                {selectedProperty === 'all' ? 'All Repair Work' : selectedProperty}
+                {selectedProperty === 'all' ? t('repairList.allRepairWork') : selectedProperty}
               </span>
               <ChevronDown size={16} className="hp-select-icon" />
               <select
@@ -133,7 +135,7 @@ function RepairList({ repairs, handleRepairClicked }) {
                 onChange={(e) => setSelectedProperty(e.target.value)}
                 className="hp-property-select"
               >
-                <option value="all">All Repair Work</option>
+                <option value="all">{t('repairList.allRepairWork')}</option>
                 {uniqueProperties.map(property => (
                   <option key={property} value={property}>
                     {property}
@@ -145,7 +147,7 @@ function RepairList({ repairs, handleRepairClicked }) {
             <div className="hp-urgency-filter-dropdown">
               <Filter size={14} className="hp-filter-icon" />
               <span className="hp-select-label">
-                {selectedUrgency === 'all' ? 'All Urgency' : selectedUrgency}
+                {selectedUrgency === 'all' ? t('repairList.allUrgency') : selectedUrgency}
               </span>
               <ChevronDown size={16} className="hp-select-icon" />
               <select
@@ -153,7 +155,7 @@ function RepairList({ repairs, handleRepairClicked }) {
                 onChange={(e) => setSelectedUrgency(e.target.value)}
                 className="hp-property-select"
               >
-                <option value="all">All Urgency</option>
+                <option value="all">{t('repairList.allUrgency')}</option>
                 {uniqueUrgencies.map(urgency => (
                   <option key={urgency} value={urgency}>
                     {urgency}
@@ -163,25 +165,25 @@ function RepairList({ repairs, handleRepairClicked }) {
             </div>
           </div>
           <p className="hp-section-subtitle">
-            {filteredRepairs.length} repair{filteredRepairs.length !== 1 ? 's' : ''}
-            {selectedProperty !== 'all' && ` in ${selectedProperty}`}
+            {filteredRepairs.length} {filteredRepairs.length !== 1 ? t('repairList.repairs') : t('repairList.repair')}
+            {selectedProperty !== 'all' && ` ${t('repairList.in')} ${selectedProperty}`}
             {selectedUrgency !== 'all' && ` - ${selectedUrgency}`}
-            {selectedProperty === 'all' && selectedUrgency === 'all' && ' available'}
-            {totalPages > 1 && ` (Page ${currentPage} of ${totalPages})`}
+            {selectedProperty === 'all' && selectedUrgency === 'all' && ` ${t('repairList.available')}`}
+            {totalPages > 1 && ` (${t('repairList.page')} ${currentPage} ${t('repairList.of')} ${totalPages})`}
           </p>
         </div>
         <div className="hp-view-toggle">
           <button
             className={`hp-view-btn ${viewMode === 'grid' ? 'active' : ''}`}
             onClick={() => setViewMode('grid')}
-            title="Grid View"
+            title={t('repairList.gridView')}
           >
             <Grid3x3 size={18} />
           </button>
           <button
             className={`hp-view-btn ${viewMode === 'list' ? 'active' : ''}`}
             onClick={() => setViewMode('list')}
-            title="List View"
+            title={t('repairList.listView')}
           >
             <List size={18} />
           </button>
@@ -229,7 +231,7 @@ function RepairList({ repairs, handleRepairClicked }) {
               {repair.hasApprovedBid && (
                 <span className="hp-approved-badge">
                   <CheckCircle2 size={12} />
-                  <span>Approved</span>
+                  <span>{t('repairList.approved')}</span>
                 </span>
               )}
             </div>
@@ -255,7 +257,7 @@ function RepairList({ repairs, handleRepairClicked }) {
               <div className="hp-repair-footer">
                 <div className="hp-footer-item">
                   <Users size={14} />
-                  <span>{repair.bids} bids</span>
+                  <span>{repair.bids} {t('repairList.bids')}</span>
                 </div>
                 <div className="hp-footer-item hp-budget">
                   <DollarSign size={14} />
@@ -277,7 +279,7 @@ function RepairList({ repairs, handleRepairClicked }) {
             disabled={currentPage === 1}
           >
             <ChevronLeft size={18} />
-            <span>Previous</span>
+            <span>{t('repairList.previous')}</span>
           </button>
 
           <div className="hp-pagination-numbers">
@@ -303,7 +305,7 @@ function RepairList({ repairs, handleRepairClicked }) {
             onClick={goToNextPage}
             disabled={currentPage === totalPages}
           >
-            <span>Next</span>
+            <span>{t('repairList.next')}</span>
             <ChevronRight size={18} />
           </button>
         </div>

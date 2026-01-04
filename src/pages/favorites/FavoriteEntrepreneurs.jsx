@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   getFavorites,
@@ -18,15 +18,22 @@ import {
   CheckCircle,
   Clock,
   Briefcase,
-  FileText
+  FileText,
+  Search,
+  Filter,
+  ChevronDown,
+  ChevronRight,
+  User
 } from 'lucide-react';
 import Nav from '../../components/Nav';
+import { useLanguage } from '../../contexts/LanguageContext';
 import '../../styles/manager/favoriteentrepreneurs.css';
 import toast from 'react-hot-toast';
 import EntrepreneurProfileModal from '../../components/modal/EntrepreneurProfileModal';
 
 const FavoriteEntrepreneurs = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [favorites, setFavorites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -40,6 +47,61 @@ const FavoriteEntrepreneurs = () => {
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
+  // New state for filtering/searching
+  const [activeTab, setActiveTab] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    minRating: '',
+    minJobs: '',
+  });
+
+  // Tabs configuration
+  const tabs = [
+    { id: 'all', label: t('favorites.allFavorites'), icon: Heart },
+    { id: 'approved', label: t('favorites.approved'), icon: CheckCircle },
+    { id: 'pending', label: t('favorites.pending'), icon: Clock },
+  ];
+
+  // Filtered favorites based on tab and search
+  const filteredFavorites = useMemo(() => {
+    let result = [...favorites];
+
+    // Filter by tab
+    if (activeTab === 'approved') {
+      result = result.filter(fav => fav.bid_status === 'approved');
+    } else if (activeTab === 'pending') {
+      result = result.filter(fav => fav.bid_status !== 'approved');
+    }
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(fav =>
+        `${fav.first_name} ${fav.last_name}`.toLowerCase().includes(query) ||
+        fav.company_name?.toLowerCase().includes(query) ||
+        fav.last_job_title?.toLowerCase().includes(query)
+      );
+    }
+
+    // Apply additional filters
+    if (filters.minRating) {
+      result = result.filter(fav => Number(fav.average_rating) >= Number(filters.minRating));
+    }
+    if (filters.minJobs) {
+      result = result.filter(fav => (fav.completed_jobs || 0) >= Number(filters.minJobs));
+    }
+
+    return result;
+  }, [favorites, activeTab, searchQuery, filters]);
+
+  // Get counts for tabs
+  const tabCounts = useMemo(() => ({
+    all: favorites.length,
+    approved: favorites.filter(fav => fav.bid_status === 'approved').length,
+    pending: favorites.filter(fav => fav.bid_status !== 'approved').length,
+  }), [favorites]);
+
   const showNotification = (message, type = 'success') => {
     if (type === 'success') {
       toast.success(message);
@@ -50,11 +112,6 @@ const FavoriteEntrepreneurs = () => {
     }
   };
 
-  // Fetch favorites on mount
-  useEffect(() => {
-    loadFavorites();
-  }, []);
-
   const loadFavorites = async () => {
     try {
       setLoading(true);
@@ -63,10 +120,23 @@ const FavoriteEntrepreneurs = () => {
       setError(null);
     } catch (err) {
       console.error('Error loading favorites:', err);
-      setError('Failed to load favorites. Please try again.');
+      setError(t('favorites.errorLoading'));
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fetch favorites on mount
+  useEffect(() => {
+    loadFavorites();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setFilters({ minRating: '', minJobs: '' });
+    setShowFilters(false);
   };
 
   // Show confirmation modal for removing favorite
@@ -87,16 +157,15 @@ const FavoriteEntrepreneurs = () => {
     try {
       await removeFavorite(bidId);
       setFavorites(prev => prev.filter(fav => fav.bid_id !== bidId));
-      showNotification('Contractor removed from favorites.', 'success');
+      showNotification(t('favorites.removedSuccess'), 'success');
 
-      // If this was the selected entrepreneur, close the history panel
       if (selectedEntrepreneur?.bid_id === bidId) {
         setSelectedEntrepreneur(null);
         setJobHistory([]);
       }
     } catch (err) {
       console.error('Error removing favorite:', err);
-      showNotification('Failed to remove favorite. Please try again.', 'error');
+      showNotification(t('favorites.removeFailed'), 'error');
     }
   };
 
@@ -110,7 +179,7 @@ const FavoriteEntrepreneurs = () => {
       setJobHistory(response.history || []);
     } catch (err) {
       console.error('Error loading history:', err);
-      showNotification('Failed to load job history.', 'error');
+      showNotification(t('favorites.historyFailed'), 'error');
     } finally {
       setLoadingHistory(false);
     }
@@ -118,25 +187,21 @@ const FavoriteEntrepreneurs = () => {
 
   // Start conversation with entrepreneur
   const handleMessage = async (favorite) => {
-    // Check if bid is approved before allowing messaging
     if (favorite.bid_status !== 'approved') {
-      showNotification('You can only message contractors with approved bids. Please approve the bid first from the Submissions page.', 'warning');
+      showNotification(t('favorites.messageNotApproved'), 'warning');
       return;
     }
 
     try {
-      // Store target user info in localStorage for Messages component to pick up
       localStorage.setItem('targetReceiverId', favorite.user_id);
       localStorage.setItem('targetReceiverName', `${favorite.first_name} ${favorite.last_name}`);
       if (favorite.job_id) {
         localStorage.setItem('targetJobId', favorite.job_id);
       }
-
-      // Navigate to messages page - Messages component will handle opening the chat
       navigate('/messages/property_manager');
     } catch (err) {
       console.error('Error navigating to messages:', err);
-      showNotification('Failed to open messages. Please try again.', 'error');
+      showNotification(t('favorites.messageFailed'), 'error');
     }
   };
 
@@ -156,9 +221,10 @@ const FavoriteEntrepreneurs = () => {
           : fav
       ));
       setEditingNotes(null);
+      showNotification(t('favorites.notesSaved'), 'success');
     } catch (err) {
       console.error('Error saving notes:', err);
-      showNotification('Failed to save notes. Please try again.', 'error');
+      showNotification(t('favorites.notesFailed'), 'error');
     }
   };
 
@@ -200,7 +266,7 @@ const FavoriteEntrepreneurs = () => {
       setShowProfileModal(true);
     } catch (error) {
       console.error('Error fetching entrepreneur profile:', error);
-      showNotification('Failed to load profile', 'error');
+      showNotification(t('favorites.profileFailed'), 'error');
     } finally {
       setIsLoadingProfile(false);
     }
@@ -209,28 +275,23 @@ const FavoriteEntrepreneurs = () => {
   // Skeleton Card Component
   const SkeletonCard = () => (
     <div className="fav-card fav-skeleton-card">
-      <div className="fav-card-header">
-        <div className="fav-contractor-info">
-          <div className="fav-skeleton fav-skeleton-avatar"></div>
-          <div className="fav-contractor-details">
-            <div className="fav-skeleton fav-skeleton-name"></div>
-            <div className="fav-skeleton fav-skeleton-rating"></div>
-          </div>
-        </div>
+      <div className="fav-card-top">
+        <div className="fav-skeleton fav-skeleton-badge"></div>
         <div className="fav-skeleton fav-skeleton-btn"></div>
       </div>
-      <div className="fav-card-body">
-        <div className="fav-stats-row">
-          <div className="fav-skeleton fav-skeleton-stat"></div>
-        </div>
-        <div className="fav-skeleton fav-skeleton-last-job"></div>
-        <div className="fav-skeleton fav-skeleton-badge"></div>
-        <div className="fav-notes-section">
-          <div className="fav-skeleton fav-skeleton-notes"></div>
+      <div className="fav-card-main">
+        <div className="fav-skeleton fav-skeleton-avatar"></div>
+        <div className="fav-card-main-info">
+          <div className="fav-skeleton fav-skeleton-name"></div>
+          <div className="fav-skeleton fav-skeleton-rating"></div>
         </div>
       </div>
-      <div className="fav-card-footer">
-        <div className="fav-skeleton fav-skeleton-action-btn"></div>
+      <div className="fav-card-stats">
+        <div className="fav-skeleton fav-skeleton-stat"></div>
+        <div className="fav-skeleton fav-skeleton-stat"></div>
+      </div>
+      <div className="fav-skeleton fav-skeleton-notes"></div>
+      <div className="fav-card-actions">
         <div className="fav-skeleton fav-skeleton-action-btn"></div>
       </div>
     </div>
@@ -238,27 +299,27 @@ const FavoriteEntrepreneurs = () => {
 
   if (loading) {
     return (
-      <div className="fav-favorites-container">
+      <div className="fav-container">
         <Nav />
-        <div className="fav-favorites-content">
-          {/* Skeleton Header */}
+        <div className="fav-content">
           <header className="fav-page-header">
             <div className="fav-header-left">
               <div className="fav-header-title-group">
-                <h1>FAVORITES</h1>
-                <span className="fav-count-badge">Loading...</span>
+                <h1>{t('favorites.title')}</h1>
+                <span className="fav-count-badge">{t('common.loading')}</span>
               </div>
-            </div>
-            <div className="fav-header-actions">
-              <button className="fav-btn fav-btn-primary" disabled>
-                <FileText size={18} />
-                <span>Browse Bids</span>
-              </button>
             </div>
           </header>
 
-          {/* Skeleton Cards Grid */}
-          <div className="fav-cards-grid">
+          <div className="fav-tabs-container">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="fav-tab-btn">
+                <div className="fav-skeleton" style={{ width: '80px', height: '16px' }}></div>
+              </div>
+            ))}
+          </div>
+
+          <div className="fav-grid">
             <SkeletonCard />
             <SkeletonCard />
             <SkeletonCard />
@@ -272,16 +333,18 @@ const FavoriteEntrepreneurs = () => {
   }
 
   return (
-    <div className="fav-favorites-container">
+    <div className="fav-container">
       <Nav />
 
-      <div className="fav-favorites-content">
-        {/* Page Header - PM Style */}
+      <div className="fav-content">
+        {/* Page Header */}
         <header className="fav-page-header">
           <div className="fav-header-left">
             <div className="fav-header-title-group">
-              <h1>FAVORITES</h1>
-              <span className="fav-count-badge">{favorites.length} contractors</span>
+              <h1>{t('favorites.title')}</h1>
+              <span className="fav-count-badge">
+                {filteredFavorites.length} {t('favorites.contractors')}
+              </span>
             </div>
           </div>
           <div className="fav-header-actions">
@@ -290,167 +353,261 @@ const FavoriteEntrepreneurs = () => {
               onClick={() => navigate('/submissions/property_manager')}
             >
               <FileText size={18} />
-              <span>Browse Bids</span>
+              <span>{t('favorites.browseBids')}</span>
             </button>
           </div>
         </header>
+
+        {/* Tabs */}
+        <div className="fav-tabs-container">
+          {tabs.map(tab => {
+            const TabIcon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                className={`fav-tab-btn ${activeTab === tab.id ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                <TabIcon size={16} />
+                <span>{tab.label}</span>
+                <span className="fav-tab-count">{tabCounts[tab.id]}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Controls Bar */}
+        <div className="fav-controls-bar">
+          <div className="fav-search-box">
+            <Search size={18} />
+            <input
+              type="text"
+              placeholder={t('favorites.searchPlaceholder')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button className="fav-clear-btn" onClick={() => setSearchQuery('')}>
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          <button
+            className={`fav-filter-btn ${showFilters ? 'active' : ''}`}
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter size={16} />
+            <span>{t('favorites.filters')}</span>
+            <ChevronDown size={14} className={showFilters ? 'rotated' : ''} />
+          </button>
+        </div>
+
+        {/* Filters Panel */}
+        {showFilters && (
+          <div className="fav-filters-panel">
+            <div className="fav-filters-grid">
+              <div className="fav-filter-item">
+                <label>{t('favorites.minRating')}</label>
+                <select
+                  value={filters.minRating}
+                  onChange={(e) => setFilters(prev => ({ ...prev, minRating: e.target.value }))}
+                >
+                  <option value="">{t('favorites.anyRating')}</option>
+                  <option value="4.5">4.5+</option>
+                  <option value="4">4.0+</option>
+                  <option value="3.5">3.5+</option>
+                  <option value="3">3.0+</option>
+                </select>
+              </div>
+              <div className="fav-filter-item">
+                <label>{t('favorites.minCompletedJobs')}</label>
+                <select
+                  value={filters.minJobs}
+                  onChange={(e) => setFilters(prev => ({ ...prev, minJobs: e.target.value }))}
+                >
+                  <option value="">{t('favorites.anyJobs')}</option>
+                  <option value="10">10+</option>
+                  <option value="5">5+</option>
+                  <option value="3">3+</option>
+                  <option value="1">1+</option>
+                </select>
+              </div>
+              <button className="fav-clear-all-btn" onClick={clearAllFilters}>
+                <X size={14} />
+                {t('favorites.clearAll')}
+              </button>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="fav-error-message">
             {error}
             <button onClick={loadFavorites} className="fav-retry-button">
-              Retry
+              {t('favorites.retry')}
             </button>
           </div>
         )}
 
-        {favorites.length === 0 ? (
+        {filteredFavorites.length === 0 ? (
           <div className="fav-empty-state">
             <Heart size={48} />
-            <h2>No Favorite Contractors Yet</h2>
+            <h2>{favorites.length === 0 ? t('favorites.noFavorites') : t('favorites.noResults')}</h2>
             <p>
-              When you find contractors you like, click the heart button on their bids
-              to save them here for future projects.
+              {favorites.length === 0
+                ? t('favorites.noFavoritesDescription')
+                : t('favorites.noResultsDescription')
+              }
             </p>
-            <button
-              className="fav-btn fav-btn-primary"
-              onClick={() => navigate('/submissions/property_manager')}
-            >
-              Browse Bids
-            </button>
+            {favorites.length === 0 && (
+              <button
+                className="fav-btn fav-btn-primary"
+                onClick={() => navigate('/submissions/property_manager')}
+              >
+                {t('favorites.browseBids')}
+              </button>
+            )}
           </div>
         ) : (
-          <div className="fav-cards-grid">
-            {favorites.map(favorite => (
+          <div className="fav-grid">
+            {filteredFavorites.map(favorite => (
               <div key={favorite.bid_id || favorite.favorite_id} className="fav-card">
-                <div className="fav-card-header">
-                  <div className="fav-contractor-info">
-                    <div
-                      className="fav-avatar fav-avatar-clickable"
-                      onClick={() => handleViewProfile(favorite)}
-                      title="View profile"
-                    >
-                      {favorite.profile_picture_url ? (
-                        <img src={favorite.profile_picture_url} alt={favorite.first_name} />
-                      ) : (
-                        <span className="fav-avatar-initials">
-                          {favorite.first_name?.charAt(0)}{favorite.last_name?.charAt(0)}
-                        </span>
-                      )}
-                    </div>
-                    <div className="fav-contractor-details">
-                      <h3
-                        className="fav-contractor-name fav-contractor-name-clickable"
-                        onClick={() => handleViewProfile(favorite)}
-                        title="View profile"
-                      >
-                        {favorite.first_name} {favorite.last_name}
-                      </h3>
-                      <div className="fav-contractor-rating">
-                        <Star size={12} fill="#f59e0b" stroke="#f59e0b" />
-                        <span>{Number(favorite.average_rating).toFixed(1)}</span>
-                        <span className="fav-review-count">({favorite.review_count} reviews)</span>
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    className="fav-remove-btn"
-                    onClick={() => handleRemoveFavorite(favorite.bid_id, `${favorite.first_name} ${favorite.last_name}`)}
-                    title="Remove from favorites"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-
-                <div className="fav-card-body">
-                  <div className="fav-stats-row">
-                    <div className="fav-stat-item">
-                      <Briefcase size={14} />
-                      <span className="fav-stat-value">{favorite.completed_jobs || 0}</span>
-                      <span className="fav-stat-label">Jobs Done</span>
-                    </div>
-                  </div>
-
-                  {favorite.last_job_title && (
-                    <div className="fav-last-job">
-                      <span className="fav-last-job-label">Last Job:</span>
-                      <span className="fav-last-job-title">{favorite.last_job_title}</span>
-                      {favorite.last_bid_amount && (
-                        <span className="fav-last-job-amount">${Number(favorite.last_bid_amount).toFixed(2)}</span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Bid Status */}
+                {/* Card Top - Status & Actions */}
+                <div className="fav-card-top">
                   <div className={`fav-status-badge ${favorite.bid_status === 'approved' ? 'approved' : 'pending'}`}>
                     {favorite.bid_status === 'approved' ? (
-                      <><CheckCircle size={12} /> Bid Approved</>
+                      <><CheckCircle size={12} /> {t('favorites.bidApproved')}</>
                     ) : (
-                      <><Clock size={12} /> Bid Pending</>
+                      <><Clock size={12} /> {t('favorites.bidPending')}</>
                     )}
                   </div>
-                  {favorite.bid_status !== 'approved' && (
-                    <p className="fav-status-note">Approve bid in Submissions to message</p>
-                  )}
-
-                  {/* Notes Section */}
-                  <div className="fav-notes-section">
-                    {editingNotes === favorite.favorite_id ? (
-                      <div className="fav-notes-edit">
-                        <textarea
-                          value={notesText}
-                          onChange={(e) => setNotesText(e.target.value)}
-                          placeholder="Add notes about this contractor..."
-                          rows="3"
-                        />
-                        <div className="fav-notes-actions">
-                          <button
-                            className="fav-btn fav-btn-sm fav-btn-primary"
-                            onClick={() => handleSaveNotes(favorite.favorite_id)}
-                          >
-                            <Save size={14} /> Save
-                          </button>
-                          <button
-                            className="fav-btn fav-btn-sm fav-btn-secondary"
-                            onClick={handleCancelEdit}
-                          >
-                            <X size={14} /> Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="fav-notes-display">
-                        <div className="fav-notes-header">
-                          <span className="fav-notes-label">Notes</span>
-                          <button
-                            className="fav-edit-btn"
-                            onClick={() => handleEditNotes(favorite)}
-                          >
-                            <Edit3 size={12} /> Edit
-                          </button>
-                        </div>
-                        <p className="fav-notes-text">
-                          {favorite.notes || 'No notes yet.'}
-                        </p>
-                      </div>
+                  <div className="fav-card-top-right">
+                    {favorite.last_bid_amount && (
+                      <span className="fav-bid-amount">${Number(favorite.last_bid_amount).toLocaleString()}</span>
                     )}
+                    <button
+                      className="fav-favorite-btn active"
+                      onClick={() => handleRemoveFavorite(favorite.bid_id, `${favorite.first_name} ${favorite.last_name}`)}
+                      aria-label={t('favorites.removeFromFavorites')}
+                    >
+                      <Heart size={16} fill="#E74C3C" stroke="#E74C3C" />
+                    </button>
                   </div>
                 </div>
 
-                <div className="fav-card-footer">
+                {/* Main Info */}
+                <div className="fav-card-main">
+                  <div
+                    className="fav-avatar fav-avatar-clickable"
+                    onClick={() => handleViewProfile(favorite)}
+                    title={t('favorites.viewProfile')}
+                  >
+                    {favorite.profile_picture_url ? (
+                      <img src={favorite.profile_picture_url} alt={favorite.first_name} />
+                    ) : (
+                      <span className="fav-avatar-initials">
+                        {favorite.first_name?.charAt(0)}{favorite.last_name?.charAt(0)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="fav-card-main-info">
+                    <h3
+                      className="fav-contractor-name fav-contractor-name-clickable"
+                      onClick={() => handleViewProfile(favorite)}
+                      title={t('favorites.viewProfile')}
+                    >
+                      {favorite.first_name} {favorite.last_name}
+                    </h3>
+                    <div className="fav-contractor-rating">
+                      <Star size={12} fill="#f59e0b" stroke="#f59e0b" />
+                      <span>{Number(favorite.average_rating).toFixed(1)}</span>
+                      <span className="fav-review-count">({favorite.review_count} {t('favorites.reviews')})</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div className="fav-card-stats">
+                  <div className="fav-stat-item">
+                    <Briefcase size={14} />
+                    <span className="fav-stat-value">{favorite.completed_jobs || 0}</span>
+                    <span className="fav-stat-label">{t('favorites.jobsDone')}</span>
+                  </div>
+                  {favorite.last_job_title && (
+                    <div className="fav-stat-item fav-last-job">
+                      <FileText size={14} />
+                      <span className="fav-last-job-title">{favorite.last_job_title}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Notes Section */}
+                <div className="fav-notes-section">
+                  {editingNotes === favorite.favorite_id ? (
+                    <div className="fav-notes-edit">
+                      <textarea
+                        value={notesText}
+                        onChange={(e) => setNotesText(e.target.value)}
+                        placeholder={t('favorites.notesPlaceholder')}
+                        rows="3"
+                      />
+                      <div className="fav-notes-actions">
+                        <button
+                          className="fav-btn fav-btn-sm fav-btn-primary"
+                          onClick={() => handleSaveNotes(favorite.favorite_id)}
+                        >
+                          <Save size={14} /> {t('favorites.save')}
+                        </button>
+                        <button
+                          className="fav-btn fav-btn-sm fav-btn-secondary"
+                          onClick={handleCancelEdit}
+                        >
+                          <X size={14} /> {t('common.cancel')}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="fav-notes-display">
+                      <div className="fav-notes-header">
+                        <span className="fav-notes-label">{t('favorites.notes')}</span>
+                        <button
+                          className="fav-edit-btn"
+                          onClick={() => handleEditNotes(favorite)}
+                        >
+                          <Edit3 size={12} /> {t('favorites.edit')}
+                        </button>
+                      </div>
+                      <p className="fav-notes-text">
+                        {favorite.notes || t('favorites.noNotes')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Card Actions */}
+                <div className="fav-card-actions">
                   <button
-                    className={`fav-btn fav-btn-action ${favorite.bid_status === 'approved' ? 'fav-btn-primary' : 'fav-btn-disabled'}`}
+                    className={`fav-action-btn ${favorite.bid_status === 'approved' ? 'primary' : 'disabled'}`}
                     onClick={() => handleMessage(favorite)}
                     disabled={favorite.bid_status !== 'approved'}
-                    title={favorite.bid_status === 'approved' ? 'Send a message' : 'Bid must be approved to message'}
+                    title={favorite.bid_status === 'approved' ? t('favorites.sendMessage') : t('favorites.approveFirst')}
                   >
-                    <MessageCircle size={14} /> Message
+                    <MessageCircle size={14} />
+                    <span>{t('favorites.message')}</span>
                   </button>
                   <button
-                    className="fav-btn fav-btn-action fav-btn-secondary"
+                    className="fav-action-btn secondary"
                     onClick={() => handleViewHistory(favorite)}
                   >
-                    <History size={14} /> History
+                    <History size={14} />
+                    <span>{t('favorites.history')}</span>
+                  </button>
+                  <button
+                    className="fav-details-btn"
+                    onClick={() => handleViewProfile(favorite)}
+                  >
+                    {t('favorites.details')}
+                    <ChevronRight size={14} />
                   </button>
                 </div>
               </div>
@@ -464,7 +621,7 @@ const FavoriteEntrepreneurs = () => {
         <div className="fav-sidebar-overlay" onClick={() => setSelectedEntrepreneur(null)}>
           <div className="fav-sidebar" onClick={(e) => e.stopPropagation()}>
             <div className="fav-sidebar-header">
-              <h2>Job History</h2>
+              <h2>{t('favorites.jobHistory')}</h2>
               <button
                 className="fav-sidebar-close"
                 onClick={() => setSelectedEntrepreneur(null)}
@@ -482,12 +639,12 @@ const FavoriteEntrepreneurs = () => {
               {loadingHistory ? (
                 <div className="fav-sidebar-loading">
                   <div className="fav-spinner"></div>
-                  <p>Loading history...</p>
+                  <p>{t('favorites.loadingHistory')}</p>
                 </div>
               ) : jobHistory.length === 0 ? (
                 <div className="fav-sidebar-empty">
                   <History size={32} />
-                  <p>No job history with this contractor yet.</p>
+                  <p>{t('favorites.noHistory')}</p>
                 </div>
               ) : (
                 <div className="fav-history-list">
@@ -499,13 +656,13 @@ const FavoriteEntrepreneurs = () => {
                         <span className={`fav-history-status status-${job.status}`}>{job.status}</span>
                       </div>
                       <div className="fav-history-bid">
-                        <span>Bid: ${Number(job.bid_amount).toFixed(2)}</span>
+                        <span>{t('favorites.bid')}: ${Number(job.bid_amount).toFixed(2)}</span>
                         <span className={`fav-history-bid-status ${job.bid_status}`}>
                           {job.bid_status}
                         </span>
                       </div>
                       <div className="fav-history-property">
-                        Property: {job.property_name}
+                        {t('favorites.property')}: {job.property_name}
                       </div>
                       {job.bid_message && (
                         <div className="fav-history-message">
@@ -528,20 +685,20 @@ const FavoriteEntrepreneurs = () => {
             <div className="fav-confirm-icon">
               <Trash2 size={24} />
             </div>
-            <h3>Remove from Favorites?</h3>
-            <p>Are you sure you want to remove <strong>{confirmModal.entrepreneurName}</strong> from your favorites?</p>
+            <h3>{t('favorites.removeConfirmTitle')}</h3>
+            <p>{t('favorites.removeConfirmMessage')} <strong>{confirmModal.entrepreneurName}</strong>?</p>
             <div className="fav-confirm-actions">
               <button
                 className="fav-btn fav-btn-secondary"
                 onClick={() => setConfirmModal(null)}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 className="fav-btn fav-btn-danger"
                 onClick={confirmRemoveFavorite}
               >
-                <Trash2 size={14} /> Remove
+                <Trash2 size={14} /> {t('favorites.remove')}
               </button>
             </div>
           </div>

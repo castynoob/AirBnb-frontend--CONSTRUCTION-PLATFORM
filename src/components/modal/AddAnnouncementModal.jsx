@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { X, Megaphone } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useLanguage } from '../../contexts/LanguageContext';
 import '../../styles/manager/addannouncementmodal.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     property_id: '',
     title: '',
@@ -116,7 +118,7 @@ const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
       if (onSuccess) onSuccess(data.announcement);
       // show a quick success toast then close
       try {
-        toast.success('Announcement created successfully');
+        toast.success(t('announcementModal.createdSuccess'));
       } catch (e) {
         // ignore if toast fails
       }
@@ -147,8 +149,8 @@ const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
           <div className="announcement-title-wrapper">
             <Megaphone size={20} className="announcement-icon" />
             <div>
-              <h2>Create Announcement</h2>
-              <p className="announcement-subtitle">Post a concise announcement to residents of the selected building</p>
+              <h2>{t('announcementModal.title')}</h2>
+              <p className="announcement-subtitle">{t('announcementModal.subtitle')}</p>
             </div>
           </div>
           <button className="announcement-close-btn" onClick={onClose} aria-label="Close">
@@ -167,13 +169,13 @@ const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
           {/* Property Selection */}
           <div className="form-group">
             <label htmlFor="property_id" className="form-label">
-              Building/Property <span className="required">*</span>
+              {t('announcementModal.buildingProperty')} <span className="required">*</span>
             </label>
             {isLoadingProperties ? (
-              <div className="loading-text">Loading properties...</div>
+              <div className="loading-text">{t('announcementModal.loadingProperties')}</div>
             ) : properties.length === 0 ? (
               <div className="info-message">
-                No properties found. Please add a property first.
+                {t('announcementModal.noPropertiesFound')}
               </div>
             ) : (
               <select
@@ -196,7 +198,7 @@ const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
           {/* Title */}
           <div className="form-group">
             <label htmlFor="title" className="form-label">
-              Title <span className="required">*</span>
+              {t('announcementModal.titleLabel')} <span className="required">*</span>
             </label>
             <input
               type="text"
@@ -205,7 +207,7 @@ const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
               value={formData.title}
               onChange={handleChange}
               className="form-input"
-              placeholder="Enter announcement title"
+              placeholder={t('announcementModal.titlePlaceholder')}
               required
               maxLength={200}
             />

@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import { X, Camera, Trash2 } from 'lucide-react';
 import { FiUser } from 'react-icons/fi';
+import { useLanguage } from '../../contexts/LanguageContext';
 import "../../styles/manager/editmanagerprofilemodal.css";
 
 function EditManagerProfileModal({ userProfile, onClose, onSave }) {
+  const { t } = useLanguage();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const fileInputRef = useRef(null);
   
@@ -45,13 +47,13 @@ function EditManagerProfileModal({ userProfile, onClose, onSave }) {
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        setError('Please select an image file');
+        setError(t('editManagerModal.selectImageFile'));
         return;
       }
-      
+
       // Validate file size (5MB max)
       if (file.size > 5 * 1024 * 1024) {
-        setError('Image must be less than 5MB');
+        setError(t('editManagerModal.imageTooLarge'));
         return;
       }
 
@@ -70,7 +72,7 @@ function EditManagerProfileModal({ userProfile, onClose, onSave }) {
 
   const handleImageUpload = async () => {
     if (!imageFile) {
-      setError('Please select an image first');
+      setError(t('editManagerModal.selectImageFirst'));
       return;
     }
 
@@ -99,7 +101,7 @@ function EditManagerProfileModal({ userProfile, onClose, onSave }) {
 
       setProfileImage(data.imageUrl);
       setImageFile(null);
-      setSuccessMessage('Profile picture updated successfully!');
+      setSuccessMessage(t('editManagerModal.pictureUpdated'));
       
       // Notify parent to refresh
       setTimeout(() => {
@@ -119,7 +121,7 @@ function EditManagerProfileModal({ userProfile, onClose, onSave }) {
   const handleDeleteImage = async () => {
     if (!profileImage) return;
 
-    if (!confirm('Are you sure you want to delete your profile picture?')) {
+    if (!confirm(t('editManagerModal.deleteConfirm'))) {
       return;
     }
 
@@ -146,7 +148,7 @@ function EditManagerProfileModal({ userProfile, onClose, onSave }) {
       setProfileImage(null);
       setImagePreview(null);
       setImageFile(null);
-      setSuccessMessage('Profile picture removed successfully!');
+      setSuccessMessage(t('editManagerModal.pictureRemoved'));
       
       // Notify parent to refresh
       setTimeout(() => {
@@ -177,7 +179,7 @@ function EditManagerProfileModal({ userProfile, onClose, onSave }) {
     <div className="mpm-overlay">
       <div className="mpm-modal">
         <div className="mpm-header">
-          <h2>Edit Profile Picture</h2>
+          <h2>{t('editManagerModal.title')}</h2>
           <button className="mpm-close-btn" onClick={handleClose} disabled={isUploading}>
             <X size={20} />
           </button>

@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Building2, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useLanguage } from '../../contexts/LanguageContext';
 import '../../styles/manager/addpropertymodal.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
+  const { t } = useLanguage();
   const mapRef = useRef(null);
   const markerRef = useRef(null);
   const [map, setMap] = useState(null);
@@ -295,8 +297,8 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
           <div className="property-title-wrapper">
             <Building2 size={20} className="property-icon" />
             <div>
-              <h2>Add New Property</h2>
-              <p className="property-subtitle">Add a building or property to your portfolio</p>
+              <h2>{t('addPropertyModal.addNewProperty')}</h2>
+              <p className="property-subtitle">{t('addPropertyModal.subtitle')}</p>
             </div>
           </div>
           <button className="property-close-btn" onClick={onClose} aria-label="Close">
@@ -316,7 +318,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
           <div className="form-group">
             <label htmlFor="building_name" className="form-label">
               <Building2 size={14} />
-              Building Name <span className="required">*</span>
+              {t('addPropertyModal.buildingName')} <span className="required">*</span>
             </label>
             <input
               type="text"
@@ -325,7 +327,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
               value={formData.building_name}
               onChange={handleChange}
               className="form-input"
-              placeholder="e.g., Sunrise Apartments, Oak Tower, etc."
+              placeholder={t('addPropertyModal.buildingNamePlaceholder')}
               required
             />
           </div>
@@ -334,10 +336,10 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
           <div className="property-map-section-large">
             <h4 className="map-section-title">
               <MapPin size={18} />
-              Pin Property Location on Map
+              {t('addPropertyModal.pinLocation')}
             </h4>
             <p className="map-instruction">
-              📍 Click on the map or drag the marker to set location. Address fields will auto-fill based on your selection.
+              📍 {t('addPropertyModal.mapInstruction')}
             </p>
             <div ref={mapRef} className="property-map-container-large" />
 
@@ -345,15 +347,15 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
             <div className="coordinates-display">
               <h4 className="coordinates-title">
                 <MapPin size={16} />
-                Selected Coordinates
+                {t('addPropertyModal.selectedCoordinates')}
               </h4>
               <div className="coordinates-row">
                 <div className="coordinate-item">
-                  <span className="coordinate-label">Latitude:</span>
+                  <span className="coordinate-label">{t('addPropertyModal.latitude')}:</span>
                   <span className="coordinate-value">{formData.latitude.toFixed(6)}</span>
                 </div>
                 <div className="coordinate-item">
-                  <span className="coordinate-label">Longitude:</span>
+                  <span className="coordinate-label">{t('addPropertyModal.longitude')}:</span>
                   <span className="coordinate-value">{formData.longitude.toFixed(6)}</span>
                 </div>
               </div>
@@ -362,14 +364,14 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
 
           {/* Address Fields Section */}
           <div className="address-section">
-            <h4 className="section-title">Auto-Filled Address Information</h4>
-            <p className="section-description">These fields are automatically filled based on the map location. You can edit them if needed.</p>
+            <h4 className="section-title">{t('addPropertyModal.autoFilledAddress')}</h4>
+            <p className="section-description">{t('addPropertyModal.autoFillDescription')}</p>
 
             <div className="property-form-grid">
               {/* Address */}
               <div className="form-group">
                 <label htmlFor="address" className="form-label">
-                  Street Address <span className="required">*</span>
+                  {t('addPropertyModal.streetAddress')} <span className="required">*</span>
                 </label>
                 <input
                   type="text"
@@ -378,7 +380,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
                   value={formData.address}
                   onChange={handleChange}
                   className="form-input"
-                  placeholder="Will auto-fill from map"
+                  placeholder={t('addPropertyModal.willAutoFill')}
                   required
                 />
               </div>
@@ -387,7 +389,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="city" className="form-label">
-                    City <span className="required">*</span>
+                    {t('addPropertyModal.city')} <span className="required">*</span>
                   </label>
                   <input
                     type="text"
@@ -396,14 +398,14 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
                     value={formData.city}
                     onChange={handleChange}
                     className="form-input"
-                    placeholder="Will auto-fill from map"
+                    placeholder={t('addPropertyModal.willAutoFill')}
                     required
                   />
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="province" className="form-label">
-                    Province/State
+                    {t('addPropertyModal.provinceState')}
                   </label>
                   <input
                     type="text"
@@ -412,7 +414,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
                     value={formData.province}
                     onChange={handleChange}
                     className="form-input"
-                    placeholder="Will auto-fill from map"
+                    placeholder={t('addPropertyModal.willAutoFill')}
                     required
                   />
                 </div>
@@ -421,7 +423,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
               {/* Postal Code */}
               <div className="form-group">
                 <label htmlFor="postal_code" className="form-label">
-                  Postal/Zip Code
+                  {t('addPropertyModal.postalCode')}
                 </label>
                 <input
                   type="text"
@@ -430,7 +432,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
                   value={formData.postal_code}
                   onChange={handleChange}
                   className="form-input"
-                  placeholder="Will auto-fill from map"
+                  placeholder={t('addPropertyModal.willAutoFill')}
                 />
               </div>
             </div>
@@ -438,12 +440,12 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
 
           {/* Building Details Section */}
           <div className="building-details-section">
-            <h4 className="section-title">Building Details</h4>
+            <h4 className="section-title">{t('addPropertyModal.buildingDetails')}</h4>
 
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="building_type" className="form-label">
-                  Building Type <span className="required">*</span>
+                  {t('addPropertyModal.buildingType')} <span className="required">*</span>
                 </label>
                 <select
                   id="building_type"
@@ -463,7 +465,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
 
               <div className="form-group">
                 <label htmlFor="num_units" className="form-label">
-                  Number of Units <span className="required">*</span>
+                  {t('addPropertyModal.numberOfUnits')} <span className="required">*</span>
                 </label>
                 <input
                   type="number"
@@ -472,7 +474,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
                   value={formData.num_units}
                   onChange={handleChange}
                   className="form-input"
-                  placeholder="e.g., 24"
+                  placeholder={t('addPropertyModal.unitsPlaceholder')}
                   min="1"
                   required
                 />
@@ -488,14 +490,14 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
               className="property-btn property-btn-secondary"
               disabled={isSubmitting}
             >
-              Cancel
+              {t('addPropertyModal.cancel')}
             </button>
             <button
               type="submit"
               className="property-btn property-btn-primary"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Adding...' : 'Add Property'}
+              {isSubmitting ? t('addPropertyModal.adding') : t('addPropertyModal.addProperty')}
             </button>
           </div>
         </form>

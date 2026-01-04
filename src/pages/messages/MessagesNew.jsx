@@ -22,6 +22,7 @@ import {
   Users,
 } from "lucide-react";
 import { useSocket } from "../../contexts/SocketContext";
+import { useLanguage } from "../../contexts/LanguageContext";
 import {
   getConversations,
   getMessages,
@@ -34,6 +35,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000
 
 function MessagesNew() {
   const { socket, isConnected } = useSocket();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState("dm"); // "dm" or "group"
   const [selectedChat, setSelectedChat] = useState(null);
   const [selectedGroupChat, setSelectedGroupChat] = useState(null);
@@ -759,21 +761,21 @@ function MessagesNew() {
     const now = new Date();
     const diff = now - date;
 
-    if (diff < 60000) return "Just now";
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+    if (diff < 60000) return t('messages.justNow');
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}${t('time.minutesAgo')}`;
     if (diff < 86400000) return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     return date.toLocaleDateString([], { month: "short", day: "numeric" });
   };
 
   // Format user role for display
   const formatUserRole = (role) => {
-    if (!role) return "User";
+    if (!role) return t('messages.user');
 
     const roleMap = {
-      'entrepreneur': 'Entrepreneur',
-      'property_manager': 'Property Manager',
-      'resident': 'Resident',
-      'supplier': 'Supplier'
+      'entrepreneur': t('nav.entrepreneur'),
+      'property_manager': t('nav.propertyManager'),
+      'resident': t('nav.resident'),
+      'supplier': t('nav.supplierRole')
     };
 
     return roleMap[role] || role.charAt(0).toUpperCase() + role.slice(1);
@@ -829,7 +831,7 @@ function MessagesNew() {
         {/* SIDEBAR */}
         <div className={`messages-sidebar ${showMobileChat ? 'hide-mobile' : ''}`}>
           <div className="messages-sidebar-header">
-            <h2>Messages</h2>
+            <h2>{t('messages.title')}</h2>
 
             {/* Tab Buttons */}
             <div className="messages-tab-buttons">
@@ -838,14 +840,14 @@ function MessagesNew() {
                 onClick={() => switchTab("dm")}
               >
                 <MessageSquare size={16} />
-                Direct Messages
+                {t('messages.directMessages')}
               </button>
               <button
                 className={`tab-btn ${activeTab === "group" ? "active" : ""}`}
                 onClick={() => switchTab("group")}
               >
                 <Users size={16} />
-                Group Chats
+                {t('messages.groupChats')}
               </button>
             </div>
 
@@ -853,7 +855,7 @@ function MessagesNew() {
               <Search size={16} className="messages-search-icon" />
               <input
                 type="text"
-                placeholder={activeTab === "dm" ? "Search conversations..." : "Search group chats..."}
+                placeholder={activeTab === "dm" ? t('messages.searchConversations') : t('messages.searchGroupChats')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -866,19 +868,19 @@ function MessagesNew() {
                   className={`filter-bubble-btn ${userFilter === "all" ? "active" : ""}`}
                   onClick={() => setUserFilter("all")}
                 >
-                  All
+                  {t('messages.all')}
                 </button>
                 <button
                   className={`filter-bubble-btn ${userFilter === "resident" ? "active" : ""}`}
                   onClick={() => setUserFilter("resident")}
                 >
-                  Resident
+                  {t('messages.resident')}
                 </button>
                 <button
                   className={`filter-bubble-btn ${userFilter === "entrepreneur" ? "active" : ""}`}
                   onClick={() => setUserFilter("entrepreneur")}
                 >
-                  Entrepreneur
+                  {t('messages.entrepreneur')}
                 </button>
               </div>
             )}
@@ -886,12 +888,12 @@ function MessagesNew() {
 
           <div className="messages-conversations">
             {isLoading ? (
-              <div className="messages-loading">Loading...</div>
+              <div className="messages-loading">{t('messages.loading')}</div>
             ) : activeTab === "dm" ? (
               /* Direct Messages List */
               filteredConversations.length === 0 ? (
                 <div style={{ padding: "20px", textAlign: "center", color: "#9ca3af" }}>
-                  No conversations found
+                  {t('messages.noConversationsFound')}
                 </div>
               ) : (
                 filteredConversations.map((conv) => (
@@ -915,7 +917,7 @@ function MessagesNew() {
                         </span>
                       </div>
                       <p className="conversation-preview">
-                        {conv.last_message || "No messages yet"}
+                        {conv.last_message || t('messages.noMessagesYet')}
                       </p>
                     </div>
                     {conv.unread_count > 0 && (
@@ -928,7 +930,7 @@ function MessagesNew() {
               /* Group Chats List */
               groupChats.length === 0 ? (
                 <div style={{ padding: "20px", textAlign: "center", color: "#9ca3af" }}>
-                  No group chats found
+                  {t('messages.noGroupChatsFound')}
                 </div>
               ) : (
                 groupChats
@@ -950,7 +952,7 @@ function MessagesNew() {
                           </span>
                         </div>
                         <p className="conversation-preview">
-                          {chat.description || `${chat.member_count || 0} members`}
+                          {chat.description || `${chat.member_count || 0} ${t('messages.members')}`}
                         </p>
                       </div>
                       {chat.unread_count > 0 && (
@@ -970,8 +972,8 @@ function MessagesNew() {
               <div className="messages-chat-empty-icon">
                 {activeTab === "dm" ? <MessageSquare size={40} /> : <Users size={40} />}
               </div>
-              <h3>Select a {activeTab === "dm" ? "conversation" : "group chat"}</h3>
-              <p>Choose a {activeTab === "dm" ? "conversation" : "group chat"} from the sidebar to start messaging</p>
+              <h3>{activeTab === "dm" ? t('messages.selectConversation') : t('messages.selectGroupChat')}</h3>
+              <p>{activeTab === "dm" ? t('messages.chooseConversation') : t('messages.chooseGroupChat')}</p>
             </div>
           ) : selectedGroupChat ? (
             /* GROUP CHAT VIEW */
@@ -984,7 +986,7 @@ function MessagesNew() {
                     setShowMobileChat(false);
                     setSelectedGroupChat(null);
                   }}
-                  title="Back to group chats"
+                  title={t('messages.backToGroupChats')}
                 >
                   <ArrowLeft size={24} />
                 </button>
@@ -994,7 +996,7 @@ function MessagesNew() {
                 <div className="chat-header-info">
                   <h3 className="chat-header-name">{selectedGroupChat.name}</h3>
                   <p className="chat-header-role">
-                    {selectedGroupChat.member_count || 0} members
+                    {selectedGroupChat.member_count || 0} {t('messages.members')}
                   </p>
                 </div>
               </div>
@@ -1027,7 +1029,7 @@ function MessagesNew() {
                     <div className="chat-input-main">
                       <textarea
                         className="chat-input-field"
-                        placeholder="Type a message..."
+                        placeholder={t('messages.typeMessage')}
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         onKeyDown={(e) => {
@@ -1057,7 +1059,7 @@ function MessagesNew() {
                 <button
                   className="mobile-back-btn"
                   onClick={() => setShowMobileChat(false)}
-                  title="Back to conversations"
+                  title={t('messages.backToConversations')}
                 >
                   <ArrowLeft size={24} />
                 </button>
@@ -1068,7 +1070,7 @@ function MessagesNew() {
                       handleViewEntrepreneurProfile(selectedChat.other_user_id);
                     }
                   }}
-                  title={selectedChat.other_user_role === 'entrepreneur' ? 'View profile' : ''}
+                  title={selectedChat.other_user_role === 'entrepreneur' ? t('messages.viewProfile') : ''}
                 >
                   {getInitials(selectedChat.other_user_name)}
                 </div>
@@ -1080,7 +1082,7 @@ function MessagesNew() {
                         handleViewEntrepreneurProfile(selectedChat.other_user_id);
                       }
                     }}
-                    title={selectedChat.other_user_role === 'entrepreneur' ? 'View profile' : ''}
+                    title={selectedChat.other_user_role === 'entrepreneur' ? t('messages.viewProfile') : ''}
                   >
                     {selectedChat.other_user_name}
                   </h3>
@@ -1088,7 +1090,7 @@ function MessagesNew() {
                     {selectedChat.company_name || formatUserRole(selectedChat.other_user_role)}
                   </p>
                 </div>
-                <button className="chat-header-call-btn" title="Call">
+                <button className="chat-header-call-btn" title={t('messages.call')}>
                   <Phone size={20} />
                 </button>
               </div>
@@ -1103,7 +1105,7 @@ function MessagesNew() {
                     <div className="job-info-preview">
                       <Briefcase size={16} />
                       <span className="job-info-title">
-                        {isLoadingJobInfo ? "Loading..." : (selectedChat.job_title || "Job Details")}
+                        {isLoadingJobInfo ? t('messages.loading') : (selectedChat.job_title || t('messages.jobDetails'))}
                       </span>
                       {selectedChat.bid_status && (
                         <span className={`job-info-badge ${selectedChat.bid_status}`}>
@@ -1119,25 +1121,25 @@ function MessagesNew() {
                       {isLoadingJobInfo ? (
                         <div className="job-info-loading">
                           <Loader2 size={20} className="spinning" />
-                          <span>Loading job details...</span>
+                          <span>{t('messages.loadingJobDetails')}</span>
                         </div>
                       ) : (
                       <>
                       {/* Job Information */}
                       <div className="job-info-section">
-                        <h4 className="job-info-section-title">Job Details</h4>
+                        <h4 className="job-info-section-title">{t('messages.jobDetails')}</h4>
                         <div className="job-info-grid">
                           {selectedChat.job_category && (
                             <div className="job-info-item">
                               <Briefcase size={14} />
-                              <span className="job-info-label">Category:</span>
+                              <span className="job-info-label">{t('messages.category')}</span>
                               <span className="job-info-value">{selectedChat.job_category}</span>
                             </div>
                           )}
                           {selectedChat.job_budget_min && selectedChat.job_budget_max && (
                             <div className="job-info-item">
                               <DollarSign size={14} />
-                              <span className="job-info-label">Budget:</span>
+                              <span className="job-info-label">{t('messages.budget')}</span>
                               <span className="job-info-value">
                                 ${selectedChat.job_budget_min} - ${selectedChat.job_budget_max}
                               </span>
@@ -1146,7 +1148,7 @@ function MessagesNew() {
                           {selectedChat.job_due_date && (
                             <div className="job-info-item">
                               <Calendar size={14} />
-                              <span className="job-info-label">Due Date:</span>
+                              <span className="job-info-label">{t('messages.dueDate')}</span>
                               <span className="job-info-value">
                                 {new Date(selectedChat.job_due_date).toLocaleDateString()}
                               </span>
@@ -1155,7 +1157,7 @@ function MessagesNew() {
                           {(selectedChat.job_property_address || selectedChat.job_city) && (
                             <div className="job-info-item">
                               <MapPin size={14} />
-                              <span className="job-info-label">Location:</span>
+                              <span className="job-info-label">{t('messages.location')}</span>
                               <span className="job-info-value">
                                 {selectedChat.job_property_address}
                                 {selectedChat.job_city && `, ${selectedChat.job_city}`}
@@ -1165,7 +1167,7 @@ function MessagesNew() {
                         </div>
                         {selectedChat.job_description && (
                           <div className="job-info-description">
-                            <p className="job-info-label">Description:</p>
+                            <p className="job-info-label">{t('messages.description')}</p>
                             <p className="job-info-value">{selectedChat.job_description}</p>
                           </div>
                         )}
@@ -1174,18 +1176,18 @@ function MessagesNew() {
                       {/* Bid Information */}
                       {selectedChat.bid_id && (
                         <div className="job-info-section">
-                          <h4 className="job-info-section-title">Approved Bid</h4>
+                          <h4 className="job-info-section-title">{t('messages.approvedBid')}</h4>
                           <div className="job-info-grid">
                             <div className="job-info-item">
                               <DollarSign size={14} />
-                              <span className="job-info-label">Bid Amount:</span>
+                              <span className="job-info-label">{t('messages.bidAmount')}</span>
                               <span className="job-info-value bid-amount">
                                 ${selectedChat.bid_amount}
                               </span>
                             </div>
                             <div className="job-info-item">
                               <Calendar size={14} />
-                              <span className="job-info-label">Submitted:</span>
+                              <span className="job-info-label">{t('messages.submitted')}</span>
                               <span className="job-info-value">
                                 {new Date(selectedChat.bid_created_at).toLocaleDateString()}
                               </span>
@@ -1193,7 +1195,7 @@ function MessagesNew() {
                           </div>
                           {selectedChat.bid_message && (
                             <div className="job-info-description">
-                              <p className="job-info-label">Proposal:</p>
+                              <p className="job-info-label">{t('messages.proposal')}</p>
                               <p className="job-info-value">{selectedChat.bid_message}</p>
                             </div>
                           )}
@@ -1209,7 +1211,7 @@ function MessagesNew() {
                   <div className="job-info-container job-info-none">
                     <div className="job-info-message">
                       <Briefcase size={16} />
-                      <span>This is a general conversation (no job associated)</span>
+                      <span>{t('messages.generalConversation')}</span>
                     </div>
                   </div>
                 )
@@ -1301,7 +1303,7 @@ function MessagesNew() {
                         <button
                           className="chat-input-btn"
                           onClick={() => imageInputRef.current?.click()}
-                          title="Upload Image"
+                          title={t('messages.uploadImage')}
                           disabled={isUploadingImage}
                         >
                           {isUploadingImage ? (
@@ -1320,7 +1322,7 @@ function MessagesNew() {
                         <button
                           className="chat-input-btn"
                           onClick={() => fileInputRef.current?.click()}
-                          title="Attach File"
+                          title={t('messages.attachFile')}
                           disabled={isUploadingFile}
                         >
                           {isUploadingFile ? (
@@ -1333,7 +1335,7 @@ function MessagesNew() {
 
                       <textarea
                         className="chat-input-field"
-                        placeholder="Type a message..."
+                        placeholder={t('messages.typeMessage')}
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         onKeyDown={(e) => {

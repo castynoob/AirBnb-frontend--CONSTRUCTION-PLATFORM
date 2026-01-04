@@ -1,174 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { X, AlertTriangle, HelpCircle, MessageSquare, CreditCard, Bug, UserX, FileWarning, Send, Loader2 } from 'lucide-react';
 import { createSupportTicket } from '../../utils/api';
+import { useLanguage } from '../../contexts/LanguageContext';
 import '../../styles/components/reportmodal.css';
 
-const REPORT_CATEGORIES = {
-  entrepreneur: [
-    {
-      id: 'technical',
-      label: 'Technical Issue',
-      icon: Bug,
-      description: 'App bugs, errors, or features not working correctly',
-      priority: 'medium'
-    },
-    {
-      id: 'account',
-      label: 'Account Problem',
-      icon: UserX,
-      description: 'Login issues, profile problems, or account access',
-      priority: 'high'
-    },
-    {
-      id: 'payment',
-      label: 'Payment & Billing',
-      icon: CreditCard,
-      description: 'Subscription, payment, or payout issues',
-      priority: 'high'
-    },
-    {
-      id: 'job_issue',
-      label: 'Job Issue',
-      icon: FileWarning,
-      description: 'Problems with a job posting or bid',
-      priority: 'medium'
-    },
-    {
-      id: 'report_user',
-      label: 'Report User',
-      icon: AlertTriangle,
-      description: 'Report inappropriate behavior or content',
-      priority: 'high'
-    },
-    {
-      id: 'other',
-      label: 'Other',
-      icon: HelpCircle,
-      description: 'General questions or feedback',
-      priority: 'low'
-    }
-  ],
-  property_manager: [
-    {
-      id: 'technical',
-      label: 'Technical Issue',
-      icon: Bug,
-      description: 'App bugs, errors, or features not working correctly',
-      priority: 'medium'
-    },
-    {
-      id: 'account',
-      label: 'Account Problem',
-      icon: UserX,
-      description: 'Login issues, profile problems, or account access',
-      priority: 'high'
-    },
-    {
-      id: 'payment',
-      label: 'Payment & Billing',
-      icon: CreditCard,
-      description: 'Contract payment or transaction issues',
-      priority: 'high'
-    },
-    {
-      id: 'contractor_issue',
-      label: 'Contractor Issue',
-      icon: FileWarning,
-      description: 'Problems with a contractor or their work',
-      priority: 'medium'
-    },
-    {
-      id: 'report_user',
-      label: 'Report User',
-      icon: AlertTriangle,
-      description: 'Report inappropriate behavior or content',
-      priority: 'high'
-    },
-    {
-      id: 'other',
-      label: 'Other',
-      icon: HelpCircle,
-      description: 'General questions or feedback',
-      priority: 'low'
-    }
-  ],
-  supplier: [
-    {
-      id: 'technical',
-      label: 'Technical Issue',
-      icon: Bug,
-      description: 'App bugs, errors, or features not working correctly',
-      priority: 'medium'
-    },
-    {
-      id: 'account',
-      label: 'Account Problem',
-      icon: UserX,
-      description: 'Login issues, profile problems, or account access',
-      priority: 'high'
-    },
-    {
-      id: 'order_issue',
-      label: 'Order Issue',
-      icon: FileWarning,
-      description: 'Problems with material requests or orders',
-      priority: 'medium'
-    },
-    {
-      id: 'report_user',
-      label: 'Report User',
-      icon: AlertTriangle,
-      description: 'Report inappropriate behavior or content',
-      priority: 'high'
-    },
-    {
-      id: 'other',
-      label: 'Other',
-      icon: HelpCircle,
-      description: 'General questions or feedback',
-      priority: 'low'
-    }
-  ],
-  resident: [
-    {
-      id: 'technical',
-      label: 'Technical Issue',
-      icon: Bug,
-      description: 'App bugs, errors, or features not working correctly',
-      priority: 'medium'
-    },
-    {
-      id: 'account',
-      label: 'Account Problem',
-      icon: UserX,
-      description: 'Login issues, profile problems, or account access',
-      priority: 'high'
-    },
-    {
-      id: 'property_issue',
-      label: 'Property Issue',
-      icon: FileWarning,
-      description: 'Issues related to your property or building',
-      priority: 'medium'
-    },
-    {
-      id: 'report_user',
-      label: 'Report User',
-      icon: AlertTriangle,
-      description: 'Report inappropriate behavior or content',
-      priority: 'high'
-    },
-    {
-      id: 'other',
-      label: 'Other',
-      icon: HelpCircle,
-      description: 'General questions or feedback',
-      priority: 'low'
-    }
-  ]
+// Category definitions with translation keys
+const CATEGORY_DEFINITIONS = {
+  technical: { icon: Bug, labelKey: 'technicalIssue', descKey: 'technicalIssueDesc', priority: 'medium' },
+  account: { icon: UserX, labelKey: 'accountProblem', descKey: 'accountProblemDesc', priority: 'high' },
+  payment_entrepreneur: { icon: CreditCard, labelKey: 'paymentBilling', descKey: 'paymentBillingDescEntrepreneur', priority: 'high' },
+  payment_manager: { icon: CreditCard, labelKey: 'paymentBilling', descKey: 'paymentBillingDescManager', priority: 'high' },
+  job_issue: { icon: FileWarning, labelKey: 'jobIssue', descKey: 'jobIssueDesc', priority: 'medium' },
+  contractor_issue: { icon: FileWarning, labelKey: 'contractorIssue', descKey: 'contractorIssueDesc', priority: 'medium' },
+  order_issue: { icon: FileWarning, labelKey: 'orderIssue', descKey: 'orderIssueDesc', priority: 'medium' },
+  property_issue: { icon: FileWarning, labelKey: 'propertyIssue', descKey: 'propertyIssueDesc', priority: 'medium' },
+  report_user: { icon: AlertTriangle, labelKey: 'reportUser', descKey: 'reportUserDesc', priority: 'high' },
+  other: { icon: HelpCircle, labelKey: 'other', descKey: 'otherDesc', priority: 'low' }
+};
+
+// Role-based category lists (using category keys)
+const ROLE_CATEGORIES = {
+  entrepreneur: ['technical', 'account', 'payment_entrepreneur', 'job_issue', 'report_user', 'other'],
+  property_manager: ['technical', 'account', 'payment_manager', 'contractor_issue', 'report_user', 'other'],
+  supplier: ['technical', 'account', 'order_issue', 'report_user', 'other'],
+  resident: ['technical', 'account', 'property_issue', 'report_user', 'other']
 };
 
 export default function ReportModal({ onClose, userRole = 'entrepreneur' }) {
+  const { t } = useLanguage();
   const [step, setStep] = useState(1); // 1: select category, 2: fill form
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [formData, setFormData] = useState({
@@ -179,7 +38,20 @@ export default function ReportModal({ onClose, userRole = 'entrepreneur' }) {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
-  const categories = REPORT_CATEGORIES[userRole] || REPORT_CATEGORIES.entrepreneur;
+  // Build translated categories based on user role
+  const categories = useMemo(() => {
+    const categoryKeys = ROLE_CATEGORIES[userRole] || ROLE_CATEGORIES.entrepreneur;
+    return categoryKeys.map(key => {
+      const def = CATEGORY_DEFINITIONS[key];
+      return {
+        id: key.replace('_entrepreneur', '').replace('_manager', ''),
+        icon: def.icon,
+        label: t(`reportModal.${def.labelKey}`),
+        description: t(`reportModal.${def.descKey}`),
+        priority: def.priority
+      };
+    });
+  }, [userRole, t]);
 
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
@@ -196,12 +68,12 @@ export default function ReportModal({ onClose, userRole = 'entrepreneur' }) {
     e.preventDefault();
 
     if (!formData.subject.trim()) {
-      setError('Please enter a subject for your report');
+      setError(t('reportModal.subjectRequired'));
       return;
     }
 
     if (!formData.description.trim()) {
-      setError('Please provide a description of your issue');
+      setError(t('reportModal.descriptionRequired'));
       return;
     }
 
@@ -221,11 +93,11 @@ export default function ReportModal({ onClose, userRole = 'entrepreneur' }) {
       if (response.success) {
         setSuccess(true);
       } else {
-        setError(response.message || 'Failed to submit report. Please try again.');
+        setError(response.message || t('reportModal.submitFailed'));
       }
     } catch (err) {
       console.error('Error submitting report:', err);
-      setError(err.message || 'Failed to submit report. Please try again.');
+      setError(err.message || t('reportModal.submitFailed'));
     } finally {
       setLoading(false);
     }
@@ -255,10 +127,10 @@ export default function ReportModal({ onClose, userRole = 'entrepreneur' }) {
                 <path d="M8 12l3 3 5-6" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <h2>Report Submitted!</h2>
-            <p>Thank you for your report. Our support team will review it and get back to you as soon as possible.</p>
+            <h2>{t('reportModal.reportSubmitted')}</h2>
+            <p>{t('reportModal.thankYouMessage')}</p>
             <button className="rpt-btn-primary" onClick={onClose}>
-              Close
+              {t('reportModal.close')}
             </button>
           </div>
         </div>
@@ -279,8 +151,8 @@ export default function ReportModal({ onClose, userRole = 'entrepreneur' }) {
           <>
             <div className="rpt-header">
               <MessageSquare size={28} className="rpt-header-icon" />
-              <h2>How can we help?</h2>
-              <p>Select the type of issue you're experiencing</p>
+              <h2>{t('reportModal.howCanWeHelp')}</h2>
+              <p>{t('reportModal.selectIssueType')}</p>
             </div>
 
             <div className="rpt-categories">
@@ -315,7 +187,7 @@ export default function ReportModal({ onClose, userRole = 'entrepreneur' }) {
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                Back
+                {t('reportModal.back')}
               </button>
               <div className="rpt-selected-category">
                 {selectedCategory && (
@@ -329,26 +201,26 @@ export default function ReportModal({ onClose, userRole = 'entrepreneur' }) {
 
             <form className="rpt-form" onSubmit={handleSubmit}>
               <div className="rpt-form-group">
-                <label htmlFor="subject">Subject</label>
+                <label htmlFor="subject">{t('reportModal.subject')}</label>
                 <input
                   type="text"
                   id="subject"
                   name="subject"
                   value={formData.subject}
                   onChange={handleInputChange}
-                  placeholder="Brief summary of your issue"
+                  placeholder={t('reportModal.subjectPlaceholder')}
                   maxLength={255}
                 />
               </div>
 
               <div className="rpt-form-group">
-                <label htmlFor="description">Description</label>
+                <label htmlFor="description">{t('reportModal.description')}</label>
                 <textarea
                   id="description"
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
-                  placeholder="Please provide as much detail as possible about your issue..."
+                  placeholder={t('reportModal.descriptionPlaceholder')}
                   rows={6}
                 />
               </div>
@@ -367,7 +239,7 @@ export default function ReportModal({ onClose, userRole = 'entrepreneur' }) {
                   onClick={onClose}
                   disabled={loading}
                 >
-                  Cancel
+                  {t('reportModal.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -377,12 +249,12 @@ export default function ReportModal({ onClose, userRole = 'entrepreneur' }) {
                   {loading ? (
                     <>
                       <Loader2 size={18} className="rpt-spinner" />
-                      Submitting...
+                      {t('reportModal.submitting')}
                     </>
                   ) : (
                     <>
                       <Send size={18} />
-                      Submit Report
+                      {t('reportModal.submitReport')}
                     </>
                   )}
                 </button>

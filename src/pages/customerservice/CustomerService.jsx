@@ -19,6 +19,7 @@ import {
   Eye,
 } from "lucide-react";
 import Nav from "../../components/Nav";
+import { useLanguage } from "../../contexts/LanguageContext";
 import "./customerservice.css";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -37,32 +38,33 @@ const getStatusColor = (status) => {
   return colors[status] || "secondary";
 };
 
-// Format date
-const formatDate = (dateString) => {
-  if (!dateString) return "N/A";
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-};
-
-// Time ago
-const timeAgo = (dateString) => {
-  if (!dateString) return "";
-  const date = new Date(dateString);
-  const now = new Date();
-  const seconds = Math.floor((now - date) / 1000);
-
-  if (seconds < 60) return "just now";
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
-  return formatDate(dateString);
-};
-
 function CustomerService() {
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState("disputes");
+
+  // Format date with locale
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  // Time ago with translations
+  const timeAgo = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+
+    if (seconds < 60) return t('customerService.justNow');
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}${t('customerService.minutesAgo')}`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}${t('customerService.hoursAgo')}`;
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)}${t('customerService.daysAgo')}`;
+    return formatDate(dateString);
+  };
   const [loading, setLoading] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
 
@@ -291,26 +293,26 @@ function CustomerService() {
   const renderDisputes = () => (
     <div className="cs-section">
       <div className="cs-section-header">
-        <h2>My Disputes</h2>
+        <h2>{t('customerService.myDisputes')}</h2>
         <button
           className="cs-btn cs-btn-primary"
           onClick={() => setShowDisputeModal(true)}
         >
           <Plus size={16} />
-          File a Dispute
+          {t('customerService.fileDispute')}
         </button>
       </div>
 
       {loading ? (
         <div className="cs-loading">
           <Loader2 size={24} className="spin" />
-          <span>Loading disputes...</span>
+          <span>{t('customerService.loadingDisputes')}</span>
         </div>
       ) : disputes.length === 0 ? (
         <div className="cs-empty">
           <Scale size={48} />
-          <h3>No Disputes Filed</h3>
-          <p>You haven't filed any disputes yet.</p>
+          <h3>{t('customerService.noDisputesFiled')}</h3>
+          <p>{t('customerService.noDisputesDesc')}</p>
         </div>
       ) : (
         <div className="cs-list">
@@ -347,26 +349,26 @@ function CustomerService() {
   const renderTickets = () => (
     <div className="cs-section">
       <div className="cs-section-header">
-        <h2>Support Tickets</h2>
+        <h2>{t('customerService.supportTickets')}</h2>
         <button
           className="cs-btn cs-btn-primary"
           onClick={() => setShowTicketModal(true)}
         >
           <Plus size={16} />
-          New Ticket
+          {t('customerService.newTicket')}
         </button>
       </div>
 
       {loading ? (
         <div className="cs-loading">
           <Loader2 size={24} className="spin" />
-          <span>Loading tickets...</span>
+          <span>{t('customerService.loadingTickets')}</span>
         </div>
       ) : tickets.length === 0 ? (
         <div className="cs-empty">
           <MessageSquare size={48} />
-          <h3>No Support Tickets</h3>
-          <p>You haven't created any support tickets yet.</p>
+          <h3>{t('customerService.noTickets')}</h3>
+          <p>{t('customerService.noTicketsDesc')}</p>
         </div>
       ) : (
         <div className="cs-list">
@@ -403,7 +405,7 @@ function CustomerService() {
   const renderHelp = () => (
     <div className="cs-section">
       <div className="cs-section-header">
-        <h2>Help & FAQ</h2>
+        <h2>{t('customerService.helpFaq')}</h2>
       </div>
 
       <div className="cs-help-list">
@@ -412,12 +414,8 @@ function CustomerService() {
             <Scale size={20} />
           </div>
           <div className="cs-help-content">
-            <h4>How do I file a dispute?</h4>
-            <p>
-              Go to the "Disputes" tab and click "File a Dispute". Select the type
-              of dispute, provide details about the issue, and submit. Our team
-              will review it within 24-48 hours.
-            </p>
+            <h4>{t('customerService.faqDispute')}</h4>
+            <p>{t('customerService.faqDisputeAnswer')}</p>
           </div>
         </div>
 
@@ -426,11 +424,8 @@ function CustomerService() {
             <MessageSquare size={20} />
           </div>
           <div className="cs-help-content">
-            <h4>How do I contact support?</h4>
-            <p>
-              Create a support ticket in the "Support" tab. Describe your issue
-              and our team will respond as soon as possible.
-            </p>
+            <h4>{t('customerService.faqSupport')}</h4>
+            <p>{t('customerService.faqSupportAnswer')}</p>
           </div>
         </div>
 
@@ -439,11 +434,8 @@ function CustomerService() {
             <Settings size={20} />
           </div>
           <div className="cs-help-content">
-            <h4>How do I update my profile?</h4>
-            <p>
-              Go to your Profile page and click "Edit Profile" to update your
-              personal information, company details, and contact info.
-            </p>
+            <h4>{t('customerService.faqProfile')}</h4>
+            <p>{t('customerService.faqProfileAnswer')}</p>
           </div>
         </div>
 
@@ -452,11 +444,8 @@ function CustomerService() {
             <Briefcase size={20} />
           </div>
           <div className="cs-help-content">
-            <h4>What types of disputes can I file?</h4>
-            <p>
-              You can file disputes for: Job Quality issues, Payment problems,
-              Non-delivery of services, Review disputes, and Contract violations.
-            </p>
+            <h4>{t('customerService.faqDisputeTypes')}</h4>
+            <p>{t('customerService.faqDisputeTypesAnswer')}</p>
           </div>
         </div>
       </div>
@@ -474,8 +463,8 @@ function CustomerService() {
               <Headphones size={28} />
             </div>
             <div className="cs-header-text">
-              <h1>Customer Service</h1>
-              <p>Get help, file disputes, and contact support</p>
+              <h1>{t('customerService.pageTitle')}</h1>
+              <p>{t('customerService.pageSubtitle')}</p>
             </div>
           </div>
 
@@ -486,21 +475,21 @@ function CustomerService() {
               onClick={() => setActiveTab("disputes")}
             >
               <Scale size={18} />
-              <span>Disputes</span>
+              <span>{t('customerService.tabDisputes')}</span>
             </button>
             <button
               className={`cs-tab ${activeTab === "tickets" ? "active" : ""}`}
               onClick={() => setActiveTab("tickets")}
             >
               <MessageSquare size={18} />
-              <span>Support</span>
+              <span>{t('customerService.tabSupport')}</span>
             </button>
             <button
               className={`cs-tab ${activeTab === "help" ? "active" : ""}`}
               onClick={() => setActiveTab("help")}
             >
               <HelpCircle size={18} />
-              <span>Help</span>
+              <span>{t('customerService.tabHelp')}</span>
             </button>
           </div>
 
@@ -520,7 +509,7 @@ function CustomerService() {
             <div className="cs-modal-header">
               <h3>
                 <Scale size={20} />
-                File a Dispute
+                {t('customerService.disputeModalTitle')}
               </h3>
               <button
                 className="cs-modal-close"
@@ -532,7 +521,7 @@ function CustomerService() {
             <form onSubmit={handleSubmitDispute}>
               <div className="cs-modal-body">
                 <div className="cs-form-group">
-                  <label>Dispute Type *</label>
+                  <label>{t('customerService.disputeType')} *</label>
                   <select
                     value={disputeForm.type}
                     onChange={(e) =>
@@ -540,25 +529,25 @@ function CustomerService() {
                     }
                     required
                   >
-                    <option value="">Select type...</option>
-                    <option value="job_quality">Job Quality Issue</option>
-                    <option value="payment">Payment Problem</option>
-                    <option value="non_delivery">Non-Delivery</option>
-                    <option value="review_dispute">Review Dispute</option>
-                    <option value="contract_violation">Contract Violation</option>
-                    <option value="other">Other</option>
+                    <option value="">{t('customerService.selectType')}</option>
+                    <option value="job_quality">{t('customerService.typeJobQuality')}</option>
+                    <option value="payment">{t('customerService.typePayment')}</option>
+                    <option value="non_delivery">{t('customerService.typeNonDelivery')}</option>
+                    <option value="review_dispute">{t('customerService.typeReviewDispute')}</option>
+                    <option value="contract_violation">{t('customerService.typeContractViolation')}</option>
+                    <option value="other">{t('customerService.typeOther')}</option>
                   </select>
                 </div>
 
                 <div className="cs-form-group">
-                  <label>Related Job (Optional)</label>
+                  <label>{t('customerService.relatedJob')}</label>
                   <select
                     value={disputeForm.job_id}
                     onChange={(e) =>
                       setDisputeForm({ ...disputeForm, job_id: e.target.value })
                     }
                   >
-                    <option value="">Select job...</option>
+                    <option value="">{t('customerService.selectJob')}</option>
                     {userJobs.map((job) => (
                       <option key={job.id} value={job.id}>
                         {job.title}
@@ -568,13 +557,13 @@ function CustomerService() {
                 </div>
 
                 <div className="cs-form-group">
-                  <label>Describe the Issue *</label>
+                  <label>{t('customerService.describeIssue')} *</label>
                   <textarea
                     value={disputeForm.reason}
                     onChange={(e) =>
                       setDisputeForm({ ...disputeForm, reason: e.target.value })
                     }
-                    placeholder="Please describe the issue in detail..."
+                    placeholder={t('customerService.describeIssuePlaceholder')}
                     rows={5}
                     required
                   />
@@ -586,7 +575,7 @@ function CustomerService() {
                   className="cs-btn cs-btn-secondary"
                   onClick={() => setShowDisputeModal(false)}
                 >
-                  Cancel
+                  {t('customerService.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -596,12 +585,12 @@ function CustomerService() {
                   {submittingDispute ? (
                     <>
                       <Loader2 size={16} className="spin" />
-                      Submitting...
+                      {t('customerService.submitting')}
                     </>
                   ) : (
                     <>
                       <Send size={16} />
-                      Submit Dispute
+                      {t('customerService.submitDispute')}
                     </>
                   )}
                 </button>
@@ -618,7 +607,7 @@ function CustomerService() {
             <div className="cs-modal-header">
               <h3>
                 <MessageSquare size={20} />
-                Create Support Ticket
+                {t('customerService.ticketModalTitle')}
               </h3>
               <button
                 className="cs-modal-close"
@@ -630,57 +619,57 @@ function CustomerService() {
             <form onSubmit={handleSubmitTicket}>
               <div className="cs-modal-body">
                 <div className="cs-form-group">
-                  <label>Subject *</label>
+                  <label>{t('customerService.subject')} *</label>
                   <input
                     type="text"
                     value={ticketForm.subject}
                     onChange={(e) =>
                       setTicketForm({ ...ticketForm, subject: e.target.value })
                     }
-                    placeholder="Brief description of your issue"
+                    placeholder={t('customerService.subjectPlaceholder')}
                     required
                   />
                 </div>
 
                 <div className="cs-form-row">
                   <div className="cs-form-group">
-                    <label>Category</label>
+                    <label>{t('customerService.category')}</label>
                     <select
                       value={ticketForm.category}
                       onChange={(e) =>
                         setTicketForm({ ...ticketForm, category: e.target.value })
                       }
                     >
-                      <option value="technical">Technical Issue</option>
-                      <option value="account">Account Problem</option>
-                      <option value="payment">Payment & Billing</option>
-                      <option value="job_issue">Job Issue</option>
-                      <option value="other">Other</option>
+                      <option value="technical">{t('customerService.categoryTechnical')}</option>
+                      <option value="account">{t('customerService.categoryAccount')}</option>
+                      <option value="payment">{t('customerService.categoryPayment')}</option>
+                      <option value="job_issue">{t('customerService.categoryJobIssue')}</option>
+                      <option value="other">{t('customerService.categoryOther')}</option>
                     </select>
                   </div>
                   <div className="cs-form-group">
-                    <label>Priority</label>
+                    <label>{t('customerService.priority')}</label>
                     <select
                       value={ticketForm.priority}
                       onChange={(e) =>
                         setTicketForm({ ...ticketForm, priority: e.target.value })
                       }
                     >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
+                      <option value="low">{t('customerService.priorityLow')}</option>
+                      <option value="medium">{t('customerService.priorityMedium')}</option>
+                      <option value="high">{t('customerService.priorityHigh')}</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="cs-form-group">
-                  <label>Description *</label>
+                  <label>{t('customerService.description')} *</label>
                   <textarea
                     value={ticketForm.description}
                     onChange={(e) =>
                       setTicketForm({ ...ticketForm, description: e.target.value })
                     }
-                    placeholder="Please describe your issue in detail..."
+                    placeholder={t('customerService.descriptionPlaceholder')}
                     rows={5}
                     required
                   />
@@ -692,7 +681,7 @@ function CustomerService() {
                   className="cs-btn cs-btn-secondary"
                   onClick={() => setShowTicketModal(false)}
                 >
-                  Cancel
+                  {t('customerService.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -702,12 +691,12 @@ function CustomerService() {
                   {submittingTicket ? (
                     <>
                       <Loader2 size={16} className="spin" />
-                      Creating...
+                      {t('customerService.creating')}
                     </>
                   ) : (
                     <>
                       <Send size={16} />
-                      Create Ticket
+                      {t('customerService.createTicket')}
                     </>
                   )}
                 </button>
@@ -724,7 +713,7 @@ function CustomerService() {
             <div className="cs-modal-header">
               <h3>
                 <Scale size={20} />
-                Dispute #{selectedDispute.dispute_number}
+                {t('customerService.dispute')} #{selectedDispute.dispute_number}
               </h3>
               <button
                 className="cs-modal-close"
@@ -735,34 +724,34 @@ function CustomerService() {
             </div>
             <div className="cs-modal-body">
               <div className="cs-detail-row">
-                <span className="cs-detail-label">Status</span>
+                <span className="cs-detail-label">{t('customerService.status')}</span>
                 <span className={`cs-badge cs-badge-${getStatusColor(selectedDispute.status)}`}>
                   {selectedDispute.status?.replace(/_/g, " ")}
                 </span>
               </div>
               <div className="cs-detail-row">
-                <span className="cs-detail-label">Type</span>
+                <span className="cs-detail-label">{t('customerService.type')}</span>
                 <span>{selectedDispute.type?.replace(/_/g, " ")}</span>
               </div>
               <div className="cs-detail-row">
-                <span className="cs-detail-label">Created</span>
+                <span className="cs-detail-label">{t('customerService.created')}</span>
                 <span>{formatDate(selectedDispute.created_at)}</span>
               </div>
               {selectedDispute.job_title && (
                 <div className="cs-detail-row">
-                  <span className="cs-detail-label">Related Job</span>
+                  <span className="cs-detail-label">{t('customerService.relatedJobLabel')}</span>
                   <span>{selectedDispute.job_title}</span>
                 </div>
               )}
               <div className="cs-detail-section">
-                <h4>Reason</h4>
+                <h4>{t('customerService.reason')}</h4>
                 <p>{selectedDispute.reason}</p>
               </div>
               {selectedDispute.resolution && (
                 <div className="cs-detail-section cs-resolution">
                   <h4>
                     <CheckCircle size={16} />
-                    Resolution
+                    {t('customerService.resolution')}
                   </h4>
                   <p>{selectedDispute.resolution}</p>
                 </div>
@@ -779,7 +768,7 @@ function CustomerService() {
             <div className="cs-modal-header">
               <h3>
                 <MessageSquare size={20} />
-                Ticket #{selectedTicket.ticket_number}
+                {t('customerService.ticket')} #{selectedTicket.ticket_number}
               </h3>
               <button
                 className="cs-modal-close"
@@ -801,10 +790,10 @@ function CustomerService() {
               </div>
 
               <div className="cs-messages">
-                <h4>Conversation</h4>
+                <h4>{t('customerService.conversation')}</h4>
                 <div className="cs-messages-list">
                   {ticketMessages.length === 0 ? (
-                    <div className="cs-messages-empty">No messages yet</div>
+                    <div className="cs-messages-empty">{t('customerService.noMessagesYet')}</div>
                   ) : (
                     ticketMessages.map((msg) => (
                       <div
@@ -812,7 +801,7 @@ function CustomerService() {
                         className={`cs-message ${msg.sender_type === "user" ? "sent" : "received"}`}
                       >
                         <div className="cs-message-header">
-                          <span>{msg.sender_type === "user" ? "You" : "Support"}</span>
+                          <span>{msg.sender_type === "user" ? t('customerService.you') : t('customerService.supportTeam')}</span>
                           <span>{timeAgo(msg.created_at)}</span>
                         </div>
                         <div className="cs-message-body">{msg.message}</div>
@@ -826,7 +815,7 @@ function CustomerService() {
                     <textarea
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
-                      placeholder="Type your reply..."
+                      placeholder={t('customerService.typeReply')}
                       rows={3}
                     />
                     <button
@@ -839,7 +828,7 @@ function CustomerService() {
                       ) : (
                         <Send size={16} />
                       )}
-                      Send
+                      {t('customerService.send')}
                     </button>
                   </div>
                 )}

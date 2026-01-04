@@ -1053,6 +1053,159 @@
   background: #9ca3af;
 }
 
+/* ==================== SETTINGS TAB ==================== */
+.rp-settings-section {
+  margin-bottom: 20px;
+}
+
+.rp-settings-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 28px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.rp-settings-card-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.rp-settings-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(0, 165, 169, 0.1) 0%, rgba(0, 165, 169, 0.05) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00a5a9;
+}
+
+.rp-settings-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f223d;
+  margin: 0 0 4px 0;
+}
+
+.rp-settings-subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.rp-language-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rp-language-option {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: #f8fafc;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.rp-language-option:hover {
+  background: rgba(0, 165, 169, 0.05);
+  border-color: rgba(0, 165, 169, 0.3);
+}
+
+.rp-language-option.rp-language-active {
+  background: rgba(0, 165, 169, 0.08);
+  border-color: #00a5a9;
+}
+
+.rp-language-flag {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.rp-language-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rp-language-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f223d;
+}
+
+.rp-language-native {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.rp-language-check {
+  color: #00a5a9;
+  flex-shrink: 0;
+}
+
+/* Mobile responsiveness for settings */
+@media (max-width: 768px) {
+  .rp-settings-card {
+    padding: 20px;
+  }
+
+  .rp-settings-card-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .rp-language-option {
+    padding: 14px 16px;
+  }
+
+  .rp-language-flag {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .rp-settings-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .rp-settings-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .rp-settings-title {
+    font-size: 16px;
+  }
+
+  .rp-language-option {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .rp-language-name {
+    font-size: 14px;
+  }
+
+  .rp-language-native {
+    font-size: 12px;
+  }
+}
+
 /* ==================== FOCUS STATES ==================== */
 .rp-btn:focus-visible,
 .rp-nav-item:focus-visible,

@@ -23,6 +23,7 @@ import "leaflet/dist/leaflet.css";
 import "../../styles/manager/repairdetails.css";
 import toast from "react-hot-toast";
 import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 // Custom marker icon for the map
 const createPropertyIcon = () => {
@@ -41,6 +42,7 @@ const createPropertyIcon = () => {
 };
 
 function RepairDetails({ isOpen, onClose, repair }) {
+  const { t } = useLanguage();
   const [favorites, setFavorites] = useState([]);
   const [bidders, setBidders] = useState([]);
   const [showBidModal, setShowBidModal] = useState(false);
@@ -361,7 +363,7 @@ function RepairDetails({ isOpen, onClose, repair }) {
                     {repair.property}
                   </span>
                   <span className="rd-compact-divider">•</span>
-                  <span>{repair.category || "General"}</span>
+                  <span>{repair.category || t('repairDetails.general')}</span>
                 </div>
               </div>
             </div>
@@ -370,7 +372,7 @@ function RepairDetails({ isOpen, onClose, repair }) {
                 repair.category?.includes("Urgent") ? "urgent" :
                 repair.category?.includes("Next") ? "warning" : "active"
               }`}>
-                {repair.status || "Open"}
+                {repair.status || t('repairDetails.open')}
               </span>
               <button className="rd-compact-close" onClick={onClose}>
                 <X size={18} />
@@ -385,16 +387,16 @@ function RepairDetails({ isOpen, onClose, repair }) {
             <div className="rd-compact-stats">
               <div className="rd-compact-stat">
                 <Clock size={14} />
-                <span>{getDaysSincePosted()} days ago</span>
+                <span>{getDaysSincePosted()} {t('repairDetails.daysAgo')}</span>
               </div>
               <div className="rd-compact-stat">
                 <Users size={14} />
-                <span>{bidders.length} {bidders.length === 1 ? 'bid' : 'bids'}</span>
+                <span>{bidders.length} {bidders.length === 1 ? t('repairDetails.bid') : t('repairDetails.bids')}</span>
               </div>
               {getHighestBid() && (
                 <div className="rd-compact-stat highlight">
                   <DollarSign size={14} />
-                  <span>High: ${getHighestBid().toLocaleString()}</span>
+                  <span>{t('repairDetails.highestBid')} ${getHighestBid().toLocaleString()}</span>
                 </div>
               )}
             </div>
@@ -405,33 +407,33 @@ function RepairDetails({ isOpen, onClose, repair }) {
               {/* Left: Details */}
               <div className="rd-compact-details">
                 <div className="rd-compact-section">
-                  <label className="rd-compact-label">Description</label>
+                  <label className="rd-compact-label">{t('repairDetails.description')}</label>
                   <p className="rd-compact-description">
-                    {repair.description || "No description provided."}
+                    {repair.description || t('repairDetails.noDescription')}
                   </p>
                 </div>
 
                 <div className="rd-compact-info-list">
                   <div className="rd-compact-info-item">
                     <DollarSign size={14} />
-                    <span className="rd-info-key">Budget</span>
+                    <span className="rd-info-key">{t('repairDetails.budget')}</span>
                     <span className="rd-info-val">{repair.budget}</span>
                   </div>
                   <div className="rd-compact-info-item">
                     <Building2 size={14} />
-                    <span className="rd-info-key">Type</span>
+                    <span className="rd-info-key">{t('repairDetails.type')}</span>
                     <span className="rd-info-val">{repair.building_type || "N/A"}</span>
                   </div>
                   <div className="rd-compact-info-item">
                     <Calendar size={14} />
-                    <span className="rd-info-key">Posted</span>
+                    <span className="rd-info-key">{t('repairDetails.posted')}</span>
                     <span className="rd-info-val">{new Date(repair.created_at).toLocaleDateString('en-US', {
                       month: 'short', day: 'numeric', year: 'numeric'
                     })}</span>
                   </div>
                   <div className="rd-compact-info-item">
                     <MapPin size={14} />
-                    <span className="rd-info-key">Location</span>
+                    <span className="rd-info-key">{t('repairDetails.location')}</span>
                     <span className="rd-info-val">{repair.address || repair.property}</span>
                   </div>
                 </div>
@@ -474,7 +476,7 @@ function RepairDetails({ isOpen, onClose, repair }) {
                   ) : (
                     <div className="rd-compact-map-fallback">
                       <MapPin size={32} />
-                      <p>Location not available</p>
+                      <p>{t('repairDetails.locationNotAvailable')}</p>
                     </div>
                   )}
                 </div>
@@ -486,7 +488,7 @@ function RepairDetails({ isOpen, onClose, repair }) {
               <div className="rd-compact-bids-header">
                 <h3>
                   <FileText size={16} />
-                  Review Bids
+                  {t('repairDetails.reviewBids')}
                   {bidders.length > 0 && <span className="rd-bids-badge">{bidders.length}</span>}
                 </h3>
               </div>
@@ -495,12 +497,12 @@ function RepairDetails({ isOpen, onClose, repair }) {
                 {isLoadingBidders ? (
                   <div className="rd-compact-bids-empty">
                     <div className="rd-spinner"></div>
-                    <p>Loading bids...</p>
+                    <p>{t('repairDetails.loadingBids')}</p>
                   </div>
                 ) : bidders.length === 0 ? (
                   <div className="rd-compact-bids-empty">
                     <Users size={32} />
-                    <p>No bids yet</p>
+                    <p>{t('repairDetails.noBidsYet')}</p>
                   </div>
                 ) : (
                   [...bidders]
@@ -514,7 +516,7 @@ function RepairDetails({ isOpen, onClose, repair }) {
                         <div
                           className="rd-bid-avatar rd-bid-avatar-clickable"
                           onClick={(e) => handleProfileClick(e, bidder)}
-                          title="View profile"
+                          title={t('repairDetails.viewProfile')}
                         >
                           {bidder.company_name?.charAt(0) || 'C'}
                         </div>
@@ -522,7 +524,7 @@ function RepairDetails({ isOpen, onClose, repair }) {
                           <div
                             className="rd-bid-name rd-bid-name-clickable"
                             onClick={(e) => handleProfileClick(e, bidder)}
-                            title="View profile"
+                            title={t('repairDetails.viewProfile')}
                           >
                             {bidder.company_name}
                           </div>
@@ -536,7 +538,7 @@ function RepairDetails({ isOpen, onClose, repair }) {
                         </div>
                         <div className="rd-bid-amount">${bidder.bid_amount.toLocaleString()}</div>
                         <span className={`rd-bid-status ${bidder.bid_status || 'pending'}`}>
-                          {bidder.bid_status || 'Pending'}
+                          {bidder.bid_status || t('repairDetails.pending')}
                         </span>
                         <button
                           className="rd-bid-fav"
@@ -569,7 +571,7 @@ function RepairDetails({ isOpen, onClose, repair }) {
                   <h3>{selectedBidder.company_name}</h3>
                   <div className="rd-submodal-rating">
                     <Star size={12} fill="#facc15" stroke="#facc15" />
-                    <span>{Number(selectedBidder.average_rating || 0).toFixed(1)} ({selectedBidder.total_reviews || 0} reviews)</span>
+                    <span>{Number(selectedBidder.average_rating || 0).toFixed(1)} ({selectedBidder.total_reviews || 0} {t('repairDetails.reviews')})</span>
                   </div>
                 </div>
               </div>
@@ -581,36 +583,36 @@ function RepairDetails({ isOpen, onClose, repair }) {
             <div className="rd-submodal-body">
               {/* Bid Amount Highlight */}
               <div className="rd-submodal-amount-box">
-                <span className="rd-amount-label">Bid Amount</span>
+                <span className="rd-amount-label">{t('repairDetails.bidAmount')}</span>
                 <span className="rd-amount-value">${selectedBidder.bid_amount.toLocaleString()}</span>
                 <span className={`rd-amount-status ${selectedBidder.bid_status || 'pending'}`}>
-                  {selectedBidder.bid_status || 'Pending'}
+                  {selectedBidder.bid_status || t('repairDetails.pending')}
                 </span>
               </div>
 
               {/* Message */}
               {selectedBidder.bid_message && (
                 <div className="rd-submodal-section">
-                  <label>Message</label>
+                  <label>{t('repairDetails.message')}</label>
                   <p className="rd-submodal-message">{selectedBidder.bid_message}</p>
                 </div>
               )}
 
               {/* Company Info */}
               <div className="rd-submodal-section">
-                <label>Company Details</label>
+                <label>{t('repairDetails.companyDetails')}</label>
                 <div className="rd-submodal-grid">
-                  <div><span>License</span><strong>{selectedBidder.profile.license_number || "N/A"}</strong></div>
-                  <div><span>Employees</span><strong>{selectedBidder.profile.num_employees || "N/A"}</strong></div>
-                  <div><span>Years</span><strong>{selectedBidder.profile.years_in_business || "N/A"}</strong></div>
-                  <div><span>Email</span><strong>{selectedBidder.profile.email}</strong></div>
+                  <div><span>{t('repairDetails.license')}</span><strong>{selectedBidder.profile.license_number || "N/A"}</strong></div>
+                  <div><span>{t('repairDetails.employees')}</span><strong>{selectedBidder.profile.num_employees || "N/A"}</strong></div>
+                  <div><span>{t('repairDetails.years')}</span><strong>{selectedBidder.profile.years_in_business || "N/A"}</strong></div>
+                  <div><span>{t('repairDetails.email')}</span><strong>{selectedBidder.profile.email}</strong></div>
                 </div>
               </div>
 
               {/* Specializations */}
               {selectedBidder.profile.specializations?.length > 0 && (
                 <div className="rd-submodal-section">
-                  <label>Specializations</label>
+                  <label>{t('repairDetails.specializations')}</label>
                   <div className="rd-submodal-tags">
                     {selectedBidder.profile.specializations.map((s, i) => (
                       <span key={i} className="rd-submodal-tag">{s}</span>
@@ -624,15 +626,15 @@ function RepairDetails({ isOpen, onClose, repair }) {
               {selectedBidder.bid_status !== "approved" && selectedBidder.bid_status !== "declined" ? (
                 <>
                   <button className="rd-submodal-btn secondary" onClick={handleDeclineBid} disabled={isProcessing}>
-                    {isProcessing ? "..." : "Decline"}
+                    {isProcessing ? "..." : t('repairDetails.decline')}
                   </button>
                   <button className="rd-submodal-btn primary" onClick={handleAcceptBid} disabled={isProcessing}>
-                    {isProcessing ? "..." : "Accept Bid"}
+                    {isProcessing ? "..." : t('repairDetails.acceptBid')}
                   </button>
                 </>
               ) : (
                 <div className="rd-submodal-decided">
-                  This bid has been <strong>{selectedBidder.bid_status}</strong>
+                  {t('repairDetails.bidDecided')} <strong>{selectedBidder.bid_status}</strong>
                 </div>
               )}
             </div>

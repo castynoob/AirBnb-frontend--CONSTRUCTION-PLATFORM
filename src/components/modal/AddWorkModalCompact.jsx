@@ -18,11 +18,13 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import JobsPreviewModal from './JobsPreviewModal';
+import { useLanguage } from '../../contexts/LanguageContext';
 import '../../styles/manager/addworkmodalcompact.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
+  const { t } = useLanguage();
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [parsedJobsData, setParsedJobsData] = useState(null);
   const [inspectionId, setInspectionId] = useState(null);
@@ -403,7 +405,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
         <div className="compact-header">
           <div className="compact-title-wrapper">
             <Tag size={20} className="compact-icon" />
-            <h2>Add New Job</h2>
+            <h2>{t('addWorkModal.addNewJob')}</h2>
           </div>
           <button className="compact-close-btn" onClick={onClose} disabled={isSubmitting}>
             <X size={20} />
@@ -415,15 +417,15 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
           <div className="compact-property-section">
             <label className="compact-label">
               <Building2 size={14} />
-              {inputMethod === 'excel' ? 'Property for All Jobs' : 'Select Property'}
+              {inputMethod === 'excel' ? t('addWorkModal.propertyForAllJobs') : t('addWorkModal.selectProperty')}
               <span className="required">*</span>
             </label>
             {isLoadingProperties ? (
-              <div className="compact-loading-text">Loading...</div>
+              <div className="compact-loading-text">{t('addWorkModal.loading')}</div>
             ) : properties.length === 0 ? (
               <div className="compact-info-message">
                 <AlertCircle size={16} />
-                <span>No properties found. Please add a property first.</span>
+                <span>{t('addWorkModal.noPropertiesFound')}</span>
               </div>
             ) : (
               <>
@@ -443,7 +445,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                 {inputMethod === 'excel' && (
                   <div className="compact-info-message" style={{ marginTop: '0.5rem' }}>
                     <AlertCircle size={16} />
-                    <span>All jobs from the Excel file will be created for this property</span>
+                    <span>{t('addWorkModal.allJobsForProperty')}</span>
                   </div>
                 )}
               </>
@@ -459,7 +461,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
               disabled={isSubmitting}
             >
               <Edit3 size={16} />
-              <span>Manual Entry</span>
+              <span>{t('addWorkModal.manualEntry')}</span>
             </button>
             <button
               type="button"
@@ -468,7 +470,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
               disabled={isSubmitting}
             >
               <FileText size={16} />
-              <span>Upload Excel</span>
+              <span>{t('addWorkModal.uploadExcel')}</span>
             </button>
           </div>
 
@@ -478,7 +480,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
               {/* Job Title */}
               <div className="compact-form-group">
                 <label className="compact-label">
-                  Job Title <span className="required">*</span>
+                  {t('addWorkModal.jobTitle')} <span className="required">*</span>
                 </label>
                 <input
                   type="text"
@@ -486,7 +488,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                   value={formData.title}
                   onChange={handleChange}
                   className={`compact-input ${errors.title ? 'error' : ''}`}
-                  placeholder="e.g., Fix leaking roof"
+                  placeholder={t('addWorkModal.jobTitlePlaceholder')}
                   disabled={isSubmitting}
                 />
                 {errors.title && <span className="compact-error-text">{errors.title}</span>}
@@ -495,7 +497,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
               {/* Category & Urgency */}
               <div className="compact-form-row">
                 <div className="compact-form-group">
-                  <label className="compact-label">Category</label>
+                  <label className="compact-label">{t('addWorkModal.category')}</label>
                   <select
                     name="category"
                     value={formData.category}
@@ -509,7 +511,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                   </select>
                 </div>
                 <div className="compact-form-group">
-                  <label className="compact-label">Urgency</label>
+                  <label className="compact-label">{t('addWorkModal.urgency')}</label>
                   <select
                     name="urgency"
                     value={formData.urgency}
@@ -537,7 +539,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                 />
                 <label htmlFor="is_emergency" className="compact-checkbox-label">
                   <AlertTriangle size={14} className="emergency-icon" />
-                  Mark as Emergency
+                  {t('addWorkModal.markAsEmergency')}
                 </label>
               </div>
 
@@ -545,7 +547,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
               <div className="compact-form-row">
                 <div className="compact-form-group">
                   <label className="compact-label">
-                    <Calendar size={14} /> Due Date
+                    <Calendar size={14} /> {t('addWorkModal.dueDate')}
                   </label>
                   <input
                     type="date"
@@ -558,7 +560,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                 </div>
                 <div className="compact-form-group">
                   <label className="compact-label">
-                    <Clock size={14} /> Duration (days)
+                    <Clock size={14} /> {t('addWorkModal.duration')}
                   </label>
                   <input
                     type="number"
@@ -566,7 +568,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                     value={formData.estimated_duration_days}
                     onChange={handleChange}
                     className="compact-input"
-                    placeholder="e.g., 7"
+                    placeholder={t('addWorkModal.durationPlaceholder')}
                     min="1"
                     disabled={isSubmitting}
                   />
@@ -576,7 +578,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
               {/* Budget Section */}
               <div className="compact-budget-box">
                 <label className="compact-label">
-                  <DollarSign size={14} /> Budget Range
+                  <DollarSign size={14} /> {t('addWorkModal.budgetRange')}
                 </label>
                 <div className="compact-form-row">
                   <input
@@ -585,7 +587,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                     value={formData.budget_min}
                     onChange={handleChange}
                     className="compact-input"
-                    placeholder="Min"
+                    placeholder={t('addWorkModal.min')}
                     min="0"
                     step="0.01"
                     disabled={isSubmitting}
@@ -596,7 +598,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                     value={formData.budget_max}
                     onChange={handleChange}
                     className="compact-input"
-                    placeholder="Max"
+                    placeholder={t('addWorkModal.max')}
                     min="0"
                     step="0.01"
                     disabled={isSubmitting}
@@ -606,14 +608,14 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
 
               {/* Description */}
               <div className="compact-form-group">
-                <label className="compact-label">Description</label>
+                <label className="compact-label">{t('addWorkModal.description')}</label>
                 <textarea
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
                   className="compact-textarea"
                   rows="3"
-                  placeholder="Describe the work needed..."
+                  placeholder={t('addWorkModal.descriptionPlaceholder')}
                   disabled={isSubmitting}
                 />
               </div>
@@ -621,7 +623,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
               {/* Image Upload */}
               <div className="compact-form-group">
                 <label className="compact-label">
-                  <Upload size={14} /> Upload Images (Optional, max 5)
+                  <Upload size={14} /> {t('addWorkModal.uploadImages')}
                 </label>
                 <div className="compact-upload-zone">
                   <input
@@ -635,8 +637,8 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                   />
                   <label htmlFor="job-images" className="compact-upload-label">
                     <Upload size={20} />
-                    <span>Click to upload images</span>
-                    <small>PNG, JPG up to 5MB each</small>
+                    <span>{t('addWorkModal.clickToUpload')}</span>
+                    <small>{t('addWorkModal.imageLimit')}</small>
                   </label>
                 </div>
 
@@ -667,14 +669,14 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                   className="compact-btn compact-btn-secondary"
                   disabled={isSubmitting}
                 >
-                  Cancel
+                  {t('addWorkModal.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="compact-btn compact-btn-primary"
                   disabled={isSubmitting || properties.length === 0}
                 >
-                  {isSubmitting ? 'Creating...' : 'Create Job'}
+                  {isSubmitting ? t('addWorkModal.creating') : t('addWorkModal.createJob')}
                 </button>
               </div>
             </form>
@@ -688,8 +690,8 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                 <div className="compact-template-info">
                   <FileText size={20} className="template-icon" />
                   <div>
-                    <h4>Excel Template</h4>
-                    <p>Download our template to ensure your data is formatted correctly</p>
+                    <h4>{t('addWorkModal.excelTemplate')}</h4>
+                    <p>{t('addWorkModal.templateDescription')}</p>
                   </div>
                 </div>
                 <button
@@ -699,7 +701,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                   disabled={isSubmitting}
                 >
                   <Download size={16} />
-                  Download Template
+                  {t('addWorkModal.downloadTemplate')}
                 </button>
               </div>
 
@@ -715,9 +717,9 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                 />
                 <label htmlFor="excel-file" className="compact-excel-label">
                   <File size={32} className="excel-icon" />
-                  <p>Drag & drop your Excel file here</p>
-                  <span>or click to browse</span>
-                  <small>Supported: .XLSX, .XLS, .CSV (max 10MB)</small>
+                  <p>{t('addWorkModal.dragDropExcel')}</p>
+                  <span>{t('addWorkModal.orClickBrowse')}</span>
+                  <small>{t('addWorkModal.supportedFormats')}</small>
                 </label>
               </div>
 
@@ -751,14 +753,14 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                   className="compact-btn compact-btn-secondary"
                   disabled={isSubmitting}
                 >
-                  Cancel
+                  {t('addWorkModal.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="compact-btn compact-btn-primary"
                   disabled={isSubmitting || !excelFile || properties.length === 0}
                 >
-                  {isSubmitting ? 'Parsing...' : 'Preview Jobs'}
+                  {isSubmitting ? t('addWorkModal.parsing') : t('addWorkModal.previewJobs')}
                 </button>
               </div>
             </form>

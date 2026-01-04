@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom"
 import toast from "react-hot-toast"
 import "../../styles/manager/homepage.css"
 import Nav from "../../components/Nav"
+import { useLanguage } from "../../contexts/LanguageContext"
 import RepairList from "../../components/RepairList"
 import SummarySection from "../../components/SummarySection"
 import RepairDetails from "../works/RepairDetails"
@@ -94,7 +95,7 @@ function SummarySkeleton() {
 
 function HomePage() {
   const navigate = useNavigate()
-
+  const { t } = useLanguage()
 
   const [properties, setProperties] = useState([])
   const [jobs, setJobs] = useState([])
@@ -351,16 +352,16 @@ function HomePage() {
 
   // Generate default urgent message template
   const getDefaultUrgentMessage = () => {
-    return `Dear Contractor,
+    return `${t('urgentEmail.greeting')}
 
-We have urgent job(s) that require immediate attention. These projects are time-sensitive and need experienced contractors.
+${t('urgentEmail.intro')}
 
-Please log in to your dashboard to review full details and submit your bid as soon as possible.
+${t('urgentEmail.action')}
 
-Thank you for your prompt attention to this matter.
+${t('urgentEmail.thanks')}
 
-Best regards,
-${uProfile?.name || 'Property Manager'}`
+${t('urgentEmail.regards')}
+${uProfile?.name || t('urgentEmail.propertyManager')}`
   }
 
   // Open urgent modal
@@ -612,9 +613,9 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
     toast.promise(
       sendEmail(),
       {
-        loading: `Sending urgent request for ${urgentJobs.length} job${urgentJobs.length !== 1 ? 's' : ''}...`,
-        success: `Urgent request sent for ${urgentJobs.length} job${urgentJobs.length !== 1 ? 's' : ''}!`,
-        error: 'Failed to send urgent request. Please try again.',
+        loading: `${t('urgentModal.sendingRequest')} (${urgentJobs.length} ${urgentJobs.length !== 1 ? t('urgentModal.jobsSelected') : t('urgentModal.jobSelected')})...`,
+        success: `${t('urgentModal.requestSent')} (${urgentJobs.length} ${urgentJobs.length !== 1 ? t('urgentModal.jobsSelected') : t('urgentModal.jobSelected')})!`,
+        error: t('urgentModal.requestFailed'),
       }
     );
   };
@@ -660,8 +661,8 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
           <header className="pm-page-header">
             <div className="pm-header-left">
               <div className="pm-header-title-group">
-                <h1>TRAVAUX</h1>
-                <span className="pm-project-count">0 active jobs</span>
+                <h1>{t('homePage.title')}</h1>
+                <span className="pm-project-count">0 {t('homePage.activeJobs')}</span>
               </div>
             </div>
             <div className="pm-header-actions">
@@ -669,7 +670,7 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                 <Search size={18} className="pm-search-icon" />
                 <input
                   type="text"
-                  placeholder="Search jobs..."
+                  placeholder={t('homePage.searchPlaceholder')}
                   value=""
                   className="pm-search-input"
                   disabled
@@ -680,19 +681,19 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
               <div className="pm-action-buttons">
                 <button className="pm-btn pm-btn-secondary" disabled>
                   <Wrench size={18} />
-                  <span>Urgent</span>
+                  <span>{t('homePage.urgent')}</span>
                 </button>
                 <button className="pm-btn pm-btn-secondary" disabled>
                   <Megaphone size={18} />
-                  <span>Announcement</span>
+                  <span>{t('homePage.announcement')}</span>
                 </button>
                 <button className="pm-btn pm-btn-primary" disabled>
                   <Plus size={18} />
-                  <span>New Jobs</span>
+                  <span>{t('homePage.newJobs')}</span>
                 </button>
                 <button className="pm-btn pm-btn-primary pm-btn-property" disabled>
                   <Building2 size={18} />
-                  <span>Add Property</span>
+                  <span>{t('homePage.addProperty')}</span>
                 </button>
               </div>
 
@@ -709,8 +710,8 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
           <section className="hp-repairs-section">
             <div className="hp-section-header">
               <div className="hp-section-header-left">
-                <h2>All Repair Work</h2>
-                <p className="hp-section-subtitle">Loading repairs...</p>
+                <h2>{t('homePage.allRepairWork')}</h2>
+                <p className="hp-section-subtitle">{t('homePage.loadingRepairs')}</p>
               </div>
               <div className="hp-section-header-right">
                 <div className="pm-skeleton-filter">
@@ -747,8 +748,8 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
         <header className="pm-page-header">
           <div className="pm-header-left">
             <div className="pm-header-title-group">
-              <h1>TRAVAUX</h1>
-              <span className="pm-project-count">{properties.length} active jobs</span>
+              <h1>{t('homePage.title')}</h1>
+              <span className="pm-project-count">{properties.length} {t('homePage.activeJobs')}</span>
             </div>
           </div>
           <div className="pm-header-actions">
@@ -757,7 +758,7 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
               <input
                 ref={searchInputRef}
                 type="text"
-                placeholder="Search jobs..."
+                placeholder={t('homePage.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pm-search-input"
@@ -768,34 +769,34 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
               <button
                 onClick={handleOpenUrgentModal}
                 className="pm-btn pm-btn-secondary"
-                title="Send urgent requests"
+                title={t('homePage.urgent')}
               >
                 <Wrench size={18} />
-                <span>Urgent</span>
+                <span>{t('homePage.urgent')}</span>
               </button>
               <button
                 onClick={() => setShowAnnouncementModal(true)}
                 className="pm-btn pm-btn-secondary"
-                title="Create announcement"
+                title={t('homePage.announcement')}
               >
                 <Megaphone size={18} />
-                <span>Announcement</span>
+                <span>{t('homePage.announcement')}</span>
               </button>
               <button
                 onClick={handleAddWork}
                 className="pm-btn pm-btn-primary"
-                title="Create new project"
+                title={t('homePage.newJobs')}
               >
                 <Plus size={18} />
-                <span>New Jobs</span>
+                <span>{t('homePage.newJobs')}</span>
               </button>
               <button
                 onClick={() => setShowAddPropertyModal(true)}
                 className="pm-btn pm-btn-primary pm-btn-property"
-                title="Add new property"
+                title={t('homePage.addProperty')}
               >
                 <Building2 size={18} />
-                <span>Add Property</span>
+                <span>{t('homePage.addProperty')}</span>
               </button>
             </div>
 
@@ -813,7 +814,7 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
 
         {filteredRepairs.length === 0 && (
           <div className="pm-no-results-home">
-            <p>No repairs found matching your search.</p>
+            <p>{t('homePage.noRepairsFound')}</p>
           </div>
         )}
       </div>
@@ -881,7 +882,7 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
             <div className="pm-urgent-modal-header">
               <div className="pm-urgent-modal-title">
                 <AlertTriangle size={20} />
-                <h2>Send Urgent Request</h2>
+                <h2>{t('urgentModal.sendUrgentRequest')}</h2>
               </div>
               <button
                 className="pm-urgent-modal-close"
@@ -895,18 +896,18 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
               {/* Job Selection Section */}
               <div className="pm-urgent-section">
                 <div className="pm-urgent-section-header">
-                  <h3>Select Jobs to Send</h3>
+                  <h3>{t('urgentModal.selectJobsToSend')}</h3>
                   <button
                     type="button"
                     className="pm-urgent-select-all"
                     onClick={selectAllJobs}
                   >
-                    {selectedUrgentJobs.length === jobs.length ? 'Deselect All' : 'Select All'}
+                    {selectedUrgentJobs.length === jobs.length ? t('urgentModal.deselectAll') : t('urgentModal.selectAll')}
                   </button>
                 </div>
                 <div className="pm-urgent-jobs-list">
                   {jobs.length === 0 ? (
-                    <p className="pm-urgent-no-jobs">No jobs available</p>
+                    <p className="pm-urgent-no-jobs">{t('urgentModal.noJobsAvailable')}</p>
                   ) : (
                     jobs.map(job => (
                       <label
@@ -926,8 +927,8 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                         <div className="pm-urgent-job-info">
                           <span className="pm-urgent-job-title">{job.title}</span>
                           <span className="pm-urgent-job-meta">
-                            <span className="pm-urgent-job-category">{job.category || 'General'}</span>
-                            {job.is_emergency && <span className="pm-urgent-job-emergency">Emergency</span>}
+                            <span className="pm-urgent-job-category">{job.category || t('common.general')}</span>
+                            {job.is_emergency && <span className="pm-urgent-job-emergency">{t('common.emergency')}</span>}
                             <span className="pm-urgent-job-budget">${job.budget_min} - ${job.budget_max}</span>
                           </span>
                         </div>
@@ -936,26 +937,26 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                   )}
                 </div>
                 <p className="pm-urgent-selected-count">
-                  {selectedUrgentJobs.length} job{selectedUrgentJobs.length !== 1 ? 's' : ''} selected
+                  {selectedUrgentJobs.length} {selectedUrgentJobs.length !== 1 ? t('urgentModal.jobsSelected') : t('urgentModal.jobSelected')}
                 </p>
               </div>
 
               {/* Message Section */}
               <div className="pm-urgent-section">
-                <h3>Message to Contractors</h3>
+                <h3>{t('urgentModal.messageToContractors')}</h3>
                 <textarea
                   className="pm-urgent-message-editor"
                   value={urgentMessage}
                   onChange={(e) => setUrgentMessage(e.target.value)}
                   rows={8}
-                  placeholder="Enter your message to contractors..."
+                  placeholder={t('urgentModal.messagePlaceholder')}
                 />
                 <button
                   type="button"
                   className="pm-urgent-reset-message"
                   onClick={() => setUrgentMessage(getDefaultUrgentMessage())}
                 >
-                  Reset to Default Template
+                  {t('urgentModal.resetToDefault')}
                 </button>
               </div>
             </div>
@@ -965,7 +966,7 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                 className="pm-btn pm-btn-secondary"
                 onClick={() => setShowUrgentModal(false)}
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 className="pm-btn pm-btn-primary pm-urgent-send-btn"
@@ -973,7 +974,7 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                 disabled={selectedUrgentJobs.length === 0}
               >
                 <Wrench size={16} />
-                <span>Send Urgent Request</span>
+                <span>{t('urgentModal.sendUrgentRequest')}</span>
               </button>
             </div>
           </div>

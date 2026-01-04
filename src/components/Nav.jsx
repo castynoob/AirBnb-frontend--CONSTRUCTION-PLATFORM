@@ -5,10 +5,12 @@ import logo from '../assets/logo-light.png'
 import '../styles/nav.css'
 import { getUnreadCount, logout } from '../utils/api';
 import { useSocket } from '../contexts/SocketContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import ReportModal from './modal/ReportModal';
 
 function Nav() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [role, setRole] = useState('property_manager')
   const [userProfile, setUserProfile] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -147,8 +149,10 @@ function Nav() {
   };
 
   const getRoleDisplay = () => {
-    if (role === 'property_manager') return 'Property Manager';
-    if (role === 'supplier') return 'Supplier';
+    if (role === 'property_manager') return t('nav.propertyManager');
+    if (role === 'supplier') return t('nav.supplierRole');
+    if (role === 'entrepreneur') return t('nav.entrepreneur');
+    if (role === 'resident') return t('nav.resident');
     return role[0].toUpperCase() + role.substring(1);
   };
 
@@ -173,15 +177,13 @@ function Nav() {
             <div className="brand-text">
               <span className="brand-name nav">INTERVOS</span>
               <span className="brand-subtitle">
-                {role === 'property_manager' ? 'Property Manager' :
-                 role === 'supplier' ? 'Supplier' :
-                 role[0].toUpperCase() + role.substring(1)}
+                {getRoleDisplay()}
               </span>
             </div>
           </div>
 
           <div className="nav-section">
-            <span className="section-label">Main Menu</span>
+            <span className="section-label">{t('nav.mainMenu')}</span>
             <ul className="nav-links">
               <li>
                 <NavLink
@@ -191,7 +193,7 @@ function Nav() {
                   <div className="nav-icon">
                     <Home size={20} />
                   </div>
-                  <span className="nav-text">Home</span>
+                  <span className="nav-text">{t('nav.home')}</span>
                 </NavLink>
               </li>
 
@@ -203,7 +205,7 @@ function Nav() {
                   <div className="nav-icon">
                     <MessageSquare size={20} />
                   </div>
-                  <span className="nav-text">Messages</span>
+                  <span className="nav-text">{t('nav.messages')}</span>
                   {unreadCount > 0 && (
                     <span className="notification-badge">{unreadCount}</span>
                   )}
@@ -220,7 +222,7 @@ function Nav() {
                     <div className="nav-icon">
                       <FileText size={20} />
                     </div>
-                    <span className="nav-text">Biddings</span>
+                    <span className="nav-text">{t('nav.biddings')}</span>
                   </NavLink>
                 </li>
               }
@@ -235,7 +237,7 @@ function Nav() {
                     <div className="nav-icon">
                       <Users size={20} />
                     </div>
-                    <span className="nav-text">Members</span>
+                    <span className="nav-text">{t('nav.members')}</span>
                   </NavLink>
                 </li>
               }
@@ -251,7 +253,7 @@ function Nav() {
                     <div className="nav-icon">
                       <Heart size={20} />
                     </div>
-                    <span className="nav-text">Favorites</span>
+                    <span className="nav-text">{t('nav.favorites')}</span>
                   </NavLink>
                 </li>
               }
@@ -267,7 +269,7 @@ function Nav() {
                     <div className="nav-icon">
                       <Wrench size={20} />
                     </div>
-                    <span className="nav-text">Jobs</span>
+                    <span className="nav-text">{t('nav.jobs')}</span>
                   </NavLink>
                 </li>
                 <li>
@@ -278,7 +280,7 @@ function Nav() {
                     <div className="nav-icon">
                       <ShoppingCart size={20} />
                     </div>
-                    <span className="nav-text">Supplier</span>
+                    <span className="nav-text">{t('nav.supplier')}</span>
                   </NavLink>
                 </li>
                 </>
@@ -292,7 +294,7 @@ function Nav() {
                   <div className="nav-icon">
                     <User size={20} />
                   </div>
-                  <span className="nav-text">{userProfile?.first_name || 'Profile'}</span>
+                  <span className="nav-text">{userProfile?.first_name || t('nav.profile')}</span>
                 </NavLink>
               </li>
               
@@ -323,20 +325,20 @@ function Nav() {
               <div className="sidebar-dropdown">
                 <button className="sidebar-dropdown-item" onClick={handleViewProfile}>
                   <User size={18} />
-                  <span>View Profile</span>
+                  <span>{t('nav.viewProfile')}</span>
                 </button>
                 <button className="sidebar-dropdown-item" onClick={handleCustomerService}>
                   <Headphones size={18} />
-                  <span>Customer Service</span>
+                  <span>{t('nav.customerService')}</span>
                 </button>
                 <button className="sidebar-dropdown-item" onClick={handleReport}>
                   <Flag size={18} />
-                  <span>Report</span>
+                  <span>{t('nav.report')}</span>
                 </button>
                 <div className="sidebar-dropdown-divider" />
                 <button className="sidebar-dropdown-item logout" onClick={handleLogout}>
                   <LogOut size={18} />
-                  <span>Log out</span>
+                  <span>{t('nav.logout')}</span>
                 </button>
               </div>
             )}

@@ -27,12 +27,14 @@ import Nav from "../../components/Nav"
 import SlideToConfirm from "../../components/SlideToConfirm"
 import "../../styles/manager/submissions.css"
 import { useNavigate } from "react-router-dom"
+import { useLanguage } from "../../contexts/LanguageContext"
 import toast from "react-hot-toast"
 import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal"
 import PaymentModal from "../../components/PaymentModal"
 import { checkEntrepreneurStripeStatus, createContract, createPaymentIntent, getContractByJob, approveWorkAndReleaseFunds } from "../../utils/contractApi"
 
 function SubmissionsPage() {
+  const { t } = useLanguage()
   const [submissions, setSubmissions] = useState([])
   const [filteredSubmissions, setFilteredSubmissions] = useState([])
   const [loading, setLoading] = useState(true)
@@ -986,10 +988,10 @@ function SubmissionsPage() {
   const getStatusInfo = (status) => {
     const normalizedStatus = normalizeStatus(status)
     const statusMap = {
-      open: { class: "status-open", icon: FolderOpen, label: "Open" },
-      accepted: { class: "status-accepted", icon: CheckCircle, label: "Approved" },
-      ongoing: { class: "status-ongoing", icon: PlayCircle, label: "Ongoing" },
-      completed: { class: "status-completed", icon: CheckCircle, label: "Completed" },
+      open: { class: "status-open", icon: FolderOpen, label: t('submissions.open') },
+      accepted: { class: "status-accepted", icon: CheckCircle, label: t('submissions.approved') },
+      ongoing: { class: "status-ongoing", icon: PlayCircle, label: t('submissions.ongoing') },
+      completed: { class: "status-completed", icon: CheckCircle, label: t('submissions.completed') },
     }
     return statusMap[normalizedStatus]
   }
@@ -1058,11 +1060,11 @@ function SubmissionsPage() {
 
   // Updated tabs to match job status values
   const tabs = [
-    { id: "all", label: "All Submissions" },
-    { id: "open", label: "Open" },
-    { id: "accepted", label: "Approved" },
-    { id: "ongoing", label: "Ongoing" },
-    { id: "completed", label: "Completed" },
+    { id: "all", label: t('submissions.allSubmissions') },
+    { id: "open", label: t('submissions.open') },
+    { id: "accepted", label: t('submissions.approved') },
+    { id: "ongoing", label: t('submissions.ongoing') },
+    { id: "completed", label: t('submissions.completed') },
   ]
 
   useEffect(() => {
@@ -1124,14 +1126,14 @@ function SubmissionsPage() {
         <header className="subs-page-header">
           <div className="subs-header-left">
             <div className="subs-header-title-group">
-              <h1>SUBMISSIONS</h1>
-              <span className="subs-submission-count">{getStatusCount("all")} bids</span>
+              <h1>{t('submissions.title')}</h1>
+              <span className="subs-submission-count">{getStatusCount("all")} {t('submissions.bids')}</span>
             </div>
           </div>
           <div className="subs-header-actions">
             <button className="subs-btn subs-btn-secondary" onClick={handleViewReviews}>
               <Star size={18} />
-              <span>My Reviews</span>
+              <span>{t('submissions.myReviews')}</span>
             </button>
           </div>
         </header>
@@ -1141,7 +1143,7 @@ function SubmissionsPage() {
           <div className="subs-property-filter">
             <div className="subs-property-filter-label">
               <Building2 size={16} />
-              <span>Property:</span>
+              <span>{t('submissions.property')}</span>
             </div>
             <div className="subs-property-select-wrapper">
               <select
@@ -1152,7 +1154,7 @@ function SubmissionsPage() {
                   setSelectedJob("all") // Reset job filter when property changes
                 }}
               >
-                <option value="all">All Properties ({uniqueProperties.length})</option>
+                <option value="all">{t('submissions.allProperties')} ({uniqueProperties.length})</option>
                 {uniqueProperties.map((property) => (
                   <option key={property.id} value={String(property.id)}>
                     {property.name}
@@ -1166,7 +1168,7 @@ function SubmissionsPage() {
           <div className="subs-property-filter">
             <div className="subs-property-filter-label">
               <FileText size={16} />
-              <span>Job:</span>
+              <span>{t('submissions.job')}</span>
             </div>
             <div className="subs-property-select-wrapper">
               <select
@@ -1174,7 +1176,7 @@ function SubmissionsPage() {
                 value={selectedJob}
                 onChange={(e) => setSelectedJob(e.target.value)}
               >
-                <option value="all">All Jobs ({uniqueJobs.length})</option>
+                <option value="all">{t('submissions.allJobs')} ({uniqueJobs.length})</option>
                 {uniqueJobs.map((job) => (
                   <option key={job.id} value={String(job.id)}>
                     {job.title}
@@ -1204,7 +1206,7 @@ function SubmissionsPage() {
             <Search size={18} />
             <input
               type="text"
-              placeholder="Search by job or contractor..."
+              placeholder={t('submissions.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -1220,7 +1222,7 @@ function SubmissionsPage() {
             onClick={() => setShowFilters(!showFilters)}
           >
             <Filter size={18} />
-            Filters
+            {t('submissions.filters')}
             <ChevronDown size={16} className={showFilters ? "rotated" : ""} />
           </button>
         </div>
@@ -1229,18 +1231,18 @@ function SubmissionsPage() {
           <div className="subs-filters-panel">
             <div className="subs-filters-grid">
               <div className="subs-filter-item">
-                <label>Location</label>
+                <label>{t('submissions.location')}</label>
                 <input
                   type="text"
-                  placeholder="City or Address"
+                  placeholder={t('submissions.cityOrAddress')}
                   value={locationFilter}
                   onChange={(e) => setLocationFilter(e.target.value)}
                 />
               </div>
               <div className="subs-filter-item">
-                <label>Category</label>
+                <label>{t('submissions.category')}</label>
                 <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-                  <option value="">All Categories</option>
+                  <option value="">{t('submissions.allCategories')}</option>
                   {categories.map((cat) => (
                     <option key={cat} value={cat}>
                       {cat}
@@ -1249,7 +1251,7 @@ function SubmissionsPage() {
                 </select>
               </div>
               <div className="subs-filter-item">
-                <label>Min Amount</label>
+                <label>{t('submissions.minAmount')}</label>
                 <input
                   type="number"
                   placeholder="$0"
@@ -1258,7 +1260,7 @@ function SubmissionsPage() {
                 />
               </div>
               <div className="subs-filter-item">
-                <label>Max Amount</label>
+                <label>{t('submissions.maxAmount')}</label>
                 <input
                   type="number"
                   placeholder="$999,999"
@@ -1267,7 +1269,7 @@ function SubmissionsPage() {
                 />
               </div>
               <div className="subs-filter-item">
-                <label>From Date</label>
+                <label>{t('submissions.fromDate')}</label>
                 <input
                   type="date"
                   value={dateRange.start}
@@ -1275,7 +1277,7 @@ function SubmissionsPage() {
                 />
               </div>
               <div className="subs-filter-item">
-                <label>To Date</label>
+                <label>{t('submissions.toDate')}</label>
                 <input
                   type="date"
                   value={dateRange.end}
@@ -1285,7 +1287,7 @@ function SubmissionsPage() {
             </div>
             <button className="subs-clear-all-btn" onClick={clearFilters}>
               <X size={16} />
-              Clear All Filters
+              {t('submissions.clearAllFilters')}
             </button>
           </div>
         )}
@@ -1300,7 +1302,7 @@ function SubmissionsPage() {
             <div className="rm-modal-container" onClick={(e) => e.stopPropagation()}>
               <div className="rm-modal-header">
                 <div className="rm-header-content">
-                  <h2 className="rm-modal-title">Leave a Review</h2>
+                  <h2 className="rm-modal-title">{t('submissions.leaveReview')}</h2>
                   <p className="rm-modal-subtitle">{selectedSubmission.entrepreneur_profile?.company_name}</p>
                 </div>
                 <button
@@ -1319,7 +1321,7 @@ function SubmissionsPage() {
               <div className="rm-modal-body">
                 {/* Rating Section */}
                 <div className="rm-rating-section">
-                  <label className="rm-section-label">How would you rate your experience?</label>
+                  <label className="rm-section-label">{t('submissions.rateExperience')}</label>
                   <div className="rm-stars-container">
                     {[1, 2, 3, 4, 5].map((num) => (
                       <button
@@ -1337,23 +1339,23 @@ function SubmissionsPage() {
 
                 {/* Comment Section */}
                 <div className="rm-comment-section">
-                  <label className="rm-section-label">Share your experience</label>
+                  <label className="rm-section-label">{t('submissions.shareExperience')}</label>
                   <textarea
                     className="rm-textarea"
-                    placeholder="Tell us about your experience working with this contractor..."
+                    placeholder={t('submissions.reviewPlaceholder')}
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
                     rows={5}
                   />
                   <div className="rm-char-count">
-                    {comment.length} characters {comment.trim().length < 10 && '(minimum 10)'}
+                    {comment.length} {t('submissions.characters')} {comment.trim().length < 10 && `(${t('submissions.minimum')} 10)`}
                   </div>
                 </div>
 
                 {/* Image Upload Section */}
                 <div className="rm-image-section">
-                  <label className="rm-section-label">Add photos (optional)</label>
-                  <p className="rm-section-hint">Upload up to 5 photos to showcase the work</p>
+                  <label className="rm-section-label">{t('submissions.addPhotos')}</label>
+                  <p className="rm-section-hint">{t('submissions.uploadPhotosHint')}</p>
 
                   <input
                     type="file"
@@ -1365,7 +1367,7 @@ function SubmissionsPage() {
                   />
                   <label htmlFor="rm-review-images" className="rm-upload-btn">
                     <FileText size={18} />
-                    <span>Choose Images</span>
+                    <span>{t('submissions.chooseImages')}</span>
                   </label>
 
                   {reviewImagePreviews.length > 0 && (
@@ -1399,7 +1401,7 @@ function SubmissionsPage() {
                   }}
                   disabled={isProcessing}
                 >
-                  Cancel
+                  {t('common.cancel')}
                 </button>
                 <button
                   className="rm-btn rm-btn-submit"
@@ -1409,12 +1411,12 @@ function SubmissionsPage() {
                   {isProcessing ? (
                     <>
                       <div className="rm-spinner"></div>
-                      <span>Submitting...</span>
+                      <span>{t('submissions.submitting')}</span>
                     </>
                   ) : (
                     <>
                       <Star size={16} />
-                      <span>Submit Review</span>
+                      <span>{t('submissions.submitReview')}</span>
                     </>
                   )}
                 </button>
@@ -1428,7 +1430,7 @@ function SubmissionsPage() {
           <div className="bid-modal-overlay" onClick={() => setShowViewReviews(false)}>
             <div className="bid-modal-content view-reviews-modal" onClick={(e) => e.stopPropagation()}>
               <div className="bid-modal-header">
-                <h2>{selectedSubmission?.review ? 'Review Details' : 'My Reviews'}</h2>
+                <h2>{selectedSubmission?.review ? t('submissions.reviewDetails') : t('submissions.myReviews')}</h2>
                 <button
                   className="bid-modal-close"
                   onClick={() => setShowViewReviews(false)}
@@ -1447,7 +1449,7 @@ function SubmissionsPage() {
                           <h4>{selectedSubmission.job.title}</h4>
                           <p className="review-contractor">
                             <User size={14} />
-                            <strong>Reviewed:</strong> {selectedSubmission.user.first_name} {selectedSubmission.user.last_name}
+                            <strong>{t('submissions.reviewed')}</strong> {selectedSubmission.user.first_name} {selectedSubmission.user.last_name}
                           </p>
                           {selectedSubmission.entrepreneur_profile.company_name && (
                             <p className="review-company">
@@ -1476,23 +1478,23 @@ function SubmissionsPage() {
                       <div className="review-metadata">
                         <div className="review-meta-item">
                           <Calendar size={14} />
-                          <span>Reviewed on {formatDate(selectedSubmission.review.created_at)}</span>
+                          <span>{t('submissions.reviewedOn')} {formatDate(selectedSubmission.review.created_at)}</span>
                         </div>
                         <div className="review-meta-item">
                           <User size={14} />
-                          <span>By you</span>
+                          <span>{t('submissions.byYou')}</span>
                         </div>
                       </div>
 
                       <div className="review-card-body">
                         <div className="review-comment-section">
-                          <label>Your Review:</label>
+                          <label>{t('submissions.yourReview')}</label>
                           <p className="review-comment">{selectedSubmission.review.comment}</p>
                         </div>
 
                         {selectedSubmission.review.images && selectedSubmission.review.images.length > 0 && (
                           <div className="review-images-section">
-                            <label>Attached Photos ({selectedSubmission.review.images.length}):</label>
+                            <label>{t('submissions.attachedPhotos')} ({selectedSubmission.review.images.length}):</label>
                             <div className="review-images-grid">
                               {selectedSubmission.review.images.map((image, index) => (
                                 <div key={index} className="review-image-item">
@@ -1512,13 +1514,13 @@ function SubmissionsPage() {
                 ) : loadingReviews ? (
                   <div className="reviews-loading">
                     <div className="subs-spinner"></div>
-                    <p>Loading your reviews...</p>
+                    <p>{t('submissions.loadingReviews')}</p>
                   </div>
                 ) : userReviews.length === 0 ? (
                   <div className="reviews-empty">
                     <Star size={48} strokeWidth={1.5} />
-                    <h3>No Reviews Yet</h3>
-                    <p>You haven't submitted any reviews yet.</p>
+                    <h3>{t('submissions.noReviewsYet')}</h3>
+                    <p>{t('submissions.noReviewsDescription')}</p>
                   </div>
                 ) : (
                   <div className="reviews-list">
@@ -1529,7 +1531,7 @@ function SubmissionsPage() {
                             <h4>{review.job_title || "Untitled Job"}</h4>
                             <p className="review-contractor">
                               <User size={14} />
-                              <strong>Reviewed:</strong> {review.reviewed_first_name} {review.reviewed_last_name}
+                              <strong>{t('submissions.reviewed')}</strong> {review.reviewed_first_name} {review.reviewed_last_name}
                             </p>
                             {review.reviewed_company_name && (
                               <p className="review-company">
@@ -1558,23 +1560,23 @@ function SubmissionsPage() {
                         <div className="review-metadata">
                           <div className="review-meta-item">
                             <Calendar size={14} />
-                            <span>Reviewed on {formatDate(review.created_at)}</span>
+                            <span>{t('submissions.reviewedOn')} {formatDate(review.created_at)}</span>
                           </div>
                           <div className="review-meta-item">
                             <User size={14} />
-                            <span>By you</span>
+                            <span>{t('submissions.byYou')}</span>
                           </div>
                         </div>
 
                         <div className="review-card-body">
                           <div className="review-comment-section">
-                            <label>Your Review:</label>
+                            <label>{t('submissions.yourReview')}</label>
                             <p className="review-comment">{review.comment}</p>
                           </div>
 
                           {review.images && review.images.length > 0 && (
                             <div className="review-images-section">
-                              <label>Attached Photos ({review.images.length}):</label>
+                              <label>{t('submissions.attachedPhotos')} ({review.images.length}):</label>
                               <div className="review-images-grid">
                                 {review.images.map((image, index) => (
                                   <div key={index} className="review-image-item">
@@ -1607,7 +1609,7 @@ function SubmissionsPage() {
                 <div className="details-title-wrapper">
                   <FileText size={20} className="details-icon" />
                   <div>
-                    <h2>Submission Details</h2>
+                    <h2>{t('submissions.submissionDetails')}</h2>
                     <p className="details-subtitle">{selectedSubmission.job.title}</p>
                   </div>
                 </div>
@@ -1624,7 +1626,7 @@ function SubmissionsPage() {
                       {getStatusInfo(selectedSubmission.job.status)?.label || selectedSubmission.job.status}
                     </span>
                     <span className="details-bid-status">
-                      Bid: {selectedSubmission.bid.status || "pending"}
+                      {t('submissions.bidStatus')} {selectedSubmission.bid.status || "pending"}
                     </span>
                   </div>
                   <div className="details-amount">
@@ -1636,44 +1638,44 @@ function SubmissionsPage() {
                 <div className="details-card">
                   <div className="details-card-header">
                     <FileText size={16} />
-                    <span>Job Information</span>
+                    <span>{t('submissions.jobInformation')}</span>
                   </div>
                   <div className="details-card-body">
                     <div className="details-info-row">
                       <div className="details-info-item">
-                        <span className="details-label">Category</span>
+                        <span className="details-label">{t('submissions.category')}</span>
                         <span className="details-value">{selectedSubmission.job.category}</span>
                       </div>
                       <div className="details-info-item">
-                        <span className="details-label">Urgency</span>
+                        <span className="details-label">{t('submissions.urgency')}</span>
                         <span className="details-value">{selectedSubmission.job.urgency}</span>
                       </div>
                     </div>
                     <div className="details-info-row">
                       <div className="details-info-item">
-                        <span className="details-label">Due Date</span>
+                        <span className="details-label">{t('submissions.dueDate')}</span>
                         <span className="details-value">{formatDate(selectedSubmission.job.due_date)}</span>
                       </div>
                       <div className="details-info-item">
-                        <span className="details-label">Duration</span>
-                        <span className="details-value">{selectedSubmission.job.estimated_duration_days} days</span>
+                        <span className="details-label">{t('submissions.duration')}</span>
+                        <span className="details-value">{selectedSubmission.job.estimated_duration_days} {t('submissions.days')}</span>
                       </div>
                     </div>
                     <div className="details-info-row">
                       <div className="details-info-item full-width">
-                        <span className="details-label">Budget Range</span>
+                        <span className="details-label">{t('submissions.budgetRange')}</span>
                         <span className="details-value">{formatCurrency(selectedSubmission.job.budget_min)} - {formatCurrency(selectedSubmission.job.budget_max)}</span>
                       </div>
                     </div>
                     <div className="details-info-row">
                       <div className="details-info-item full-width">
-                        <span className="details-label">Property</span>
+                        <span className="details-label">{t('submissions.property')}</span>
                         <span className="details-value">{selectedSubmission.property_address}</span>
                       </div>
                     </div>
                     {selectedSubmission.job.description && (
                       <div className="details-description">
-                        <span className="details-label">Description</span>
+                        <span className="details-label">{t('submissions.description')}</span>
                         <p>{selectedSubmission.job.description}</p>
                       </div>
                     )}
@@ -1684,42 +1686,42 @@ function SubmissionsPage() {
                 <div className="details-card">
                   <div className="details-card-header">
                     <Building2 size={16} />
-                    <span>Contractor Information</span>
+                    <span>{t('submissions.contractorInformation')}</span>
                   </div>
                   <div className="details-card-body">
                     <div className="details-contractor-main">
                       <div
                         className="details-contractor-name details-contractor-link"
                         onClick={(e) => handleViewProfile(e, selectedSubmission)}
-                        title="View profile"
+                        title={t('submissions.viewProfile')}
                       >
                         {selectedSubmission.entrepreneur_profile.company_name}
                       </div>
                       <div className="details-contractor-rating">
                         <Star size={14} fill="#f59e0b" stroke="#f59e0b" />
                         <span>{selectedSubmission.entrepreneur_profile.average_rating}</span>
-                        <span className="details-review-count">({selectedSubmission.entrepreneur_profile.total_reviews} reviews)</span>
+                        <span className="details-review-count">({selectedSubmission.entrepreneur_profile.total_reviews} {t('submissions.reviews')})</span>
                       </div>
                     </div>
                     <div className="details-info-row">
                       <div className="details-info-item">
-                        <span className="details-label">Contact</span>
+                        <span className="details-label">{t('submissions.contact')}</span>
                         <span className="details-value">{selectedSubmission.user.first_name} {selectedSubmission.user.last_name}</span>
                       </div>
                       <div className="details-info-item">
-                        <span className="details-label">License</span>
+                        <span className="details-label">{t('submissions.license')}</span>
                         <span className="details-value">{selectedSubmission.entrepreneur_profile.license_number || "N/A"}</span>
                       </div>
                     </div>
                     <div className="details-info-row">
                       <div className="details-info-item full-width">
-                        <span className="details-label">Years in Business</span>
-                        <span className="details-value">{selectedSubmission.entrepreneur_profile.years_in_business || "N/A"} years</span>
+                        <span className="details-label">{t('submissions.yearsInBusiness')}</span>
+                        <span className="details-value">{selectedSubmission.entrepreneur_profile.years_in_business || "N/A"} {t('submissions.years')}</span>
                       </div>
                     </div>
                     {selectedSubmission.entrepreneur_profile.specializations?.length > 0 && (
                       <div className="details-specializations">
-                        <span className="details-label">Specializations</span>
+                        <span className="details-label">{t('submissions.specializations')}</span>
                         <div className="details-tags">
                           {selectedSubmission.entrepreneur_profile.specializations.map((spec, index) => (
                             <span key={index} className="details-tag">{spec}</span>
@@ -1735,7 +1737,7 @@ function SubmissionsPage() {
                   <div className="details-card">
                     <div className="details-card-header">
                       <MessageCircle size={16} />
-                      <span>Message from Contractor</span>
+                      <span>{t('submissions.messageFromContractor')}</span>
                     </div>
                     <div className="details-card-body">
                       <p className="details-message">{selectedSubmission.bid.message}</p>
@@ -1753,7 +1755,7 @@ function SubmissionsPage() {
                       onClick={() => handleDecline(selectedSubmission.bid.id)}
                       disabled={isProcessing}
                     >
-                      {isProcessing ? "Processing..." : "Decline"}
+                      {isProcessing ? t('submissions.processing') : t('submissions.decline')}
                     </button>
                     <div className="details-slider-wrapper">
                       <SlideToConfirm
@@ -1763,8 +1765,8 @@ function SubmissionsPage() {
                           selectedSubmission.job.id,
                           selectedSubmission.entrepreneur_profile.id
                         )}
-                        label="Slide to Approve Bid"
-                        confirmLabel="Approved!"
+                        label={t('submissions.slideToApprove')}
+                        confirmLabel={t('submissions.approvedLabel')}
                         disabled={isProcessing}
                         isProcessing={isProcessing && processingBidId === selectedSubmission.bid.id}
                         isCompleted={processingBidId === selectedSubmission.bid.id && isProcessing}
@@ -1778,8 +1780,8 @@ function SubmissionsPage() {
                     <SlideToConfirm
                       key={`release-${selectedSubmission.job.id}`}
                       onConfirm={() => handleReleaseFunds(selectedSubmission.job.id)}
-                      label="Slide to Release Funds"
-                      confirmLabel="Funds Released!"
+                      label={t('submissions.slideToRelease')}
+                      confirmLabel={t('submissions.fundsReleased')}
                       disabled={isProcessing}
                       isProcessing={isProcessing && processingJobId === selectedSubmission.job.id}
                       isCompleted={processingJobId === selectedSubmission.job.id && isProcessing}
@@ -1789,17 +1791,17 @@ function SubmissionsPage() {
                 )}
                 {selectedSubmission.bid.status === "approved" && normalizeStatus(selectedSubmission.job.status) === "completed" && releasedJobIds.has(selectedSubmission.job.id) && (
                   <div className="details-status-message details-status-success">
-                    Funds have been <strong>released</strong> to the contractor.
+                    {t('submissions.fundsReleasedMessage')}
                   </div>
                 )}
                 {selectedSubmission.bid.status === "approved" && normalizeStatus(selectedSubmission.job.status) !== "completed" && (
                   <div className="details-status-message">
-                    This bid has been <strong>approved</strong>. Waiting for contractor to complete the work.
+                    {t('submissions.bidApprovedWaiting')}
                   </div>
                 )}
                 {selectedSubmission.bid.status === "declined" && (
                   <div className="details-status-message">
-                    This bid has been <strong>declined</strong>
+                    {t('submissions.bidDeclined')}
                   </div>
                 )}
               </div>
@@ -1811,19 +1813,19 @@ function SubmissionsPage() {
         {loading ? (
           <div className="subs-loading-state">
             <div className="subs-spinner"></div>
-            <p>Loading submissions...</p>
+            <p>{t('submissions.loadingSubmissions')}</p>
           </div>
         ) : error ? (
           <div className="subs-empty-state">
             <FileText size={48} />
-            <h3>Error loading submissions</h3>
+            <h3>{t('submissions.errorLoading')}</h3>
             <p>{error}</p>
           </div>
         ) : filteredSubmissions.length === 0 ? (
           <div className="subs-empty-state">
             <FileText size={48} />
-            <h3>No submissions found</h3>
-            <p>Try adjusting your filters</p>
+            <h3>{t('submissions.noSubmissions')}</h3>
+            <p>{t('submissions.adjustFilters')}</p>
           </div>
         ) : (
           <div className="subs-bids-grid">
@@ -1842,13 +1844,13 @@ function SubmissionsPage() {
                     </div>
                     <div className="subs-card-top-right">
                       {submission.job.is_emergency && (
-                        <span className="subs-urgency urgent">Urgent</span>
+                        <span className="subs-urgency urgent">{t('submissions.urgent')}</span>
                       )}
                       <span className="subs-bid-amount">{formatCurrency(submission.bid.amount)}</span>
                       <button
                         className="subs-favorite-btn"
                         onClick={(e) => toggleFavorite(submission, e)}
-                        aria-label={favorites.includes(submission.bid.id) ? "Remove from favorites" : "Add to favorites"}
+                        aria-label={favorites.includes(submission.bid.id) ? t('submissions.removeFromFavorites') : t('submissions.addToFavorites')}
                       >
                         <Heart
                           size={16}
@@ -1869,7 +1871,7 @@ function SubmissionsPage() {
                       <span
                         className="subs-company-link"
                         onClick={(e) => handleViewProfile(e, submission)}
-                        title="View profile"
+                        title={t('submissions.viewProfile')}
                       >
                         {submission.entrepreneur_profile.company_name}
                       </span>
@@ -1884,7 +1886,7 @@ function SubmissionsPage() {
                     {submission.entrepreneur_profile.license_number && (
                       <div className="subs-info-item">
                         <BadgeCheck size={12} />
-                        <span className="subs-license">License: {submission.entrepreneur_profile.license_number}</span>
+                        <span className="subs-license">{t('submissions.licenseLabel')} {submission.entrepreneur_profile.license_number}</span>
                       </div>
                     )}
                     {submission.entrepreneur_profile.specializations?.length > 0 && (
@@ -1905,7 +1907,7 @@ function SubmissionsPage() {
                   {/* Action Row */}
                   <div className="subs-card-actions">
                     <button className="subs-details-btn" onClick={(e) => { e.stopPropagation(); handleViewDetails(submission); }}>
-                      Details
+                      {t('submissions.details')}
                       <ChevronRight size={14} />
                     </button>
 

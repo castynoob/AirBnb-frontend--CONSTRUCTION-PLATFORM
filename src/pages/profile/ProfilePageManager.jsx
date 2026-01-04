@@ -6,19 +6,21 @@ import {
   User, Mail, Shield, Home, Plus, MapPin, Calendar, X, LogOut,
   Package, Building2, ChevronRight, Briefcase, Phone, Camera,
   Lock, Eye, EyeOff, Key, Check, AlertCircle, BarChart3, Settings, Menu, Edit,
-  Star, MessageSquare, TrendingUp, Award, ThumbsUp
+  Star, MessageSquare, TrendingUp, Award, ThumbsUp, Globe
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import EditManagerProfileModal from '../../components/modal/EditManagerProfileModal'
 import EditPropertyModal from '../../components/modal/EditPropertyModal'
 import ManagerProfileSkeleton from '../../components/loading/ManagerProfileSkeleton'
 import { logout } from '../../utils/api'
+import { useLanguage } from '../../contexts/LanguageContext'
 
 // Lazy load PropertyMap component to prevent Leaflet initialization errors
 const PropertyMap = lazy(() => import('../../components/map/PropertyMap'))
 
 function ProfilePageManager() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const { t, language, changeLanguage, languages } = useLanguage();
   const [user, setUser] = useState({})
   const [properties, setProperties] = useState([])
   const [selectedProperty, setSelectedProperty] = useState(null)
@@ -197,9 +199,9 @@ function ProfilePageManager() {
   const getPasswordStrength = (password) => {
     const requirements = validatePassword(password)
     const passedCount = Object.values(requirements).filter(Boolean).length
-    if (passedCount <= 2) return { label: 'Weak', color: '#ef4444' }
-    if (passedCount <= 4) return { label: 'Medium', color: '#f59e0b' }
-    return { label: 'Strong', color: '#22c55e' }
+    if (passedCount <= 2) return { label: t('profileManager.weak'), color: '#ef4444' }
+    if (passedCount <= 4) return { label: t('profileManager.medium'), color: '#f59e0b' }
+    return { label: t('profileManager.strong'), color: '#22c55e' }
   }
 
   const handleChangePassword = async (e) => {
@@ -208,18 +210,18 @@ function ProfilePageManager() {
     setPasswordSuccess('')
 
     if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-      setPasswordError('All fields are required')
+      setPasswordError(t('profileManager.allFieldsRequired'))
       return
     }
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError('New passwords do not match')
+      setPasswordError(t('profileManager.passwordsNotMatch'))
       return
     }
 
     const requirements = validatePassword(passwordForm.newPassword)
     if (!Object.values(requirements).every(Boolean)) {
-      setPasswordError('Password does not meet all requirements')
+      setPasswordError(t('profileManager.passwordRequirements'))
       return
     }
 
@@ -244,7 +246,7 @@ function ProfilePageManager() {
         throw new Error(data.message || 'Failed to change password')
       }
 
-      setPasswordSuccess('Password changed successfully!')
+      setPasswordSuccess(t('profileManager.passwordChanged'))
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
       setTimeout(() => setPasswordSuccess(''), 3000)
     } catch (error) {
@@ -262,11 +264,11 @@ function ProfilePageManager() {
 
   // Tab configuration
   const tabs = [
-    { id: 'account', label: 'Account', icon: User },
-    { id: 'overview', label: 'Overview', icon: BarChart3 },
-    { id: 'properties', label: 'Properties', icon: Building2, badge: properties.length },
-    { id: 'reviews', label: 'Reviews', icon: Star, badge: reviews.length > 0 ? reviews.length : undefined },
-    { id: 'security', label: 'Security', icon: Lock },
+    { id: 'account', label: t('profileManager.tabAccount'), icon: User },
+    { id: 'overview', label: t('profileManager.tabOverview'), icon: BarChart3 },
+    { id: 'properties', label: t('profileManager.tabProperties'), icon: Building2, badge: properties.length },
+    { id: 'reviews', label: t('profileManager.tabReviews'), icon: Star, badge: reviews.length > 0 ? reviews.length : undefined },
+    { id: 'settings', label: t('profileManager.tabSettings'), icon: Settings },
   ]
 
   if (isLoading) {
@@ -285,8 +287,8 @@ function ProfilePageManager() {
         return (
           <div className="mp-tab-content">
             <div className="mp-content-header">
-              <h2>Account Information</h2>
-              <p>Manage your personal information and profile settings</p>
+              <h2>{t('profileManager.accountInfo')}</h2>
+              <p>{t('profileManager.accountInfoDesc')}</p>
             </div>
 
             {/* Profile Card */}
@@ -308,30 +310,30 @@ function ProfilePageManager() {
                   <h3>
                     {uProfile?.profile?.first_name && uProfile?.profile?.last_name
                       ? `${uProfile.profile.first_name} ${uProfile.profile.last_name}`
-                      : 'Property Manager'}
+                      : t('profileManager.propertyManager')}
                   </h3>
                   <span className="mp-role-tag-modern">
                     <Shield size={12} />
-                    {user?.role || 'Property Manager'}
+                    {user?.role || t('profileManager.propertyManager')}
                   </span>
                 </div>
               </div>
               <button className="mp-btn mp-btn-outline" onClick={() => setIsEditingProfile(true)}>
                 <Camera size={16} />
-                Edit Photo
+                {t('profileManager.editPhoto')}
               </button>
             </div>
 
             {/* Info Grid */}
             <div className="mp-info-section">
-              <h4 className="mp-info-section-title">Personal Details</h4>
+              <h4 className="mp-info-section-title">{t('profileManager.personalDetails')}</h4>
               <div className="mp-info-grid-modern">
                 <div className="mp-info-item-modern">
                   <div className="mp-info-icon-modern">
                     <User size={18} />
                   </div>
                   <div className="mp-info-details">
-                    <label>First Name</label>
+                    <label>{t('profileManager.firstName')}</label>
                     <span>{uProfile?.profile?.first_name || '—'}</span>
                   </div>
                 </div>
@@ -341,7 +343,7 @@ function ProfilePageManager() {
                     <User size={18} />
                   </div>
                   <div className="mp-info-details">
-                    <label>Last Name</label>
+                    <label>{t('profileManager.lastName')}</label>
                     <span>{uProfile?.profile?.last_name || '—'}</span>
                   </div>
                 </div>
@@ -351,7 +353,7 @@ function ProfilePageManager() {
                     <Mail size={18} />
                   </div>
                   <div className="mp-info-details">
-                    <label>Email Address</label>
+                    <label>{t('profileManager.emailAddress')}</label>
                     <span>{uProfile?.profile?.email || user?.email || '—'}</span>
                   </div>
                 </div>
@@ -361,7 +363,7 @@ function ProfilePageManager() {
                     <Phone size={18} />
                   </div>
                   <div className="mp-info-details">
-                    <label>Phone Number</label>
+                    <label>{t('profileManager.phoneNumber')}</label>
                     <span>{uProfile?.profile?.phone || '—'}</span>
                   </div>
                 </div>
@@ -369,14 +371,14 @@ function ProfilePageManager() {
             </div>
 
             <div className="mp-info-section">
-              <h4 className="mp-info-section-title">Business Information</h4>
+              <h4 className="mp-info-section-title">{t('profileManager.businessInfo')}</h4>
               <div className="mp-info-grid-modern">
                 <div className="mp-info-item-modern">
                   <div className="mp-info-icon-modern">
                     <Briefcase size={18} />
                   </div>
                   <div className="mp-info-details">
-                    <label>Company Name</label>
+                    <label>{t('profileManager.companyName')}</label>
                     <span>{uProfile?.profile?.company_name || '—'}</span>
                   </div>
                 </div>
@@ -386,7 +388,7 @@ function ProfilePageManager() {
                     <MapPin size={18} />
                   </div>
                   <div className="mp-info-details">
-                    <label>Address</label>
+                    <label>{t('profileManager.address')}</label>
                     <span>{uProfile?.profile?.address || '—'}</span>
                   </div>
                 </div>
@@ -396,7 +398,7 @@ function ProfilePageManager() {
                     <Shield size={18} />
                   </div>
                   <div className="mp-info-details">
-                    <label>Account ID</label>
+                    <label>{t('profileManager.accountId')}</label>
                     <span className="mp-text-mono">{user?.id?.slice(0, 8) || '—'}...</span>
                   </div>
                 </div>
@@ -406,10 +408,10 @@ function ProfilePageManager() {
                     <Calendar size={18} />
                   </div>
                   <div className="mp-info-details">
-                    <label>Member Since</label>
+                    <label>{t('profileManager.memberSince')}</label>
                     <span>
                       {uProfile?.profile?.created_at
-                        ? new Date(uProfile.profile.created_at).toLocaleDateString('en-US', {
+                        ? new Date(uProfile.profile.created_at).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', {
                             month: 'long',
                             year: 'numeric'
                           })
@@ -422,7 +424,7 @@ function ProfilePageManager() {
 
             <div className="mp-info-note">
               <Settings size={16} />
-              <span>To update your profile information, please contact support.</span>
+              <span>{t('profileManager.updateProfileNote')}</span>
             </div>
           </div>
         )
@@ -431,8 +433,8 @@ function ProfilePageManager() {
         return (
           <div className="mp-tab-content">
             <div className="mp-content-header">
-              <h2>Overview</h2>
-              <p>Quick summary of your property management stats</p>
+              <h2>{t('profileManager.overview')}</h2>
+              <p>{t('profileManager.overviewDesc')}</p>
             </div>
 
             <div className="mp-stats-grid-modern">
@@ -442,7 +444,7 @@ function ProfilePageManager() {
                 </div>
                 <div className="mp-stat-info">
                   <span className="mp-stat-value-modern">{totalProperties}</span>
-                  <span className="mp-stat-label-modern">Total Properties</span>
+                  <span className="mp-stat-label-modern">{t('profileManager.totalProperties')}</span>
                 </div>
               </div>
 
@@ -452,7 +454,7 @@ function ProfilePageManager() {
                 </div>
                 <div className="mp-stat-info">
                   <span className="mp-stat-value-modern">{totalUnits}</span>
-                  <span className="mp-stat-label-modern">Total Units</span>
+                  <span className="mp-stat-label-modern">{t('profileManager.totalUnits')}</span>
                 </div>
               </div>
 
@@ -462,7 +464,7 @@ function ProfilePageManager() {
                 </div>
                 <div className="mp-stat-info">
                   <span className="mp-stat-value-modern">{totalProperties}</span>
-                  <span className="mp-stat-label-modern">Active Properties</span>
+                  <span className="mp-stat-label-modern">{t('profileManager.activeProperties')}</span>
                 </div>
               </div>
             </div>
@@ -470,9 +472,9 @@ function ProfilePageManager() {
             {/* Recent Properties */}
             <div className="mp-recent-section">
               <div className="mp-recent-header">
-                <h4>Recent Properties</h4>
+                <h4>{t('profileManager.recentProperties')}</h4>
                 <button className="mp-link-btn" onClick={() => setActiveTab('properties')}>
-                  View all
+                  {t('profileManager.viewAll')}
                   <ChevronRight size={16} />
                 </button>
               </div>
@@ -489,14 +491,14 @@ function ProfilePageManager() {
                         <span>{property.city}, {property.province}</span>
                       </div>
                       <div className="mp-recent-meta">
-                        <span className="mp-unit-badge">{property.num_units} units</span>
+                        <span className="mp-unit-badge">{property.num_units} {t('profileManager.units')}</span>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="mp-empty-recent">
-                  <p>No properties added yet</p>
+                  <p>{t('profileManager.noPropertiesYet')}</p>
                 </div>
               )}
             </div>
@@ -508,12 +510,12 @@ function ProfilePageManager() {
           <div className="mp-tab-content">
             <div className="mp-content-header">
               <div className="mp-content-header-left">
-                <h2>Properties</h2>
-                <p>Manage your properties and units</p>
+                <h2>{t('profileManager.properties')}</h2>
+                <p>{t('profileManager.propertiesDesc')}</p>
               </div>
               <button className="mp-btn mp-btn-primary" onClick={handleAddProperty}>
                 <Plus size={18} />
-                Add Property
+                {t('profileManager.addProperty')}
               </button>
             </div>
 
@@ -537,7 +539,7 @@ function ProfilePageManager() {
                     <div className="mp-property-card-footer">
                       <div className="mp-property-stat">
                         <Package size={14} />
-                        <span>{property.num_units} {property.num_units === 1 ? 'Unit' : 'Units'}</span>
+                        <span>{property.num_units} {property.num_units === 1 ? t('profileManager.unit') : t('profileManager.units')}</span>
                       </div>
                       <ChevronRight size={18} className="mp-property-arrow" />
                     </div>
@@ -549,11 +551,11 @@ function ProfilePageManager() {
                 <div className="mp-empty-icon-modern">
                   <Home size={48} />
                 </div>
-                <h3>No properties yet</h3>
-                <p>Add your first property to get started managing your units</p>
+                <h3>{t('profileManager.noPropertiesTitle')}</h3>
+                <p>{t('profileManager.noPropertiesDesc')}</p>
                 <button className="mp-btn mp-btn-primary" onClick={handleAddProperty}>
                   <Plus size={18} />
-                  Add Property
+                  {t('profileManager.addProperty')}
                 </button>
               </div>
             )}
@@ -564,14 +566,14 @@ function ProfilePageManager() {
         return (
           <div className="mp-tab-content">
             <div className="mp-content-header">
-              <h2>Reviews & Performance</h2>
-              <p>See what contractors say about working with you</p>
+              <h2>{t('profileManager.reviewsPerformance')}</h2>
+              <p>{t('profileManager.reviewsPerformanceDesc')}</p>
             </div>
 
             {reviewsLoading ? (
               <div className="mp-reviews-loading">
                 <div className="mp-spinner"></div>
-                <p>Loading reviews...</p>
+                <p>{t('profileManager.loadingReviews')}</p>
               </div>
             ) : (
               <>
@@ -585,7 +587,7 @@ function ProfilePageManager() {
                       <span className="mp-review-stat-value">
                         {reviewStats.averageRating.toFixed(1)}
                       </span>
-                      <span className="mp-review-stat-label">Average Rating</span>
+                      <span className="mp-review-stat-label">{t('profileManager.averageRating')}</span>
                       <div className="mp-review-stars">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <Star
@@ -605,7 +607,7 @@ function ProfilePageManager() {
                     </div>
                     <div className="mp-review-stat-content">
                       <span className="mp-review-stat-value">{reviewStats.totalReviews}</span>
-                      <span className="mp-review-stat-label">Total Reviews</span>
+                      <span className="mp-review-stat-label">{t('profileManager.totalReviews')}</span>
                     </div>
                   </div>
 
@@ -619,7 +621,7 @@ function ProfilePageManager() {
                           ? Math.round(((reviewStats.ratingDistribution[4] + reviewStats.ratingDistribution[5]) / reviewStats.totalReviews) * 100)
                           : 0}%
                       </span>
-                      <span className="mp-review-stat-label">Positive Reviews</span>
+                      <span className="mp-review-stat-label">{t('profileManager.positiveReviews')}</span>
                     </div>
                   </div>
                 </div>
@@ -627,7 +629,7 @@ function ProfilePageManager() {
                 {/* Rating Distribution */}
                 {reviewStats.totalReviews > 0 && (
                   <div className="mp-rating-distribution">
-                    <h4 className="mp-info-section-title">Rating Breakdown</h4>
+                    <h4 className="mp-info-section-title">{t('profileManager.ratingBreakdown')}</h4>
                     <div className="mp-rating-bars">
                       {[5, 4, 3, 2, 1].map((rating) => {
                         const count = reviewStats.ratingDistribution[rating]
@@ -655,7 +657,7 @@ function ProfilePageManager() {
 
                 {/* Reviews List */}
                 <div className="mp-reviews-section">
-                  <h4 className="mp-info-section-title">Recent Reviews</h4>
+                  <h4 className="mp-info-section-title">{t('profileManager.recentReviews')}</h4>
                   {reviews.length > 0 ? (
                     <div className="mp-reviews-list">
                       {reviews.map((review) => (
@@ -670,7 +672,7 @@ function ProfilePageManager() {
                                   {review.reviewer_first_name} {review.reviewer_last_name}
                                 </span>
                                 <span className="mp-review-date">
-                                  {new Date(review.created_at).toLocaleDateString('en-US', {
+                                  {new Date(review.created_at).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', {
                                     month: 'short',
                                     day: 'numeric',
                                     year: 'numeric'
@@ -720,8 +722,8 @@ function ProfilePageManager() {
                       <div className="mp-empty-icon-modern">
                         <Star size={48} />
                       </div>
-                      <h3>No reviews yet</h3>
-                      <p>Reviews from contractors will appear here after they complete jobs with you</p>
+                      <h3>{t('profileManager.noReviewsYet')}</h3>
+                      <p>{t('profileManager.noReviewsDesc')}</p>
                     </div>
                   )}
                 </div>
@@ -730,177 +732,212 @@ function ProfilePageManager() {
           </div>
         )
 
-      case 'security':
+      case 'settings':
         return (
           <div className="mp-tab-content">
             <div className="mp-content-header">
-              <h2>Security</h2>
-              <p>Manage your password and account security</p>
+              <h2>{t('profileManager.settings')}</h2>
+              <p>{t('profileManager.settingsDesc')}</p>
             </div>
 
-            {/* Success Message */}
-            {passwordSuccess && (
-              <div className="mp-alert mp-alert-success">
-                <Check size={18} />
-                <span>{passwordSuccess}</span>
-              </div>
-            )}
-
-            {/* Password Section */}
-            <div className="mp-security-card">
-              <div className="mp-security-card-header">
-                <div className="mp-security-icon">
-                  <Key size={20} />
+            {/* Language Settings */}
+            <div className="mp-settings-section">
+              <div className="mp-settings-card">
+                <div className="mp-settings-card-header">
+                  <div className="mp-settings-icon">
+                    <Globe size={20} />
+                  </div>
+                  <div className="mp-settings-info">
+                    <h3>{t('profileManager.language')}</h3>
+                    <p>{t('profileManager.languageDesc')}</p>
+                  </div>
                 </div>
-                <div className="mp-security-info">
-                  <h4>Password</h4>
-                  <p>Change your password to keep your account secure</p>
+                <div className="mp-language-options">
+                  {Object.values(languages).map((lang) => (
+                    <button
+                      key={lang.code}
+                      className={`mp-language-option ${language === lang.code ? 'active' : ''}`}
+                      onClick={() => changeLanguage(lang.code)}
+                    >
+                      <span className="mp-language-flag">{lang.flag}</span>
+                      <div className="mp-language-details">
+                        <span className="mp-language-name">{lang.name}</span>
+                        <span className="mp-language-native">{lang.nativeName}</span>
+                      </div>
+                      {language === lang.code && (
+                        <Check size={18} className="mp-language-check" />
+                      )}
+                    </button>
+                  ))}
                 </div>
               </div>
+            </div>
 
-              <form onSubmit={handleChangePassword} className="mp-password-form-modern">
-                {/* Error Message */}
-                {passwordError && (
-                  <div className="mp-alert mp-alert-error">
-                    <AlertCircle size={18} />
-                    <span>{passwordError}</span>
+            {/* Security Settings */}
+            <div className="mp-settings-section">
+              <div className="mp-settings-card">
+                <div className="mp-settings-card-header">
+                  <div className="mp-settings-icon">
+                    <Key size={20} />
+                  </div>
+                  <div className="mp-settings-info">
+                    <h3>{t('profileManager.changePassword')}</h3>
+                    <p>{t('profileManager.changePasswordDesc')}</p>
+                  </div>
+                </div>
+
+                {/* Success Message */}
+                {passwordSuccess && (
+                  <div className="mp-alert mp-alert-success">
+                    <Check size={18} />
+                    <span>{passwordSuccess}</span>
                   </div>
                 )}
 
-                {/* Current Password */}
-                <div className="mp-form-group">
-                  <label>Current Password</label>
-                  <div className="mp-input-wrapper">
-                    <input
-                      type={showPasswords.current ? 'text' : 'password'}
-                      value={passwordForm.currentPassword}
-                      onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-                      placeholder="Enter your current password"
-                    />
-                    <button
-                      type="button"
-                      className="mp-input-toggle"
-                      onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
-                    >
-                      {showPasswords.current ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                </div>
+                <form onSubmit={handleChangePassword} className="mp-password-form-modern">
+                  {/* Error Message */}
+                  {passwordError && (
+                    <div className="mp-alert mp-alert-error">
+                      <AlertCircle size={18} />
+                      <span>{passwordError}</span>
+                    </div>
+                  )}
 
-                {/* New Password */}
-                <div className="mp-form-group">
-                  <label>New Password</label>
-                  <div className="mp-input-wrapper">
-                    <input
-                      type={showPasswords.new ? 'text' : 'password'}
-                      value={passwordForm.newPassword}
-                      onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-                      placeholder="Enter your new password"
-                    />
-                    <button
-                      type="button"
-                      className="mp-input-toggle"
-                      onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
-                    >
-                      {showPasswords.new ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
+                  {/* Current Password */}
+                  <div className="mp-form-group">
+                    <label>{t('profileManager.currentPassword')}</label>
+                    <div className="mp-input-wrapper">
+                      <input
+                        type={showPasswords.current ? 'text' : 'password'}
+                        value={passwordForm.currentPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                        placeholder={t('profileManager.enterCurrentPassword')}
+                      />
+                      <button
+                        type="button"
+                        className="mp-input-toggle"
+                        onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
+                      >
+                        {showPasswords.current ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Password Strength */}
-                  {passwordForm.newPassword && (
-                    <>
-                      <div className="mp-strength-indicator">
-                        <div className="mp-strength-bar-modern">
-                          <div
-                            className="mp-strength-fill-modern"
-                            style={{
-                              width: `${(Object.values(validatePassword(passwordForm.newPassword)).filter(Boolean).length / 5) * 100}%`,
-                              backgroundColor: getPasswordStrength(passwordForm.newPassword).color
-                            }}
-                          />
-                        </div>
-                        <span style={{ color: getPasswordStrength(passwordForm.newPassword).color }}>
-                          {getPasswordStrength(passwordForm.newPassword).label}
-                        </span>
-                      </div>
+                  {/* New Password */}
+                  <div className="mp-form-group">
+                    <label>{t('profileManager.newPassword')}</label>
+                    <div className="mp-input-wrapper">
+                      <input
+                        type={showPasswords.new ? 'text' : 'password'}
+                        value={passwordForm.newPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                        placeholder={t('profileManager.enterNewPassword')}
+                      />
+                      <button
+                        type="button"
+                        className="mp-input-toggle"
+                        onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                      >
+                        {showPasswords.new ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
 
-                      <div className="mp-requirements-grid">
-                        {[
-                          { key: 'minLength', label: '8+ characters' },
-                          { key: 'hasUpperCase', label: 'Uppercase' },
-                          { key: 'hasLowerCase', label: 'Lowercase' },
-                          { key: 'hasNumber', label: 'Number' },
-                          { key: 'hasSpecialChar', label: 'Special char' }
-                        ].map((req) => (
-                          <div
-                            key={req.key}
-                            className={`mp-req-item ${validatePassword(passwordForm.newPassword)[req.key] ? 'mp-req-met' : ''}`}
-                          >
-                            {validatePassword(passwordForm.newPassword)[req.key] ? (
-                              <Check size={12} />
-                            ) : (
-                              <X size={12} />
-                            )}
-                            <span>{req.label}</span>
+                    {/* Password Strength */}
+                    {passwordForm.newPassword && (
+                      <>
+                        <div className="mp-strength-indicator">
+                          <div className="mp-strength-bar-modern">
+                            <div
+                              className="mp-strength-fill-modern"
+                              style={{
+                                width: `${(Object.values(validatePassword(passwordForm.newPassword)).filter(Boolean).length / 5) * 100}%`,
+                                backgroundColor: getPasswordStrength(passwordForm.newPassword).color
+                              }}
+                            />
                           </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
+                          <span style={{ color: getPasswordStrength(passwordForm.newPassword).color }}>
+                            {getPasswordStrength(passwordForm.newPassword).label}
+                          </span>
+                        </div>
 
-                {/* Confirm Password */}
-                <div className="mp-form-group">
-                  <label>Confirm New Password</label>
-                  <div className="mp-input-wrapper">
-                    <input
-                      type={showPasswords.confirm ? 'text' : 'password'}
-                      value={passwordForm.confirmPassword}
-                      onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-                      placeholder="Confirm your new password"
-                    />
-                    <button
-                      type="button"
-                      className="mp-input-toggle"
-                      onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
-                    >
-                      {showPasswords.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
-                    </button>
-                  </div>
-                  {passwordForm.confirmPassword && passwordForm.newPassword !== passwordForm.confirmPassword && (
-                    <p className="mp-input-error">Passwords do not match</p>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div className="mp-form-actions">
-                  <button
-                    type="button"
-                    className="mp-btn mp-btn-ghost"
-                    onClick={resetPasswordForm}
-                    disabled={isChangingPassword}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="mp-btn mp-btn-primary"
-                    disabled={isChangingPassword || !passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword}
-                  >
-                    {isChangingPassword ? (
-                      <>
-                        <span className="mp-spinner"></span>
-                        Updating...
-                      </>
-                    ) : (
-                      <>
-                        <Check size={16} />
-                        Update Password
+                        <div className="mp-requirements-grid">
+                          {[
+                            { key: 'minLength', label: t('profileManager.minCharacters') },
+                            { key: 'hasUpperCase', label: t('profileManager.uppercase') },
+                            { key: 'hasLowerCase', label: t('profileManager.lowercase') },
+                            { key: 'hasNumber', label: t('profileManager.number') },
+                            { key: 'hasSpecialChar', label: t('profileManager.specialChar') }
+                          ].map((req) => (
+                            <div
+                              key={req.key}
+                              className={`mp-req-item ${validatePassword(passwordForm.newPassword)[req.key] ? 'mp-req-met' : ''}`}
+                            >
+                              {validatePassword(passwordForm.newPassword)[req.key] ? (
+                                <Check size={12} />
+                              ) : (
+                                <X size={12} />
+                              )}
+                              <span>{req.label}</span>
+                            </div>
+                          ))}
+                        </div>
                       </>
                     )}
-                  </button>
-                </div>
-              </form>
+                  </div>
+
+                  {/* Confirm Password */}
+                  <div className="mp-form-group">
+                    <label>{t('profileManager.confirmNewPassword')}</label>
+                    <div className="mp-input-wrapper">
+                      <input
+                        type={showPasswords.confirm ? 'text' : 'password'}
+                        value={passwordForm.confirmPassword}
+                        onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                        placeholder={t('profileManager.confirmYourPassword')}
+                      />
+                      <button
+                        type="button"
+                        className="mp-input-toggle"
+                        onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                      >
+                        {showPasswords.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                    {passwordForm.confirmPassword && passwordForm.newPassword !== passwordForm.confirmPassword && (
+                      <p className="mp-input-error">{t('profileManager.passwordsDoNotMatch')}</p>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="mp-form-actions">
+                    <button
+                      type="button"
+                      className="mp-btn mp-btn-ghost"
+                      onClick={resetPasswordForm}
+                      disabled={isChangingPassword}
+                    >
+                      {t('profileManager.cancel')}
+                    </button>
+                    <button
+                      type="submit"
+                      className="mp-btn mp-btn-primary"
+                      disabled={isChangingPassword || !passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword}
+                    >
+                      {isChangingPassword ? (
+                        <>
+                          <span className="mp-spinner"></span>
+                          {t('profileManager.updating')}
+                        </>
+                      ) : (
+                        <>
+                          <Check size={16} />
+                          {t('profileManager.updatePassword')}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         )
@@ -931,11 +968,11 @@ function ProfilePageManager() {
           >
             <Menu size={24} />
           </button>
-          <span className="mp-mobile-title">{currentTab?.label || 'Profile'}</span>
+          <span className="mp-mobile-title">{currentTab?.label || t('profileManager.profile')}</span>
           <button
             className="mp-mobile-logout-btn"
             onClick={handelLogout}
-            title="Logout"
+            title={t('profileManager.logout')}
           >
             <LogOut size={20} />
           </button>
@@ -963,7 +1000,7 @@ function ProfilePageManager() {
               <h3>
                 {uProfile?.profile?.first_name
                   ? `${uProfile.profile.first_name} ${uProfile.profile.last_name || ''}`
-                  : 'Property Manager'}
+                  : t('profileManager.propertyManager')}
               </h3>
               <span>{user?.email}</span>
             </div>
@@ -997,7 +1034,7 @@ function ProfilePageManager() {
           <div className="mp-sidebar-footer">
             <button className="mp-nav-item mp-nav-logout" onClick={handelLogout}>
               <LogOut size={18} />
-              <span>Logout</span>
+              <span>{t('profileManager.logout')}</span>
             </button>
           </div>
         </aside>
@@ -1015,7 +1052,7 @@ function ProfilePageManager() {
             <div className="mp-modal-header">
               <div className="mp-modal-title">
                 <Building2 size={18} />
-                <h2>Property Details</h2>
+                <h2>{t('profileManager.propertyDetails')}</h2>
               </div>
               <button className="mp-modal-close" onClick={handleCloseModal}>
                 <X size={18} />
@@ -1024,49 +1061,49 @@ function ProfilePageManager() {
 
             <div className="mp-modal-body">
               <div className="mp-modal-section">
-                <h3>Address Information</h3>
+                <h3>{t('profileManager.addressInfo')}</h3>
                 <div className="mp-modal-grid">
                   <div className="mp-modal-field">
-                    <label>Building Name</label>
+                    <label>{t('profileManager.buildingName')}</label>
                     <p>{selectedProperty.building_name || '—'}</p>
                   </div>
                   <div className="mp-modal-field">
-                    <label>Address</label>
+                    <label>{t('profileManager.address')}</label>
                     <p>{selectedProperty.address}</p>
                   </div>
                   <div className="mp-modal-field">
-                    <label>City</label>
+                    <label>{t('profileManager.city')}</label>
                     <p>{selectedProperty.city}</p>
                   </div>
                   <div className="mp-modal-field">
-                    <label>Province</label>
+                    <label>{t('profileManager.province')}</label>
                     <p>{selectedProperty.province}</p>
                   </div>
                   <div className="mp-modal-field">
-                    <label>Postal Code</label>
+                    <label>{t('profileManager.postalCode')}</label>
                     <p>{selectedProperty.postal_code}</p>
                   </div>
                 </div>
               </div>
 
               <div className="mp-modal-section">
-                <h3>Property Details</h3>
+                <h3>{t('profileManager.propertyDetails')}</h3>
                 <div className="mp-modal-grid">
                   <div className="mp-modal-field">
-                    <label>Building Type</label>
+                    <label>{t('profileManager.buildingType')}</label>
                     <p>{selectedProperty.building_type}</p>
                   </div>
                   <div className="mp-modal-field">
-                    <label>Number of Units</label>
+                    <label>{t('profileManager.numberOfUnits')}</label>
                     <p>{selectedProperty.num_units}</p>
                   </div>
                   <div className="mp-modal-field">
-                    <label>Property ID</label>
+                    <label>{t('profileManager.propertyId')}</label>
                     <p>{selectedProperty.id}</p>
                   </div>
                   <div className="mp-modal-field">
-                    <label>Created At</label>
-                    <p>{new Date(selectedProperty.created_at).toLocaleDateString('en-US', {
+                    <label>{t('profileManager.createdAt')}</label>
+                    <p>{new Date(selectedProperty.created_at).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', {
                       month: 'short',
                       day: 'numeric',
                       year: 'numeric'
@@ -1081,7 +1118,7 @@ function ProfilePageManager() {
                 <div className="mp-modal-section">
                   <h3>
                     <MapPin size={16} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
-                    Property Location
+                    {t('profileManager.propertyLocation')}
                   </h3>
                   <div className="mp-property-map-container">
                     <Suspense fallback={
@@ -1096,7 +1133,7 @@ function ProfilePageManager() {
                         color: '#6b7280',
                         fontSize: '14px'
                       }}>
-                        Loading map...
+                        {t('profileManager.loadingMap')}
                       </div>
                     }>
                       <PropertyMap
@@ -1115,7 +1152,7 @@ function ProfilePageManager() {
 
             <div className="mp-modal-footer">
               <button className="mp-btn mp-btn-ghost" onClick={handleCloseModal}>
-                Close
+                {t('profileManager.close')}
               </button>
               <button
                 className="mp-btn mp-btn-primary"
@@ -1124,7 +1161,7 @@ function ProfilePageManager() {
                 }}
               >
                 <Edit size={16} />
-                Edit Property
+                {t('profileManager.editProperty')}
               </button>
             </div>
           </div>

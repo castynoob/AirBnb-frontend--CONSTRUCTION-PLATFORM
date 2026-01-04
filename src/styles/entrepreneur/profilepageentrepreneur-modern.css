@@ -2753,3 +2753,124 @@
   margin-bottom: 1rem;
   opacity: 0.5;
 }
+
+/* ==================== SETTINGS TAB STYLES ==================== */
+
+.ep-settings-section {
+  margin-top: 1rem;
+}
+
+.ep-settings-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.ep-settings-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.ep-settings-icon {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #0F223D 0%, #1a3a5c 100%);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #00A5A9;
+  flex-shrink: 0;
+}
+
+.ep-settings-info h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.25rem;
+}
+
+.ep-settings-info p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.ep-language-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ep-language-option {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.ep-language-option:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.ep-language-option.active {
+  background: rgba(0, 165, 169, 0.05);
+  border-color: #00A5A9;
+}
+
+.ep-language-flag {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.ep-language-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.ep-language-name {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #111827;
+}
+
+.ep-language-native {
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.ep-language-check {
+  color: #00A5A9;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .ep-settings-card {
+    padding: 1rem;
+  }
+
+  .ep-settings-card-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .ep-language-option {
+    padding: 0.875rem 1rem;
+  }
+}
