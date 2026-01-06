@@ -2622,8 +2622,14 @@ export default function LandingPage() {
                     <label className="lp-checkbox">
                       <input type="checkbox" required />
                       <span>
-                        I agree to the <a href="#terms">Terms of Service</a> and{" "}
-                        <a href="#privacy">Privacy Policy</a>
+                        I agree to the{" "}
+                        <a href="/legal?tab=terms" target="_blank" rel="noopener noreferrer">
+                          Terms of Service
+                        </a>{" "}
+                        and{" "}
+                        <a href="/legal?tab=privacy" target="_blank" rel="noopener noreferrer">
+                          Privacy Policy
+                        </a>
                       </span>
                     </label>
                   </div>
