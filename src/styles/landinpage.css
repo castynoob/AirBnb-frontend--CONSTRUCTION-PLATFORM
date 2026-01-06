@@ -1992,10 +1992,15 @@ body {
 
 .lp-footer-content {
   display: grid;
-  grid-template-columns: 2fr repeat(3, 1fr);
-  gap: var(--spacing-3xl);
+  grid-template-columns: 2fr repeat(4, 1fr);
+  gap: var(--spacing-2xl);
   max-width: 1280px;
   margin: 0 auto var(--spacing-2xl);
+}
+
+/* Contact section styling */
+.lp-footer-contact a {
+  word-break: break-word;
 }
 
 .lp-footer-brand {
