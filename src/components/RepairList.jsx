@@ -108,7 +108,7 @@ function RepairList({ repairs, handleRepairClicked }) {
         pages.push('...');
         for (let i = totalPages - 3; i <= totalPages; i++) pages.push(i);
       } else {
-        // Middle
+        // Middles
         pages.push(1);
         pages.push('...');
         for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
