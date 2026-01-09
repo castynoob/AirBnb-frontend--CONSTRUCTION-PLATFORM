@@ -21,10 +21,12 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Nav from "../../components/Nav";
+import { useLanguage } from '../../contexts/LanguageContext';
 import '../../styles/supplier/supplierhomepage.css';
 
 function SupplierHomepage() {
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
   const [profile, setProfile] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -128,9 +130,9 @@ function SupplierHomepage() {
     if (!profile) return { percentage: 0, missing: [] };
 
     const checks = {
-      'Profile Picture': !!profile.image,
-      'Catalog Upload': !!profile.catalogUrl,
-      'Phone Number': !!profile.phone
+      [t('supplierHomepage.profilePicture')]: !!profile.image,
+      [t('supplierHomepage.catalogUpload')]: !!profile.catalogUrl,
+      [t('supplierHomepage.phoneNumber')]: !!profile.phone
     };
 
     const completed = Object.values(checks).filter(Boolean).length;
@@ -164,15 +166,15 @@ function SupplierHomepage() {
       if (response.ok) {
         // Refresh the requests and stats
         fetchSupplierData();
-        toast.success('Request status updated successfully');
+        toast.success(t('supplierHomepage.statusUpdatedSuccess'));
       } else {
         const error = await response.json();
         console.error('Error updating request status:', error);
-        toast.error(error.message || 'Failed to update request status');
+        toast.error(error.message || t('supplierHomepage.failedUpdateStatus'));
       }
     } catch (error) {
       console.error('Error updating request status:', error);
-      toast.error('Failed to update request status');
+      toast.error(t('supplierHomepage.failedUpdateStatus'));
     }
   };
 
@@ -182,9 +184,9 @@ function SupplierHomepage() {
 
   const handleDeclineRequest = (requestId) => {
     setConfirmModalConfig({
-      title: 'Decline Request',
-      message: 'Are you sure you want to decline this request? This action cannot be undone.',
-      confirmText: 'Decline',
+      title: t('supplierHomepage.declineRequestTitle'),
+      message: t('supplierHomepage.declineConfirmMessage'),
+      confirmText: t('supplierHomepage.decline'),
       confirmStyle: 'danger',
       onConfirm: () => {
         handleUpdateRequestStatus(requestId, 'cancelled');
@@ -196,9 +198,9 @@ function SupplierHomepage() {
 
   const handleCompleteRequest = (requestId) => {
     setConfirmModalConfig({
-      title: 'Complete Request',
-      message: 'Mark this request as completed? You can add a receipt/invoice after completion.',
-      confirmText: 'Complete',
+      title: t('supplierHomepage.completeRequestTitle'),
+      message: t('supplierHomepage.completeConfirmMessage'),
+      confirmText: t('supplierHomepage.complete'),
       confirmStyle: 'success',
       onConfirm: () => {
         handleUpdateRequestStatus(requestId, 'completed');
@@ -247,19 +249,19 @@ function SupplierHomepage() {
     // Validate items
     const hasEmptyDescription = invoiceItems.some(item => !item.description.trim());
     if (hasEmptyDescription) {
-      toast.error('Please fill in all item descriptions');
+      toast.error(t('supplierHomepage.fillAllDescriptions'));
       return;
     }
 
     const hasInvalidQuantity = invoiceItems.some(item => item.quantity <= 0);
     if (hasInvalidQuantity) {
-      toast.error('Please enter valid quantities for all items');
+      toast.error(t('supplierHomepage.enterValidQuantities'));
       return;
     }
 
     const hasInvalidPrice = invoiceItems.some(item => item.unitPrice <= 0);
     if (hasInvalidPrice) {
-      toast.error('Please enter valid prices for all items');
+      toast.error(t('supplierHomepage.enterValidPrices'));
       return;
     }
 
@@ -284,17 +286,17 @@ function SupplierHomepage() {
       });
 
       if (response.ok) {
-        toast.success('Invoice/Receipt created successfully!');
+        toast.success(t('supplierHomepage.invoiceCreatedSuccess'));
         setShowInvoiceModal(false);
         setSelectedRequest(null);
         fetchSupplierData(); // Refresh data
       } else {
         const error = await response.json();
-        toast.error(error.message || 'Failed to create invoice');
+        toast.error(error.message || t('supplierHomepage.failedCreateInvoice'));
       }
     } catch (error) {
       console.error('Error creating invoice:', error);
-      toast.error('Failed to create invoice');
+      toast.error(t('supplierHomepage.failedCreateInvoice'));
     } finally {
       setIsSubmittingInvoice(false);
     }
@@ -336,7 +338,7 @@ function SupplierHomepage() {
         <Nav />
         <div className="supplier-home-loading">
           <div className="supplier-home-loader"></div>
-          <p>Loading...</p>
+          <p>{t('supplierHomepage.loading')}</p>
         </div>
       </div>
     );
@@ -353,12 +355,12 @@ function SupplierHomepage() {
           <div className="supplier-home-alert-fixed">
             <AlertCircle size={18} />
             <div className="supplier-home-alert-content">
-              <span>Profile {profileStatus.percentage}% complete</span>
+              <span>{t('supplierHomepage.profileComplete', { percentage: profileStatus.percentage })}</span>
               <button
                 className="supplier-home-alert-link"
                 onClick={() => navigate('/profile/supplier')}
               >
-                Complete now
+                {t('supplierHomepage.completeNow')}
               </button>
             </div>
           </div>
@@ -368,8 +370,8 @@ function SupplierHomepage() {
         <div className="supplier-home-header-section">
           <div className="supplier-home-header-top">
             <div className="supplier-home-welcome">
-              <h1>Welcome back, {profile?.companyName || 'Supplier'}!</h1>
-              <p>Manage your material requests and communicate with construction companies</p>
+              <h1>{t('supplierHomepage.welcomeBack', { companyName: profile?.companyName || t('supplierHomepage.supplier') })}</h1>
+              <p>{t('supplierHomepage.welcomeDescription')}</p>
             </div>
             <div className="supplier-home-profile-preview">
               <img
@@ -388,7 +390,7 @@ function SupplierHomepage() {
                 <Package size={24} />
               </div>
               <div className="supplier-home-stat-content">
-                <div className="supplier-home-stat-label">Total Requests</div>
+                <div className="supplier-home-stat-label">{t('supplierHomepage.totalRequests')}</div>
                 <div className="supplier-home-stat-value">{stats.totalRequests}</div>
               </div>
             </div>
@@ -398,7 +400,7 @@ function SupplierHomepage() {
                 <Clock size={24} />
               </div>
               <div className="supplier-home-stat-content">
-                <div className="supplier-home-stat-label">Pending Requests</div>
+                <div className="supplier-home-stat-label">{t('supplierHomepage.pendingRequests')}</div>
                 <div className="supplier-home-stat-value">{stats.pendingRequests}</div>
               </div>
             </div>
@@ -408,7 +410,7 @@ function SupplierHomepage() {
                 <CheckCircle size={24} />
               </div>
               <div className="supplier-home-stat-content">
-                <div className="supplier-home-stat-label">Completed</div>
+                <div className="supplier-home-stat-label">{t('supplierHomepage.completedLabel')}</div>
                 <div className="supplier-home-stat-value">{stats.completedRequests}</div>
               </div>
             </div>
@@ -418,7 +420,7 @@ function SupplierHomepage() {
                 <MessageSquare size={24} />
               </div>
               <div className="supplier-home-stat-content">
-                <div className="supplier-home-stat-label">Unread Messages</div>
+                <div className="supplier-home-stat-label">{t('supplierHomepage.unreadMessages')}</div>
                 <div className="supplier-home-stat-value">{stats.unreadMessages}</div>
               </div>
             </div>
@@ -432,7 +434,7 @@ function SupplierHomepage() {
             <div className="supplier-home-section-header">
               <h2>
                 <FileText size={20} />
-                Material Requests
+                {t('supplierHomepage.materialRequests')}
               </h2>
             </div>
 
@@ -442,7 +444,7 @@ function SupplierHomepage() {
                 <Search size={18} />
                 <input
                   type="text"
-                  placeholder="Search by company or details..."
+                  placeholder={t('supplierHomepage.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="supplier-home-search-input"
@@ -455,11 +457,11 @@ function SupplierHomepage() {
                   onChange={(e) => setStatusFilter(e.target.value)}
                   className="supplier-home-filter-select"
                 >
-                  <option value="all">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="in-progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
+                  <option value="all">{t('supplierHomepage.allStatus')}</option>
+                  <option value="pending">{t('supplierHomepage.pending')}</option>
+                  <option value="in-progress">{t('supplierHomepage.inProgress')}</option>
+                  <option value="completed">{t('supplierHomepage.completed')}</option>
+                  <option value="cancelled">{t('supplierHomepage.cancelled')}</option>
                 </select>
               </div>
             </div>
@@ -484,7 +486,7 @@ function SupplierHomepage() {
                       <div className="supplier-home-request-footer">
                         <div className="supplier-home-request-date">
                           <Calendar size={14} />
-                          {new Date(request.created_at).toLocaleDateString()}
+                          {new Date(request.created_at).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}
                         </div>
                         <div className="supplier-home-request-actions">
                           <button
@@ -492,7 +494,7 @@ function SupplierHomepage() {
                             onClick={() => handleViewRequest(request)}
                           >
                             <Eye size={16} />
-                            View Request
+                            {t('supplierHomepage.viewRequest')}
                           </button>
                           {request.status === 'pending' && (
                             <>
@@ -501,14 +503,14 @@ function SupplierHomepage() {
                                 onClick={() => handleAcceptRequest(request.id)}
                               >
                                 <Check size={16} />
-                                Accept
+                                {t('supplierHomepage.accept')}
                               </button>
                               <button
                                 className="supplier-home-request-btn decline"
                                 onClick={() => handleDeclineRequest(request.id)}
                               >
                                 <X size={16} />
-                                Decline
+                                {t('supplierHomepage.decline')}
                               </button>
                             </>
                           )}
@@ -517,17 +519,17 @@ function SupplierHomepage() {
                               <button
                                 className="supplier-home-request-btn chat"
                                 onClick={() => handleChatWithEntrepreneur(request)}
-                                title="Chat with Entrepreneur"
+                                title={t('supplierHomepage.chatWithEntrepreneur')}
                               >
                                 <MessageSquare size={16} />
-                                Chat
+                                {t('supplierHomepage.chat')}
                               </button>
                               <button
                                 className="supplier-home-request-btn complete"
                                 onClick={() => handleCompleteRequest(request.id)}
                               >
                                 <CheckCircle size={16} />
-                                Mark as Completed
+                                {t('supplierHomepage.markAsCompleted')}
                               </button>
                             </>
                           )}
@@ -536,17 +538,17 @@ function SupplierHomepage() {
                               <button
                                 className="supplier-home-request-btn chat"
                                 onClick={() => handleChatWithEntrepreneur(request)}
-                                title="Chat with Entrepreneur"
+                                title={t('supplierHomepage.chatWithEntrepreneur')}
                               >
                                 <MessageSquare size={16} />
-                                Chat
+                                {t('supplierHomepage.chat')}
                               </button>
                               <button
                                 className="supplier-home-request-btn receipt"
                                 onClick={() => handleAddReceipt(request)}
                               >
                                 <FileText size={16} />
-                                Add Receipt
+                                {t('supplierHomepage.addReceipt')}
                               </button>
                             </>
                           )}
@@ -558,8 +560,8 @@ function SupplierHomepage() {
               ) : (
                 <div className="supplier-home-empty-state">
                   <FileText size={48} color="#cbd5e1" />
-                  <h3>{searchTerm || statusFilter !== 'all' ? 'No Matching Requests' : 'No Requests Yet'}</h3>
-                  <p>{searchTerm || statusFilter !== 'all' ? 'Try adjusting your search or filters' : 'Material requests from entrepreneurs will appear here'}</p>
+                  <h3>{searchTerm || statusFilter !== 'all' ? t('supplierHomepage.noMatchingRequests') : t('supplierHomepage.noRequestsYet')}</h3>
+                  <p>{searchTerm || statusFilter !== 'all' ? t('supplierHomepage.tryAdjustingFilters') : t('supplierHomepage.requestsWillAppear')}</p>
                 </div>
               )}
             </div>
@@ -570,7 +572,7 @@ function SupplierHomepage() {
             <div className="supplier-home-section-header">
               <h2>
                 <TrendingUp size={20} />
-                Quick Actions
+                {t('supplierHomepage.quickActions')}
               </h2>
             </div>
             <div className="supplier-home-section-body">
@@ -583,8 +585,8 @@ function SupplierHomepage() {
                     <User size={24} />
                   </div>
                   <div className="supplier-home-action-content">
-                    <h3>View Profile</h3>
-                    <p>Update your company information</p>
+                    <h3>{t('supplierHomepage.viewProfile')}</h3>
+                    <p>{t('supplierHomepage.updateCompanyInfo')}</p>
                   </div>
                 </button>
 
@@ -596,8 +598,8 @@ function SupplierHomepage() {
                     <MessageSquare size={24} />
                   </div>
                   <div className="supplier-home-action-content">
-                    <h3>Messages</h3>
-                    <p>Chat with entrepreneurs</p>
+                    <h3>{t('supplierHomepage.messages')}</h3>
+                    <p>{t('supplierHomepage.chatWithEntrepreneurs')}</p>
                   </div>
                 </button>
 
@@ -610,8 +612,8 @@ function SupplierHomepage() {
                       <Upload size={24} />
                     </div>
                     <div className="supplier-home-action-content">
-                      <h3>Upload Catalog</h3>
-                      <p>Add your product catalog</p>
+                      <h3>{t('supplierHomepage.uploadCatalog')}</h3>
+                      <p>{t('supplierHomepage.addProductCatalog')}</p>
                     </div>
                   </button>
                 )}
@@ -625,7 +627,7 @@ function SupplierHomepage() {
           <div className="supplier-home-modal-overlay" onClick={handleCloseModal}>
             <div className="supplier-home-modal" onClick={(e) => e.stopPropagation()}>
               <div className="supplier-home-modal-header">
-                <h2>Request Details</h2>
+                <h2>{t('supplierHomepage.requestDetails')}</h2>
                 <button className="supplier-home-modal-close" onClick={handleCloseModal}>
                   <X size={24} />
                 </button>
@@ -633,39 +635,39 @@ function SupplierHomepage() {
               <div className="supplier-home-modal-body">
                 <div className="supplier-home-modal-info">
                   <div className="supplier-home-modal-field">
-                    <label>Company:</label>
+                    <label>{t('supplierHomepage.company')}</label>
                     <span>{selectedRequest.entrepreneur_company_name}</span>
                   </div>
                   <div className="supplier-home-modal-field">
-                    <label>Status:</label>
+                    <label>{t('supplierHomepage.status')}</label>
                     <span className={`supplier-home-request-status ${selectedRequest.status}`}>
                       {selectedRequest.status}
                     </span>
                   </div>
                   <div className="supplier-home-modal-field">
-                    <label>Date Submitted:</label>
-                    <span>{new Date(selectedRequest.created_at).toLocaleString()}</span>
+                    <label>{t('supplierHomepage.dateSubmitted')}</label>
+                    <span>{new Date(selectedRequest.created_at).toLocaleString(language === 'fr' ? 'fr-FR' : 'en-US')}</span>
                   </div>
                   <div className="supplier-home-modal-field">
-                    <label>Contact Email:</label>
+                    <label>{t('supplierHomepage.contactEmail')}</label>
                     <span>{selectedRequest.entrepreneur_email}</span>
                   </div>
                   {selectedRequest.entrepreneur_phone && (
                     <div className="supplier-home-modal-field">
-                      <label>Contact Phone:</label>
+                      <label>{t('supplierHomepage.contactPhone')}</label>
                       <span>{selectedRequest.entrepreneur_phone}</span>
                     </div>
                   )}
                 </div>
 
                 <div className="supplier-home-modal-section">
-                  <h3>Request Details</h3>
+                  <h3>{t('supplierHomepage.requestDetails')}</h3>
                   <p className="supplier-home-modal-details">{selectedRequest.request_details}</p>
                 </div>
 
                 {selectedRequest.request_file_url && (
                   <div className="supplier-home-modal-section">
-                    <h3>Attached Document</h3>
+                    <h3>{t('supplierHomepage.attachedDocument')}</h3>
                     <div className="supplier-home-modal-pdf">
                       <iframe
                         src={selectedRequest.request_file_url}
@@ -677,7 +679,7 @@ function SupplierHomepage() {
                         onClick={() => handleDownloadPDF(selectedRequest.request_file_url, 'request-document.pdf')}
                       >
                         <Download size={16} />
-                        Open/Download PDF
+                        {t('supplierHomepage.openDownloadPDF')}
                       </button>
                     </div>
                   </div>
@@ -694,7 +696,7 @@ function SupplierHomepage() {
                       }}
                     >
                       <Check size={16} />
-                      Accept Request
+                      {t('supplierHomepage.acceptRequest')}
                     </button>
                     <button
                       className="supplier-home-request-btn decline"
@@ -704,7 +706,7 @@ function SupplierHomepage() {
                       }}
                     >
                       <X size={16} />
-                      Decline Request
+                      {t('supplierHomepage.declineRequest')}
                     </button>
                   </>
                 )}
@@ -717,7 +719,7 @@ function SupplierHomepage() {
                     }}
                   >
                     <MessageSquare size={16} />
-                    Chat with Entrepreneur
+                    {t('supplierHomepage.chatWithEntrepreneur')}
                   </button>
                 )}
                 {selectedRequest.status === 'in-progress' && (
@@ -729,11 +731,11 @@ function SupplierHomepage() {
                     }}
                   >
                     <CheckCircle size={16} />
-                    Mark as Completed
+                    {t('supplierHomepage.markAsCompleted')}
                   </button>
                 )}
                 <button className="supplier-home-request-btn" onClick={handleCloseModal}>
-                  Close
+                  {t('supplierHomepage.close')}
                 </button>
               </div>
             </div>
@@ -745,7 +747,7 @@ function SupplierHomepage() {
           <div className="supplier-home-modal-overlay" onClick={() => setShowInvoiceModal(false)}>
             <div className="supplier-home-modal supplier-home-invoice-modal" onClick={(e) => e.stopPropagation()}>
               <div className="supplier-home-modal-header">
-                <h2>Create Invoice/Receipt</h2>
+                <h2>{t('supplierHomepage.createInvoiceReceipt')}</h2>
                 <button className="supplier-home-modal-close" onClick={() => setShowInvoiceModal(false)}>
                   <X size={24} />
                 </button>
@@ -753,24 +755,24 @@ function SupplierHomepage() {
               <div className="supplier-home-modal-body">
                 <div className="supplier-home-invoice-info">
                   <div className="supplier-home-invoice-field">
-                    <label>Request ID:</label>
+                    <label>{t('supplierHomepage.requestId')}</label>
                     <span>{selectedRequest.id.substring(0, 8)}...</span>
                   </div>
                   <div className="supplier-home-invoice-field">
-                    <label>Company:</label>
+                    <label>{t('supplierHomepage.company')}</label>
                     <span>{selectedRequest.entrepreneur_company_name}</span>
                   </div>
                 </div>
 
                 <div className="supplier-home-invoice-items-section">
                   <div className="supplier-home-invoice-items-header">
-                    <h3>Invoice Items</h3>
+                    <h3>{t('supplierHomepage.invoiceItems')}</h3>
                     <button
                       className="supplier-home-add-item-btn"
                       onClick={handleAddInvoiceItem}
                       type="button"
                     >
-                      + Add Item
+                      {t('supplierHomepage.addItem')}
                     </button>
                   </div>
 
@@ -778,17 +780,17 @@ function SupplierHomepage() {
                     <div key={index} className="supplier-home-invoice-item">
                       <div className="supplier-home-invoice-item-row">
                         <div className="supplier-home-invoice-input-group supplier-home-invoice-description">
-                          <label>Description *</label>
+                          <label>{t('supplierHomepage.description')}</label>
                           <input
                             type="text"
                             value={item.description}
                             onChange={(e) => handleInvoiceItemChange(index, 'description', e.target.value)}
-                            placeholder="Item description"
+                            placeholder={t('supplierHomepage.itemDescriptionPlaceholder')}
                             className="supplier-home-invoice-input"
                           />
                         </div>
                         <div className="supplier-home-invoice-input-group">
-                          <label>Quantity *</label>
+                          <label>{t('supplierHomepage.quantity')}</label>
                           <input
                             type="number"
                             value={item.quantity}
@@ -798,7 +800,7 @@ function SupplierHomepage() {
                           />
                         </div>
                         <div className="supplier-home-invoice-input-group">
-                          <label>Unit Price (₱) *</label>
+                          <label>{t('supplierHomepage.unitPrice')}</label>
                           <input
                             type="number"
                             value={item.unitPrice}
@@ -809,7 +811,7 @@ function SupplierHomepage() {
                           />
                         </div>
                         <div className="supplier-home-invoice-input-group">
-                          <label>Subtotal</label>
+                          <label>{t('supplierHomepage.subtotal')}</label>
                           <div className="supplier-home-invoice-subtotal">
                             ₱{(item.quantity * item.unitPrice).toFixed(2)}
                           </div>
@@ -828,7 +830,7 @@ function SupplierHomepage() {
                   ))}
 
                   <div className="supplier-home-invoice-total">
-                    <strong>Total Amount:</strong>
+                    <strong>{t('supplierHomepage.totalAmount')}</strong>
                     <span className="supplier-home-invoice-total-value">
                       ₱{calculateTotalAmount().toFixed(2)}
                     </span>
@@ -836,11 +838,11 @@ function SupplierHomepage() {
                 </div>
 
                 <div className="supplier-home-invoice-delivery">
-                  <label>Delivery Terms</label>
+                  <label>{t('supplierHomepage.deliveryTerms')}</label>
                   <textarea
                     value={deliveryTerms}
                     onChange={(e) => setDeliveryTerms(e.target.value)}
-                    placeholder="Enter delivery terms, conditions, or notes..."
+                    placeholder={t('supplierHomepage.deliveryTermsPlaceholder')}
                     className="supplier-home-invoice-textarea"
                     rows="3"
                   />
@@ -852,14 +854,14 @@ function SupplierHomepage() {
                   onClick={() => setShowInvoiceModal(false)}
                   disabled={isSubmittingInvoice}
                 >
-                  Cancel
+                  {t('supplierHomepage.cancel')}
                 </button>
                 <button
                   className="supplier-home-request-btn accept"
                   onClick={handleSubmitInvoice}
                   disabled={isSubmittingInvoice}
                 >
-                  {isSubmittingInvoice ? 'Creating...' : 'Create Invoice'}
+                  {isSubmittingInvoice ? t('supplierHomepage.creating') : t('supplierHomepage.createInvoice')}
                 </button>
               </div>
             </div>
@@ -893,7 +895,7 @@ function SupplierHomepage() {
                   className="supplier-home-request-btn"
                   onClick={() => setShowConfirmModal(false)}
                 >
-                  Cancel
+                  {t('supplierHomepage.cancel')}
                 </button>
                 <button
                   className={`supplier-home-request-btn ${confirmModalConfig.confirmStyle === 'danger' ? 'decline' : confirmModalConfig.confirmStyle === 'success' ? 'complete' : 'accept'}`}

@@ -21,6 +21,7 @@ import {
   Phone,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useLanguage } from "../../contexts/LanguageContext";
 import { useSocket } from "../../contexts/SocketContext";
 import {
   getConversations,
@@ -32,6 +33,7 @@ import PropertyManagerProfileModal from "../../components/modal/PropertyManagerP
 import SupplierProfileModal from "../../components/modal/SupplierProfileModal";
 
 function MessagesEntrepreneurNew() {
+  const { t, language } = useLanguage();
   const { socket } = useSocket();
   const [selectedChat, setSelectedChat] = useState(null);
   const [message, setMessage] = useState("");
@@ -228,12 +230,12 @@ function MessagesEntrepreneurNew() {
     console.log("📷 Attempting to upload image:", file.name);
 
     if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
+      toast.error(t('messages.selectImageFile'));
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      toast.error("Image must be less than 10MB");
+      toast.error(t('messages.imageTooLarge'));
       return;
     }
 
@@ -245,13 +247,13 @@ function MessagesEntrepreneurNew() {
 
       const userProfile = localStorage.getItem("userProfile");
       if (!userProfile) {
-        toast.error("You must be logged in to upload files");
+        toast.error(t('messages.mustBeLoggedIn'));
         return;
       }
 
       const token = JSON.parse(userProfile)?.token;
       if (!token) {
-        toast.error("Authentication token not found. Please log in again.");
+        toast.error(t('messages.authTokenNotFound'));
         return;
       }
 
@@ -274,7 +276,7 @@ function MessagesEntrepreneurNew() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("❌ Upload failed:", errorText);
-        toast.error(`Failed to upload image: ${response.statusText}`);
+        toast.error(t('messages.failedUploadImage'));
         return;
       }
 
@@ -285,11 +287,11 @@ function MessagesEntrepreneurNew() {
         setUploadedImage(data.file);
         console.log("✅ Image uploaded successfully:", data.file);
       } else {
-        toast.error(data.message || "Failed to upload image");
+        toast.error(data.message || t('messages.failedUploadImage'));
       }
     } catch (error) {
       console.error("❌ Image upload error:", error);
-      toast.error(`Failed to upload image: ${error.message}`);
+      toast.error(t('messages.failedUploadImage'));
     } finally {
       setIsUploadingImage(false);
     }
@@ -303,7 +305,7 @@ function MessagesEntrepreneurNew() {
     console.log("📎 Attempting to upload file:", file.name);
 
     if (file.size > 10 * 1024 * 1024) {
-      toast.error("File must be less than 10MB");
+      toast.error(t('messages.fileTooLarge'));
       return;
     }
 
@@ -315,13 +317,13 @@ function MessagesEntrepreneurNew() {
 
       const userProfile = localStorage.getItem("userProfile");
       if (!userProfile) {
-        toast.error("You must be logged in to upload files");
+        toast.error(t('messages.mustBeLoggedIn'));
         return;
       }
 
       const token = JSON.parse(userProfile)?.token;
       if (!token) {
-        toast.error("Authentication token not found. Please log in again.");
+        toast.error(t('messages.authTokenNotFound'));
         return;
       }
 
@@ -344,7 +346,7 @@ function MessagesEntrepreneurNew() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("❌ Upload failed:", errorText);
-        toast.error(`Failed to upload file: ${response.statusText}`);
+        toast.error(t('messages.failedUploadFile'));
         return;
       }
 
@@ -355,11 +357,11 @@ function MessagesEntrepreneurNew() {
         setUploadedFiles((prev) => [...prev, data.file]);
         console.log("✅ File uploaded successfully:", data.file);
       } else {
-        toast.error(data.message || "Failed to upload file");
+        toast.error(data.message || t('messages.failedUploadFile'));
       }
     } catch (error) {
       console.error("❌ File upload error:", error);
-      toast.error(`Failed to upload file: ${error.message}`);
+      toast.error(t('messages.failedUploadFile'));
     } finally {
       setIsUploadingFile(false);
     }
@@ -530,7 +532,7 @@ function MessagesEntrepreneurNew() {
       }, 5000);
     } catch (error) {
       console.error("❌ Send error:", error);
-      toast.error("Failed to send message. Please try again.");
+      toast.error(t('messages.failedSendMessage'));
     } finally {
       setTimeout(() => setIsSending(false), 500);
     }
@@ -548,22 +550,23 @@ function MessagesEntrepreneurNew() {
     const date = new Date(timestamp);
     const now = new Date();
     const diff = now - date;
+    const locale = language === 'fr' ? 'fr-FR' : 'en-US';
 
-    if (diff < 60000) return "Just now";
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-    if (diff < 86400000) return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    return date.toLocaleDateString([], { month: "short", day: "numeric" });
+    if (diff < 60000) return t('messages.justNow');
+    if (diff < 3600000) return `${Math.floor(diff / 60000)}${t('time.minutesAgo')}`;
+    if (diff < 86400000) return date.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleDateString(locale, { month: "short", day: "numeric" });
   };
 
   // Format user role for display
   const formatUserRole = (role) => {
-    if (!role) return "User";
+    if (!role) return t('messages.user');
 
     const roleMap = {
-      'entrepreneur': 'Entrepreneur',
-      'property_manager': 'Property Manager',
-      'resident': 'Resident',
-      'supplier': 'Supplier'
+      'entrepreneur': t('nav.entrepreneur'),
+      'property_manager': t('nav.propertyManager'),
+      'resident': t('nav.resident'),
+      'supplier': t('nav.supplierRole')
     };
 
     return roleMap[role] || role.charAt(0).toUpperCase() + role.slice(1);
@@ -609,7 +612,7 @@ function MessagesEntrepreneurNew() {
       setShowProfileModal(true);
     } catch (error) {
       console.error("Error fetching entrepreneur profile:", error);
-      toast.error("Failed to load profile");
+      toast.error(t('messages.failedLoadProfile'));
     } finally {
       setIsLoadingProfile(false);
     }
@@ -646,7 +649,7 @@ function MessagesEntrepreneurNew() {
       setShowManagerModal(true);
     } catch (error) {
       console.error("Error fetching manager profile:", error);
-      toast.error("Failed to load profile");
+      toast.error(t('messages.failedLoadProfile'));
     } finally {
       setIsLoadingManagerProfile(false);
     }
@@ -684,7 +687,7 @@ function MessagesEntrepreneurNew() {
       setShowSupplierModal(true);
     } catch (error) {
       console.error("Error fetching supplier profile:", error);
-      toast.error("Failed to load supplier profile");
+      toast.error(t('messages.failedLoadSupplierProfile'));
     } finally {
       setIsLoadingSupplierProfile(false);
     }
@@ -697,12 +700,12 @@ function MessagesEntrepreneurNew() {
         {/* SIDEBAR */}
         <div className={`messages-sidebar ${showMobileChat ? 'hide-mobile' : ''}`}>
           <div className="messages-sidebar-header">
-            <h2>Messages</h2>
+            <h2>{t('messages.title')}</h2>
             <div className="messages-search">
               <Search size={16} className="messages-search-icon" />
               <input
                 type="text"
-                placeholder="Search conversations..."
+                placeholder={t('messages.searchConversations')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -714,35 +717,35 @@ function MessagesEntrepreneurNew() {
                 className={`filter-bubble-btn ${userFilter === "all" ? "active" : ""}`}
                 onClick={() => setUserFilter("all")}
               >
-                All
+                {t('messages.all')}
               </button>
               <button
                 className={`filter-bubble-btn ${userFilter === "property_manager" ? "active" : ""}`}
                 onClick={() => setUserFilter("property_manager")}
               >
-                Property Manager
+                {t('nav.propertyManager')}
               </button>
               <button
                 className={`filter-bubble-btn ${userFilter === "supplier" ? "active" : ""}`}
                 onClick={() => setUserFilter("supplier")}
               >
-                Supplier
+                {t('nav.supplierRole')}
               </button>
               {/* <button
                 className={`filter-bubble-btn ${userFilter === "entrepreneur" ? "active" : ""}`}
                 onClick={() => setUserFilter("entrepreneur")}
               >
-                Entrepreneur
+                {t('nav.entrepreneur')}
               </button> */}
             </div>
           </div>
 
           <div className="messages-conversations">
             {isLoading ? (
-              <div className="messages-loading">Loading...</div>
+              <div className="messages-loading">{t('messages.loading')}</div>
             ) : filteredConversations.length === 0 ? (
               <div style={{ padding: "20px", textAlign: "center", color: "#9ca3af" }}>
-                No conversations found
+                {t('messages.noConversationsFound')}
               </div>
             ) : (
               filteredConversations.map((conv) => (
@@ -765,7 +768,7 @@ function MessagesEntrepreneurNew() {
                       </span>
                     </div>
                     <p className="conversation-preview">
-                      {conv.last_message || "No messages yet"}
+                      {conv.last_message || t('messages.noMessagesYet')}
                     </p>
                   </div>
                   {conv.unread_count > 0 && (
@@ -784,8 +787,8 @@ function MessagesEntrepreneurNew() {
               <div className="messages-chat-empty-icon">
                 <MessageSquare size={40} />
               </div>
-              <h3>Select a conversation</h3>
-              <p>Choose a conversation from the sidebar to start messaging</p>
+              <h3>{t('messages.selectConversation')}</h3>
+              <p>{t('messages.chooseConversation')}</p>
             </div>
           ) : (
             <>
@@ -794,7 +797,7 @@ function MessagesEntrepreneurNew() {
                 <button
                   className="mobile-back-btn"
                   onClick={() => setShowMobileChat(false)}
-                  title="Back to conversations"
+                  title={t('messages.backToConversations')}
                 >
                   <ArrowLeft size={24} />
                 </button>
@@ -809,7 +812,7 @@ function MessagesEntrepreneurNew() {
                       handleViewSupplierProfile(selectedChat.other_user_id, selectedChat.other_user_name);
                     }
                   }}
-                  title={['entrepreneur', 'property_manager', 'supplier'].includes(selectedChat.other_user_role) ? 'View profile' : ''}
+                  title={['entrepreneur', 'property_manager', 'supplier'].includes(selectedChat.other_user_role) ? t('messages.viewProfile') : ''}
                 >
                   {getInitials(selectedChat.other_user_name)}
                 </div>
@@ -825,7 +828,7 @@ function MessagesEntrepreneurNew() {
                         handleViewSupplierProfile(selectedChat.other_user_id, selectedChat.other_user_name);
                       }
                     }}
-                    title={['entrepreneur', 'property_manager', 'supplier'].includes(selectedChat.other_user_role) ? 'View profile' : ''}
+                    title={['entrepreneur', 'property_manager', 'supplier'].includes(selectedChat.other_user_role) ? t('messages.viewProfile') : ''}
                   >
                     {selectedChat.other_user_name}
                   </h3>
@@ -833,7 +836,7 @@ function MessagesEntrepreneurNew() {
                     {formatUserRole(selectedChat.other_user_role)}
                   </p>
                 </div>
-                <button className="chat-header-call-btn" title="Call">
+                <button className="chat-header-call-btn" title={t('messages.call')}>
                   <Phone size={20} />
                 </button>
               </div>
@@ -848,7 +851,7 @@ function MessagesEntrepreneurNew() {
                     <div className="job-info-preview">
                       <Briefcase size={16} />
                       <span className="job-info-title">
-                        {selectedChat.job_title || "Job Details"}
+                        {selectedChat.job_title || t('messages.jobDetails')}
                       </span>
                       {selectedChat.bid_status && (
                         <span className={`job-info-badge ${selectedChat.bid_status}`}>
@@ -863,19 +866,19 @@ function MessagesEntrepreneurNew() {
                     <div className="job-info-details">
                       {/* Job Information */}
                       <div className="job-info-section">
-                        <h4 className="job-info-section-title">Job Details</h4>
+                        <h4 className="job-info-section-title">{t('messages.jobDetails')}</h4>
                         <div className="job-info-grid">
                           {selectedChat.job_category && (
                             <div className="job-info-item">
                               <Briefcase size={14} />
-                              <span className="job-info-label">Category:</span>
+                              <span className="job-info-label">{t('messages.category')}</span>
                               <span className="job-info-value">{selectedChat.job_category}</span>
                             </div>
                           )}
                           {selectedChat.job_budget_min && selectedChat.job_budget_max && (
                             <div className="job-info-item">
                               <DollarSign size={14} />
-                              <span className="job-info-label">Budget:</span>
+                              <span className="job-info-label">{t('messages.budget')}</span>
                               <span className="job-info-value">
                                 ${selectedChat.job_budget_min} - ${selectedChat.job_budget_max}
                               </span>
@@ -884,16 +887,16 @@ function MessagesEntrepreneurNew() {
                           {selectedChat.job_due_date && (
                             <div className="job-info-item">
                               <Calendar size={14} />
-                              <span className="job-info-label">Due Date:</span>
+                              <span className="job-info-label">{t('messages.dueDate')}</span>
                               <span className="job-info-value">
-                                {new Date(selectedChat.job_due_date).toLocaleDateString()}
+                                {new Date(selectedChat.job_due_date).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}
                               </span>
                             </div>
                           )}
                           {(selectedChat.job_property_address || selectedChat.job_city) && (
                             <div className="job-info-item">
                               <MapPin size={14} />
-                              <span className="job-info-label">Location:</span>
+                              <span className="job-info-label">{t('messages.location')}</span>
                               <span className="job-info-value">
                                 {selectedChat.job_property_address}
                                 {selectedChat.job_city && `, ${selectedChat.job_city}`}
@@ -903,7 +906,7 @@ function MessagesEntrepreneurNew() {
                         </div>
                         {selectedChat.job_description && (
                           <div className="job-info-description">
-                            <p className="job-info-label">Description:</p>
+                            <p className="job-info-label">{t('messages.description')}</p>
                             <p className="job-info-value">{selectedChat.job_description}</p>
                           </div>
                         )}
@@ -912,26 +915,26 @@ function MessagesEntrepreneurNew() {
                       {/* Bid Information */}
                       {selectedChat.bid_id && (
                         <div className="job-info-section">
-                          <h4 className="job-info-section-title">Your Bid</h4>
+                          <h4 className="job-info-section-title">{t('messages.approvedBid')}</h4>
                           <div className="job-info-grid">
                             <div className="job-info-item">
                               <DollarSign size={14} />
-                              <span className="job-info-label">Bid Amount:</span>
+                              <span className="job-info-label">{t('messages.bidAmount')}</span>
                               <span className="job-info-value bid-amount">
                                 ${selectedChat.bid_amount}
                               </span>
                             </div>
                             <div className="job-info-item">
                               <Calendar size={14} />
-                              <span className="job-info-label">Submitted:</span>
+                              <span className="job-info-label">{t('messages.submitted')}</span>
                               <span className="job-info-value">
-                                {new Date(selectedChat.bid_created_at).toLocaleDateString()}
+                                {new Date(selectedChat.bid_created_at).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}
                               </span>
                             </div>
                           </div>
                           {selectedChat.bid_message && (
                             <div className="job-info-description">
-                              <p className="job-info-label">Your Proposal:</p>
+                              <p className="job-info-label">{t('messages.proposal')}</p>
                               <p className="job-info-value">{selectedChat.bid_message}</p>
                             </div>
                           )}
@@ -945,7 +948,7 @@ function MessagesEntrepreneurNew() {
                   <div className="job-info-container job-info-none">
                     <div className="job-info-message">
                       <Briefcase size={16} />
-                      <span>This is a general conversation (no job associated)</span>
+                      <span>{t('messages.generalConversation')}</span>
                     </div>
                   </div>
                 )
@@ -1037,7 +1040,7 @@ function MessagesEntrepreneurNew() {
                         <button
                           className="chat-input-btn"
                           onClick={() => imageInputRef.current?.click()}
-                          title="Upload Image"
+                          title={t('messages.uploadImage')}
                           disabled={isUploadingImage}
                         >
                           {isUploadingImage ? (
@@ -1056,7 +1059,7 @@ function MessagesEntrepreneurNew() {
                         <button
                           className="chat-input-btn"
                           onClick={() => fileInputRef.current?.click()}
-                          title="Attach File"
+                          title={t('messages.attachFile')}
                           disabled={isUploadingFile}
                         >
                           {isUploadingFile ? (
@@ -1069,7 +1072,7 @@ function MessagesEntrepreneurNew() {
 
                       <textarea
                         className="chat-input-field"
-                        placeholder="Type a message..."
+                        placeholder={t('messages.typeMessage')}
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         onKeyDown={(e) => {

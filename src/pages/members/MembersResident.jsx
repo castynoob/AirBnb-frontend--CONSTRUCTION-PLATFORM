@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Phone, MessageSquare, MapPin } from 'lucide-react';
 import Nav from '../../components/Nav';
+import { useLanguage } from '../../contexts/LanguageContext';
 import '../../styles/resident/members.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const MembersResident = () => {
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
   const [residents, setResidents] = useState([]);
   const [filteredResidents, setFilteredResidents] = useState([]);
   const [search, setSearch] = useState('');
@@ -50,7 +52,7 @@ const MembersResident = () => {
 
       const userProfile = JSON.parse(localStorage.getItem('userProfile'));
       if (!userProfile?.token) {
-        setError('Please log in to view members');
+        setError(t('membersResident.pleaseLogIn'));
         setLoading(false);
         return;
       }
@@ -78,7 +80,7 @@ const MembersResident = () => {
       }
     } catch (error) {
       console.error('❌ Error fetching residents:', error);
-      setError('Failed to load building members');
+      setError(t('membersResident.failedToLoadMembers'));
     } finally {
       setLoading(false);
     }
@@ -129,8 +131,8 @@ const MembersResident = () => {
       <Nav />
       <div className="resident-members-container">
         <div className="members-header">
-          <h1>Building Members</h1>
-          <p>Connect with your neighbors</p>
+          <h1>{t('membersResident.title')}</h1>
+          <p>{t('membersResident.subtitle')}</p>
         </div>
 
         {/* Search and Filter */}
@@ -138,7 +140,7 @@ const MembersResident = () => {
           <div className="search-box">
             <input
               type="text"
-              placeholder="Search residents by name or unit..."
+              placeholder={t('membersResident.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="search-input"
@@ -147,7 +149,7 @@ const MembersResident = () => {
               <button
                 className="search-clear-btn"
                 onClick={() => setSearch('')}
-                aria-label="Clear search"
+                aria-label={t('membersResident.clearSearch')}
               >
                 ✕
               </button>
@@ -161,7 +163,7 @@ const MembersResident = () => {
                 checked={filterOnline}
                 onChange={(e) => setFilterOnline(e.target.checked)}
               />
-              <span>Show online only</span>
+              <span>{t('membersResident.showOnlineOnly')}</span>
             </label>
           </div>
         </div>
@@ -170,7 +172,7 @@ const MembersResident = () => {
         {loading && (
           <div className="loading-container">
             <div className="loading-spinner"></div>
-            <p>Loading members...</p>
+            <p>{t('membersResident.loadingMembers')}</p>
           </div>
         )}
 
@@ -179,7 +181,7 @@ const MembersResident = () => {
           <div className="error-container">
             <p className="error-message">{error}</p>
             <button className="retry-btn" onClick={fetchResidents}>
-              Try Again
+              {t('membersResident.tryAgain')}
             </button>
           </div>
         )}
@@ -188,11 +190,11 @@ const MembersResident = () => {
         {!loading && !error && filteredResidents.length === 0 && (
           <div className="empty-state">
             <div className="empty-state-icon">👥</div>
-            <h3>No members found</h3>
+            <h3>{t('membersResident.noMembersFound')}</h3>
             <p>
               {search || filterOnline
-                ? 'Try adjusting your search or filters'
-                : 'No residents are currently in your building'}
+                ? t('membersResident.adjustSearchOrFilters')
+                : t('membersResident.noResidentsInBuilding')}
             </p>
             {(search || filterOnline) && (
               <button
@@ -202,7 +204,7 @@ const MembersResident = () => {
                   setFilterOnline(false);
                 }}
               >
-                Clear Filters
+                {t('membersResident.clearFilters')}
               </button>
             )}
           </div>
@@ -241,20 +243,20 @@ const MembersResident = () => {
                     <h3 className="member-name">
                       {resident.first_name} {resident.last_name}
                       {resident.is_owner && (
-                        <span className="owner-badge">Owner</span>
+                        <span className="owner-badge">{t('membersResident.owner')}</span>
                       )}
                     </h3>
 
                     {resident.show_unit && resident.unit_number && !resident.is_owner && (
                       <div className="member-detail">
                         <MapPin size={16} />
-                        <span>Unit {resident.unit_number}</span>
-                        {resident.floor && <span className="member-floor">Floor {resident.floor}</span>}
+                        <span>{t('membersResident.unit')} {resident.unit_number}</span>
+                        {resident.floor && <span className="member-floor">{t('membersResident.floor')} {resident.floor}</span>}
                       </div>
                     )}
                     {resident.is_owner && (
                       <div className="member-detail owner-detail">
-                        <span>Property Manager</span>
+                        <span>{t('membersResident.propertyManager')}</span>
                       </div>
                     )}
 
@@ -262,7 +264,7 @@ const MembersResident = () => {
 
                     {resident.show_move_in_date && resident.move_in_date && (
                       <p className="member-move-in">
-                        Moved in: {new Date(resident.move_in_date).toLocaleDateString()}
+                        {t('membersResident.movedIn')} {new Date(resident.move_in_date).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}
                       </p>
                     )}
                   </div>
@@ -279,7 +281,7 @@ const MembersResident = () => {
                           console.log(`💬 Message button clicked for ${resident.first_name} ${resident.last_name}`);
                           handleContact(resident, 'message');
                         }}
-                        title="Send message"
+                        title={t('membersResident.sendMessage')}
                       >
                         <MessageSquare size={18} />
                       </button>
@@ -295,7 +297,7 @@ const MembersResident = () => {
         {/* Results Count */}
         {!loading && !error && filteredResidents.length > 0 && (
           <div className="members-count">
-            Showing {filteredResidents.length} of {residents.length} members
+            {t('membersResident.showingMembers', { shown: filteredResidents.length, total: residents.length })}
           </div>
         )}
       </div>

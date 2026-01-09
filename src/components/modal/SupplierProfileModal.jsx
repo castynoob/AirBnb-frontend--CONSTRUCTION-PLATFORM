@@ -21,11 +21,13 @@ import {
   MessageSquare,
   Loader2,
 } from "lucide-react";
+import { useLanguage } from "../../contexts/LanguageContext";
 import "../../styles/modal/supplierprofilemodal.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) => {
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState("company");
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
@@ -82,13 +84,13 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
   if (!isOpen || !profile) return null;
 
   const tabs = [
-    { id: "company", label: "Company Info", icon: Building2 },
-    { id: "contact", label: "Contact", icon: Phone },
-    { id: "reviews", label: "Reviews", icon: MessageSquare, badge: reviews.length > 0 ? reviews.length : undefined },
-    { id: "delivery", label: "Delivery Areas", icon: Truck },
-    { id: "business", label: "Business Overview", icon: Briefcase },
-    { id: "catalog", label: "Product Catalog", icon: Package },
-    { id: "services", label: "Services", icon: Shield },
+    { id: "company", label: t('supplierProfileModal.tabCompanyInfo'), icon: Building2 },
+    { id: "contact", label: t('supplierProfileModal.tabContact'), icon: Phone },
+    { id: "reviews", label: t('supplierProfileModal.tabReviews'), icon: MessageSquare, badge: reviews.length > 0 ? reviews.length : undefined },
+    { id: "delivery", label: t('supplierProfileModal.tabDeliveryAreas'), icon: Truck },
+    { id: "business", label: t('supplierProfileModal.tabBusinessOverview'), icon: Briefcase },
+    { id: "catalog", label: t('supplierProfileModal.tabProductCatalog'), icon: Package },
+    { id: "services", label: t('supplierProfileModal.tabServices'), icon: Shield },
   ];
 
   const renderStars = (rating) => {
@@ -129,11 +131,11 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
               </div>
               <div className="spm-profile-info">
                 <h3>{profile.company_name || `${profile.first_name || ''} ${profile.last_name || ''}`}</h3>
-                <p className="spm-profile-role">Supplier</p>
+                <p className="spm-profile-role">{t('supplierProfileModal.supplier')}</p>
                 <div className="spm-rating-display">
                   {renderStars(profile.average_rating || 0)}
                   <span className="spm-rating-text">
-                    {Number(profile.average_rating || 0).toFixed(1)} ({profile.total_reviews || 0} reviews)
+                    {Number(profile.average_rating || 0).toFixed(1)} ({profile.total_reviews || 0} {t('supplierProfileModal.reviews')})
                   </span>
                 </div>
               </div>
@@ -145,9 +147,9 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
                   <Building2 size={18} />
                 </div>
                 <div className="spm-info-details">
-                  <span className="spm-info-label">Company Name</span>
+                  <span className="spm-info-label">{t('supplierProfileModal.companyName')}</span>
                   <span className="spm-info-value">
-                    {profile.company_name || "Not provided"}
+                    {profile.company_name || t('supplierProfileModal.notProvided')}
                   </span>
                 </div>
               </div>
@@ -157,9 +159,9 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
                   <Briefcase size={18} />
                 </div>
                 <div className="spm-info-details">
-                  <span className="spm-info-label">Business Type</span>
+                  <span className="spm-info-label">{t('supplierProfileModal.businessType')}</span>
                   <span className="spm-info-value">
-                    {profile.business_type || "Not specified"}
+                    {profile.business_type || t('supplierProfileModal.notSpecified')}
                   </span>
                 </div>
               </div>
@@ -169,11 +171,11 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
                   <Calendar size={18} />
                 </div>
                 <div className="spm-info-details">
-                  <span className="spm-info-label">Years in Business</span>
+                  <span className="spm-info-label">{t('supplierProfileModal.yearsInBusiness')}</span>
                   <span className="spm-info-value">
                     {profile.years_in_business
-                      ? `${profile.years_in_business} years`
-                      : "Not specified"}
+                      ? `${profile.years_in_business} ${t('supplierProfileModal.years')}`
+                      : t('supplierProfileModal.notSpecified')}
                   </span>
                 </div>
               </div>
@@ -183,8 +185,8 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
                   <CheckCircle size={18} />
                 </div>
                 <div className="spm-info-details">
-                  <span className="spm-info-label">Status</span>
-                  <span className="spm-info-value spm-status-active">Active</span>
+                  <span className="spm-info-label">{t('supplierProfileModal.status')}</span>
+                  <span className="spm-info-value spm-status-active">{t('supplierProfileModal.active')}</span>
                 </div>
               </div>
             </div>
@@ -196,7 +198,7 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
           <div className="spm-tab-content">
             <div className="spm-section-header">
               <Phone size={20} />
-              <h4>Contact Information</h4>
+              <h4>{t('supplierProfileModal.contactInformation')}</h4>
             </div>
 
             <div className="spm-contact-list">
@@ -205,11 +207,11 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
                   <User size={18} />
                 </div>
                 <div className="spm-contact-details">
-                  <span className="spm-contact-label">Contact Person</span>
+                  <span className="spm-contact-label">{t('supplierProfileModal.contactPerson')}</span>
                   <span className="spm-contact-value">
                     {profile.first_name && profile.last_name
                       ? `${profile.first_name} ${profile.middle_name || ''} ${profile.last_name}`.trim()
-                      : "Not provided"}
+                      : t('supplierProfileModal.notProvided')}
                   </span>
                 </div>
               </div>
@@ -219,9 +221,9 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
                   <Mail size={18} />
                 </div>
                 <div className="spm-contact-details">
-                  <span className="spm-contact-label">Email Address</span>
+                  <span className="spm-contact-label">{t('supplierProfileModal.emailAddress')}</span>
                   <span className="spm-contact-value">
-                    {profile.email || "Not provided"}
+                    {profile.email || t('supplierProfileModal.notProvided')}
                   </span>
                 </div>
               </div>
@@ -231,9 +233,9 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
                   <Phone size={18} />
                 </div>
                 <div className="spm-contact-details">
-                  <span className="spm-contact-label">Phone Number</span>
+                  <span className="spm-contact-label">{t('supplierProfileModal.phoneNumber')}</span>
                   <span className="spm-contact-value">
-                    {profile.phone || "Not provided"}
+                    {profile.phone || t('supplierProfileModal.notProvided')}
                   </span>
                 </div>
               </div>
@@ -243,7 +245,7 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
                   <Globe size={18} />
                 </div>
                 <div className="spm-contact-details">
-                  <span className="spm-contact-label">Website</span>
+                  <span className="spm-contact-label">{t('supplierProfileModal.website')}</span>
                   {profile.website ? (
                     <a
                       href={profile.website.startsWith('http') ? profile.website : `https://${profile.website}`}
@@ -255,7 +257,7 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
                       <ExternalLink size={14} />
                     </a>
                   ) : (
-                    <span className="spm-contact-value">Not provided</span>
+                    <span className="spm-contact-value">{t('supplierProfileModal.notProvided')}</span>
                   )}
                 </div>
               </div>
@@ -265,9 +267,9 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
                   <MapPin size={18} />
                 </div>
                 <div className="spm-contact-details">
-                  <span className="spm-contact-label">Business Address</span>
+                  <span className="spm-contact-label">{t('supplierProfileModal.businessAddress')}</span>
                   <span className="spm-contact-value">
-                    {profile.address || "Not provided"}
+                    {profile.address || t('supplierProfileModal.notProvided')}
                   </span>
                 </div>
               </div>
@@ -280,13 +282,13 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
           <div className="spm-tab-content">
             <div className="spm-section-header">
               <MessageSquare size={20} />
-              <h4>Customer Reviews</h4>
+              <h4>{t('supplierProfileModal.customerReviews')}</h4>
             </div>
 
             {reviewsLoading ? (
               <div className="spm-reviews-loading">
                 <Loader2 size={24} className="spm-spinner" />
-                <span>Loading reviews...</span>
+                <span>{t('supplierProfileModal.loadingReviews')}</span>
               </div>
             ) : reviews.length > 0 ? (
               <>
@@ -300,7 +302,7 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
                       {renderStars(reviewStats.averageRating)}
                     </div>
                     <span className="spm-reviews-count">
-                      {reviewStats.totalReviews} review{reviewStats.totalReviews !== 1 ? 's' : ''}
+                      {reviewStats.totalReviews} {reviewStats.totalReviews !== 1 ? t('supplierProfileModal.reviews') : t('supplierProfileModal.review')}
                     </span>
                   </div>
                   <div className="spm-rating-bars">
@@ -335,18 +337,18 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
                           {review.reviewer?.profile_picture ? (
                             <img
                               src={review.reviewer.profile_picture}
-                              alt={review.reviewer?.company_name || 'Reviewer'}
+                              alt={review.reviewer?.company_name || t('supplierProfileModal.reviewer')}
                             />
                           ) : (
                             review.reviewer?.company_name?.charAt(0) || 'R'
                           )}
                         </div>
                         <div className="spm-review-meta">
-                          <h5>{review.reviewer?.company_name || 'Anonymous'}</h5>
+                          <h5>{review.reviewer?.company_name || t('supplierProfileModal.anonymous')}</h5>
                           <div className="spm-review-rating">
                             {renderStars(review.rating)}
                             <span className="spm-review-date">
-                              {new Date(review.created_at).toLocaleDateString('en-US', {
+                              {new Date(review.created_at).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', {
                                 year: 'numeric',
                                 month: 'short',
                                 day: 'numeric'
@@ -365,8 +367,8 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
             ) : (
               <div className="spm-reviews-empty">
                 <MessageSquare size={40} />
-                <h4>No Reviews Yet</h4>
-                <p>This supplier hasn't received any reviews yet.</p>
+                <h4>{t('supplierProfileModal.noReviewsYet')}</h4>
+                <p>{t('supplierProfileModal.noReviewsMessage')}</p>
               </div>
             )}
           </div>
@@ -377,14 +379,14 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
           <div className="spm-tab-content">
             <div className="spm-section-header">
               <Truck size={20} />
-              <h4>Delivery Areas</h4>
+              <h4>{t('supplierProfileModal.deliveryAreas')}</h4>
             </div>
 
             <div className="spm-delivery-content">
               {profile.delivery_areas && profile.delivery_areas.length > 0 ? (
                 <>
                   <p className="spm-delivery-intro">
-                    This supplier delivers to the following areas:
+                    {t('supplierProfileModal.deliveryIntro')}
                   </p>
                   <div className="spm-delivery-tags">
                     {profile.delivery_areas.map((area, index) => (
@@ -398,16 +400,15 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
               ) : (
                 <div className="spm-empty-state">
                   <Truck size={48} />
-                  <h5>No Delivery Areas Listed</h5>
-                  <p>This supplier has not specified their delivery areas yet.</p>
+                  <h5>{t('supplierProfileModal.noDeliveryAreas')}</h5>
+                  <p>{t('supplierProfileModal.noDeliveryAreasMessage')}</p>
                 </div>
               )}
 
               <div className="spm-delivery-note">
                 <Award size={18} />
                 <p>
-                  Contact the supplier directly for specific delivery schedules
-                  and coverage in your area.
+                  {t('supplierProfileModal.deliveryNote')}
                 </p>
               </div>
             </div>
@@ -419,7 +420,7 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
           <div className="spm-tab-content">
             <div className="spm-section-header">
               <Briefcase size={20} />
-              <h4>Business Overview</h4>
+              <h4>{t('supplierProfileModal.businessOverview')}</h4>
             </div>
 
             <div className="spm-business-cards">
@@ -431,7 +432,7 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
                   <span className="spm-business-stat-value">
                     {profile.years_in_business || 0}+
                   </span>
-                  <span className="spm-business-stat-label">Years in Business</span>
+                  <span className="spm-business-stat-label">{t('supplierProfileModal.yearsInBusiness')}</span>
                 </div>
               </div>
 
@@ -443,7 +444,7 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
                   <span className="spm-business-stat-value">
                     {profile.delivery_areas?.length || 0}
                   </span>
-                  <span className="spm-business-stat-label">Delivery Areas</span>
+                  <span className="spm-business-stat-label">{t('supplierProfileModal.deliveryAreas')}</span>
                 </div>
               </div>
             </div>
@@ -452,40 +453,40 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
               <div className="spm-business-info-row">
                 <span className="spm-business-info-label">
                   <FileText size={14} />
-                  Business Registration
+                  {t('supplierProfileModal.businessRegistration')}
                 </span>
                 <span className="spm-business-info-value">
-                  {profile.business_registration || "Not provided"}
+                  {profile.business_registration || t('supplierProfileModal.notProvided')}
                 </span>
               </div>
 
               <div className="spm-business-info-row">
                 <span className="spm-business-info-label">
                   <Briefcase size={14} />
-                  Business Type
+                  {t('supplierProfileModal.businessType')}
                 </span>
                 <span className="spm-business-info-value">
-                  {profile.business_type || "Not specified"}
+                  {profile.business_type || t('supplierProfileModal.notSpecified')}
                 </span>
               </div>
 
               <div className="spm-business-info-row">
                 <span className="spm-business-info-label">
                   <Shield size={14} />
-                  Tax ID
+                  {t('supplierProfileModal.taxId')}
                 </span>
                 <span className="spm-business-info-value">
-                  {profile.tax_id || "Not provided"}
+                  {profile.tax_id || t('supplierProfileModal.notProvided')}
                 </span>
               </div>
 
               <div className="spm-business-info-row">
                 <span className="spm-business-info-label">
                   <Award size={14} />
-                  Business License
+                  {t('supplierProfileModal.businessLicense')}
                 </span>
                 <span className="spm-business-info-value">
-                  {profile.business_license ? "Verified" : "Not provided"}
+                  {profile.business_license ? t('supplierProfileModal.verified') : t('supplierProfileModal.notProvided')}
                 </span>
               </div>
             </div>
@@ -497,7 +498,7 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
           <div className="spm-tab-content">
             <div className="spm-section-header">
               <Package size={20} />
-              <h4>Product Catalog</h4>
+              <h4>{t('supplierProfileModal.productCatalog')}</h4>
             </div>
 
             <div className="spm-catalog-content">
@@ -507,8 +508,8 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
                     <FileText size={48} />
                   </div>
                   <div className="spm-catalog-info">
-                    <h5>Product Catalog Available</h5>
-                    <p>View or download the supplier's complete product catalog</p>
+                    <h5>{t('supplierProfileModal.catalogAvailable')}</h5>
+                    <p>{t('supplierProfileModal.catalogDescription')}</p>
                     <a
                       href={profile.catalog_pdf_url}
                       target="_blank"
@@ -516,7 +517,7 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
                       className="spm-catalog-btn"
                     >
                       <FileText size={16} />
-                      View Catalog
+                      {t('supplierProfileModal.viewCatalog')}
                       <ExternalLink size={14} />
                     </a>
                   </div>
@@ -524,10 +525,10 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
               ) : (
                 <div className="spm-empty-state">
                   <Package size={48} />
-                  <h5>No Catalog Available</h5>
-                  <p>This supplier has not uploaded a product catalog yet.</p>
+                  <h5>{t('supplierProfileModal.noCatalog')}</h5>
+                  <p>{t('supplierProfileModal.noCatalogMessage')}</p>
                   <p className="spm-empty-hint">
-                    Contact them directly for product information.
+                    {t('supplierProfileModal.contactForInfo')}
                   </p>
                 </div>
               )}
@@ -540,7 +541,7 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
           <div className="spm-tab-content">
             <div className="spm-section-header">
               <Shield size={20} />
-              <h4>Service Information</h4>
+              <h4>{t('supplierProfileModal.serviceInformation')}</h4>
             </div>
 
             <div className="spm-services-content">
@@ -549,31 +550,30 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
                   <div className="spm-service-icon">
                     <Package size={24} />
                   </div>
-                  <h5>Supply Services</h5>
+                  <h5>{t('supplierProfileModal.supplyServices')}</h5>
                 </div>
                 <p className="spm-service-desc">
-                  {profile.company_name || "This supplier"} provides construction materials
-                  and supplies to contractors and property managers.
+                  {t('supplierProfileModal.supplyServicesDesc', { companyName: profile.company_name || t('supplierProfileModal.thisSupplier') })}
                 </p>
               </div>
 
               <div className="spm-service-features">
                 <div className="spm-service-feature">
                   <CheckCircle size={16} />
-                  <span>Quality Materials</span>
+                  <span>{t('supplierProfileModal.qualityMaterials')}</span>
                 </div>
                 <div className="spm-service-feature">
                   <CheckCircle size={16} />
-                  <span>Competitive Pricing</span>
+                  <span>{t('supplierProfileModal.competitivePricing')}</span>
                 </div>
                 <div className="spm-service-feature">
                   <CheckCircle size={16} />
-                  <span>Reliable Delivery</span>
+                  <span>{t('supplierProfileModal.reliableDelivery')}</span>
                 </div>
                 {profile.years_in_business && profile.years_in_business >= 5 && (
                   <div className="spm-service-feature">
                     <CheckCircle size={16} />
-                    <span>Established Business</span>
+                    <span>{t('supplierProfileModal.establishedBusiness')}</span>
                   </div>
                 )}
               </div>
@@ -581,8 +581,7 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
               <div className="spm-services-note">
                 <Award size={18} />
                 <p>
-                  Contact the supplier for quotes, bulk pricing, and specific
-                  product inquiries.
+                  {t('supplierProfileModal.servicesNote')}
                 </p>
               </div>
             </div>
@@ -612,7 +611,7 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
               <div className="spm-header-meta">
                 <Star size={12} fill="#facc15" stroke="#facc15" />
                 <span>
-                  {Number(profile.average_rating || 0).toFixed(1)} ({profile.total_reviews || 0} reviews)
+                  {Number(profile.average_rating || 0).toFixed(1)} ({profile.total_reviews || 0} {t('supplierProfileModal.reviews')})
                 </span>
               </div>
             </div>
@@ -649,7 +648,7 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
           <div className="spm-footer">
             <button className="spm-request-btn" onClick={onRequestMaterials}>
               <Send size={18} />
-              Request Materials
+              {t('supplierProfileModal.requestMaterials')}
             </button>
           </div>
         )}

@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
   useStripe,
@@ -8,8 +7,7 @@ import {
 } from "@stripe/react-stripe-js";
 import "../styles/entrepreneur/budgetunlock.css";
 import logoLight from "../assets/logo-light.png";
-
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+import { stripePromise } from "../utils/stripeConfig";
 
 // Closing/Loading Screen Component
 const ClosingScreen = () => {

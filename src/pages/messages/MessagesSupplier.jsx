@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSocket } from '../../contexts/SocketContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { Image as ImageIcon, Paperclip, X, File, Download, Loader2, Search, ArrowLeft, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Nav from '../../components/Nav';
@@ -66,6 +67,7 @@ async function fetchWithAuth(url, options = {}) {
 const MessagesSupplier = () => {
   const socketContext = useSocket();
   const socket = socketContext?.socket;
+  const { t, language } = useLanguage();
 
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
@@ -157,7 +159,7 @@ const MessagesSupplier = () => {
     try {
       const userProfile = JSON.parse(localStorage.getItem('userProfile'));
       if (!userProfile?.token) {
-        setError('Please log in to view messages');
+        setError(t('messagesSupplier.pleaseLoginToView'));
         return;
       }
 
@@ -334,7 +336,7 @@ const MessagesSupplier = () => {
         // Update conversation preview
         setConversations(prev => prev.map(conv =>
           conv.id === activeConversation.id
-            ? { ...conv, last_message: newMsg.content || '[Attachment]' }
+            ? { ...conv, last_message: newMsg.content || t('messagesSupplier.attachment') }
             : conv
         ));
 
@@ -342,7 +344,7 @@ const MessagesSupplier = () => {
       }
     } catch (error) {
       console.error('❌ Error sending message:', error);
-      alert('Failed to send message: ' + error.message);
+      toast.error(t('messagesSupplier.failedToSendMessage') + ': ' + error.message);
     }
   };
 
@@ -354,12 +356,12 @@ const MessagesSupplier = () => {
     console.log('📷 Attempting to upload image:', file.name);
 
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      toast.error(t('messagesSupplier.pleaseSelectImage'));
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      alert('Image must be less than 10MB');
+      toast.error(t('messagesSupplier.imageMustBeLessThan'));
       return;
     }
 
@@ -371,7 +373,7 @@ const MessagesSupplier = () => {
 
       const userProfile = JSON.parse(localStorage.getItem('userProfile'));
       if (!userProfile?.token) {
-        alert('You must be logged in to upload files');
+        toast.error(t('messagesSupplier.mustBeLoggedIn'));
         return;
       }
 
@@ -386,7 +388,7 @@ const MessagesSupplier = () => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Upload failed:', errorText);
-        alert(`Failed to upload image: ${response.statusText}`);
+        toast.error(t('messagesSupplier.failedToUploadImage'));
         return;
       }
 
@@ -395,11 +397,11 @@ const MessagesSupplier = () => {
         setUploadedImage(data.file);
         console.log('✅ Image uploaded successfully:', data.file);
       } else {
-        alert(data.message || 'Failed to upload image');
+        toast.error(data.message || t('messagesSupplier.failedToUploadImage'));
       }
     } catch (error) {
       console.error('❌ Image upload error:', error);
-      alert(`Failed to upload image: ${error.message}`);
+      toast.error(t('messagesSupplier.failedToUploadImage'));
     } finally {
       setIsUploadingImage(false);
       if (imageInputRef.current) {
@@ -416,7 +418,7 @@ const MessagesSupplier = () => {
     console.log('📎 Attempting to upload file:', file.name);
 
     if (file.size > 10 * 1024 * 1024) {
-      alert('File must be less than 10MB');
+      toast.error(t('messagesSupplier.fileMustBeLessThan'));
       return;
     }
 
@@ -428,7 +430,7 @@ const MessagesSupplier = () => {
 
       const userProfile = JSON.parse(localStorage.getItem('userProfile'));
       if (!userProfile?.token) {
-        alert('You must be logged in to upload files');
+        toast.error(t('messagesSupplier.mustBeLoggedIn'));
         return;
       }
 
@@ -443,7 +445,7 @@ const MessagesSupplier = () => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Upload failed:', errorText);
-        alert(`Failed to upload file: ${response.statusText}`);
+        toast.error(t('messagesSupplier.failedToUploadFile'));
         return;
       }
 
@@ -452,11 +454,11 @@ const MessagesSupplier = () => {
         setUploadedFiles(prev => [...prev, data.file]);
         console.log('✅ File uploaded successfully:', data.file);
       } else {
-        alert(data.message || 'Failed to upload file');
+        toast.error(data.message || t('messagesSupplier.failedToUploadFile'));
       }
     } catch (error) {
       console.error('❌ File upload error:', error);
-      alert(`Failed to upload file: ${error.message}`);
+      toast.error(t('messagesSupplier.failedToUploadFile'));
     } finally {
       setIsUploadingFile(false);
       if (fileInputRef.current) {
@@ -484,7 +486,7 @@ const MessagesSupplier = () => {
   // Format time
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString(language === 'fr' ? 'fr-FR' : 'en-US', { hour: '2-digit', minute: '2-digit' });
   };
 
   // Get initials
@@ -529,7 +531,7 @@ const MessagesSupplier = () => {
       setShowProfileModal(true);
     } catch (error) {
       console.error('Error fetching entrepreneur profile:', error);
-      toast.error('Failed to load entrepreneur profile');
+      toast.error(t('messagesSupplier.failedToLoadProfile'));
     } finally {
       setIsLoadingProfile(false);
     }
@@ -542,15 +544,15 @@ const MessagesSupplier = () => {
         {/* SIDEBAR */}
         <div className={`chat-sidebar-supplier ${showMobileChat ? 'hide-mobile' : ''}`}>
           <div className="sidebar-header-supplier">
-            <h2>Messages</h2>
-            <p className="sidebar-subtitle">Chat with construction companies</p>
+            <h2>{t('messagesSupplier.title')}</h2>
+            <p className="sidebar-subtitle">{t('messagesSupplier.subtitle')}</p>
 
             {/* Search */}
             <div className="search-box-supplier">
               <Search size={18} />
               <input
                 type="text"
-                placeholder="Search entrepreneurs..."
+                placeholder={t('messagesSupplier.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input-supplier"
@@ -563,20 +565,20 @@ const MessagesSupplier = () => {
             {loading ? (
               <div className="loading-container-supplier">
                 <div className="loading-spinner-supplier"></div>
-                <p>Loading conversations...</p>
+                <p>{t('messagesSupplier.loadingConversations')}</p>
               </div>
             ) : error ? (
               <div className="error-container-supplier">
                 <p className="error-message-supplier">{error}</p>
                 <button className="retry-btn-supplier" onClick={fetchConversations}>
-                  Try Again
+                  {t('messagesSupplier.tryAgain')}
                 </button>
               </div>
             ) : filteredConversations.length === 0 ? (
               <div className="empty-list-message-supplier">
-                {searchTerm ? 'No matching conversations' : 'No conversations yet'}
+                {searchTerm ? t('messagesSupplier.noMatchingConversations') : t('messagesSupplier.noConversationsYet')}
                 <p className="empty-list-hint">
-                  You can message entrepreneurs after you accept their material requests. Check your homepage for pending requests.
+                  {t('messagesSupplier.emptyListHint')}
                 </p>
               </div>
             ) : (
@@ -590,7 +592,7 @@ const MessagesSupplier = () => {
                     <div
                       className="avatar-circle-supplier clickable"
                       onClick={(e) => { e.stopPropagation(); handleViewEntrepreneurProfile(conv); }}
-                      title="View entrepreneur profile"
+                      title={t('messagesSupplier.viewEntrepreneurProfile')}
                     >
                       {getInitials(conv.other_user_name || conv.company_name)}
                     </div>
@@ -603,13 +605,13 @@ const MessagesSupplier = () => {
                       <h4
                         className="chat-name-supplier clickable"
                         onClick={(e) => { e.stopPropagation(); handleViewEntrepreneurProfile(conv); }}
-                        title="View entrepreneur profile"
+                        title={t('messagesSupplier.viewEntrepreneurProfile')}
                       >
                         {conv.other_user_name || conv.company_name}
                       </h4>
                     </div>
-                    <p className="chat-role-supplier">Entrepreneur</p>
-                    <p className="chat-preview-supplier">{conv.last_message || 'No messages yet'}</p>
+                    <p className="chat-role-supplier">{t('messagesSupplier.entrepreneur')}</p>
+                    <p className="chat-preview-supplier">{conv.last_message || t('messagesSupplier.noMessagesYet')}</p>
                   </div>
                 </div>
               ))
@@ -622,15 +624,15 @@ const MessagesSupplier = () => {
           {!activeConversation ? (
             <div className="empty-chat-supplier">
               <div className="empty-icon-supplier">💬</div>
-              <h3>Select a conversation</h3>
-              <p>Choose an entrepreneur from the list to start messaging</p>
+              <h3>{t('messagesSupplier.selectConversation')}</h3>
+              <p>{t('messagesSupplier.chooseEntrepreneur')}</p>
               <div className="empty-info-supplier">
-                <p>Messaging is enabled after you accept a material request. You can then:</p>
+                <p>{t('messagesSupplier.messagingEnabledInfo')}</p>
                 <ul>
-                  <li>Discuss material specifications</li>
-                  <li>Negotiate pricing and terms</li>
-                  <li>Confirm delivery dates</li>
-                  <li>Send invoices and quotes</li>
+                  <li>{t('messagesSupplier.discussMaterialSpecs')}</li>
+                  <li>{t('messagesSupplier.negotiatePricing')}</li>
+                  <li>{t('messagesSupplier.confirmDeliveryDates')}</li>
+                  <li>{t('messagesSupplier.sendInvoicesQuotes')}</li>
                 </ul>
               </div>
             </div>
@@ -641,14 +643,14 @@ const MessagesSupplier = () => {
                 <button
                   className="mobile-back-btn-supplier"
                   onClick={() => setShowMobileChat(false)}
-                  title="Back to conversations"
+                  title={t('messagesSupplier.backToConversations')}
                 >
                   <ArrowLeft size={20} />
                 </button>
                 <div
                   className="header-info-supplier clickable-header"
                   onClick={() => handleViewEntrepreneurProfile(activeConversation)}
-                  title="View entrepreneur profile"
+                  title={t('messagesSupplier.viewEntrepreneurProfile')}
                 >
                   <div className="header-avatar-wrapper-supplier">
                     <div className="header-avatar-supplier">
@@ -659,7 +661,7 @@ const MessagesSupplier = () => {
                     <h3 className="header-name-supplier">
                       {activeConversation.other_user_name || activeConversation.company_name}
                     </h3>
-                    <p className="user-status-text-supplier">Entrepreneur</p>
+                    <p className="user-status-text-supplier">{t('messagesSupplier.entrepreneur')}</p>
                   </div>
                   <ChevronRight size={18} className="header-chevron-supplier" />
                 </div>
@@ -760,7 +762,7 @@ const MessagesSupplier = () => {
                     <button
                       type="button"
                       className="input-action-btn-supplier"
-                      title="Send image"
+                      title={t('messagesSupplier.sendImage')}
                       onClick={() => imageInputRef.current?.click()}
                       disabled={isUploadingImage}
                     >
@@ -780,7 +782,7 @@ const MessagesSupplier = () => {
                     <button
                       type="button"
                       className="input-action-btn-supplier"
-                      title="Attach file"
+                      title={t('messagesSupplier.attachFile')}
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isUploadingFile}
                     >
@@ -793,7 +795,7 @@ const MessagesSupplier = () => {
                   </div>
                   <input
                     type="text"
-                    placeholder="Type a message..."
+                    placeholder={t('messagesSupplier.typeMessage')}
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     className="message-input-supplier"

@@ -16,8 +16,10 @@ import {
   validatePasswordConfirmation
 } from "../../utils/validation";
 import { useSocket } from "../../contexts/SocketContext";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 export default function LandingPage() {
+  const { t, language, changeLanguage, languages } = useLanguage();
   // ===== STATE MANAGEMENT =====
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showRegisterModal, setShowRegisterModal] = useState(false)
@@ -100,7 +102,7 @@ export default function LandingPage() {
     if (verification === 'success') {
       setVerificationMessage({
         type: 'success',
-        message: 'Email verified successfully! You can now log in.'
+        message: t('landingPage.verification.success')
       });
       setShowLoginModal(true);
       // Clear URL parameters
@@ -108,10 +110,10 @@ export default function LandingPage() {
       // Auto-hide after 5 seconds
       setTimeout(() => setVerificationMessage(null), 5000);
     } else if (verification === 'failed') {
-      let message = 'Email verification failed.';
-      if (reason === 'missing_token') message = 'Verification link is invalid (missing token).';
-      if (reason === 'invalid_token') message = 'Verification link is invalid or expired.';
-      if (reason === 'server_error') message = 'Server error during verification. Please try again.';
+      let message = t('landingPage.verification.failed');
+      if (reason === 'missing_token') message = t('landingPage.verification.missingToken');
+      if (reason === 'invalid_token') message = t('landingPage.verification.invalidToken');
+      if (reason === 'server_error') message = t('landingPage.verification.serverError');
 
       setVerificationMessage({
         type: 'error',
@@ -122,7 +124,7 @@ export default function LandingPage() {
       // Auto-hide after 10 seconds
       setTimeout(() => setVerificationMessage(null), 10000);
     }
-  }, [searchParams]);
+  }, [searchParams, t]);
 
   // ===== SCROLL EFFECT =====
   useEffect(() => {
@@ -931,7 +933,7 @@ export default function LandingPage() {
   const roles = [
     {
       id: "property-manager",
-      title: "Property Manager",
+      title: t('landingPage.register.rolePropertyManager'),
       icon: (
         <svg viewBox="0 0 24 24">
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -939,7 +941,7 @@ export default function LandingPage() {
         </svg>
       ),
       headline: "Take Back Control",
-      description: "Drowning in maintenance requests? Chasing contractors for updates? Managing properties shouldn't feel like chaos.",
+      description: t('landingPage.register.rolePropertyManagerDesc'),
       benefits: [
         "Full visibility: Every property, every job, every contractor — in one dashboard",
         "No more chasing: Automated updates and real-time project tracking",
@@ -950,14 +952,14 @@ export default function LandingPage() {
     },
     {
       id: "entrepreneur",
-      title: "Entrepreneur",
+      title: t('landingPage.register.roleEntrepreneur'),
       icon: (
         <svg viewBox="0 0 24 24">
           <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
         </svg>
       ),
       headline: "Get Paid Faster, Work Smarter",
-      description: "Tired of hunting for jobs? Waiting weeks for payment? Competing on price alone?",
+      description: t('landingPage.register.roleEntrepreneurDesc'),
       benefits: [
         "Steady work pipeline: Verified jobs delivered to your inbox daily",
         "Faster payments: Milestone-based invoicing with escrow protection",
@@ -968,7 +970,7 @@ export default function LandingPage() {
     },
     {
       id: "resident",
-      title: "Resident",
+      title: t('landingPage.register.roleResident'),
       icon: (
         <svg viewBox="0 0 24 24">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -976,7 +978,7 @@ export default function LandingPage() {
         </svg>
       ),
       headline: "Finally Know What's Happening in Your Building",
-      description: "No more wondering when that leak will get fixed or why there's construction noise at 7 AM.",
+      description: t('landingPage.register.roleResidentDesc'),
       benefits: [
         "Real-time updates: Track repairs affecting your unit",
         "Direct communication: Message property managers instantly",
@@ -987,7 +989,7 @@ export default function LandingPage() {
     },
     {
       id: "supplier",
-      title: "Supplier",
+      title: t('landingPage.register.roleSupplier'),
       icon: (
         <svg viewBox="0 0 24 24">
           <path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z" />
@@ -998,7 +1000,7 @@ export default function LandingPage() {
         </svg>
       ),
       headline: "Supply the Projects That Matter",
-      description: "Stop cold-calling. Connect directly with active construction projects needing your materials.",
+      description: t('landingPage.register.roleSupplierDesc'),
       benefits: [
         "Direct access: Connect with active projects needing materials",
         "Expand your network: Reach property managers and contractors",
@@ -1011,33 +1013,33 @@ export default function LandingPage() {
 
   const features = [
     {
-      title: "Smart Bidding Engine",
-      description: "Stop overpaying. Get competitive bids from vetted contractors automatically.",
+      title: t('landingPage.features.smartBidding'),
+      description: t('landingPage.features.smartBiddingDesc'),
       iconType: "zap",
     },
     {
-      title: "Verified Professionals",
-      description: "No more bad hires. Every contractor is background-checked and community-rated.",
+      title: t('landingPage.features.verifiedProfessionals'),
+      description: t('landingPage.features.verifiedProfessionalsDesc'),
       iconType: "check-circle",
     },
     {
-      title: "Live Project Dashboard",
-      description: "Know exactly what's happening — always. No phone calls required.",
+      title: t('landingPage.features.liveDashboard'),
+      description: t('landingPage.features.liveDashboardDesc'),
       iconType: "bar-chart",
     },
     {
-      title: "Multi-Property Command Center",
-      description: "Manage 10 buildings or 100. One login. Complete control.",
+      title: t('landingPage.features.multiProperty'),
+      description: t('landingPage.features.multiPropertyDesc'),
       iconType: "building",
     },
     {
-      title: "Built-In Messaging",
-      description: "Stop chasing people. Instant communication with everyone on your project.",
+      title: t('landingPage.features.builtInMessaging'),
+      description: t('landingPage.features.builtInMessagingDesc'),
       iconType: "message",
     },
     {
-      title: "Protected Payments",
-      description: "Get paid faster with escrow protection and milestone-based billing.",
+      title: t('landingPage.features.protectedPayments'),
+      description: t('landingPage.features.protectedPaymentsDesc'),
       iconType: "shield",
     },
   ]
@@ -1108,20 +1110,38 @@ export default function LandingPage() {
             <span className="lp-logo-text">INTERVOS</span>
           </div>
           <ul className="lp-navbar-links">
-            <li><a href="#about">About</a></li>
-            <li><a href="#features">Features</a></li>
-            <li><a href="#roles">For You</a></li>
-            <li><a href="#how-it-works">How It Works</a></li>
+            <li><a href="#about">{t('landingPage.nav.about')}</a></li>
+            <li><a href="#features">{t('landingPage.nav.features')}</a></li>
+            <li><a href="#roles">{t('landingPage.nav.forYou')}</a></li>
+            <li><a href="#how-it-works">{t('landingPage.nav.howItWorks')}</a></li>
           </ul>
           <div className="lp-navbar-actions">
+            {/* Language Toggle */}
+            <div className="lp-language-toggle">
+              <button
+                className={`lp-lang-btn ${language === 'en' ? 'active' : ''}`}
+                onClick={() => changeLanguage('en')}
+                aria-label="English"
+              >
+                EN
+              </button>
+              <span className="lp-lang-divider">|</span>
+              <button
+                className={`lp-lang-btn ${language === 'fr' ? 'active' : ''}`}
+                onClick={() => changeLanguage('fr')}
+                aria-label="Français"
+              >
+                FR
+              </button>
+            </div>
             <button className="lp-btn-login" onClick={() => setShowLoginModal(true)}>
-              Login
+              {t('landingPage.nav.login')}
             </button>
             <button className="lp-btn-register" onClick={() => setShowRegisterModal(true)}>
-              Get Started
+              {t('landingPage.nav.getStarted')}
             </button>
             {/* Hamburger Menu Icon - Mobile Only */}
-            <button className="lp-hamburger-menu" onClick={() => setShowMobileMenu(!showMobileMenu)} aria-label="Toggle menu">
+            <button className="lp-hamburger-menu" onClick={() => setShowMobileMenu(!showMobileMenu)} aria-label={t('landingPage.nav.toggleMenu')}>
               <span></span>
               <span></span>
               <span></span>
@@ -1141,22 +1161,37 @@ export default function LandingPage() {
                 </span>
                 <span className="lp-logo-text">INTERVOS</span>
               </div>
-              <button className="lp-close-menu" onClick={() => setShowMobileMenu(false)} aria-label="Close menu">
+              <button className="lp-close-menu" onClick={() => setShowMobileMenu(false)} aria-label={t('landingPage.nav.closeMenu')}>
                 ×
               </button>
             </div>
+            {/* Mobile Language Toggle */}
+            <div className="lp-mobile-language-toggle">
+              <button
+                className={`lp-mobile-lang-btn ${language === 'en' ? 'active' : ''}`}
+                onClick={() => changeLanguage('en')}
+              >
+                English
+              </button>
+              <button
+                className={`lp-mobile-lang-btn ${language === 'fr' ? 'active' : ''}`}
+                onClick={() => changeLanguage('fr')}
+              >
+                Français
+              </button>
+            </div>
             <nav className="lp-mobile-nav">
-              <a href="#about" onClick={() => setShowMobileMenu(false)}>About</a>
-              <a href="#features" onClick={() => setShowMobileMenu(false)}>Features</a>
-              <a href="#roles" onClick={() => setShowMobileMenu(false)}>For You</a>
-              <a href="#how-it-works" onClick={() => setShowMobileMenu(false)}>How It Works</a>
+              <a href="#about" onClick={() => setShowMobileMenu(false)}>{t('landingPage.nav.about')}</a>
+              <a href="#features" onClick={() => setShowMobileMenu(false)}>{t('landingPage.nav.features')}</a>
+              <a href="#roles" onClick={() => setShowMobileMenu(false)}>{t('landingPage.nav.forYou')}</a>
+              <a href="#how-it-works" onClick={() => setShowMobileMenu(false)}>{t('landingPage.nav.howItWorks')}</a>
             </nav>
             <div className="lp-mobile-menu-actions">
               <button className="lp-btn-login lp-btn-full" onClick={() => { setShowLoginModal(true); setShowMobileMenu(false); }}>
-                Login
+                {t('landingPage.nav.login')}
               </button>
               <button className="lp-btn-register lp-btn-full" onClick={() => { setShowRegisterModal(true); setShowMobileMenu(false); }}>
-                Get Started
+                {t('landingPage.nav.getStarted')}
               </button>
             </div>
           </div>
@@ -1170,21 +1205,20 @@ export default function LandingPage() {
         </div>
         <div className="lp-hero-content">
           <div className="lp-hero-badge">
-            Trusted by 1,000+ Property Managers & Contractors
+            {t('landingPage.hero.badge')}
           </div>
           <h1 className="lp-hero-title">
-            Property Maintenance, Managed <span className="lp-highlight-teal">Smarter</span>
+            {t('landingPage.hero.title')} <span className="lp-highlight-teal">{t('landingPage.hero.titleHighlight')}</span>
           </h1>
           <p className="lp-hero-subtitle">
-            INTERVOS automates your entire construction workflow — from emergency repairs to major renovations.
-            One platform. Zero stress. Full control from day one.
+            {t('landingPage.hero.subtitle')}
           </p>
           <div className="lp-hero-buttons">
             <button className="lp-btn-primary lp-btn-large" onClick={() => setShowRegisterModal(true)}>
-              Start Your First Project
+              {t('landingPage.hero.startProject')}
             </button>
             <button className="lp-btn-ghost lp-btn-large" onClick={() => document.getElementById('how-it-works').scrollIntoView({ behavior: 'smooth' })}>
-              See How It Works
+              {t('landingPage.hero.seeHowItWorks')}
             </button>
           </div>
 
@@ -1371,8 +1405,8 @@ export default function LandingPage() {
       {/* Features Section */}
       <section id="features" className="lp-features">
         <div className="lp-section-header">
-          <h2>Everything You Need. Nothing You Don't.</h2>
-          <p>Built for modern property management — no complexity, just results</p>
+          <h2>{t('landingPage.features.title')}</h2>
+          <p>{t('landingPage.features.subtitle')}</p>
         </div>
         <div className="lp-features-grid">
           {features.map((feature, index) => (
@@ -1388,57 +1422,55 @@ export default function LandingPage() {
       {/* Role-Based Sections */}
       <section id="roles" className="lp-roles">
         <div className="lp-roles-intro">
-          <h2>Who uses INTERVOS?</h2>
-          <p>Everyone involved in getting work done on buildings.</p>
+          <h2>{t('landingPage.roles.title')}</h2>
+          <p>{t('landingPage.roles.subtitle')}</p>
         </div>
 
         {/* Property Managers */}
         <div className="lp-role-block lp-role-manager">
           <div className="lp-role-grid">
             <div className="lp-role-text">
-              <span className="lp-role-label">Property Managers</span>
-              <h3>Stop chasing. Start managing.</h3>
+              <span className="lp-role-label">{t('landingPage.roles.propertyManagers.label')}</span>
+              <h3>{t('landingPage.roles.propertyManagers.headline')}</h3>
               <p className="lp-role-story">
-                "I used to spend 10+ hours a week just tracking down contractors. Did they start the job?
-                When will they finish? Why hasn't the invoice come through? Now I just open the dashboard.
-                Everything's there."
+                {t('landingPage.roles.propertyManagers.story')}
               </p>
-              <p className="lp-role-attribution">— Sarah M., manages 8 buildings in Toronto</p>
+              <p className="lp-role-attribution">{t('landingPage.roles.propertyManagers.attribution')}</p>
 
               <div className="lp-role-features">
                 <div className="lp-feature-item">
-                  <strong>Post a job in 60 seconds</strong>
-                  <span>Building address, issue description, photos. Done.</span>
+                  <strong>{t('landingPage.roles.propertyManagers.feature1Title')}</strong>
+                  <span>{t('landingPage.roles.propertyManagers.feature1Desc')}</span>
                 </div>
                 <div className="lp-feature-item">
-                  <strong>Get bids from verified entrepreneurs</strong>
-                  <span>No more calling around. They come to you.</span>
+                  <strong>{t('landingPage.roles.propertyManagers.feature2Title')}</strong>
+                  <span>{t('landingPage.roles.propertyManagers.feature2Desc')}</span>
                 </div>
                 <div className="lp-feature-item">
-                  <strong>Track everything in one place</strong>
-                  <span>Who's working where. What's done. What's pending.</span>
+                  <strong>{t('landingPage.roles.propertyManagers.feature3Title')}</strong>
+                  <span>{t('landingPage.roles.propertyManagers.feature3Desc')}</span>
                 </div>
               </div>
 
               <button className="lp-btn-role" onClick={() => openRegisterModal("property-manager")}>
-                Start managing smarter
+                {t('landingPage.roles.propertyManagers.cta')}
               </button>
             </div>
             <div className="lp-role-visual">
               <div className="lp-visual-card">
-                <div className="lp-card-tag">Active Projects</div>
+                <div className="lp-card-tag">{t('landingPage.roles.activeProjects')}</div>
                 <div className="lp-project-list">
                   <div className="lp-project-item">
                     <div className="lp-project-name">Plumbing - Unit 204</div>
-                    <div className="lp-project-status in-progress">In Progress</div>
+                    <div className="lp-project-status in-progress">{t('landingPage.roles.inProgress')}</div>
                   </div>
                   <div className="lp-project-item">
                     <div className="lp-project-name">HVAC Repair - Building A</div>
-                    <div className="lp-project-status completed">Completed</div>
+                    <div className="lp-project-status completed">{t('landingPage.roles.completed')}</div>
                   </div>
                   <div className="lp-project-item">
                     <div className="lp-project-name">Roof Leak - Unit 312</div>
-                    <div className="lp-project-status bidding">Receiving Bids (3)</div>
+                    <div className="lp-project-status bidding">{t('landingPage.roles.receivingBids')} (3)</div>
                   </div>
                 </div>
               </div>
@@ -1451,7 +1483,7 @@ export default function LandingPage() {
           <div className="lp-role-grid reverse">
             <div className="lp-role-visual">
               <div className="lp-visual-card">
-                <div className="lp-card-tag">Available Jobs Near You</div>
+                <div className="lp-card-tag">{t('landingPage.roles.availableJobs')}</div>
                 <div className="lp-job-list">
                   <div className="lp-job-item">
                     <div className="lp-job-title">Kitchen Renovation</div>
@@ -1469,32 +1501,30 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="lp-role-text">
-              <span className="lp-role-label">Entrepreneurs & Contractors</span>
-              <h3>Bid on real jobs. Get paid faster.</h3>
+              <span className="lp-role-label">{t('landingPage.roles.entrepreneurs.label')}</span>
+              <h3>{t('landingPage.roles.entrepreneurs.headline')}</h3>
               <p className="lp-role-story">
-                "Most platforms take 20% and you're competing with 50 other people who undercut you. Here,
-                property managers see your profile, your past work, your ratings. I've closed 4 jobs this month
-                without a single phone call."
+                {t('landingPage.roles.entrepreneurs.story')}
               </p>
-              <p className="lp-role-attribution">— Mike T., general contractor, 6 years experience</p>
+              <p className="lp-role-attribution">{t('landingPage.roles.entrepreneurs.attribution')}</p>
 
               <div className="lp-role-features">
                 <div className="lp-feature-item">
-                  <strong>Jobs sent to your inbox</strong>
-                  <span>Filter by location, budget, and trade. Only see what matters.</span>
+                  <strong>{t('landingPage.roles.entrepreneurs.feature1Title')}</strong>
+                  <span>{t('landingPage.roles.entrepreneurs.feature1Desc')}</span>
                 </div>
                 <div className="lp-feature-item">
-                  <strong>Milestone payments</strong>
-                  <span>Get paid as you complete work. No more waiting 60 days.</span>
+                  <strong>{t('landingPage.roles.entrepreneurs.feature2Title')}</strong>
+                  <span>{t('landingPage.roles.entrepreneurs.feature2Desc')}</span>
                 </div>
                 <div className="lp-feature-item">
-                  <strong>Build your reputation</strong>
-                  <span>Every completed job adds to your profile.</span>
+                  <strong>{t('landingPage.roles.entrepreneurs.feature3Title')}</strong>
+                  <span>{t('landingPage.roles.entrepreneurs.feature3Desc')}</span>
                 </div>
               </div>
 
               <button className="lp-btn-role" onClick={() => openRegisterModal("entrepreneur")}>
-                Find work today
+                {t('landingPage.roles.entrepreneurs.cta')}
               </button>
             </div>
           </div>
@@ -1504,45 +1534,43 @@ export default function LandingPage() {
         <div className="lp-role-block lp-role-resident">
           <div className="lp-role-grid">
             <div className="lp-role-text">
-              <span className="lp-role-label">Residents</span>
-              <h3>Know what's happening in your building.</h3>
+              <span className="lp-role-label">{t('landingPage.roles.residents.label')}</span>
+              <h3>{t('landingPage.roles.residents.headline')}</h3>
               <p className="lp-role-story">
-                "I submitted a maintenance request about a leaky faucet. Got a notification when the plumber
-                was assigned. Another when they were on their way. Another when it was fixed. Felt like magic
-                compared to the old 'we'll get to it' approach."
+                {t('landingPage.roles.residents.story')}
               </p>
-              <p className="lp-role-attribution">— James L., resident since 2019</p>
+              <p className="lp-role-attribution">{t('landingPage.roles.residents.attribution')}</p>
 
               <div className="lp-role-features">
                 <div className="lp-feature-item">
-                  <strong>Submit requests instantly</strong>
-                  <span>Broken appliance? Maintenance issue? Submit it from your phone.</span>
+                  <strong>{t('landingPage.roles.residents.feature1Title')}</strong>
+                  <span>{t('landingPage.roles.residents.feature1Desc')}</span>
                 </div>
                 <div className="lp-feature-item">
-                  <strong>Get real updates</strong>
-                  <span>No more "we're working on it." See actual progress.</span>
+                  <strong>{t('landingPage.roles.residents.feature2Title')}</strong>
+                  <span>{t('landingPage.roles.residents.feature2Desc')}</span>
                 </div>
                 <div className="lp-feature-item">
-                  <strong>Message your property manager</strong>
-                  <span>Direct line. No phone tag.</span>
+                  <strong>{t('landingPage.roles.residents.feature3Title')}</strong>
+                  <span>{t('landingPage.roles.residents.feature3Desc')}</span>
                 </div>
               </div>
 
               <button className="lp-btn-role" onClick={() => openRegisterModal("resident")}>
-                Connect to your building
+                {t('landingPage.roles.residents.cta')}
               </button>
             </div>
             <div className="lp-role-visual">
               <div className="lp-visual-card">
-                <div className="lp-card-tag">Your Requests</div>
+                <div className="lp-card-tag">{t('landingPage.roles.yourRequests')}</div>
                 <div className="lp-request-list">
                   <div className="lp-request-item">
                     <div className="lp-request-title">Leaky faucet</div>
-                    <div className="lp-request-status fixed">Fixed yesterday</div>
+                    <div className="lp-request-status fixed">{t('landingPage.roles.fixedYesterday')}</div>
                   </div>
                   <div className="lp-request-item">
                     <div className="lp-request-title">Heating not working</div>
-                    <div className="lp-request-status scheduled">Scheduled for tomorrow</div>
+                    <div className="lp-request-status scheduled">{t('landingPage.roles.scheduledTomorrow')}</div>
                   </div>
                 </div>
               </div>
@@ -1554,32 +1582,32 @@ export default function LandingPage() {
       {/* How It Works Section */}
       <section id="how-it-works" className="lp-how-it-works">
         <div className="lp-section-header">
-          <h2>From Problem to Solution in 4 Simple Steps</h2>
-          <p>Start controlling your projects today — no complexity, just results</p>
+          <h2>{t('landingPage.howItWorks.title')}</h2>
+          <p>{t('landingPage.howItWorks.subtitle')}</p>
         </div>
         <div className="lp-steps-container">
           <div className="lp-step">
             <div className="lp-step-number">1</div>
-            <h3>Post Your Project</h3>
-            <p>Describe what needs fixing. Set your budget. Define your timeline.</p>
+            <h3>{t('landingPage.howItWorks.step1Title')}</h3>
+            <p>{t('landingPage.howItWorks.step1Desc')}</p>
           </div>
           <div className="lp-step-connector"></div>
           <div className="lp-step">
             <div className="lp-step-number">2</div>
-            <h3>Review Smart Bids</h3>
-            <p>Vetted contractors compete for your work. Compare proposals side-by-side.</p>
+            <h3>{t('landingPage.howItWorks.step2Title')}</h3>
+            <p>{t('landingPage.howItWorks.step2Desc')}</p>
           </div>
           <div className="lp-step-connector"></div>
           <div className="lp-step">
             <div className="lp-step-number">3</div>
-            <h3>Track in Real-Time</h3>
-            <p>Know exactly where your project stands — from first nail to final invoice.</p>
+            <h3>{t('landingPage.howItWorks.step3Title')}</h3>
+            <p>{t('landingPage.howItWorks.step3Desc')}</p>
           </div>
           <div className="lp-step-connector"></div>
           <div className="lp-step">
             <div className="lp-step-number">4</div>
-            <h3>Pay with Confidence</h3>
-            <p>Release payments only when milestones are complete. Everyone stays protected.</p>
+            <h3>{t('landingPage.howItWorks.step4Title')}</h3>
+            <p>{t('landingPage.howItWorks.step4Desc')}</p>
           </div>
         </div>
       </section>
@@ -1587,16 +1615,15 @@ export default function LandingPage() {
       {/* CTA Section */}
       <section className="lp-cta-section">
         <div className="lp-cta-content">
-          <h2>Stop Wasting Time. Start Building Smarter.</h2>
+          <h2>{t('landingPage.cta.title')}</h2>
           <p>
-            Every day you wait is another day of chasing contractors, dealing with cost overruns,
-            and frustrated residents. INTERVOS eliminates all of it.
+            {t('landingPage.cta.subtitle')}
           </p>
           <button className="lp-btn-cta" onClick={() => setShowRegisterModal(true)}>
-            Start Your First Project — Free
+            {t('landingPage.cta.button')}
           </button>
           <p style={{ marginTop: '1rem', fontSize: '0.9rem', opacity: 0.8 }}>
-            No credit card required. Cancel anytime. Full control from day one.
+            {t('landingPage.cta.disclaimer')}
           </p>
         </div>
       </section>
@@ -1611,33 +1638,33 @@ export default function LandingPage() {
               </span>
               <span className="lp-logo-text">INTERVOS</span>
             </div>
-            <p>Connecting every corner of construction. From posting jobs to winning bids — INTERVOS simplifies it all.</p>
+            <p>{t('landingPage.footer.tagline')}</p>
           </div>
           <div className="lp-footer-section">
-            <h4>Platform</h4>
+            <h4>{t('landingPage.footer.platform')}</h4>
             <ul>
-              <li><a href="#features">Features</a></li>
-              <li><a href="#roles">For You</a></li>
-              <li><a href="#how-it-works">How It Works</a></li>
-              <li><a href="#pricing">Pricing</a></li>
+              <li><a href="#features">{t('landingPage.nav.features')}</a></li>
+              <li><a href="#roles">{t('landingPage.nav.forYou')}</a></li>
+              <li><a href="#how-it-works">{t('landingPage.nav.howItWorks')}</a></li>
+              <li><a href="#pricing">{t('landingPage.footer.pricing')}</a></li>
             </ul>
           </div>
           <div className="lp-footer-section">
-            <h4>Company</h4>
+            <h4>{t('landingPage.footer.company')}</h4>
             <ul>
-              <li><a href="#about">About Us</a></li>
+              <li><a href="#about">{t('landingPage.footer.aboutUs')}</a></li>
             </ul>
           </div>
           <div className="lp-footer-section">
-            <h4>Legal</h4>
+            <h4>{t('landingPage.footer.legal')}</h4>
             <ul>
-              <li><a href="/legal?tab=privacy" onClick={(e) => { e.preventDefault(); navigate('/legal?tab=privacy'); }}>Privacy Policy</a></li>
-              <li><a href="/legal?tab=terms" onClick={(e) => { e.preventDefault(); navigate('/legal?tab=terms'); }}>Terms of Service</a></li>
-              <li><a href="/legal?tab=cookies" onClick={(e) => { e.preventDefault(); navigate('/legal?tab=cookies'); }}>Cookie Policy</a></li>
+              <li><a href="/legal?tab=privacy" onClick={(e) => { e.preventDefault(); navigate('/legal?tab=privacy'); }}>{t('landingPage.footer.privacyPolicy')}</a></li>
+              <li><a href="/legal?tab=terms" onClick={(e) => { e.preventDefault(); navigate('/legal?tab=terms'); }}>{t('landingPage.footer.termsOfService')}</a></li>
+              <li><a href="/legal?tab=cookies" onClick={(e) => { e.preventDefault(); navigate('/legal?tab=cookies'); }}>{t('landingPage.footer.cookiePolicy')}</a></li>
             </ul>
           </div>
           <div className="lp-footer-section">
-            <h4>Contact</h4>
+            <h4>{t('landingPage.footer.contact')}</h4>
             <ul className="lp-footer-contact">
               <li><a href="mailto:support@intervos.com">support@intervos.com</a></li>
               <li><a href="tel:+15551234567">+1 (555) 123-4567</a></li>
@@ -1645,7 +1672,7 @@ export default function LandingPage() {
           </div>
         </div>
         <div className="lp-footer-bottom">
-          <p>&copy; 2025 INTERVOS. All rights reserved.</p>
+          <p>{t('landingPage.footer.copyright')}</p>
           <div className="lp-footer-social">
             <a href="#linkedin">LinkedIn</a>
             <a href="#twitter">Twitter</a>
@@ -1661,8 +1688,8 @@ export default function LandingPage() {
             <button className="lp-modal-close" onClick={closeModals}>×</button>
 
             <div className="lp-modal-header">
-              <h2>Welcome Back</h2>
-              <p>Sign in to continue to INTERVOS</p>
+              <h2>{t('landingPage.login.title')}</h2>
+              <p>{t('landingPage.login.subtitle')}</p>
             </div>
 
             <form className="lp-modal-form" onSubmit={handleLoginSubmit}>
@@ -1677,7 +1704,7 @@ export default function LandingPage() {
                         onClick={() => handleResendVerification(loginErrors.email)}
                         disabled={isResendingVerification}
                       >
-                        {isResendingVerification ? "Sending..." : "Click here to resend verification email"}
+                        {isResendingVerification ? t('landingPage.register.resending') : t('landingPage.register.resendEmail')}
                       </button>
                     </div>
                   )}
@@ -1685,12 +1712,12 @@ export default function LandingPage() {
               )}
 
               <div className="lp-form-group">
-                <label htmlFor="login-email">Email Address</label>
+                <label htmlFor="login-email">{t('landingPage.login.emailLabel')}</label>
                 <input
                   id="login-email"
                   type="email"
                   name="email"
-                  placeholder="you@example.com"
+                  placeholder={t('landingPage.login.emailPlaceholder')}
                   value={loginFormData.email}
                   onChange={handleLoginChange}
                   className={loginErrors.email ? "lp-input-error" : ""}
@@ -1702,13 +1729,13 @@ export default function LandingPage() {
               </div>
 
               <div className="lp-form-group">
-                <label htmlFor="login-password">Password</label>
+                <label htmlFor="login-password">{t('landingPage.login.passwordLabel')}</label>
                 <div className="lp-password-input-wrapper">
                   <input
                     id="login-password"
                     type={showPassword ? "text" : "password"}
                     name="password"
-                    placeholder="Enter your password"
+                    placeholder={t('landingPage.login.passwordPlaceholder')}
                     value={loginFormData.password}
                     onChange={handleLoginChange}
                     className={loginErrors.password ? "lp-input-error" : ""}
@@ -1735,7 +1762,7 @@ export default function LandingPage() {
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
                   />
-                  <span>Remember me</span>
+                  <span>{t('landingPage.login.rememberMe')}</span>
                 </label>
                 <button
                   type="button"
@@ -1746,7 +1773,7 @@ export default function LandingPage() {
                   }}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                 >
-                  Forgot password?
+                  {t('landingPage.login.forgotPassword')}
                 </button>
               </div>
 
@@ -1755,11 +1782,11 @@ export default function LandingPage() {
                 className="lp-btn-primary lp-btn-full"
                 disabled={isLoggingIn}
               >
-                {isLoggingIn ? "Signing you in..." : "Sign In"}
+                {isLoggingIn ? t('landingPage.login.loggingIn') : t('landingPage.login.loginButton')}
               </button>
             </form>
 
-            <div className="lp-modal-divider"><span>OR</span></div>
+            <div className="lp-modal-divider"><span>{t('landingPage.login.orContinueWith')}</span></div>
 
             <div className="lp-google-login-container">
               <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
@@ -1773,7 +1800,7 @@ export default function LandingPage() {
             </div>
 
             <div className="lp-modal-footer">
-              Don't have an account?{" "}
+              {t('landingPage.login.noAccount')}{" "}
               <button
                 className="lp-link-btn"
                 onClick={() => {
@@ -1781,7 +1808,7 @@ export default function LandingPage() {
                   setShowRegisterModal(true)
                 }}
               >
-                Create account
+                {t('landingPage.login.signUp')}
               </button>
             </div>
           </div>
@@ -1798,8 +1825,8 @@ export default function LandingPage() {
             {registrationStep === 1 && (
               <>
                 <div className="lp-modal-header">
-                  <h2>Join INTERVOS</h2>
-                  <p>Choose your role to get started</p>
+                  <h2>{t('landingPage.register.title')}</h2>
+                  <p>{t('landingPage.register.selectRole')}</p>
                 </div>
                 <div className="lp-role-selector">
                   {roles.map((role) => (
@@ -1818,10 +1845,10 @@ export default function LandingPage() {
                   disabled={!selectedRole}
                   onClick={() => setRegistrationStep(2)}
                 >
-                  Continue
+                  {t('landingPage.register.next')}
                 </button>
                 <div className="lp-modal-footer">
-                  Already have an account?{" "}
+                  {t('landingPage.register.haveAccount')}{" "}
                   <button
                     className="lp-link-btn"
                     onClick={() => {
@@ -1829,7 +1856,7 @@ export default function LandingPage() {
                       setShowLoginModal(true)
                     }}
                   >
-                    Login
+                    {t('landingPage.register.logIn')}
                   </button>
                 </div>
               </>

@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { X, CreditCard, Shield, CheckCircle, AlertCircle, Building2, User, Briefcase } from 'lucide-react';
 import '../styles/manager/paymentmodal.css';
+import { stripePromise } from '../utils/stripeConfig';
 
-// Initialize Stripe with publishable key
-const stripeKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY || import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-console.log('Stripe Publishable Key exists:', !!stripeKey);
-
-const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
+// Stripe is now initialized dynamically from backend config
+console.log('Stripe configured from backend');
 
 // Payment Form Component (inside Elements provider)
 function PaymentForm({ amount, onSuccess, onError, isProcessing, setIsProcessing }) {

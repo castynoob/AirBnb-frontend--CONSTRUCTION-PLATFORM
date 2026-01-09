@@ -41,7 +41,8 @@ export function LanguageProvider({ children }) {
 
   // Translation function - gets nested translation by key path
   // Usage: t('homePage.title') returns the translation for that path
-  const t = useCallback((key, fallback = key) => {
+  // Usage with interpolation: t('key', { name: 'John' }) replaces {{name}} with 'John'
+  const t = useCallback((key, params = null) => {
     const keys = key.split('.');
     let result = translations[language];
 
@@ -49,9 +50,17 @@ export function LanguageProvider({ children }) {
       if (result && typeof result === 'object' && k in result) {
         result = result[k];
       } else {
-        // Return fallback if key not found
-        return fallback;
+        // Return key if not found
+        return key;
       }
+    }
+
+    // Handle interpolation: replace {{variable}} with params.variable
+    if (params && typeof result === 'string' && typeof params === 'object') {
+      Object.keys(params).forEach(paramKey => {
+        const regex = new RegExp(`\\{\\{${paramKey}\\}\\}`, 'g');
+        result = result.replace(regex, params[paramKey]);
+      });
     }
 
     return result;

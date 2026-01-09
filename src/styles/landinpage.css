@@ -198,6 +198,75 @@ body {
   box-shadow: 0 8px 24px rgba(20, 145, 155, 0.3);
 }
 
+/* ==================== LANGUAGE TOGGLE ==================== */
+.lp-language-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: var(--spacing-sm);
+}
+
+.lp-lang-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-weight: var(--font-weight-medium);
+  font-size: 14px;
+  transition: all 0.3s ease;
+  border-radius: 6px;
+}
+
+.lp-lang-btn:hover {
+  color: var(--color-secondary);
+  background: rgba(20, 145, 155, 0.08);
+}
+
+.lp-lang-btn.active {
+  color: var(--color-secondary);
+  font-weight: var(--font-weight-semibold);
+  background: rgba(20, 145, 155, 0.1);
+}
+
+.lp-lang-divider {
+  color: var(--color-border-divider);
+  font-size: 14px;
+}
+
+/* Mobile Language Toggle */
+.lp-mobile-language-toggle {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border-divider);
+}
+
+.lp-mobile-lang-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid var(--color-border-divider);
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: var(--font-weight-medium);
+  font-size: 14px;
+  transition: all 0.3s ease;
+  color: var(--color-text-muted);
+}
+
+.lp-mobile-lang-btn:hover {
+  border-color: var(--color-secondary);
+  color: var(--color-secondary);
+}
+
+.lp-mobile-lang-btn.active {
+  background: var(--color-secondary);
+  border-color: var(--color-secondary);
+  color: white;
+  font-weight: var(--font-weight-semibold);
+}
+
 /* ==================== HAMBURGER MENU ==================== */
 .lp-hamburger-menu {
   display: none;

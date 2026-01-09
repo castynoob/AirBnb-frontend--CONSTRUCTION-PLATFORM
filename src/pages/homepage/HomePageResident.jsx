@@ -3,11 +3,13 @@ import { io } from 'socket.io-client';
 import { Search, Bell, Calendar, Wrench, AlertTriangle, Megaphone } from 'lucide-react';
 import Nav from '../../components/Nav';
 import AnnouncementCard from '../../components/AnnouncementCard';
+import { useLanguage } from '../../contexts/LanguageContext';
 import '../../styles/resident/homepageresident.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const HomePageResident = () => {
+  const { t } = useLanguage();
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
   const [announcements, setAnnouncements] = useState([]);
@@ -21,7 +23,7 @@ const HomePageResident = () => {
       try {
         const token = localStorage.getItem('token');
         if (!token) {
-          setError('Authentication required');
+          setError(t('homePageResident.authenticationRequired'));
           setLoading(false);
           return;
         }
@@ -33,7 +35,7 @@ const HomePageResident = () => {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch user profile');
+          throw new Error(t('homePageResident.failedToFetchProfile'));
         }
 
         const data = await response.json();
@@ -42,18 +44,18 @@ const HomePageResident = () => {
           setPropertyId(data.profile.property_id);
           console.log('✅ Property ID:', data.profile.property_id);
         } else {
-          setError('No property assigned to your profile');
+          setError(t('homePageResident.noPropertyAssigned'));
           setLoading(false);
         }
       } catch (err) {
         console.error('❌ Error fetching user profile:', err);
-        setError('Failed to load your profile');
+        setError(t('homePageResident.failedToLoadProfile'));
         setLoading(false);
       }
     };
 
     fetchUserProfile();
-  }, []);
+  }, [t]);
 
   // ============================================
   // FETCH ANNOUNCEMENTS (triggered when propertyId changes)
@@ -77,7 +79,7 @@ const HomePageResident = () => {
 
       const token = localStorage.getItem('token');
       if (!token) {
-        setError('Authentication required');
+        setError(t('homePageResident.authenticationRequired'));
         setLoading(false);
         return;
       }
@@ -116,13 +118,13 @@ const HomePageResident = () => {
         setError(null);
       } else {
         setAnnouncements([]);
-        setError(data.message || 'No announcements available');
+        setError(data.message || t('homePageResident.noAnnouncementsAvailable'));
       }
 
       setLoading(false);
     } catch (err) {
       console.error('❌ Error fetching announcements:', err);
-      setError(err.message || 'Failed to fetch announcements');
+      setError(err.message || t('homePageResident.failedToFetchAnnouncements'));
       setLoading(false);
     }
   };
@@ -153,7 +155,7 @@ const HomePageResident = () => {
 
       // Show notification if permitted
       if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('New Announcement', {
+        new Notification(t('homePageResident.newAnnouncement'), {
           body: announcement.title,
           icon: '/logo.png'
         });
@@ -164,7 +166,7 @@ const HomePageResident = () => {
     return () => {
       newSocket.close();
     };
-  }, [propertyId]);
+  }, [propertyId, t]);
 
   // ============================================
   // REQUEST NOTIFICATION PERMISSION
@@ -177,11 +179,11 @@ const HomePageResident = () => {
 
   // Filter types with icons
   const filterTypes = [
-    { name: 'All', icon: null },
-    { name: 'Maintenance', icon: Wrench },
-    { name: 'Event', icon: Calendar },
-    { name: 'Notice', icon: Megaphone },
-    { name: 'Emergency', icon: AlertTriangle }
+    { name: 'All', label: t('homePageResident.all'), icon: null },
+    { name: 'Maintenance', label: t('homePageResident.maintenance'), icon: Wrench },
+    { name: 'Event', label: t('homePageResident.event'), icon: Calendar },
+    { name: 'Notice', label: t('homePageResident.notice'), icon: Megaphone },
+    { name: 'Emergency', label: t('homePageResident.emergency'), icon: AlertTriangle }
   ];
 
   return (
@@ -192,8 +194,8 @@ const HomePageResident = () => {
           {/* Page Header */}
           <div className="resident-page-header">
             <div>
-              <h1>Community Updates</h1>
-              <p>Stay informed about building announcements and events</p>
+              <h1>{t('homePageResident.title')}</h1>
+              <p>{t('homePageResident.subtitle')}</p>
             </div>
           </div>
 
@@ -203,7 +205,7 @@ const HomePageResident = () => {
               <Search className="search-icon" size={18} />
               <input
                 type="text"
-                placeholder="Search announcements..."
+                placeholder={t('homePageResident.searchPlaceholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="resident-search-input-filter"
@@ -212,14 +214,14 @@ const HomePageResident = () => {
                 <button
                   className="search-clear-btn"
                   onClick={() => setSearch('')}
-                  aria-label="Clear search"
+                  aria-label={t('homePageResident.clearSearch')}
                 >
                   ✕
                 </button>
               )}
             </div>
             <div className="resident-filter-buttons">
-              {filterTypes.map(({ name, icon: Icon }) => (
+              {filterTypes.map(({ name, label, icon: Icon }) => (
                 <button
                   key={name}
                   className={`resident-filter-btn ${
@@ -228,7 +230,7 @@ const HomePageResident = () => {
                   onClick={() => setActiveFilter(name)}
                 >
                   {Icon && <Icon size={14} />}
-                  {name}
+                  {label}
                 </button>
               ))}
             </div>
@@ -238,7 +240,7 @@ const HomePageResident = () => {
           {loading && (
             <div className="loading-container">
               <div className="loading-spinner"></div>
-              <p>Loading announcements...</p>
+              <p>{t('homePageResident.loadingAnnouncements')}</p>
             </div>
           )}
 
@@ -250,7 +252,7 @@ const HomePageResident = () => {
                 className="retry-btn"
                 onClick={fetchAnnouncements}
               >
-                Try Again
+                {t('homePageResident.tryAgain')}
               </button>
             </div>
           )}
@@ -271,11 +273,11 @@ const HomePageResident = () => {
           {!loading && !error && announcements.length === 0 && (
             <div className="resident-no-results-home">
               <div className="empty-state-icon">📭</div>
-              <h3>No announcements found</h3>
+              <h3>{t('homePageResident.noAnnouncementsFound')}</h3>
               <p>
                 {search || activeFilter !== 'All'
-                  ? 'Try adjusting your search or filter'
-                  : 'There are no announcements at this time'}
+                  ? t('homePageResident.adjustSearchOrFilter')
+                  : t('homePageResident.noAnnouncementsAtThisTime')}
               </p>
               {(search || activeFilter !== 'All') && (
                 <button
@@ -285,7 +287,7 @@ const HomePageResident = () => {
                     setActiveFilter('All');
                   }}
                 >
-                  Clear Filters
+                  {t('homePageResident.clearFilters')}
                 </button>
               )}
             </div>

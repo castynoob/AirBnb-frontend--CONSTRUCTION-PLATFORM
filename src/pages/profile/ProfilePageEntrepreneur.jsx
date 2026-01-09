@@ -20,7 +20,7 @@ import { useLanguage, LANGUAGES } from '../../contexts/LanguageContext'
 
 function ProfilePageEntrepreneur() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-  const { language, changeLanguage, languages } = useLanguage();
+  const { t, language, changeLanguage, languages } = useLanguage();
   const [activeTab, setActiveTab] = useState('account');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [profile, setProfile] = useState(null)
@@ -83,12 +83,12 @@ function ProfilePageEntrepreneur() {
 
   // Tab labels for mobile header
   const tabLabels = {
-    account: 'Account',
-    subscription: 'Subscription',
-    payouts: 'Payouts',
-    billing: 'Billing History',
-    performance: 'Performance & Reviews',
-    settings: 'Settings'
+    account: t('profileEntrepreneur.account'),
+    subscription: t('profileEntrepreneur.subscription'),
+    payouts: t('profileEntrepreneur.payouts'),
+    billing: t('profileEntrepreneur.billingHistory'),
+    performance: t('profileEntrepreneur.performanceReviews'),
+    settings: t('profileEntrepreneur.settings')
   }
 
   useEffect(() => {
@@ -140,7 +140,7 @@ function ProfilePageEntrepreneur() {
       const result = await startOnboarding()
 
       if (result.already_complete) {
-        toast.success('Your payment account is already set up!')
+        toast.success(t('profileEntrepreneur.paymentAccountSetUp'))
         fetchStripeStatus()
         return
       }
@@ -150,7 +150,7 @@ function ProfilePageEntrepreneur() {
       }
     } catch (err) {
       console.error('Stripe connect error:', err)
-      toast.error(err.message || 'Failed to start payment setup')
+      toast.error(err.message || t('profileEntrepreneur.failedPaymentSetup'))
     } finally {
       setIsConnectingStripe(false)
     }
@@ -165,7 +165,7 @@ function ProfilePageEntrepreneur() {
       }
     } catch (err) {
       console.error('Dashboard error:', err)
-      toast.error('Failed to open Stripe dashboard')
+      toast.error(t('profileEntrepreneur.failedOpenDashboard'))
     }
   }
 
@@ -361,12 +361,12 @@ function ProfilePageEntrepreneur() {
     const file = e.target.files[0]
     if (file) {
       if (!file.type.startsWith('image/')) {
-        toast.error('Please select a valid image file')
+        toast.error(t('profileEntrepreneur.selectValidImage'))
         return
       }
 
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image size should not exceed 5MB')
+        toast.error(t('profileEntrepreneur.imageSizeExceed'))
         return
       }
 
@@ -387,7 +387,7 @@ function ProfilePageEntrepreneur() {
   const handleSubmit = async () => {
     if (!formData.company_name || !formData.license_number || !formData.years_in_business ||
         !formData.num_employees || !formData.address) {
-      toast.error('Please fill in all required fields');
+      toast.error(t('profileEntrepreneur.fillRequiredFields'));
       return;
     }
 
@@ -466,14 +466,14 @@ function ProfilePageEntrepreneur() {
         setIsEditModalOpen(false)
 
         if (imageUploadFailed) {
-          toast.success('Profile updated successfully, but the image upload failed. Please try uploading your image again later.')
+          toast.success(t('profileEntrepreneur.profileUpdatedImageFailed'))
         } else {
-          toast.success('Profile updated successfully!')
+          toast.success(t('profileEntrepreneur.profileUpdatedSuccess'))
         }
       }
     } catch (error) {
       console.error('Error updating profile:', error)
-      toast.error('Failed to update profile. Please try again.')
+      toast.error(t('profileEntrepreneur.failedUpdateProfile'))
     } finally {
       setIsUpdating(false)
       setIsUploadingImage(false)
@@ -564,7 +564,13 @@ function ProfilePageEntrepreneur() {
   }
 
   const getStrengthLabel = (strength) => {
-    const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong']
+    const labels = [
+      t('profileEntrepreneur.veryWeak'),
+      t('profileEntrepreneur.weak'),
+      t('profileEntrepreneur.fair'),
+      t('profileEntrepreneur.good'),
+      t('profileEntrepreneur.strong')
+    ]
     return labels[Math.min(strength, 4)]
   }
 
@@ -579,23 +585,23 @@ function ProfilePageEntrepreneur() {
     setPasswordSuccess('')
 
     if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-      setPasswordError('All fields are required')
+      setPasswordError(t('profileEntrepreneur.allFieldsRequired'))
       return
     }
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError('New passwords do not match')
+      setPasswordError(t('profileEntrepreneur.passwordsDoNotMatch'))
       return
     }
 
     if (passwordForm.newPassword.length < 8) {
-      setPasswordError('Password must be at least 8 characters long')
+      setPasswordError(t('profileEntrepreneur.passwordMinLength'))
       return
     }
 
     const strength = getPasswordStrength(passwordForm.newPassword)
     if (strength < 4) {
-      setPasswordError('Password must contain uppercase, lowercase, number, and special character')
+      setPasswordError(t('profileEntrepreneur.passwordRequirements'))
       return
     }
 
@@ -604,7 +610,7 @@ function ProfilePageEntrepreneur() {
     try {
       const uProfile = localStorage.getItem('userProfile')
       if (!uProfile) {
-        throw new Error('Please log in again')
+        throw new Error(t('profileEntrepreneur.pleaseLoginAgain'))
       }
 
       const user = JSON.parse(uProfile)
@@ -625,16 +631,16 @@ function ProfilePageEntrepreneur() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to change password')
+        throw new Error(data.message || t('profileEntrepreneur.failedChangePassword'))
       }
 
-      setPasswordSuccess('Password changed successfully!')
+      setPasswordSuccess(t('profileEntrepreneur.passwordChangedSuccess'))
       setPasswordForm({
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
       })
-      toast.success('Password changed successfully!')
+      toast.success(t('profileEntrepreneur.passwordChangedSuccess'))
     } catch (error) {
       setPasswordError(error.message)
     } finally {
@@ -724,7 +730,7 @@ function ProfilePageEntrepreneur() {
             </div>
             <div className="ep-sidebar-user">
               <h3>{profile.companyName}</h3>
-              <span>Entrepreneur</span>
+              <span>{t('profileEntrepreneur.entrepreneur')}</span>
             </div>
           </div>
 
@@ -734,35 +740,35 @@ function ProfilePageEntrepreneur() {
               onClick={() => handleTabChange('account')}
             >
               <User size={18} />
-              <span>Account</span>
+              <span>{t('profileEntrepreneur.account')}</span>
             </button>
             <button
               className={`ep-nav-item ${activeTab === 'subscription' ? 'ep-nav-active' : ''}`}
               onClick={() => handleTabChange('subscription')}
             >
               <Crown size={18} />
-              <span>Subscription</span>
+              <span>{t('profileEntrepreneur.subscription')}</span>
             </button>
             <button
               className={`ep-nav-item ${activeTab === 'payouts' ? 'ep-nav-active' : ''}`}
               onClick={() => handleTabChange('payouts')}
             >
               <Wallet size={18} />
-              <span>Payouts</span>
+              <span>{t('profileEntrepreneur.payouts')}</span>
             </button>
             <button
               className={`ep-nav-item ${activeTab === 'billing' ? 'ep-nav-active' : ''}`}
               onClick={() => handleTabChange('billing')}
             >
               <Receipt size={18} />
-              <span>Billing History</span>
+              <span>{t('profileEntrepreneur.billingHistory')}</span>
             </button>
             <button
               className={`ep-nav-item ${activeTab === 'performance' ? 'ep-nav-active' : ''}`}
               onClick={() => handleTabChange('performance')}
             >
               <BarChart3 size={18} />
-              <span>Performance & Reviews</span>
+              <span>{t('profileEntrepreneur.performanceReviews')}</span>
               {reviews.length > 0 && (
                 <span className="ep-nav-badge">{reviews.length}</span>
               )}
@@ -772,14 +778,14 @@ function ProfilePageEntrepreneur() {
               onClick={() => handleTabChange('settings')}
             >
               <Settings size={18} />
-              <span>Settings</span>
+              <span>{t('profileEntrepreneur.settings')}</span>
             </button>
           </nav>
 
           <div className="ep-sidebar-footer">
             <button className="ep-nav-item ep-nav-logout" onClick={handleLogout}>
               <LogOut size={18} />
-              <span>Logout</span>
+              <span>{t('profileEntrepreneur.logout')}</span>
             </button>
           </div>
         </aside>
@@ -792,12 +798,12 @@ function ProfilePageEntrepreneur() {
               <>
                 <div className="ep-content-header">
                   <div className="ep-content-header-left">
-                    <h2>Account Information</h2>
-                    <p>Manage your company profile and contact details</p>
+                    <h2>{t('profileEntrepreneur.accountInformation')}</h2>
+                    <p>{t('profileEntrepreneur.manageCompanyProfile')}</p>
                   </div>
                   <button className="ep-btn ep-btn-primary ep-desktop-only" onClick={() => setIsEditModalOpen(true)}>
                     <Edit size={16} />
-                    Edit Profile
+                    {t('profileEntrepreneur.editProfile')}
                   </button>
                 </div>
 
@@ -818,7 +824,7 @@ function ProfilePageEntrepreneur() {
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                         <span className="ep-role-tag-modern">
                           <Briefcase size={12} />
-                          Entrepreneur
+                          {t('profileEntrepreneur.entrepreneur')}
                         </span>
                         <span className="ep-license-badge">
                           <CheckCircle size={12} />
@@ -840,13 +846,13 @@ function ProfilePageEntrepreneur() {
                           <CreditCard size={20} />
                         </div>
                         <div className="ep-stripe-status-info">
-                          <span className="ep-stripe-status-label">Payment Account</span>
-                          <span className="ep-stripe-status-value success">Connected</span>
+                          <span className="ep-stripe-status-label">{t('profileEntrepreneur.paymentAccount')}</span>
+                          <span className="ep-stripe-status-value success">{t('profileEntrepreneur.connected')}</span>
                         </div>
                         <button
                           className="ep-stripe-dashboard-btn"
                           onClick={handleStripeDashboard}
-                          title="View Stripe Dashboard"
+                          title={t('stripeConnectModal.viewStripeDashboard')}
                         >
                           <ExternalLink size={16} />
                         </button>
@@ -857,15 +863,15 @@ function ProfilePageEntrepreneur() {
                           <CreditCard size={20} />
                         </div>
                         <div className="ep-stripe-status-info">
-                          <span className="ep-stripe-status-label">Payment Account</span>
-                          <span className="ep-stripe-status-value pending">Not Connected</span>
+                          <span className="ep-stripe-status-label">{t('profileEntrepreneur.paymentAccount')}</span>
+                          <span className="ep-stripe-status-value pending">{t('profileEntrepreneur.notConnected')}</span>
                         </div>
                         <button
                           className="ep-stripe-connect-btn"
                           onClick={handleStripeConnect}
                           disabled={isConnectingStripe}
                         >
-                          {isConnectingStripe ? 'Connecting...' : 'Set Up'}
+                          {isConnectingStripe ? t('profileEntrepreneur.connecting') : t('profileEntrepreneur.setUp')}
                         </button>
                       </div>
                     )}
@@ -874,14 +880,14 @@ function ProfilePageEntrepreneur() {
 
                 {/* Company Information */}
                 <div className="ep-info-section">
-                  <h4 className="ep-info-section-title">Company Information</h4>
+                  <h4 className="ep-info-section-title">{t('profileEntrepreneur.companyInformation')}</h4>
                   <div className="ep-info-grid-modern">
                     <div className="ep-info-item-modern">
                       <div className="ep-info-icon-modern">
                         <Briefcase size={18} />
                       </div>
                       <div className="ep-info-details">
-                        <label>Company Name</label>
+                        <label>{t('profileEntrepreneur.companyName')}</label>
                         <span>{profile.companyName}</span>
                       </div>
                     </div>
@@ -890,7 +896,7 @@ function ProfilePageEntrepreneur() {
                         <Award size={18} />
                       </div>
                       <div className="ep-info-details">
-                        <label>License Number</label>
+                        <label>{t('profileEntrepreneur.licenseNumber')}</label>
                         <span>{profile.licenseNumber}</span>
                       </div>
                     </div>
@@ -899,8 +905,8 @@ function ProfilePageEntrepreneur() {
                         <Calendar size={18} />
                       </div>
                       <div className="ep-info-details">
-                        <label>Years in Business</label>
-                        <span>{profile.yearsInBusiness} years</span>
+                        <label>{t('profileEntrepreneur.yearsInBusiness')}</label>
+                        <span>{profile.yearsInBusiness} {t('profileEntrepreneur.years')}</span>
                       </div>
                     </div>
                     <div className="ep-info-item-modern">
@@ -908,7 +914,7 @@ function ProfilePageEntrepreneur() {
                         <User size={18} />
                       </div>
                       <div className="ep-info-details">
-                        <label>Number of Employees</label>
+                        <label>{t('profileEntrepreneur.numberOfEmployees')}</label>
                         <span>{profile.numEmployees}</span>
                       </div>
                     </div>
@@ -917,14 +923,14 @@ function ProfilePageEntrepreneur() {
 
                 {/* Contact Information */}
                 <div className="ep-info-section">
-                  <h4 className="ep-info-section-title">Contact Information</h4>
+                  <h4 className="ep-info-section-title">{t('profileEntrepreneur.contactInformation')}</h4>
                   <div className="ep-info-grid-modern">
                     <div className="ep-info-item-modern">
                       <div className="ep-info-icon-modern">
                         <Mail size={18} />
                       </div>
                       <div className="ep-info-details">
-                        <label>Email</label>
+                        <label>{t('profileEntrepreneur.email')}</label>
                         <span>{profile.email}</span>
                       </div>
                     </div>
@@ -933,7 +939,7 @@ function ProfilePageEntrepreneur() {
                         <Phone size={18} />
                       </div>
                       <div className="ep-info-details">
-                        <label>Phone</label>
+                        <label>{t('profileEntrepreneur.phone')}</label>
                         <span>{profile.phone}</span>
                       </div>
                     </div>
@@ -942,7 +948,7 @@ function ProfilePageEntrepreneur() {
                         <MapPin size={18} />
                       </div>
                       <div className="ep-info-details">
-                        <label>Address</label>
+                        <label>{t('profileEntrepreneur.address')}</label>
                         <span>{profile.address}</span>
                       </div>
                     </div>
@@ -951,7 +957,7 @@ function ProfilePageEntrepreneur() {
 
                 {/* Specializations */}
                 <div className="ep-specializations-section">
-                  <h4 className="ep-info-section-title">Specializations</h4>
+                  <h4 className="ep-info-section-title">{t('profileEntrepreneur.specializations')}</h4>
                   <div className="ep-specializations-grid">
                     {profile.specializations.map((spec) => (
                       <span key={spec} className="ep-spec-badge">
@@ -969,8 +975,8 @@ function ProfilePageEntrepreneur() {
               <>
                 <div className="ep-content-header">
                   <div className="ep-content-header-left">
-                    <h2>Subscription Management</h2>
-                    <p>Manage your subscription plan and billing</p>
+                    <h2>{t('profileEntrepreneur.subscriptionManagement')}</h2>
+                    <p>{t('profileEntrepreneur.manageSubscriptionPlan')}</p>
                   </div>
                 </div>
 
@@ -981,16 +987,16 @@ function ProfilePageEntrepreneur() {
                       <div className="no-sub-icon">
                         <Crown size={48} />
                       </div>
-                      <h3 className="no-sub-title">No Active Subscription</h3>
+                      <h3 className="no-sub-title">{t('profileEntrepreneur.noActiveSubscription')}</h3>
                       <p className="no-sub-description">
-                        Subscribe to unlock powerful features like submitting bids, unlocking project budgets, and messaging on approved projects.
+                        {t('profileEntrepreneur.noSubscriptionDesc')}
                       </p>
                       <button
                         className="subscribe-now-btn"
                         onClick={() => setShowPlansModal(true)}
                       >
                         <Crown size={18} />
-                        View Subscription Plans
+                        {t('profileEntrepreneur.viewSubscriptionPlans')}
                       </button>
                     </div>
                   </div>
@@ -1005,14 +1011,14 @@ function ProfilePageEntrepreneur() {
                           </div>
                           <div className="banner-info">
                             <div className="banner-header">
-                              <h3 className="banner-title">Premium Trial Active</h3>
-                              <div className="trial-badge">Trial Period</div>
+                              <h3 className="banner-title">{t('profileEntrepreneur.premiumTrialActive')}</h3>
+                              <div className="trial-badge">{t('profileEntrepreneur.trialPeriod')}</div>
                             </div>
                             <p className="banner-text">
-                              {getTrialInfo().daysRemaining} {getTrialInfo().daysRemaining === 1 ? 'day' : 'days'} remaining
+                              {getTrialInfo().daysRemaining} {getTrialInfo().daysRemaining === 1 ? t('profileEntrepreneur.day') : t('profileEntrepreneur.days')} {t('profileEntrepreneur.remaining')}
                             </p>
                             <p className="banner-subtext">
-                              Trial ends on {formatDate(subscription.trial_end)}
+                              {t('profileEntrepreneur.trialEndsOn')} {formatDate(subscription.trial_end)}
                             </p>
                             <div className="trial-progress-bar">
                               <div
@@ -1023,7 +1029,7 @@ function ProfilePageEntrepreneur() {
                           </div>
                           <div className="trial-countdown">
                             <div className="countdown-number">{getTrialInfo().daysRemaining}</div>
-                            <div className="countdown-label">Days Left</div>
+                            <div className="countdown-label">{t('profileEntrepreneur.daysLeft')}</div>
                           </div>
                         </div>
                       </div>
@@ -1040,17 +1046,17 @@ function ProfilePageEntrepreneur() {
                               </div>
                               <div className="status-indicator active">
                                 <span className="status-dot"></span>
-                                Active
+                                {t('profileEntrepreneur.active')}
                               </div>
                             </div>
-                            <h2 className="plan-name">{subscription.plan_type === 'premium' ? 'Premium' : 'Basic'} Plan</h2>
+                            <h2 className="plan-name">{subscription.plan_type === 'premium' ? t('profileEntrepreneur.premiumPlan') : t('profileEntrepreneur.basicPlan')}</h2>
                             <p className="plan-desc">
-                              {subscription.plan_type === 'premium' ? 'Best for professionals' : 'Perfect for getting started'}
+                              {subscription.plan_type === 'premium' ? t('profileEntrepreneur.bestForProfessionals') : t('profileEntrepreneur.perfectForGettingStarted')}
                             </p>
                             <div className="plan-price">
                               <span className="price-symbol">$</span>
                               <span className="price-value">{subscription.plan_type === 'premium' ? 429 : 250}</span>
-                              <span className="price-period">/month</span>
+                              <span className="price-period">{t('profileEntrepreneur.month')}</span>
                             </div>
                           </div>
 
@@ -1059,16 +1065,16 @@ function ProfilePageEntrepreneur() {
                               <div className="card-icon">
                                 <Calendar size={24} />
                               </div>
-                              <h3 className="card-title">Billing Cycle</h3>
+                              <h3 className="card-title">{t('profileEntrepreneur.billingCycle')}</h3>
                             </div>
                             <div className="timeline-content">
                               <div className="timeline-dates">
                                 <div className="date-item">
-                                  <span className="date-label">Started</span>
+                                  <span className="date-label">{t('profileEntrepreneur.started')}</span>
                                   <span className="date-value">{formatDate(subscription.start_date || subscription.start)}</span>
                                 </div>
                                 <div className="date-item">
-                                  <span className="date-label">Next Billing</span>
+                                  <span className="date-label">{t('profileEntrepreneur.nextBilling')}</span>
                                   <span className="date-value">{formatDate(subscription.current_period_end)}</span>
                                 </div>
                               </div>
@@ -1081,7 +1087,7 @@ function ProfilePageEntrepreneur() {
                                     ></div>
                                   </div>
                                   <div className="progress-info">
-                                    <span className="progress-text">{getSubscriptionDuration().daysRemaining} days until renewal</span>
+                                    <span className="progress-text">{getSubscriptionDuration().daysRemaining} {t('profileEntrepreneur.daysUntilRenewal')}</span>
                                   </div>
                                 </div>
                               )}
@@ -1100,12 +1106,12 @@ function ProfilePageEntrepreneur() {
                           </div>
                           <div className="upgrade-info">
                             <h3 className="upgrade-title">
-                              {subscription.plan_type === 'premium' ? 'You\'re on Premium' : 'View Subscription Plans'}
+                              {subscription.plan_type === 'premium' ? t('profileEntrepreneur.youreOnPremium') : t('profileEntrepreneur.viewSubscriptionPlans')}
                             </h3>
                             <p className="upgrade-description">
                               {subscription.plan_type === 'premium'
-                                ? 'You have access to unlimited bids and priority support'
-                                : 'Explore available plans and upgrade to get more features'}
+                                ? t('profileEntrepreneur.unlimitedBidsAccess')
+                                : t('profileEntrepreneur.explorePlansDesc')}
                             </p>
                           </div>
                         </div>
@@ -1114,7 +1120,7 @@ function ProfilePageEntrepreneur() {
                           onClick={() => setShowPlansModal(true)}
                         >
                           <Crown size={18} />
-                          View Plans
+                          {t('profileEntrepreneur.viewPlans')}
                         </button>
                       </div>
                     </div>
@@ -1126,8 +1132,8 @@ function ProfilePageEntrepreneur() {
                           <Activity size={24} />
                         </div>
                         <div className="section-text">
-                          <h2 className="section-title">Usage Analytics</h2>
-                          <p className="section-subtitle">Monitor your monthly bidding activity</p>
+                          <h2 className="section-title">{t('profileEntrepreneur.usageAnalytics')}</h2>
+                          <p className="section-subtitle">{t('profileEntrepreneur.monitorBiddingActivity')}</p>
                         </div>
                       </div>
 
@@ -1137,7 +1143,7 @@ function ProfilePageEntrepreneur() {
                             <div className="stat-icon bids">
                               <FileText size={22} />
                             </div>
-                            <span className="stat-label">Bids Submitted</span>
+                            <span className="stat-label">{t('profileEntrepreneur.bidsSubmitted')}</span>
                           </div>
                           <div className="stat-value subsval">
                             {subscription?.bids?.used || 0}
@@ -1152,7 +1158,7 @@ function ProfilePageEntrepreneur() {
                             <div className="stat-icon remaining">
                               <Zap size={22} />
                             </div>
-                            <span className="stat-label">Remaining Bids</span>
+                            <span className="stat-label">{t('profileEntrepreneur.remainingBids')}</span>
                           </div>
                           <div className="stat-value accent subsval">
                             {subscription?.bids?.remaining === 'unlimited'
@@ -1166,9 +1172,9 @@ function ProfilePageEntrepreneur() {
                             <div className="stat-icon budget">
                               <DollarSign size={22} />
                             </div>
-                            <span className="stat-label">Budget Unlocks</span>
+                            <span className="stat-label">{t('profileEntrepreneur.budgetUnlocks')}</span>
                           </div>
-                          <div className="stat-value subsval">Unlimited</div>
+                          <div className="stat-value subsval">{t('profileEntrepreneur.unlimited')}</div>
                         </div>
 
                         <div className="stat-card subs">
@@ -1176,9 +1182,9 @@ function ProfilePageEntrepreneur() {
                             <div className="stat-icon messages">
                               <MessageSquare size={22} />
                             </div>
-                            <span className="stat-label">Active Chats</span>
+                            <span className="stat-label">{t('profileEntrepreneur.activeChats')}</span>
                           </div>
-                          <div className="stat-value subsval">Unlimited</div>
+                          <div className="stat-value subsval">{t('profileEntrepreneur.unlimited')}</div>
                         </div>
                       </div>
                     </div>
@@ -1192,15 +1198,15 @@ function ProfilePageEntrepreneur() {
               <>
                 <div className="ep-content-header">
                   <div className="ep-content-header-left">
-                    <h2>Billing History</h2>
-                    <p>View your subscription payments and budget unlock history</p>
+                    <h2>{t('profileEntrepreneur.billingHistory')}</h2>
+                    <p>{t('profileEntrepreneur.viewBillingHistory')}</p>
                   </div>
                   <button
                     className="ep-btn ep-btn-secondary"
                     onClick={fetchBillingHistory}
                     disabled={billingLoading}
                   >
-                    {billingLoading ? 'Refreshing...' : 'Refresh'}
+                    {billingLoading ? t('common.loading') : t('profileEntrepreneur.refreshBilling')}
                   </button>
                 </div>
 
@@ -1215,7 +1221,7 @@ function ProfilePageEntrepreneur() {
                         <span className="ep-billing-stat-value">
                           ${billingSummary.total_spent?.toFixed(2) || '0.00'}
                         </span>
-                        <span className="ep-billing-stat-label">Total Spent</span>
+                        <span className="ep-billing-stat-label">{t('profileEntrepreneur.totalSpent')}</span>
                       </div>
                     </div>
                     <div className="ep-billing-stat-card">
@@ -1226,7 +1232,7 @@ function ProfilePageEntrepreneur() {
                         <span className="ep-billing-stat-value">
                           ${billingSummary.subscription_spent?.toFixed(2) || '0.00'}
                         </span>
-                        <span className="ep-billing-stat-label">Subscription Payments</span>
+                        <span className="ep-billing-stat-label">{t('profileEntrepreneur.subscriptionPayments')}</span>
                       </div>
                     </div>
                     <div className="ep-billing-stat-card">
@@ -1237,7 +1243,7 @@ function ProfilePageEntrepreneur() {
                         <span className="ep-billing-stat-value">
                           ${billingSummary.budget_unlock_spent?.toFixed(2) || '0.00'}
                         </span>
-                        <span className="ep-billing-stat-label">Budget Unlocks ({billingSummary.total_budget_unlocks || 0})</span>
+                        <span className="ep-billing-stat-label">{t('profileEntrepreneur.budgetUnlocks')} ({billingSummary.total_budget_unlocks || 0})</span>
                       </div>
                     </div>
                   </div>
@@ -1245,12 +1251,12 @@ function ProfilePageEntrepreneur() {
 
                 {/* Payment History List */}
                 <div className="ep-billing-section">
-                  <h4 className="ep-info-section-title">Payment History</h4>
+                  <h4 className="ep-info-section-title">{t('profileEntrepreneur.paymentHistory')}</h4>
 
                   {billingLoading ? (
                     <div className="ep-billing-loading">
                       <div className="ep-spinner"></div>
-                      <p>Loading billing history...</p>
+                      <p>{t('profileEntrepreneur.loadingBillingHistory')}</p>
                     </div>
                   ) : billingHistory.length > 0 ? (
                     <div className="ep-billing-list">
@@ -1278,7 +1284,7 @@ function ProfilePageEntrepreneur() {
                                 {payment.type === 'subscription' && payment.period_end && (
                                   <span className="ep-billing-period">
                                     <Calendar size={12} />
-                                    Period ends {new Date(payment.period_end).toLocaleDateString()}
+                                    {t('profileEntrepreneur.periodEnds')} {new Date(payment.period_end).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')}
                                   </span>
                                 )}
                                 {payment.job_category && (
@@ -1302,9 +1308,9 @@ function ProfilePageEntrepreneur() {
                             <span className="ep-billing-amount">${payment.amount?.toFixed(2)}</span>
                             <span className={`ep-billing-status ${payment.status}`}>
                               {payment.status === 'active' || payment.status === 'succeeded' ? (
-                                <><CheckCircle size={12} /> Paid</>
+                                <><CheckCircle size={12} /> {t('profileEntrepreneur.paid')}</>
                               ) : payment.status === 'trialing' ? (
-                                <><Zap size={12} /> Trial</>
+                                <><Zap size={12} /> {t('profileEntrepreneur.trial')}</>
                               ) : (
                                 <>{payment.status}</>
                               )}
@@ -1316,8 +1322,8 @@ function ProfilePageEntrepreneur() {
                   ) : (
                     <div className="ep-billing-empty">
                       <Receipt size={48} />
-                      <h3>No Payment History</h3>
-                      <p>Your subscription and budget unlock payments will appear here</p>
+                      <h3>{t('profileEntrepreneur.noPaymentHistory')}</h3>
+                      <p>{t('profileEntrepreneur.noPaymentHistoryDesc')}</p>
                     </div>
                   )}
                 </div>
@@ -1329,8 +1335,8 @@ function ProfilePageEntrepreneur() {
               <>
                 <div className="ep-content-header">
                   <div className="ep-content-header-left">
-                    <h2>Performance & Reviews</h2>
-                    <p>View your performance metrics and client reviews</p>
+                    <h2>{t('profileEntrepreneur.performanceOverview')}</h2>
+                    <p>{t('profileEntrepreneur.trackReputation')}</p>
                   </div>
                 </div>
 
@@ -1341,7 +1347,7 @@ function ProfilePageEntrepreneur() {
                       <Star size={24} />
                     </div>
                     <div className="ep-metric-content">
-                      <div className="ep-metric-label">Average Rating</div>
+                      <div className="ep-metric-label">{t('profileEntrepreneur.averageRating')}</div>
                       <div className="ep-metric-value">{calculateAverageRating() || 'N/A'}</div>
                     </div>
                   </div>
@@ -1350,7 +1356,7 @@ function ProfilePageEntrepreneur() {
                       <Award size={24} />
                     </div>
                     <div className="ep-metric-content">
-                      <div className="ep-metric-label">Total Reviews</div>
+                      <div className="ep-metric-label">{t('profileEntrepreneur.totalReviews')}</div>
                       <div className="ep-metric-value">{reviews.length}</div>
                     </div>
                   </div>
@@ -1359,8 +1365,8 @@ function ProfilePageEntrepreneur() {
                       <CheckCircle size={24} />
                     </div>
                     <div className="ep-metric-content">
-                      <div className="ep-metric-label">Experience</div>
-                      <div className="ep-metric-value">{profile.yearsInBusiness} Years</div>
+                      <div className="ep-metric-label">{t('profileEntrepreneur.experience')}</div>
+                      <div className="ep-metric-value">{profile.yearsInBusiness} {t('profileEntrepreneur.years')}</div>
                     </div>
                   </div>
                   <div className="ep-metric-card">
@@ -1368,7 +1374,7 @@ function ProfilePageEntrepreneur() {
                       <Briefcase size={24} />
                     </div>
                     <div className="ep-metric-content">
-                      <div className="ep-metric-label">Employees</div>
+                      <div className="ep-metric-label">{t('profileEntrepreneur.employees')}</div>
                       <div className="ep-metric-value">{profile.numEmployees}</div>
                     </div>
                   </div>
@@ -1376,11 +1382,11 @@ function ProfilePageEntrepreneur() {
 
                 {/* Reviews Section */}
                 <div className="ep-reviews-section">
-                  <h4 className="ep-info-section-title">Client Reviews</h4>
+                  <h4 className="ep-info-section-title">{t('profileEntrepreneur.clientReviews')}</h4>
                   {reviewsLoading ? (
                     <div className="ep-no-reviews">
                       <div className="ep-spinner"></div>
-                      <p>Loading reviews...</p>
+                      <p>{t('profileEntrepreneur.loadingReviews')}</p>
                     </div>
                   ) : reviews.length > 0 ? (
                     <div className="ep-reviews-grid">
@@ -1441,8 +1447,8 @@ function ProfilePageEntrepreneur() {
                   ) : (
                     <div className="ep-no-reviews">
                       <MessageSquare size={48} />
-                      <p>No reviews yet</p>
-                      <span>Complete jobs to receive reviews from clients</span>
+                      <p>{t('profileEntrepreneur.noReviewsYet')}</p>
+                      <span>{t('profileEntrepreneur.completeJobsForReviews')}</span>
                     </div>
                   )}
                 </div>
@@ -1454,8 +1460,8 @@ function ProfilePageEntrepreneur() {
               <>
                 <div className="ep-content-header">
                   <div className="ep-content-header-left">
-                    <h2>Payouts & Earnings</h2>
-                    <p>View your earnings, payouts, and transaction history</p>
+                    <h2>{t('profileEntrepreneur.payoutsEarnings')}</h2>
+                    <p>{t('profileEntrepreneur.managePayouts')}</p>
                   </div>
                   {stripeStatus?.onboarding_complete && (
                     <button
@@ -1465,12 +1471,12 @@ function ProfilePageEntrepreneur() {
                           const result = await getDashboardLink()
                           window.open(result.url, '_blank')
                         } catch (err) {
-                          toast.error('Could not open Stripe dashboard')
+                          toast.error(t('profileEntrepreneur.failedOpenDashboard'))
                         }
                       }}
                     >
                       <ExternalLink size={16} />
-                      Stripe Dashboard
+                      {t('stripeConnectModal.viewStripeDashboard')}
                     </button>
                   )}
                 </div>
@@ -1481,8 +1487,8 @@ function ProfilePageEntrepreneur() {
                     <div className="ep-payouts-setup-icon">
                       <Wallet size={48} />
                     </div>
-                    <h3>Set Up Payouts</h3>
-                    <p>Connect your Stripe account to receive payments from completed contracts</p>
+                    <h3>{t('profileEntrepreneur.setUpPayouts')}</h3>
+                    <p>{t('profileEntrepreneur.connectStripeDesc')}</p>
                     <button
                       className="ep-btn ep-btn-primary"
                       onClick={handleStripeConnect}
@@ -1491,12 +1497,12 @@ function ProfilePageEntrepreneur() {
                       {isConnectingStripe ? (
                         <>
                           <span className="ep-spinner"></span>
-                          Connecting...
+                          {t('profileEntrepreneur.connecting')}
                         </>
                       ) : (
                         <>
                           <CreditCard size={16} />
-                          Connect Stripe Account
+                          {t('profileEntrepreneur.connectStripeAccount')}
                         </>
                       )}
                     </button>
@@ -1507,7 +1513,7 @@ function ProfilePageEntrepreneur() {
                     {isLoadingPayouts ? (
                       <div className="ep-payouts-loading">
                         <span className="ep-spinner-lg"></span>
-                        <p>Loading earnings data...</p>
+                        <p>{t('profileEntrepreneur.loadingEarningsData')}</p>
                       </div>
                     ) : payoutsSummary ? (
                       <>
@@ -1518,8 +1524,8 @@ function ProfilePageEntrepreneur() {
                               <DollarSign size={24} />
                             </div>
                             <div className="ep-payout-card-content">
-                              <span className="ep-payout-label">Net Earnings</span>
-                              <span className="ep-payout-amount">${payoutsSummary.total_earnings?.toLocaleString('en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
+                              <span className="ep-payout-label">{t('profileEntrepreneur.netEarnings')}</span>
+                              <span className="ep-payout-amount">${payoutsSummary.total_earnings?.toLocaleString(language === 'fr' ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
                             </div>
                           </div>
                           <div className="ep-payout-card ep-payout-pending">
@@ -1527,8 +1533,8 @@ function ProfilePageEntrepreneur() {
                               <Clock size={24} />
                             </div>
                             <div className="ep-payout-card-content">
-                              <span className="ep-payout-label">Pending Payouts</span>
-                              <span className="ep-payout-amount">${payoutsSummary.pending_amount?.toLocaleString('en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
+                              <span className="ep-payout-label">{t('profileEntrepreneur.pendingPayouts')}</span>
+                              <span className="ep-payout-amount">${payoutsSummary.pending_amount?.toLocaleString(language === 'fr' ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
                             </div>
                           </div>
                           <div className="ep-payout-card ep-payout-received">
@@ -1536,8 +1542,8 @@ function ProfilePageEntrepreneur() {
                               <ArrowDownCircle size={24} />
                             </div>
                             <div className="ep-payout-card-content">
-                              <span className="ep-payout-label">Total Received</span>
-                              <span className="ep-payout-amount">${payoutsSummary.total_paid?.toLocaleString('en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
+                              <span className="ep-payout-label">{t('profileEntrepreneur.totalReceived')}</span>
+                              <span className="ep-payout-amount">${payoutsSummary.total_paid?.toLocaleString(language === 'fr' ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
                             </div>
                           </div>
                           <div className="ep-payout-card ep-payout-contracts">
@@ -1545,7 +1551,7 @@ function ProfilePageEntrepreneur() {
                               <FileText size={24} />
                             </div>
                             <div className="ep-payout-card-content">
-                              <span className="ep-payout-label">Contracts</span>
+                              <span className="ep-payout-label">{t('profileEntrepreneur.contracts')}</span>
                               <span className="ep-payout-amount">{payoutsSummary.completed_contracts || 0} / {payoutsSummary.total_contracts || 0}</span>
                             </div>
                           </div>
@@ -1558,22 +1564,22 @@ function ProfilePageEntrepreneur() {
                               <Percent size={20} />
                             </div>
                             <div>
-                              <h3>Platform Fee Breakdown</h3>
-                              <p>Overview of contract amounts and platform fees</p>
+                              <h3>{t('profileEntrepreneur.platformFeeBreakdown')}</h3>
+                              <p>{t('profileEntrepreneur.platformFeeOverviewDesc')}</p>
                             </div>
                           </div>
                           <div className="ep-fee-breakdown-content">
                             <div className="ep-fee-row">
-                              <span className="ep-fee-label">Gross Contract Value</span>
-                              <span className="ep-fee-value">${payoutsSummary.gross_earnings?.toLocaleString('en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
+                              <span className="ep-fee-label">{t('profileEntrepreneur.grossContractValue')}</span>
+                              <span className="ep-fee-value">${payoutsSummary.gross_earnings?.toLocaleString(language === 'fr' ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
                             </div>
                             <div className="ep-fee-row ep-fee-deduction">
-                              <span className="ep-fee-label">Platform Fee ({payoutsSummary.platform_fee_percentage || 7.6}%)</span>
-                              <span className="ep-fee-value">-${payoutsSummary.total_platform_fees?.toLocaleString('en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
+                              <span className="ep-fee-label">{t('profileEntrepreneur.platformFee')} ({payoutsSummary.platform_fee_percentage || 7.6}%)</span>
+                              <span className="ep-fee-value">-${payoutsSummary.total_platform_fees?.toLocaleString(language === 'fr' ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
                             </div>
                             <div className="ep-fee-row ep-fee-total">
-                              <span className="ep-fee-label">Your Net Earnings</span>
-                              <span className="ep-fee-value">${payoutsSummary.total_earnings?.toLocaleString('en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
+                              <span className="ep-fee-label">{t('profileEntrepreneur.yourNetEarnings')}</span>
+                              <span className="ep-fee-value">${payoutsSummary.total_earnings?.toLocaleString(language === 'fr' ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
                             </div>
                           </div>
                         </div>
@@ -1581,19 +1587,19 @@ function ProfilePageEntrepreneur() {
                         {/* Revenue Chart */}
                         <div className="ep-revenue-chart">
                           <div className="ep-chart-header">
-                            <h3>Revenue Overview</h3>
+                            <h3>{t('profileEntrepreneur.revenueOverview')}</h3>
                             <div className="ep-chart-toggle">
                               <button
                                 className={`ep-toggle-btn ${chartPeriod === 'weekly' ? 'ep-toggle-active' : ''}`}
                                 onClick={() => setChartPeriod('weekly')}
                               >
-                                Weekly
+                                {t('profileEntrepreneur.weekly')}
                               </button>
                               <button
                                 className={`ep-toggle-btn ${chartPeriod === 'monthly' ? 'ep-toggle-active' : ''}`}
                                 onClick={() => setChartPeriod('monthly')}
                               >
-                                Monthly
+                                {t('profileEntrepreneur.monthly')}
                               </button>
                             </div>
                           </div>
@@ -1613,7 +1619,7 @@ function ProfilePageEntrepreneur() {
                                         />
                                       </div>
                                       <div className="ep-bar-label">{item.label}</div>
-                                      <div className="ep-bar-contracts">{item.contracts} job{item.contracts !== 1 ? 's' : ''}</div>
+                                      <div className="ep-bar-contracts">{item.contracts} {item.contracts !== 1 ? t('profileEntrepreneur.jobs') : t('profileEntrepreneur.job')}</div>
                                     </div>
                                   );
                                 })}
@@ -1621,7 +1627,7 @@ function ProfilePageEntrepreneur() {
                             ) : (
                               <div className="ep-chart-empty">
                                 <BarChart3 size={48} />
-                                <p>No data for this period</p>
+                                <p>{t('profileEntrepreneur.noDataForPeriod')}</p>
                               </div>
                             )}
                           </div>
@@ -1630,19 +1636,19 @@ function ProfilePageEntrepreneur() {
                         {/* Transaction History Table */}
                         <div className="ep-payouts-transactions">
                           <div className="ep-transactions-header">
-                            <h3>Transaction History</h3>
-                            <span className="ep-transactions-count">{payoutsSummary.transactions?.length || 0} transactions</span>
+                            <h3>{t('profileEntrepreneur.transactionHistory')}</h3>
+                            <span className="ep-transactions-count">{payoutsSummary.transactions?.length || 0} {t('profileEntrepreneur.transactions')}</span>
                           </div>
                           {payoutsSummary.transactions && payoutsSummary.transactions.length > 0 ? (
                             <div className="ep-transactions-table">
                               <div className="ep-table-header">
-                                <span className="ep-th-job">Job</span>
-                                <span className="ep-th-client">Client</span>
-                                <span className="ep-th-amount">Contract</span>
-                                <span className="ep-th-fee">Fee</span>
-                                <span className="ep-th-net">Net</span>
-                                <span className="ep-th-status">Status</span>
-                                <span className="ep-th-date">Date</span>
+                                <span className="ep-th-job">{t('profileEntrepreneur.tableHeaderJob')}</span>
+                                <span className="ep-th-client">{t('profileEntrepreneur.tableHeaderClient')}</span>
+                                <span className="ep-th-amount">{t('profileEntrepreneur.tableHeaderContract')}</span>
+                                <span className="ep-th-fee">{t('profileEntrepreneur.tableHeaderFee')}</span>
+                                <span className="ep-th-net">{t('profileEntrepreneur.tableHeaderNet')}</span>
+                                <span className="ep-th-status">{t('profileEntrepreneur.tableHeaderStatus')}</span>
+                                <span className="ep-th-date">{t('profileEntrepreneur.tableHeaderDate')}</span>
                               </div>
                               <div className="ep-transactions-list">
                                 {payoutsSummary.transactions.map((tx) => (
@@ -1659,7 +1665,7 @@ function ProfilePageEntrepreneur() {
                                       <span className="ep-td-fee">-${tx.platform_fee?.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</span>
                                       <span className="ep-td-net ep-amount-green">+${tx.amount?.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</span>
                                       <span className={`ep-td-status ${tx.status === 'completed' ? 'ep-status-completed' : 'ep-status-pending'}`}>
-                                        {tx.status === 'completed' ? 'Paid' : 'Pending'}
+                                        {tx.status === 'completed' ? t('profileEntrepreneur.paid') : t('profileEntrepreneur.pending')}
                                       </span>
                                       <span className="ep-td-date">
                                         {new Date(tx.date).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -1671,27 +1677,27 @@ function ProfilePageEntrepreneur() {
                                     {expandedTransaction === tx.id && (
                                       <div className="ep-transaction-details">
                                         <div className="ep-detail-row">
-                                          <span className="ep-detail-label">Contract Amount:</span>
-                                          <span className="ep-detail-value">${tx.contract_amount?.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</span>
+                                          <span className="ep-detail-label">{t('profileEntrepreneur.contractAmountLabel')}</span>
+                                          <span className="ep-detail-value">${tx.contract_amount?.toLocaleString(language === 'fr' ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 2 })}</span>
                                         </div>
                                         <div className="ep-detail-row">
-                                          <span className="ep-detail-label">Platform Fee ({tx.platform_fee_percentage}%):</span>
-                                          <span className="ep-detail-value ep-amount-red">-${tx.platform_fee?.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</span>
+                                          <span className="ep-detail-label">{t('profileEntrepreneur.platformFeeLabel')} ({tx.platform_fee_percentage}%):</span>
+                                          <span className="ep-detail-value ep-amount-red">-${tx.platform_fee?.toLocaleString(language === 'fr' ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 2 })}</span>
                                         </div>
                                         <div className="ep-detail-row ep-detail-total">
-                                          <span className="ep-detail-label">Your Payout:</span>
-                                          <span className="ep-detail-value ep-amount-green">${tx.amount?.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</span>
+                                          <span className="ep-detail-label">{t('profileEntrepreneur.yourPayout')}</span>
+                                          <span className="ep-detail-value ep-amount-green">${tx.amount?.toLocaleString(language === 'fr' ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 2 })}</span>
                                         </div>
                                         {tx.paid_at && (
                                           <div className="ep-detail-row">
-                                            <span className="ep-detail-label">Payment Received:</span>
-                                            <span className="ep-detail-value">{new Date(tx.paid_at).toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                                            <span className="ep-detail-label">{t('profileEntrepreneur.paymentReceivedLabel')}</span>
+                                            <span className="ep-detail-value">{new Date(tx.paid_at).toLocaleDateString(language === 'fr' ? 'fr-CA' : 'en-CA', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                                           </div>
                                         )}
                                         {tx.payout_completed_at && (
                                           <div className="ep-detail-row">
-                                            <span className="ep-detail-label">Payout Completed:</span>
-                                            <span className="ep-detail-value">{new Date(tx.payout_completed_at).toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                                            <span className="ep-detail-label">{t('profileEntrepreneur.payoutCompletedLabel')}</span>
+                                            <span className="ep-detail-value">{new Date(tx.payout_completed_at).toLocaleDateString(language === 'fr' ? 'fr-CA' : 'en-CA', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                                           </div>
                                         )}
                                       </div>
@@ -1703,8 +1709,8 @@ function ProfilePageEntrepreneur() {
                           ) : (
                             <div className="ep-no-transactions">
                               <FileText size={48} />
-                              <p>No transactions yet</p>
-                              <span>Complete contracts to see your transaction history</span>
+                              <p>{t('profileEntrepreneur.noTransactions')}</p>
+                              <span>{t('profileEntrepreneur.completeContractsForHistory')}</span>
                             </div>
                           )}
                         </div>
@@ -1713,23 +1719,23 @@ function ProfilePageEntrepreneur() {
                         <div className="ep-payout-schedule">
                           <div className="ep-schedule-header">
                             <Calendar size={20} />
-                            <h3>Payout Schedule</h3>
+                            <h3>{t('profileEntrepreneur.payoutSchedule')}</h3>
                           </div>
                           <div className="ep-schedule-content">
                             <div className="ep-schedule-item">
-                              <span className="ep-schedule-label">Payout Frequency</span>
-                              <span className="ep-schedule-value">After work approval</span>
+                              <span className="ep-schedule-label">{t('profileEntrepreneur.payoutFrequency')}</span>
+                              <span className="ep-schedule-value">{t('profileEntrepreneur.afterWorkApproval')}</span>
                             </div>
                             <div className="ep-schedule-item">
-                              <span className="ep-schedule-label">Processing Time</span>
-                              <span className="ep-schedule-value">1-2 business days</span>
+                              <span className="ep-schedule-label">{t('profileEntrepreneur.processingTime')}</span>
+                              <span className="ep-schedule-value">{t('profileEntrepreneur.processingTimeValue')}</span>
                             </div>
                             <div className="ep-schedule-item">
-                              <span className="ep-schedule-label">Minimum Payout</span>
-                              <span className="ep-schedule-value">No minimum</span>
+                              <span className="ep-schedule-label">{t('profileEntrepreneur.minimumPayout')}</span>
+                              <span className="ep-schedule-value">{t('profileEntrepreneur.noMinimum')}</span>
                             </div>
                             <p className="ep-schedule-note">
-                              Payouts are automatically transferred to your connected bank account after the property manager approves completed work.
+                              {t('profileEntrepreneur.payoutScheduleNote')}
                             </p>
                           </div>
                         </div>
@@ -1737,9 +1743,9 @@ function ProfilePageEntrepreneur() {
                     ) : (
                       <div className="ep-payouts-error">
                         <AlertCircle size={48} />
-                        <p>Could not load earnings data</p>
+                        <p>{t('profileEntrepreneur.couldNotLoadEarnings')}</p>
                         <button className="ep-btn ep-btn-secondary" onClick={fetchPayoutsSummary}>
-                          Try Again
+                          {t('profileEntrepreneur.tryAgain')}
                         </button>
                       </div>
                     )}
@@ -1753,8 +1759,8 @@ function ProfilePageEntrepreneur() {
               <>
                 <div className="ep-content-header">
                   <div className="ep-content-header-left">
-                    <h2>Settings</h2>
-                    <p>Manage your preferences and security</p>
+                    <h2>{t('profileEntrepreneur.accountSettings')}</h2>
+                    <p>{t('profileEntrepreneur.manageSecurityPreferences')}</p>
                   </div>
                 </div>
 
@@ -1766,8 +1772,8 @@ function ProfilePageEntrepreneur() {
                         <Globe size={20} />
                       </div>
                       <div className="ep-settings-info">
-                        <h3>Language</h3>
-                        <p>Choose your preferred language for the app</p>
+                        <h3>{t('profileEntrepreneur.languagePreferences')}</h3>
+                        <p>{t('profileEntrepreneur.selectLanguage')}</p>
                       </div>
                     </div>
                     <div className="ep-language-options">
@@ -1799,8 +1805,8 @@ function ProfilePageEntrepreneur() {
                         <Key size={20} />
                       </div>
                       <div className="ep-settings-info">
-                        <h3>Change Password</h3>
-                        <p>Update your account password</p>
+                        <h3>{t('profileEntrepreneur.changePassword')}</h3>
+                        <p>{t('profileEntrepreneur.updatePasswordDesc')}</p>
                       </div>
                     </div>
 
@@ -1819,14 +1825,14 @@ function ProfilePageEntrepreneur() {
                       )}
 
                       <div className="ep-form-group">
-                        <label>Current Password</label>
+                        <label>{t('profileEntrepreneur.currentPassword')}</label>
                         <div className="ep-input-wrapper">
                           <input
                             type={showPasswords.current ? 'text' : 'password'}
                             name="currentPassword"
                             value={passwordForm.currentPassword}
                             onChange={handlePasswordInputChange}
-                            placeholder="Enter current password"
+                            placeholder={t('profileEntrepreneur.currentPassword')}
                           />
                           <button
                             type="button"
@@ -1839,14 +1845,14 @@ function ProfilePageEntrepreneur() {
                       </div>
 
                       <div className="ep-form-group">
-                        <label>New Password</label>
+                        <label>{t('profileEntrepreneur.newPassword')}</label>
                         <div className="ep-input-wrapper">
                           <input
                             type={showPasswords.new ? 'text' : 'password'}
                             name="newPassword"
                             value={passwordForm.newPassword}
                             onChange={handlePasswordInputChange}
-                            placeholder="Enter new password"
+                            placeholder={t('profileEntrepreneur.newPassword')}
                           />
                           <button
                             type="button"
@@ -1894,14 +1900,14 @@ function ProfilePageEntrepreneur() {
                       </div>
 
                       <div className="ep-form-group">
-                        <label>Confirm New Password</label>
+                        <label>{t('profileEntrepreneur.confirmNewPassword')}</label>
                         <div className="ep-input-wrapper">
                           <input
                             type={showPasswords.confirm ? 'text' : 'password'}
                             name="confirmPassword"
                             value={passwordForm.confirmPassword}
                             onChange={handlePasswordInputChange}
-                            placeholder="Confirm new password"
+                            placeholder={t('profileEntrepreneur.confirmNewPassword')}
                           />
                           <button
                             type="button"
@@ -1912,7 +1918,7 @@ function ProfilePageEntrepreneur() {
                           </button>
                         </div>
                         {passwordForm.confirmPassword && passwordForm.newPassword !== passwordForm.confirmPassword && (
-                          <span className="ep-input-error">Passwords do not match</span>
+                          <span className="ep-input-error">{t('profileEntrepreneur.passwordsDoNotMatch')}</span>
                         )}
                       </div>
 
@@ -1923,7 +1929,7 @@ function ProfilePageEntrepreneur() {
                           onClick={() => setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })}
                           disabled={isChangingPassword}
                         >
-                          Cancel
+                          {t('profileEntrepreneur.cancel')}
                         </button>
                         <button
                           type="submit"
@@ -1933,12 +1939,12 @@ function ProfilePageEntrepreneur() {
                           {isChangingPassword ? (
                             <>
                               <span className="ep-spinner"></span>
-                              Changing...
+                              {t('profileEntrepreneur.changingPassword')}
                             </>
                           ) : (
                             <>
                               <Lock size={16} />
-                              Change Password
+                              {t('profileEntrepreneur.changePassword')}
                             </>
                           )}
                         </button>

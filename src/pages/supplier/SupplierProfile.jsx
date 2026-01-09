@@ -39,7 +39,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 
 function SupplierProfile() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-  const { language, changeLanguage, languages } = useLanguage();
+  const { t, language, changeLanguage, languages } = useLanguage();
   const [activeTab, setActiveTab] = useState('account');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [profile, setProfile] = useState(null);
@@ -81,11 +81,11 @@ function SupplierProfile() {
 
   // Tab labels for mobile header
   const tabLabels = {
-    account: 'Account',
-    overview: 'Overview',
-    catalog: 'Catalog',
-    service: 'Service',
-    settings: 'Settings'
+    account: t('supplierProfile.account'),
+    overview: t('supplierProfile.overview'),
+    catalog: t('supplierProfile.catalog'),
+    service: t('supplierProfile.service'),
+    settings: t('supplierProfile.settings')
   };
 
   // State for new delivery area input
@@ -198,12 +198,12 @@ function SupplierProfile() {
     const file = e.target.files[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
-        toast.error('Please select a valid image file');
+        toast.error(t('supplierProfile.selectValidImage'));
         return;
       }
 
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image size should not exceed 5MB');
+        toast.error(t('supplierProfile.imageSizeLimit'));
         return;
       }
 
@@ -220,12 +220,12 @@ function SupplierProfile() {
     const file = e.target.files[0];
     if (file) {
       if (file.type !== 'application/pdf') {
-        toast.error('Please select a PDF file');
+        toast.error(t('supplierProfile.selectPdfFile'));
         return;
       }
 
       if (file.size > 50 * 1024 * 1024) {
-        toast.error('PDF size should not exceed 50MB');
+        toast.error(t('supplierProfile.pdfSizeLimit'));
         return;
       }
 
@@ -240,7 +240,7 @@ function SupplierProfile() {
 
   const handleSubmit = async () => {
     if (!formData.company_name || !formData.business_license || !formData.address) {
-      toast.error('Please fill in all required fields');
+      toast.error(t('supplierProfile.fillRequiredFields'));
       return;
     }
 
@@ -325,11 +325,11 @@ function SupplierProfile() {
         setCatalogFile(null);
 
         setIsEditModalOpen(false);
-        toast.success('Profile updated successfully!');
+        toast.success(t('supplierProfile.profileUpdatedSuccess'));
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast.error('Failed to update profile. Please try again.');
+      toast.error(t('supplierProfile.failedToUpdate'));
     } finally {
       setIsUpdating(false);
       setIsUploadingImage(false);
@@ -391,8 +391,14 @@ function SupplierProfile() {
   };
 
   const getStrengthLabel = (strength) => {
-    const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
-    return labels[strength - 1] || 'Very Weak';
+    const labels = [
+      t('supplierProfile.veryWeak'),
+      t('supplierProfile.weak'),
+      t('supplierProfile.fair'),
+      t('supplierProfile.good'),
+      t('supplierProfile.strong')
+    ];
+    return labels[strength - 1] || t('supplierProfile.veryWeak');
   };
 
   const handleChangePassword = async (e) => {
@@ -401,17 +407,17 @@ function SupplierProfile() {
     setPasswordSuccess('');
 
     if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-      setPasswordError('All fields are required');
+      setPasswordError(t('supplierProfile.allFieldsRequired'));
       return;
     }
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError('New passwords do not match');
+      setPasswordError(t('supplierProfile.passwordsMustMatch'));
       return;
     }
 
     if (passwordForm.newPassword.length < 8) {
-      setPasswordError('Password must be at least 8 characters');
+      setPasswordError(t('supplierProfile.passwordMinLength'));
       return;
     }
 
@@ -420,7 +426,7 @@ function SupplierProfile() {
     try {
       const userProfile = JSON.parse(localStorage.getItem('userProfile'));
       if (!userProfile?.token) {
-        throw new Error('Please log in to change password');
+        throw new Error(t('supplierProfile.pleaseLoginToChange'));
       }
 
       const response = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
@@ -442,13 +448,13 @@ function SupplierProfile() {
         throw new Error(data.message || 'Failed to change password');
       }
 
-      setPasswordSuccess('Password changed successfully!');
+      setPasswordSuccess(t('supplierProfile.passwordChangedSuccess'));
       setPasswordForm({
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
       });
-      toast.success('Password changed successfully!');
+      toast.success(t('supplierProfile.passwordChangedSuccess'));
     } catch (error) {
       setPasswordError(error.message);
       toast.error(error.message);
@@ -463,7 +469,7 @@ function SupplierProfile() {
         <Nav />
         <div className="sp-loading-container">
           <div className="sp-loader"></div>
-          <p>Loading supplier profile...</p>
+          <p>{t('supplierProfile.loadingProfile')}</p>
         </div>
       </div>
     );
@@ -529,8 +535,8 @@ function SupplierProfile() {
               )}
             </div>
             <div className="sp-sidebar-user">
-              <h3>{profile?.companyName || 'Supplier'}</h3>
-              <span>Supplier</span>
+              <h3>{profile?.companyName || t('supplierProfile.supplier')}</h3>
+              <span>{t('supplierProfile.supplier')}</span>
             </div>
           </div>
 
@@ -540,42 +546,42 @@ function SupplierProfile() {
               onClick={() => handleTabChange('account')}
             >
               <User size={18} />
-              <span>Account</span>
+              <span>{t('supplierProfile.account')}</span>
             </button>
             <button
               className={`sp-nav-item ${activeTab === 'overview' ? 'sp-nav-active' : ''}`}
               onClick={() => handleTabChange('overview')}
             >
               <BarChart3 size={18} />
-              <span>Overview</span>
+              <span>{t('supplierProfile.overview')}</span>
             </button>
             <button
               className={`sp-nav-item ${activeTab === 'catalog' ? 'sp-nav-active' : ''}`}
               onClick={() => handleTabChange('catalog')}
             >
               <FileText size={18} />
-              <span>Catalog</span>
+              <span>{t('supplierProfile.catalog')}</span>
             </button>
             <button
               className={`sp-nav-item ${activeTab === 'service' ? 'sp-nav-active' : ''}`}
               onClick={() => handleTabChange('service')}
             >
               <Truck size={18} />
-              <span>Service</span>
+              <span>{t('supplierProfile.service')}</span>
             </button>
             <button
               className={`sp-nav-item ${activeTab === 'settings' ? 'sp-nav-active' : ''}`}
               onClick={() => handleTabChange('settings')}
             >
               <Settings size={18} />
-              <span>Settings</span>
+              <span>{t('supplierProfile.settings')}</span>
             </button>
           </nav>
 
           <div className="sp-sidebar-footer">
             <button className="sp-nav-item sp-nav-logout" onClick={handleLogout}>
               <LogOut size={18} />
-              <span>Logout</span>
+              <span>{t('supplierProfile.logout')}</span>
             </button>
           </div>
         </aside>
@@ -588,12 +594,12 @@ function SupplierProfile() {
               <>
                 <div className="sp-content-header">
                   <div className="sp-content-header-left">
-                    <h2>Account Information</h2>
-                    <p>Manage your company profile and contact details</p>
+                    <h2>{t('supplierProfile.accountInformation')}</h2>
+                    <p>{t('supplierProfile.manageCompanyProfile')}</p>
                   </div>
                   <button className="sp-btn sp-btn-primary sp-desktop-only" onClick={() => setIsEditModalOpen(true)}>
                     <Edit size={16} />
-                    Edit Profile
+                    {t('supplierProfile.editProfile')}
                   </button>
                 </div>
 
@@ -614,7 +620,7 @@ function SupplierProfile() {
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                         <span className="sp-role-tag-modern">
                           <Package size={12} />
-                          Supplier
+                          {t('supplierProfile.supplier')}
                         </span>
                         <span className="sp-license-badge">
                           <Award size={12} />
@@ -627,14 +633,14 @@ function SupplierProfile() {
 
                 {/* Company Information */}
                 <div className="sp-info-section">
-                  <h4 className="sp-info-section-title">Company Information</h4>
+                  <h4 className="sp-info-section-title">{t('supplierProfile.companyInformation')}</h4>
                   <div className="sp-info-grid-modern">
                     <div className="sp-info-item-modern">
                       <div className="sp-info-icon-modern">
                         <Building2 size={18} />
                       </div>
                       <div className="sp-info-details">
-                        <label>Company Name</label>
+                        <label>{t('supplierProfile.companyName')}</label>
                         <span>{profile?.companyName}</span>
                       </div>
                     </div>
@@ -643,7 +649,7 @@ function SupplierProfile() {
                         <Award size={18} />
                       </div>
                       <div className="sp-info-details">
-                        <label>Business License</label>
+                        <label>{t('supplierProfile.businessLicense')}</label>
                         <span>{profile?.businessLicense}</span>
                       </div>
                     </div>
@@ -652,8 +658,8 @@ function SupplierProfile() {
                         <Calendar size={18} />
                       </div>
                       <div className="sp-info-details">
-                        <label>Years in Business</label>
-                        <span>{profile?.yearsInBusiness} years</span>
+                        <label>{t('supplierProfile.yearsInBusiness')}</label>
+                        <span>{profile?.yearsInBusiness} {t('supplierProfile.years')}</span>
                       </div>
                     </div>
                     <div className="sp-info-item-modern">
@@ -661,12 +667,12 @@ function SupplierProfile() {
                         <Globe size={18} />
                       </div>
                       <div className="sp-info-details">
-                        <label>Website</label>
+                        <label>{t('supplierProfile.website')}</label>
                         <span>{profile?.website !== 'Not provided' ? (
                           <a href={profile?.website} target="_blank" rel="noopener noreferrer">
                             {profile?.website}
                           </a>
-                        ) : 'Not provided'}</span>
+                        ) : t('supplierProfile.notProvided')}</span>
                       </div>
                     </div>
                   </div>
@@ -674,14 +680,14 @@ function SupplierProfile() {
 
                 {/* Contact Information */}
                 <div className="sp-info-section">
-                  <h4 className="sp-info-section-title">Contact Information</h4>
+                  <h4 className="sp-info-section-title">{t('supplierProfile.contactInformation')}</h4>
                   <div className="sp-info-grid-modern">
                     <div className="sp-info-item-modern">
                       <div className="sp-info-icon-modern">
                         <Mail size={18} />
                       </div>
                       <div className="sp-info-details">
-                        <label>Email</label>
+                        <label>{t('supplierProfile.email')}</label>
                         <span>{profile?.email}</span>
                       </div>
                     </div>
@@ -690,7 +696,7 @@ function SupplierProfile() {
                         <Phone size={18} />
                       </div>
                       <div className="sp-info-details">
-                        <label>Phone</label>
+                        <label>{t('supplierProfile.phone')}</label>
                         <span>{profile?.phone}</span>
                       </div>
                     </div>
@@ -699,7 +705,7 @@ function SupplierProfile() {
                         <MapPin size={18} />
                       </div>
                       <div className="sp-info-details">
-                        <label>Address</label>
+                        <label>{t('supplierProfile.address')}</label>
                         <span>{profile?.address}</span>
                       </div>
                     </div>
@@ -708,7 +714,7 @@ function SupplierProfile() {
 
                 {/* Delivery Areas */}
                 <div className="sp-delivery-section">
-                  <h4 className="sp-info-section-title">Delivery Areas</h4>
+                  <h4 className="sp-info-section-title">{t('supplierProfile.deliveryAreas')}</h4>
                   <div className="sp-delivery-grid">
                     {profile?.deliveryAreas && profile.deliveryAreas.length > 0 ? (
                       profile.deliveryAreas.map((area) => (
@@ -718,7 +724,7 @@ function SupplierProfile() {
                         </span>
                       ))
                     ) : (
-                      <p className="sp-no-data">No delivery areas specified</p>
+                      <p className="sp-no-data">{t('supplierProfile.noDeliveryAreas')}</p>
                     )}
                   </div>
                 </div>
@@ -730,8 +736,8 @@ function SupplierProfile() {
               <>
                 <div className="sp-content-header">
                   <div className="sp-content-header-left">
-                    <h2>Business Overview</h2>
-                    <p>View your business statistics and performance</p>
+                    <h2>{t('supplierProfile.businessOverview')}</h2>
+                    <p>{t('supplierProfile.viewBusinessStats')}</p>
                   </div>
                 </div>
 
@@ -741,7 +747,7 @@ function SupplierProfile() {
                       <Calendar size={24} />
                     </div>
                     <div className="sp-stat-content">
-                      <span className="sp-stat-label">Years in Business</span>
+                      <span className="sp-stat-label">{t('supplierProfile.yearsInBusiness')}</span>
                       <span className="sp-stat-value">{profile?.yearsInBusiness || 0}</span>
                     </div>
                   </div>
@@ -750,7 +756,7 @@ function SupplierProfile() {
                       <Award size={24} />
                     </div>
                     <div className="sp-stat-content">
-                      <span className="sp-stat-label">Business License</span>
+                      <span className="sp-stat-label">{t('supplierProfile.businessLicense')}</span>
                       <span className="sp-stat-value">{profile?.businessLicense || 'N/A'}</span>
                     </div>
                   </div>
@@ -759,7 +765,7 @@ function SupplierProfile() {
                       <Truck size={24} />
                     </div>
                     <div className="sp-stat-content">
-                      <span className="sp-stat-label">Delivery Areas</span>
+                      <span className="sp-stat-label">{t('supplierProfile.deliveryAreas')}</span>
                       <span className="sp-stat-value">{profile?.deliveryAreas?.length || 0}</span>
                     </div>
                   </div>
@@ -768,8 +774,8 @@ function SupplierProfile() {
                       <FileText size={24} />
                     </div>
                     <div className="sp-stat-content">
-                      <span className="sp-stat-label">Catalog Status</span>
-                      <span className="sp-stat-value">{profile?.catalogUrl ? 'Uploaded' : 'Not Uploaded'}</span>
+                      <span className="sp-stat-label">{t('supplierProfile.catalogStatus')}</span>
+                      <span className="sp-stat-value">{profile?.catalogUrl ? t('supplierProfile.uploaded') : t('supplierProfile.notUploaded')}</span>
                     </div>
                   </div>
                 </div>
@@ -777,9 +783,9 @@ function SupplierProfile() {
                 {/* Delivery Coverage */}
                 <div className="sp-info-section">
                   <h4 className="sp-info-section-title">
-                    Delivery Coverage
+                    {t('supplierProfile.deliveryCoverage')}
                     {profile?.deliveryAreas?.length > 0 && (
-                      <span className="sp-coverage-count">{profile.deliveryAreas.length} areas</span>
+                      <span className="sp-coverage-count">{profile.deliveryAreas.length} {t('supplierProfile.areas')}</span>
                     )}
                   </h4>
                   {profile?.deliveryAreas && profile.deliveryAreas.length > 0 ? (
@@ -792,7 +798,7 @@ function SupplierProfile() {
                       ))}
                     </div>
                   ) : (
-                    <p className="sp-empty-text">No delivery areas specified</p>
+                    <p className="sp-empty-text">{t('supplierProfile.noDeliveryAreas')}</p>
                   )}
                 </div>
               </>
@@ -803,8 +809,8 @@ function SupplierProfile() {
               <>
                 <div className="sp-content-header">
                   <div className="sp-content-header-left">
-                    <h2>Product Catalog</h2>
-                    <p>Manage your product catalog and documentation</p>
+                    <h2>{t('supplierProfile.productCatalog')}</h2>
+                    <p>{t('supplierProfile.manageCatalog')}</p>
                   </div>
                 </div>
 
@@ -815,28 +821,28 @@ function SupplierProfile() {
                         <FileText size={48} />
                       </div>
                       <div className="sp-catalog-info">
-                        <h3>Product Catalog PDF</h3>
-                        <p>View our complete product catalog with pricing and specifications</p>
+                        <h3>{t('supplierProfile.productCatalogPDF')}</h3>
+                        <p>{t('supplierProfile.viewCatalogDescription')}</p>
                         <button
                           className="sp-btn sp-btn-primary"
                           onClick={handleDownloadCatalog}
                         >
                           <Download size={18} />
-                          Download Catalog
+                          {t('supplierProfile.downloadCatalog')}
                         </button>
                       </div>
                     </div>
                   ) : (
                     <div className="sp-no-catalog">
                       <FileText size={64} />
-                      <h3>No Catalog Uploaded</h3>
-                      <p>Upload a PDF catalog to showcase your products to potential clients</p>
+                      <h3>{t('supplierProfile.noCatalogUploaded')}</h3>
+                      <p>{t('supplierProfile.uploadCatalogDescription')}</p>
                       <button
                         className="sp-btn sp-btn-primary"
                         onClick={() => setIsEditModalOpen(true)}
                       >
                         <Upload size={18} />
-                        Upload Catalog
+                        {t('supplierProfile.uploadCatalog')}
                       </button>
                     </div>
                   )}
@@ -849,16 +855,16 @@ function SupplierProfile() {
               <>
                 <div className="sp-content-header">
                   <div className="sp-content-header-left">
-                    <h2>Service Information</h2>
-                    <p>View delivery coverage and service areas</p>
+                    <h2>{t('supplierProfile.serviceInformation')}</h2>
+                    <p>{t('supplierProfile.viewDeliveryCoverage')}</p>
                   </div>
                 </div>
 
                 <div className="sp-info-section">
                   <h4 className="sp-info-section-title">
-                    Delivery Coverage
+                    {t('supplierProfile.deliveryCoverage')}
                     {profile?.deliveryAreas?.length > 0 && (
-                      <span className="sp-coverage-count">{profile.deliveryAreas.length} areas</span>
+                      <span className="sp-coverage-count">{profile.deliveryAreas.length} {t('supplierProfile.areas')}</span>
                     )}
                   </h4>
                   {profile?.deliveryAreas && profile.deliveryAreas.length > 0 ? (
@@ -871,20 +877,20 @@ function SupplierProfile() {
                       ))}
                     </div>
                   ) : (
-                    <p className="sp-empty-text">No delivery areas specified</p>
+                    <p className="sp-empty-text">{t('supplierProfile.noDeliveryAreas')}</p>
                   )}
                 </div>
 
                 <div className="sp-info-section">
-                  <h4 className="sp-info-section-title">Company Experience</h4>
+                  <h4 className="sp-info-section-title">{t('supplierProfile.companyExperience')}</h4>
                   <div className="sp-stats-grid sp-stats-2col">
                     <div className="sp-stat-card">
                       <div className="sp-stat-icon experience">
                         <Calendar size={24} />
                       </div>
                       <div className="sp-stat-content">
-                        <span className="sp-stat-label">Years in Industry</span>
-                        <span className="sp-stat-value">{profile?.yearsInBusiness || 0} years</span>
+                        <span className="sp-stat-label">{t('supplierProfile.yearsInIndustry')}</span>
+                        <span className="sp-stat-value">{profile?.yearsInBusiness || 0} {t('supplierProfile.years')}</span>
                       </div>
                     </div>
                     <div className="sp-stat-card">
@@ -892,8 +898,8 @@ function SupplierProfile() {
                         <Truck size={24} />
                       </div>
                       <div className="sp-stat-content">
-                        <span className="sp-stat-label">Service Areas</span>
-                        <span className="sp-stat-value">{profile?.deliveryAreas?.length || 0} locations</span>
+                        <span className="sp-stat-label">{t('supplierProfile.serviceAreas')}</span>
+                        <span className="sp-stat-value">{profile?.deliveryAreas?.length || 0} {t('supplierProfile.locations')}</span>
                       </div>
                     </div>
                   </div>
@@ -906,8 +912,8 @@ function SupplierProfile() {
               <>
                 <div className="sp-content-header">
                   <div className="sp-content-header-left">
-                    <h2>Settings</h2>
-                    <p>Manage your preferences and security</p>
+                    <h2>{t('supplierProfile.settings')}</h2>
+                    <p>{t('supplierProfile.managePreferences')}</p>
                   </div>
                 </div>
 
@@ -919,8 +925,8 @@ function SupplierProfile() {
                         <Globe size={20} />
                       </div>
                       <div className="sp-settings-info">
-                        <h3>Language</h3>
-                        <p>Choose your preferred language for the app</p>
+                        <h3>{t('supplierProfile.language')}</h3>
+                        <p>{t('supplierProfile.chooseLanguage')}</p>
                       </div>
                     </div>
                     <div className="sp-language-options">
@@ -952,8 +958,8 @@ function SupplierProfile() {
                         <Key size={20} />
                       </div>
                       <div className="sp-settings-info">
-                        <h3>Change Password</h3>
-                        <p>Update your account password</p>
+                        <h3>{t('supplierProfile.changePassword')}</h3>
+                        <p>{t('supplierProfile.updatePassword')}</p>
                       </div>
                     </div>
 
@@ -972,14 +978,14 @@ function SupplierProfile() {
                       )}
 
                       <div className="sp-form-group">
-                        <label>Current Password</label>
+                        <label>{t('supplierProfile.currentPassword')}</label>
                         <div className="sp-input-wrapper">
                           <input
                             type={showPasswords.current ? 'text' : 'password'}
                             name="currentPassword"
                             value={passwordForm.currentPassword}
                             onChange={handlePasswordInputChange}
-                            placeholder="Enter current password"
+                            placeholder={t('supplierProfile.enterCurrentPassword')}
                           />
                           <button
                             type="button"
@@ -992,14 +998,14 @@ function SupplierProfile() {
                       </div>
 
                       <div className="sp-form-group">
-                        <label>New Password</label>
+                        <label>{t('supplierProfile.newPassword')}</label>
                         <div className="sp-input-wrapper">
                           <input
                             type={showPasswords.new ? 'text' : 'password'}
                             name="newPassword"
                             value={passwordForm.newPassword}
                             onChange={handlePasswordInputChange}
-                            placeholder="Enter new password"
+                            placeholder={t('supplierProfile.enterNewPassword')}
                           />
                           <button
                             type="button"
@@ -1027,19 +1033,19 @@ function SupplierProfile() {
                             </div>
                             <div className="sp-requirements-grid">
                               <span className={`sp-req-item ${passwordForm.newPassword.length >= 8 ? 'sp-req-met' : ''}`}>
-                                <Check size={12} /> 8+ characters
+                                <Check size={12} /> {t('supplierProfile.characters')}
                               </span>
                               <span className={`sp-req-item ${/[A-Z]/.test(passwordForm.newPassword) ? 'sp-req-met' : ''}`}>
-                                <Check size={12} /> Uppercase
+                                <Check size={12} /> {t('supplierProfile.uppercase')}
                               </span>
                               <span className={`sp-req-item ${/[a-z]/.test(passwordForm.newPassword) ? 'sp-req-met' : ''}`}>
-                                <Check size={12} /> Lowercase
+                                <Check size={12} /> {t('supplierProfile.lowercase')}
                               </span>
                               <span className={`sp-req-item ${/[0-9]/.test(passwordForm.newPassword) ? 'sp-req-met' : ''}`}>
-                                <Check size={12} /> Number
+                                <Check size={12} /> {t('supplierProfile.number')}
                               </span>
                               <span className={`sp-req-item ${/[!@#$%^&*(),.?":{}|<>]/.test(passwordForm.newPassword) ? 'sp-req-met' : ''}`}>
-                                <Check size={12} /> Special char
+                                <Check size={12} /> {t('supplierProfile.specialChar')}
                               </span>
                             </div>
                           </>
@@ -1047,14 +1053,14 @@ function SupplierProfile() {
                       </div>
 
                       <div className="sp-form-group">
-                        <label>Confirm New Password</label>
+                        <label>{t('supplierProfile.confirmNewPassword')}</label>
                         <div className="sp-input-wrapper">
                           <input
                             type={showPasswords.confirm ? 'text' : 'password'}
                             name="confirmPassword"
                             value={passwordForm.confirmPassword}
                             onChange={handlePasswordInputChange}
-                            placeholder="Confirm new password"
+                            placeholder={t('supplierProfile.confirmPasswordPlaceholder')}
                           />
                           <button
                             type="button"
@@ -1065,7 +1071,7 @@ function SupplierProfile() {
                           </button>
                         </div>
                         {passwordForm.confirmPassword && passwordForm.newPassword !== passwordForm.confirmPassword && (
-                          <span className="sp-input-error">Passwords do not match</span>
+                          <span className="sp-input-error">{t('supplierProfile.passwordsDoNotMatch')}</span>
                         )}
                       </div>
 
@@ -1076,7 +1082,7 @@ function SupplierProfile() {
                           onClick={() => setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })}
                           disabled={isChangingPassword}
                         >
-                          Cancel
+                          {t('supplierProfile.cancel')}
                         </button>
                         <button
                           type="submit"
@@ -1086,12 +1092,12 @@ function SupplierProfile() {
                           {isChangingPassword ? (
                             <>
                               <span className="sp-spinner"></span>
-                              Changing...
+                              {t('supplierProfile.changing')}
                             </>
                           ) : (
                             <>
                               <Lock size={16} />
-                              Change Password
+                              {t('supplierProfile.changePassword')}
                             </>
                           )}
                         </button>
@@ -1110,7 +1116,7 @@ function SupplierProfile() {
         <div className="sp-edit-modal-backdrop">
           <div className="sp-edit-modal-container sp-edit-compact">
             <div className="sp-edit-modal-header">
-              <h2 className="sp-edit-modal-title">Edit Profile</h2>
+              <h2 className="sp-edit-modal-title">{t('supplierProfile.editProfile')}</h2>
               <button onClick={() => setIsEditModalOpen(false)} className="sp-edit-close-btn">
                 <X size={18} />
               </button>
@@ -1131,12 +1137,12 @@ function SupplierProfile() {
                   </div>
                   <div className="sp-edit-upload-actions">
                     <label className="sp-edit-upload-link">
-                      {profileImage ? 'Change' : 'Upload Logo'}
+                      {profileImage ? t('supplierProfile.change') : t('supplierProfile.uploadLogo')}
                       <input type="file" accept="image/*" onChange={handleImageSelect} hidden />
                     </label>
                     {(profileImage || profileImagePreview) && (
                       <button type="button" className="sp-edit-remove-link" onClick={handleRemoveImage}>
-                        Remove
+                        {t('supplierProfile.remove')}
                       </button>
                     )}
                   </div>
@@ -1147,12 +1153,12 @@ function SupplierProfile() {
                   </div>
                   <div className="sp-edit-upload-actions">
                     <label className="sp-edit-upload-link">
-                      {catalogFile ? catalogFile.name.substring(0, 15) + '...' : 'Upload Catalog'}
+                      {catalogFile ? catalogFile.name.substring(0, 15) + '...' : t('supplierProfile.uploadCatalog')}
                       <input type="file" accept="application/pdf" onChange={handleCatalogSelect} hidden />
                     </label>
                     {catalogFile && (
                       <button type="button" className="sp-edit-remove-link" onClick={() => setCatalogFile(null)}>
-                        Remove
+                        {t('supplierProfile.remove')}
                       </button>
                     )}
                   </div>
@@ -1162,29 +1168,29 @@ function SupplierProfile() {
               {/* Form Grid */}
               <div className="sp-edit-form-grid">
                 <div className="sp-edit-field sp-edit-full">
-                  <label>Company Name <span>*</span></label>
+                  <label>{t('supplierProfile.companyName')} <span>*</span></label>
                   <input
                     type="text"
                     name="company_name"
                     value={formData.company_name}
                     onChange={handleInputChange}
-                    placeholder="Company name"
+                    placeholder={t('supplierProfile.companyName')}
                   />
                 </div>
 
                 <div className="sp-edit-field">
-                  <label>Business License <span>*</span></label>
+                  <label>{t('supplierProfile.businessLicense')} <span>*</span></label>
                   <input
                     type="text"
                     name="business_license"
                     value={formData.business_license}
                     onChange={handleInputChange}
-                    placeholder="License number"
+                    placeholder={t('supplierProfile.licenseNumber')}
                   />
                 </div>
 
                 <div className="sp-edit-field">
-                  <label>Years in Business</label>
+                  <label>{t('supplierProfile.yearsInBusiness')}</label>
                   <input
                     type="number"
                     name="years_in_business"
@@ -1196,7 +1202,7 @@ function SupplierProfile() {
                 </div>
 
                 <div className="sp-edit-field">
-                  <label>Phone</label>
+                  <label>{t('supplierProfile.phone')}</label>
                   <input
                     type="tel"
                     name="phone"
@@ -1207,7 +1213,7 @@ function SupplierProfile() {
                 </div>
 
                 <div className="sp-edit-field">
-                  <label>Email</label>
+                  <label>{t('supplierProfile.email')}</label>
                   <input
                     type="email"
                     name="email"
@@ -1218,7 +1224,7 @@ function SupplierProfile() {
                 </div>
 
                 <div className="sp-edit-field sp-edit-full">
-                  <label>Website</label>
+                  <label>{t('supplierProfile.website')}</label>
                   <input
                     type="url"
                     name="website"
@@ -1229,12 +1235,12 @@ function SupplierProfile() {
                 </div>
 
                 <div className="sp-edit-field sp-edit-full">
-                  <label>Business Address <span>*</span></label>
+                  <label>{t('supplierProfile.businessAddress')} <span>*</span></label>
                   <textarea
                     name="address"
                     value={formData.address}
                     onChange={handleInputChange}
-                    placeholder="Full business address"
+                    placeholder={t('supplierProfile.fullBusinessAddress')}
                     rows="2"
                   />
                 </div>
@@ -1243,7 +1249,7 @@ function SupplierProfile() {
               {/* Delivery Areas - Compact */}
               <div className="sp-edit-delivery-compact">
                 <div className="sp-edit-delivery-header">
-                  <label>Delivery Areas</label>
+                  <label>{t('supplierProfile.deliveryAreas')}</label>
                   <span className="sp-edit-count">{formData.delivery_areas.length}</span>
                 </div>
                 <div className="sp-edit-delivery-input">
@@ -1252,7 +1258,7 @@ function SupplierProfile() {
                     value={newDeliveryArea}
                     onChange={(e) => setNewDeliveryArea(e.target.value)}
                     onKeyPress={handleDeliveryAreaKeyPress}
-                    placeholder="Add area..."
+                    placeholder={t('supplierProfile.addArea')}
                   />
                   <button type="button" onClick={addDeliveryArea} disabled={!newDeliveryArea.trim()}>
                     <Plus size={16} />
@@ -1275,10 +1281,10 @@ function SupplierProfile() {
 
             <div className="sp-edit-modal-footer">
               <button onClick={() => setIsEditModalOpen(false)} className="sp-edit-btn-cancel" disabled={isUpdating}>
-                Cancel
+                {t('supplierProfile.cancel')}
               </button>
               <button onClick={handleSubmit} className="sp-edit-btn-save" disabled={isUpdating}>
-                {isUpdating ? 'Saving...' : 'Save Changes'}
+                {isUpdating ? t('supplierProfile.saving') : t('supplierProfile.saveChanges')}
               </button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Nav from '../../components/Nav';
 import '../../styles/manager/submissions.css'
+import { useLanguage } from '../../contexts/LanguageContext';
 import {
   Search,
   Calendar,
@@ -26,6 +27,7 @@ import StripeConnectModal from '../../components/StripeConnectModal';
 import { getConnectStatus } from '../../utils/stripeConnectApi';
 
 const SubmittedBids = () => {
+  const { t, language } = useLanguage();
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const [bids, setBids] = useState({ all: [], pending: [], accepted: [], declined: [] });
   const [summary, setSummary] = useState({ total: 0, pending: 0, accepted: 0, declined: 0 });
@@ -138,7 +140,8 @@ const SubmittedBids = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    const locale = language === 'fr' ? 'fr-FR' : 'en-US';
+    return new Date(dateString).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -159,12 +162,12 @@ const SubmittedBids = () => {
     const date = new Date(dateString);
     const diffInMs = now - date;
     const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-    
-    if (diffInDays === 0) return 'Today';
-    if (diffInDays === 1) return '1 day ago';
-    if (diffInDays < 7) return `${diffInDays} days ago`;
-    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`;
-    return `${Math.floor(diffInDays / 30)} months ago`;
+
+    if (diffInDays === 0) return t('submittedBids.today');
+    if (diffInDays === 1) return t('submittedBids.oneDayAgo');
+    if (diffInDays < 7) return `${diffInDays} ${t('submittedBids.daysAgo')}`;
+    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} ${t('submittedBids.weeksAgo')}`;
+    return `${Math.floor(diffInDays / 30)} ${t('submittedBids.monthsAgo')}`;
   };
 
   const getCurrentBids = () => {
@@ -362,7 +365,7 @@ const SubmittedBids = () => {
         <div className="subs-submissions-content">
           <div className="subs-empty-state">
             <XCircle size={48} />
-            <h3>Error Loading Bids</h3>
+            <h3>{t('submittedBids.errorLoading')}</h3>
             <p>{error}</p>
           </div>
         </div>
@@ -378,14 +381,14 @@ const SubmittedBids = () => {
         <header className="subs-page-header">
           <div className="subs-header-left">
             <div className="subs-header-title-group">
-              <h1>SUBMITTED BIDS</h1>
-              <span className="subs-submission-count">{summary.total} bids</span>
+              <h1>{t('submittedBids.title')}</h1>
+              <span className="subs-submission-count">{summary.total} {t('submittedBids.bids')}</span>
             </div>
           </div>
           <div className="subs-header-actions">
             <div className="subs-btn subs-btn-secondary">
               <AlertCircle size={18} />
-              <span>{summary.pending} Pending</span>
+              <span>{summary.pending} {t('submittedBids.pending')}</span>
             </div>
           </div>
         </header>
@@ -396,28 +399,28 @@ const SubmittedBids = () => {
             className={`subs-tab-btn ${activeTab === 'all' ? 'active' : ''}`}
             onClick={() => setActiveTab('all')}
           >
-            All Bids
+            {t('submittedBids.allBids')}
             <span className="subs-tab-count">{summary.total}</span>
           </button>
           <button
             className={`subs-tab-btn ${activeTab === 'pending' ? 'active' : ''}`}
             onClick={() => setActiveTab('pending')}
           >
-            Pending
+            {t('submittedBids.pending')}
             <span className="subs-tab-count">{summary.pending}</span>
           </button>
           <button
             className={`subs-tab-btn ${activeTab === 'accepted' ? 'active' : ''}`}
             onClick={() => setActiveTab('accepted')}
           >
-            Accepted
+            {t('submittedBids.accepted')}
             <span className="subs-tab-count">{summary.accepted}</span>
           </button>
           <button
             className={`subs-tab-btn ${activeTab === 'declined' ? 'active' : ''}`}
             onClick={() => setActiveTab('declined')}
           >
-            Declined
+            {t('submittedBids.declined')}
             <span className="subs-tab-count">{summary.declined}</span>
           </button>
         </div>
@@ -428,7 +431,7 @@ const SubmittedBids = () => {
             <Search size={18} />
             <input
               type="text"
-              placeholder="Search by job title, category, or location..."
+              placeholder={t('submittedBids.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -444,13 +447,13 @@ const SubmittedBids = () => {
         {filteredBids.length === 0 ? (
           <div className="subs-empty-state">
             <MessageSquare size={48} />
-            <h3>No bids found</h3>
+            <h3>{t('submittedBids.noBidsFound')}</h3>
             <p>
               {searchTerm
-                ? 'Try adjusting your search criteria'
+                ? t('submittedBids.adjustSearch')
                 : activeTab === 'all'
-                ? 'You haven\'t submitted any bids yet'
-                : `No ${activeTab} bids at the moment`
+                ? t('submittedBids.noSubmittedBids')
+                : t('submittedBids.noStatusBids', { status: t(`submittedBids.${activeTab}`) })
               }
             </p>
           </div>
@@ -460,10 +463,10 @@ const SubmittedBids = () => {
               const getStatusInfo = (status) => {
                 const normalizedStatus = status?.toLowerCase();
                 const statusMap = {
-                  pending: { class: "status-pending", icon: AlertCircle, label: "Pending" },
-                  accepted: { class: "status-accepted", icon: CheckCircle, label: "Accepted" },
-                  approved: { class: "status-accepted", icon: CheckCircle, label: "Approved" },
-                  declined: { class: "status-declined", icon: XCircle, label: "Declined" },
+                  pending: { class: "status-pending", icon: AlertCircle, label: t('submittedBids.pending') },
+                  accepted: { class: "status-accepted", icon: CheckCircle, label: t('submittedBids.accepted') },
+                  approved: { class: "status-accepted", icon: CheckCircle, label: t('submittedBids.approved') },
+                  declined: { class: "status-declined", icon: XCircle, label: t('submittedBids.declined') },
                 };
                 return statusMap[normalizedStatus] || { class: "status-pending", icon: Clock, label: status };
               };
@@ -480,7 +483,7 @@ const SubmittedBids = () => {
                     </div>
                     <div className="subs-card-top-right">
                       {bid.urgency && bid.urgency.includes('Urgent') && (
-                        <span className="subs-urgency urgent">Urgent</span>
+                        <span className="subs-urgency urgent">{t('submittedBids.urgent')}</span>
                       )}
                       <span className="subs-bid-amount">{formatCurrency(bid.amount)}</span>
                     </div>
@@ -510,7 +513,7 @@ const SubmittedBids = () => {
                   {/* Action Row */}
                   <div className="subs-card-actions">
                     <button className="subs-details-btn" onClick={(e) => { e.stopPropagation(); handleViewDetails(bid); }}>
-                      Details
+                      {t('submittedBids.details')}
                       <ChevronRight size={14} />
                     </button>
 
@@ -531,7 +534,7 @@ const SubmittedBids = () => {
           <div className="bid-modal-overlay" onClick={() => setShowDetailsModal(false)}>
             <div className="bid-modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="bid-modal-header">
-                <h2>Bid Details</h2>
+                <h2>{t('submittedBids.bidDetails')}</h2>
                 <button
                   className="bid-modal-close"
                   onClick={() => setShowDetailsModal(false)}
@@ -545,40 +548,40 @@ const SubmittedBids = () => {
                 <section className="bid-modal-section">
                   <h3 className="bid-section-title">
                     <FileText size={20} />
-                    Job Information
+                    {t('submittedBids.jobInformation')}
                   </h3>
                   <div className="bid-info-grid">
                     <div className="bid-info-item">
-                      <label>Job Title</label>
+                      <label>{t('submittedBids.jobTitle')}</label>
                       <p>{selectedBid.job_title}</p>
                     </div>
                     <div className="bid-info-item">
-                      <label>Category</label>
+                      <label>{t('submittedBids.category')}</label>
                       <p>{selectedBid.category}</p>
                     </div>
                     <div className="bid-info-item">
                       <label>
-                        <Clock size={14} /> Urgency
+                        <Clock size={14} /> {t('submittedBids.urgency')}
                       </label>
                       <p>{selectedBid.urgency}</p>
                     </div>
                     {selectedBid.due_date && (
                       <div className="bid-info-item">
                         <label>
-                          <Calendar size={14} /> Due Date
+                          <Calendar size={14} /> {t('submittedBids.dueDate')}
                         </label>
                         <p>{formatDate(selectedBid.due_date)}</p>
                       </div>
                     )}
                   </div>
                   <div className="bid-info-item" style={{ marginTop: '1rem' }}>
-                    <label>Description</label>
+                    <label>{t('submittedBids.description')}</label>
                     <p>{selectedBid.job_description}</p>
                   </div>
                   {(selectedBid.property_address || selectedBid.city) && (
                     <div className="bid-info-item" style={{ marginTop: '1rem' }}>
                       <label>
-                        <MapPin size={14} /> Property Location
+                        <MapPin size={14} /> {t('submittedBids.propertyLocation')}
                       </label>
                       <p>{selectedBid.property_address}{selectedBid.city ? `, ${selectedBid.city}` : ''}</p>
                     </div>
@@ -590,12 +593,12 @@ const SubmittedBids = () => {
                   <section className="bid-modal-section">
                     <h3 className="bid-section-title">
                       <User size={20} />
-                      Property Manager
+                      {t('submittedBids.propertyManager')}
                     </h3>
                     <div
                       className="bid-manager-card"
                       onClick={() => handleViewManagerProfile(selectedBid)}
-                      title="View property manager profile"
+                      title={t('submittedBids.viewManagerProfile')}
                     >
                       <div className="bid-manager-avatar">
                         {selectedBid.manager_company_name?.charAt(0) || selectedBid.manager_first_name?.charAt(0) || 'P'}
@@ -622,11 +625,11 @@ const SubmittedBids = () => {
                 <section className="bid-modal-section bid-modal-highlight">
                   <h3 className="bid-section-title">
                     <DollarSign size={20} />
-                    Your Bid Information
+                    {t('submittedBids.yourBidInformation')}
                   </h3>
                   <div className="bid-info-display">
                     <div className="bid-amount-display">
-                      <label>Bid Amount</label>
+                      <label>{t('submittedBids.bidAmount')}</label>
                       <p className="amount">
                         {formatCurrency(selectedBid.amount)}
                       </p>
@@ -634,7 +637,7 @@ const SubmittedBids = () => {
                     {selectedBid.message && (
                       <div className="bid-message">
                         <label>
-                          <MessageSquare size={14} /> Your Proposal Message
+                          <MessageSquare size={14} /> {t('submittedBids.yourProposalMessage')}
                         </label>
                         <p>{selectedBid.message}</p>
                       </div>
@@ -642,12 +645,12 @@ const SubmittedBids = () => {
                     <div className="bid-info-grid" style={{ marginTop: '1rem' }}>
                       <div className="bid-info-item">
                         <label>
-                          <Calendar size={14} /> Submitted On
+                          <Calendar size={14} /> {t('submittedBids.submittedOn')}
                         </label>
                         <p>{formatDate(selectedBid.created_at)}</p>
                       </div>
                       <div className="bid-info-item">
-                        <label>Status</label>
+                        <label>{t('submittedBids.status')}</label>
                         <span className={`bid-status-badge-modal status-${selectedBid.status}`}>
                           {getStatusLabel(selectedBid.status)}
                         </span>
@@ -668,14 +671,14 @@ const SubmittedBids = () => {
                     }}
                   >
                     <MessageSquare size={16} />
-                    Message Manager
+                    {t('submittedBids.messageManager')}
                   </button>
                 )}
                 <button
                   className="bid-btn-decline"
                   onClick={() => setShowDetailsModal(false)}
                 >
-                  Close
+                  {t('submittedBids.close')}
                 </button>
               </div>
             </div>

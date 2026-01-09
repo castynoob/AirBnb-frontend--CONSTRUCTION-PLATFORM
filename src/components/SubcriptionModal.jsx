@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import '../styles/entrepreneur/subscriptionmodal.css'
 import logo from '../assets/logo.png'
 import SubscriptionPaymentForm from '../components/SubscriptionPaymentModal'
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function SubscriptionModal({token, refresher, onClose, showCloseButton = true}) {
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(true);
   const [showPayment, setShowPayment] = useState(false)
   const [planType, setPlanType] = useState('')
@@ -17,11 +19,11 @@ export default function SubscriptionModal({token, refresher, onClose, showCloseB
   };
 
   const features = [
-    { name: 'Browse jobs', noSub: false, trialBasic: true, trialPremium: true, activeBasic: true, activePremium: true },
-    { name: 'View job details', noSub: false, trialBasic: true, trialPremium: true, activeBasic: true, activePremium: true },
-    { name: 'Submit bids', noSub: false, trialBasic: '30 max', trialPremium: 'unlimited', activeBasic: '30 max', activePremium: 'unlimited' },
-    { name: 'Unlock budget ($20)', noSub: false, trialBasic: true, trialPremium: true, activeBasic: true, activePremium: true },
-    { name: 'Message (approved)', noSub: false, trialBasic: true, trialPremium: true, activeBasic: true, activePremium: true },
+    { name: t('subscriptionModal.browseJobs'), noSub: false, trialBasic: true, trialPremium: true, activeBasic: true, activePremium: true },
+    { name: t('subscriptionModal.viewJobDetails'), noSub: false, trialBasic: true, trialPremium: true, activeBasic: true, activePremium: true },
+    { name: t('subscriptionModal.submitBids'), noSub: false, trialBasic: t('subscriptionModal.max30'), trialPremium: t('subscriptionModal.unlimited'), activeBasic: t('subscriptionModal.max30'), activePremium: t('subscriptionModal.unlimited') },
+    { name: t('subscriptionModal.unlockBudget'), noSub: false, trialBasic: true, trialPremium: true, activeBasic: true, activePremium: true },
+    { name: t('subscriptionModal.messageApproved'), noSub: false, trialBasic: true, trialPremium: true, activeBasic: true, activePremium: true },
   ];
 
   const handleSubsciption = (type) => {
@@ -40,7 +42,7 @@ export default function SubscriptionModal({token, refresher, onClose, showCloseB
     return (
       <div className="reopen-container">
         <button className="reopen-btn" onClick={() => setIsOpen(true)}>
-          View Subscription Plans
+          {t('subscriptionModal.viewSubscriptionPlans')}
         </button>
       </div>
     );
@@ -58,7 +60,7 @@ export default function SubscriptionModal({token, refresher, onClose, showCloseB
 
         <div className="modal-content subs">
           {showCloseButton && (
-            <button className="subs-close-btn" onClick={handleClose} aria-label="Close modal">
+            <button className="subs-close-btn" onClick={handleClose} aria-label={t('subscriptionModal.closeModal')}>
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -67,9 +69,9 @@ export default function SubscriptionModal({token, refresher, onClose, showCloseB
           <div className="modal-header">
             <img src={logo} alt="INTERVOS Logo" className="logo" />
             <div className="sub-message">
-              <h2>Choose Your Subscription Plan</h2>
+              <h2>{t('subscriptionModal.title')}</h2>
               <p className="subtitle">
-                Select the plan that fits your business needs and start bidding on projects today
+                {t('subscriptionModal.subtitle')}
               </p>
             </div>
           </div>
@@ -78,123 +80,123 @@ export default function SubscriptionModal({token, refresher, onClose, showCloseB
             {/* Basic Plan */}
               <div className="plan-card">
                 <div className="plan-header">
-                  <div className="plan-label">Basic Plan</div>
+                  <div className="plan-label">{t('subscriptionModal.basicPlan')}</div>
                   <div className="price">
                     <span className="currency">$</span>
-                    <span className="amount">250</span>
-                    <span className="period">/month</span>
+                    <span className="amount">{t('subscriptionModal.basicPrice')}</span>
+                    <span className="period">{t('subscriptionModal.basicPeriod')}</span>
                   </div>
                   <div className="plan-description">
-                    Essential features for contractors
+                    {t('subscriptionModal.basicDescription')}
                   </div>
                 </div>
-                
+
                 <ul className="features-list">
                   <li className="feature-item">
                     <svg width="20" height="20" viewBox="0 0 20 20" className="feature-icon">
                       <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
                       <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span>Browse & view jobs</span>
+                    <span>{t('subscriptionModal.browseViewJobs')}</span>
                   </li>
                   <li className="feature-item">
                     <svg width="20" height="20" viewBox="0 0 20 20" className="feature-icon">
                       <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
                       <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span>Submit up to 30 bids</span>
+                    <span>{t('subscriptionModal.submitUpTo30Bids')}</span>
                   </li>
                   <li className="feature-item">
                     <svg width="20" height="20" viewBox="0 0 20 20" className="feature-icon">
                       <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
                       <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span>Unlock budgets</span>
+                    <span>{t('subscriptionModal.unlockBudgets')}</span>
                   </li>
                   <li className="feature-item">
                     <svg width="20" height="20" viewBox="0 0 20 20" className="feature-icon">
                       <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
                       <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span>Message approved contacts</span>
+                    <span>{t('subscriptionModal.messageApprovedContacts')}</span>
                   </li>
                 </ul>
-                
-                <button className="cta-btn btn-basic" onClick={() => handleSubsciption('basic')}>Start Basic Trial</button>
+
+                <button className="cta-btn btn-basic" onClick={() => handleSubsciption('basic')}>{t('subscriptionModal.startBasicTrial')}</button>
               </div>
             
 
               <div className="plan-card premium">
-                <div className="plan-badge">RECOMMENDED</div>
+                <div className="plan-badge">{t('subscriptionModal.recommended')}</div>
 
                 <div className="plan-header">
-                  <div className="plan-label">Premium Plan</div>
+                  <div className="plan-label">{t('subscriptionModal.premiumPlan')}</div>
                   <div className="price">
                     <span className="currency">$</span>
-                    <span className="amount">429</span>
-                    <span className="period">/month</span>
+                    <span className="amount">{t('subscriptionModal.premiumPrice')}</span>
+                    <span className="period">{t('subscriptionModal.premiumPeriod')}</span>
                   </div>
                   <div className="plan-description">
-                    Unlimited bidding for growing businesses
+                    {t('subscriptionModal.premiumDescription')}
                   </div>
                 </div>
-                
+
                 <ul className="features-list">
                   <li className="feature-item">
                     <svg width="20" height="20" viewBox="0 0 20 20" className="feature-icon">
                       <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
                       <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span>Browse & view jobs</span>
+                    <span>{t('subscriptionModal.browseViewJobs')}</span>
                   </li>
                   <li className="feature-item highlight">
                     <svg width="20" height="20" viewBox="0 0 20 20" className="feature-icon">
                       <circle cx="10" cy="10" r="10" fill="#00A5A9"/>
                       <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span>Submit unlimited bids</span>
+                    <span>{t('subscriptionModal.submitUnlimitedBids')}</span>
                   </li>
                   <li className="feature-item">
                     <svg width="20" height="20" viewBox="0 0 20 20" className="feature-icon">
                       <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
                       <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span>Unlock budgets</span>
+                    <span>{t('subscriptionModal.unlockBudgets')}</span>
                   </li>
                   <li className="feature-item">
                     <svg width="20" height="20" viewBox="0 0 20 20" className="feature-icon">
                       <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
                       <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span>Message approved contacts</span>
+                    <span>{t('subscriptionModal.messageApprovedContacts')}</span>
                   </li>
                   <li className="feature-item highlight">
                     <svg width="20" height="20" viewBox="0 0 20 20" className="feature-icon">
                       <circle cx="10" cy="10" r="10" fill="#00A5A9"/>
                       <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span>Priority support</span>
+                    <span>{t('subscriptionModal.prioritySupport')}</span>
                   </li>
                 </ul>
-                
-                <button className="cta-btn btn-premium" onClick={() => handleSubsciption('premium')} >Start Premium Trial</button>
+
+                <button className="cta-btn btn-premium" onClick={() => handleSubsciption('premium')}>{t('subscriptionModal.startPremiumTrial')}</button>
               </div>
           </div>
 
           {/* Comparison Table */}
           <div className="comparison-section">
-            <h3 className="comparison-title">Detailed Feature Comparison</h3>
-            
+            <h3 className="comparison-title">{t('subscriptionModal.comparisonTitle')}</h3>
+
             <div className="table-wrapper">
               <table className="comparison-table">
                 <thead>
                   <tr>
-                    <th>Feature</th>
-                    <th>No Sub</th>
-                    <th>Trial Basic</th>
-                    <th>Trial Premium</th>
-                    <th>Active Basic</th>
-                    <th>Active Premium</th>
+                    <th>{t('subscriptionModal.feature')}</th>
+                    <th>{t('subscriptionModal.noSub')}</th>
+                    <th>{t('subscriptionModal.trialBasic')}</th>
+                    <th>{t('subscriptionModal.trialPremium')}</th>
+                    <th>{t('subscriptionModal.activeBasic')}</th>
+                    <th>{t('subscriptionModal.activePremium')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -320,7 +322,7 @@ export default function SubscriptionModal({token, refresher, onClose, showCloseB
           </div>
 
           <div className="disclaimer">
-            <p>All plans include a 14-day free trial. No credit card required. Cancel anytime.</p>
+            <p>{t('subscriptionModal.disclaimer')}</p>
           </div>
         </div>
       </div>

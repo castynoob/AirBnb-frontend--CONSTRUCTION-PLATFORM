@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../contexts/LanguageContext';
 import {
   MapPin,
   Calendar,
@@ -81,6 +82,7 @@ function CustomSelect({ value, onChange, options, icon: Icon, placeholder }) {
 
 function SupplierList() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [suppliers, setSuppliers] = useState([]);
   const [filteredSuppliers, setFilteredSuppliers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -148,19 +150,19 @@ function SupplierList() {
     'Hardware & Tools'
   ];
 
-  const yearsOptions = [
-    { label: 'All', value: 'All' },
-    { label: 'New (0-2 years)', value: '0-2' },
-    { label: 'Established (3-5 years)', value: '3-5' },
-    { label: 'Experienced (6-10 years)', value: '6-10' },
-    { label: 'Veteran (10+ years)', value: '10+' }
-  ];
+  const yearsOptions = useMemo(() => [
+    { label: t('supplierList.all'), value: 'All' },
+    { label: t('supplierList.yearsNew'), value: '0-2' },
+    { label: t('supplierList.yearsEstablished'), value: '3-5' },
+    { label: t('supplierList.yearsExperienced'), value: '6-10' },
+    { label: t('supplierList.yearsVeteran'), value: '10+' }
+  ], [t]);
 
-  const certificationOptions = [
-    { label: 'All', value: 'All' },
-    { label: 'Certified Only', value: 'certified' },
-    { label: 'Non-Certified', value: 'non-certified' }
-  ];
+  const certificationOptions = useMemo(() => [
+    { label: t('supplierList.all'), value: 'All' },
+    { label: t('supplierList.certifiedOnly'), value: 'certified' },
+    { label: t('supplierList.nonCertified'), value: 'non-certified' }
+  ], [t]);
 
   useEffect(() => {
     fetchSuppliers();
@@ -330,11 +332,11 @@ function SupplierList() {
     const file = e.target.files[0];
     if (file) {
       if (file.type !== 'application/pdf') {
-        toast.error('Please select a PDF file');
+        toast.error(t('supplierList.selectPdfFile'));
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
-        toast.error('File size should not exceed 10MB');
+        toast.error(t('supplierList.fileSizeLimit'));
         return;
       }
       setRequestFile(file);
@@ -343,11 +345,11 @@ function SupplierList() {
 
   const handleSubmitRequest = async () => {
     if (requestType === 'text' && !requestDetails.trim()) {
-      toast.error('Please enter your material request details');
+      toast.error(t('supplierList.enterRequestDetails'));
       return;
     }
     if (requestType === 'file' && !requestFile) {
-      toast.error('Please upload a PDF file with your request details');
+      toast.error(t('supplierList.uploadPdfRequest'));
       return;
     }
 
@@ -381,7 +383,7 @@ function SupplierList() {
           throw new Error(errorData.error || errorData.message || 'Failed to submit request');
         }
 
-        toast.success('Material request submitted successfully! The supplier will review and create an invoice for you.');
+        toast.success(t('supplierList.requestSubmitted'));
         closeRequestModal();
         // Refresh requests list
         fetchMyRequests();
@@ -432,7 +434,7 @@ function SupplierList() {
       setShowProfileModal(true);
     } catch (error) {
       console.error('Error fetching supplier profile:', error);
-      toast.error('Failed to load supplier profile');
+      toast.error(t('supplierList.failedLoadProfile'));
     } finally {
       setIsLoadingProfile(false);
     }
@@ -520,8 +522,8 @@ function SupplierList() {
         <header className="sl-page-header">
           <div className="sl-header-left">
             <div className="sl-header-title-group">
-              <h1>Material Suppliers</h1>
-              <span className="sl-supplier-count">{filteredSuppliers.length} suppliers</span>
+              <h1>{t('supplierList.title')}</h1>
+              <span className="sl-supplier-count">{filteredSuppliers.length} {t('supplierList.suppliers')}</span>
             </div>
           </div>
           <div className="sl-header-actions">
@@ -530,11 +532,11 @@ function SupplierList() {
               onClick={() => setShowMyRequestsModal(true)}
             >
               <Send size={16} />
-              <span>My Requests {myRequests.length > 0 && `(${myRequests.length})`}</span>
+              <span>{t('supplierList.myRequests')} {myRequests.length > 0 && `(${myRequests.length})`}</span>
             </button>
             <div className="sl-header-btn sl-header-btn-secondary">
               <Package size={16} />
-              <span>{suppliers.length} Total</span>
+              <span>{suppliers.length} {t('supplierList.total')}</span>
             </div>
           </div>
         </header>
@@ -545,7 +547,7 @@ function SupplierList() {
             <Search size={18} />
             <input
               type="text"
-              placeholder="Search by company name, license, email, or phone..."
+              placeholder={t('supplierList.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -561,7 +563,7 @@ function SupplierList() {
             onClick={() => setShowFilters(!showFilters)}
           >
             <Filter size={18} />
-            Filters
+            {t('supplierList.filters')}
             <ChevronDown size={16} className={showFilters ? 'rotated' : ''} />
           </button>
         </div>
@@ -571,46 +573,46 @@ function SupplierList() {
           <div className="sl-filters-panel">
             <div className="sl-filters-grid">
               <div className="sl-filter-item">
-                <label>Location</label>
+                <label>{t('supplierList.location')}</label>
                 <CustomSelect
                   value={selectedArea}
                   onChange={setSelectedArea}
                   options={areaOptions}
                   icon={MapPin}
-                  placeholder="Select area"
+                  placeholder={t('supplierList.location')}
                 />
               </div>
 
               <div className="sl-filter-item">
-                <label>Material Type</label>
+                <label>{t('supplierList.materialType')}</label>
                 <CustomSelect
                   value={selectedMaterial}
                   onChange={setSelectedMaterial}
                   options={materialOptions}
                   icon={Package}
-                  placeholder="Select material"
+                  placeholder={t('supplierList.materialType')}
                 />
               </div>
 
               <div className="sl-filter-item">
-                <label>Years in Business</label>
+                <label>{t('supplierList.yearsInBusiness')}</label>
                 <CustomSelect
                   value={selectedYearsFilter}
                   onChange={setSelectedYearsFilter}
                   options={yearsOptions}
                   icon={Briefcase}
-                  placeholder="Select experience"
+                  placeholder={t('supplierList.yearsInBusiness')}
                 />
               </div>
 
               <div className="sl-filter-item">
-                <label>Certification</label>
+                <label>{t('supplierList.certification')}</label>
                 <CustomSelect
                   value={certificationFilter}
                   onChange={setCertificationFilter}
                   options={certificationOptions}
                   icon={Shield}
-                  placeholder="Select certification"
+                  placeholder={t('supplierList.certification')}
                 />
               </div>
             </div>
@@ -625,7 +627,7 @@ function SupplierList() {
               }}
             >
               <X size={16} />
-              Clear All Filters
+              {t('supplierList.clearAllFilters')}
             </button>
           </div>
         )}
@@ -634,8 +636,8 @@ function SupplierList() {
         {filteredSuppliers.length === 0 ? (
           <div className="sl-empty-state">
             <Package size={48} />
-            <h3>No suppliers found</h3>
-            <p>Try adjusting your search or filter criteria</p>
+            <h3>{t('supplierList.noSuppliersFound')}</h3>
+            <p>{t('supplierList.adjustFilters')}</p>
           </div>
         ) : (
           <div className="sl-suppliers-grid">
@@ -652,17 +654,17 @@ function SupplierList() {
                       {supplier.business_license ? (
                         <span className="sl-cert-badge certified">
                           <Award size={10} />
-                          Certified
+                          {t('supplierList.certified')}
                         </span>
                       ) : (
                         <span className="sl-cert-badge not-certified">
                           <Shield size={10} />
-                          Not Certified
+                          {t('supplierList.notCertified')}
                         </span>
                       )}
                       <span className="sl-years-badge">
                         <Calendar size={10} />
-                        {supplier.years_in_business || 0} yrs
+                        {supplier.years_in_business || 0} {t('supplierList.yrs')}
                       </span>
                     </div>
                   </div>
@@ -690,7 +692,7 @@ function SupplierList() {
                     <div className="sl-delivery-section">
                       <div className="sl-section-label">
                         <Truck size={12} />
-                        Delivery Areas
+                        {t('supplierList.deliveryAreas')}
                       </div>
                       <div className="sl-area-tags">
                         {supplier.delivery_areas.slice(0, 3).map((area, idx) => (
@@ -710,7 +712,7 @@ function SupplierList() {
                     className="sl-action-btn sl-details-btn"
                     onClick={(e) => { e.stopPropagation(); handleViewSupplierProfile(supplier); }}
                   >
-                    Details
+                    {t('supplierList.details')}
                     <ChevronRight size={14} />
                   </button>
 
@@ -718,7 +720,7 @@ function SupplierList() {
                     <button
                       className="sl-action-btn sl-catalog-btn"
                       onClick={(e) => { e.stopPropagation(); handleDownloadCatalog(supplier.catalog_pdf_url); }}
-                      title="View Catalog"
+                      title={t('supplierList.viewCatalog')}
                     >
                       <FileText size={14} />
                     </button>
@@ -728,7 +730,7 @@ function SupplierList() {
                     <button
                       className="sl-action-btn sl-chat-btn"
                       onClick={(e) => { e.stopPropagation(); handleChatWithSupplier(supplier); }}
-                      title="Chat with Supplier"
+                      title={t('supplierList.chatWithSupplier')}
                     >
                       <MessageSquare size={14} />
                     </button>
@@ -739,7 +741,7 @@ function SupplierList() {
                     onClick={(e) => { e.stopPropagation(); openRequestModal(supplier); }}
                   >
                     <Package size={14} />
-                    Request
+                    {t('supplierList.request')}
                   </button>
                 </div>
               </div>
@@ -764,20 +766,20 @@ function SupplierList() {
               <section className="bid-modal-section">
                 <h3 className="bid-section-title">
                   <Package size={20} />
-                  Company Information
+                  {t('supplierList.companyInformation')}
                 </h3>
                 <div className="bid-info-grid">
                   <div className="bid-info-item">
-                    <label>Years in Business</label>
-                    <p>{selectedSupplier.years_in_business || 0} years</p>
+                    <label>{t('supplierList.yearsInBusiness')}</label>
+                    <p>{selectedSupplier.years_in_business || 0} {t('supplierList.years')}</p>
                   </div>
                   <div className="bid-info-item">
-                    <label>Certification</label>
-                    <p>{selectedSupplier.business_license ? 'Certified' : 'Not Certified'}</p>
+                    <label>{t('supplierList.certification')}</label>
+                    <p>{selectedSupplier.business_license ? t('supplierList.certified') : t('supplierList.notCertified')}</p>
                   </div>
                   {selectedSupplier.business_license && (
                     <div className="bid-info-item">
-                      <label>License Number</label>
+                      <label>{t('supplierList.licenseNumber')}</label>
                       <p>{selectedSupplier.business_license}</p>
                     </div>
                   )}
@@ -788,24 +790,24 @@ function SupplierList() {
               <section className="bid-modal-section bid-modal-highlight">
                 <h3 className="bid-section-title">
                   <Phone size={20} />
-                  Contact Information
+                  {t('supplierList.contactInformation')}
                 </h3>
                 <div className="bid-info-grid">
                   {selectedSupplier.phone && (
                     <div className="bid-info-item">
-                      <label><Phone size={14} /> Phone</label>
+                      <label><Phone size={14} /> {t('supplierList.phone')}</label>
                       <p>{selectedSupplier.phone}</p>
                     </div>
                   )}
                   {selectedSupplier.email && (
                     <div className="bid-info-item">
-                      <label><Mail size={14} /> Email</label>
+                      <label><Mail size={14} /> {t('supplierList.email')}</label>
                       <p>{selectedSupplier.email}</p>
                     </div>
                   )}
                   {selectedSupplier.website && (
                     <div className="bid-info-item">
-                      <label><Globe size={14} /> Website</label>
+                      <label><Globe size={14} /> {t('supplierList.website')}</label>
                       <a href={selectedSupplier.website} target="_blank" rel="noopener noreferrer" style={{ color: '#00a5a9' }}>
                         {selectedSupplier.website}
                       </a>
@@ -819,7 +821,7 @@ function SupplierList() {
                 <section className="bid-modal-section">
                   <h3 className="bid-section-title">
                     <MapPin size={20} />
-                    Delivery Areas
+                    {t('supplierList.deliveryAreas')}
                   </h3>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                     {selectedSupplier.delivery_areas.map((area, index) => (
@@ -842,7 +844,7 @@ function SupplierList() {
                 <section className="bid-modal-section">
                   <h3 className="bid-section-title">
                     <Package size={20} />
-                    Materials Supplied
+                    {t('supplierList.materialsSupplied')}
                   </h3>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                     {selectedSupplier.materials_supplied.map((material, index) => (
@@ -868,7 +870,7 @@ function SupplierList() {
                   onClick={() => handleDownloadCatalog(selectedSupplier.catalog_pdf_url)}
                 >
                   <FileText size={16} />
-                  View Catalog
+                  {t('supplierList.viewCatalog')}
                 </button>
               )}
               {canChatWithSupplier(selectedSupplier.id) && (
@@ -881,7 +883,7 @@ function SupplierList() {
                   style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', color: 'white', border: 'none' }}
                 >
                   <MessageSquare size={16} />
-                  Chat with Supplier
+                  {t('supplierList.chatWithSupplier')}
                 </button>
               )}
               <button
@@ -892,7 +894,7 @@ function SupplierList() {
                 }}
               >
                 <Package size={16} />
-                Request Materials
+                {t('supplierList.requestMaterials')}
               </button>
             </div>
           </div>
@@ -904,7 +906,7 @@ function SupplierList() {
         <div className="bid-modal-overlay" onClick={closeRequestModal}>
           <div className="bid-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="bid-modal-header">
-              <h2>Request Materials</h2>
+              <h2>{t('supplierList.requestMaterialsTitle')}</h2>
               <button className="bid-modal-close" onClick={closeRequestModal}>
                 <X size={24} />
               </button>
@@ -917,8 +919,7 @@ function SupplierList() {
                   {selectedSupplier.company_name}
                 </h3>
                 <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>
-                  Please review the supplier's catalog (if available) to identify specific materials and quantities needed.
-                  The supplier will create a custom invoice based on your request.
+                  {t('supplierList.supplierInstructions')}
                 </p>
               </section>
 
@@ -926,7 +927,7 @@ function SupplierList() {
               <section className="bid-modal-section">
                 <h3 className="bid-section-title">
                   <FileText size={20} />
-                  Submit Your Request As
+                  {t('supplierList.submitRequestAs')}
                 </h3>
                 <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
                   <button
@@ -936,7 +937,7 @@ function SupplierList() {
                     style={{ flex: 1 }}
                   >
                     <FileText size={16} />
-                    Text Description
+                    {t('supplierList.textDescription')}
                   </button>
                   <button
                     type="button"
@@ -945,7 +946,7 @@ function SupplierList() {
                     style={{ flex: 1 }}
                   >
                     <Upload size={16} />
-                    PDF Document
+                    {t('supplierList.pdfDocument')}
                   </button>
                 </div>
               </section>
@@ -953,11 +954,11 @@ function SupplierList() {
               {/* Text Input */}
               {requestType === 'text' && (
                 <section className="bid-modal-section">
-                  <h3 className="bid-section-title">Material Request Details</h3>
+                  <h3 className="bid-section-title">{t('supplierList.materialRequestDetails')}</h3>
                   <textarea
                     value={requestDetails}
                     onChange={(e) => setRequestDetails(e.target.value)}
-                    placeholder="Please specify the materials you need, quantities, and any special requirements...&#10;&#10;Example:&#10;- Cement: 50 bags&#10;- Steel bars: 100 pieces (10mm)&#10;- Sand: 5 cubic meters&#10;- Delivery needed by: [Date]"
+                    placeholder={t('supplierList.requestPlaceholder')}
                     rows="6"
                     style={{
                       width: '100%',
@@ -970,7 +971,7 @@ function SupplierList() {
                     }}
                   />
                   <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.5rem' }}>
-                    Be as specific as possible to receive an accurate quote
+                    {t('supplierList.beSpecific')}
                   </p>
                 </section>
               )}
@@ -978,7 +979,7 @@ function SupplierList() {
               {/* File Upload */}
               {requestType === 'file' && (
                 <section className="bid-modal-section">
-                  <h3 className="bid-section-title">Upload Request Document (PDF)</h3>
+                  <h3 className="bid-section-title">{t('supplierList.uploadRequestDocument')}</h3>
                   <div style={{
                     border: '2px dashed #e2e8f0',
                     borderRadius: '0.5rem',
@@ -990,10 +991,10 @@ function SupplierList() {
                       <label style={{ cursor: 'pointer', display: 'block' }}>
                         <Upload size={32} color="#94a3b8" />
                         <p style={{ margin: '0.5rem 0 0', color: '#64748b', fontSize: '0.875rem' }}>
-                          <span style={{ color: '#00a5a9', fontWeight: 500 }}>Click to upload</span> or drag and drop
+                          <span style={{ color: '#00a5a9', fontWeight: 500 }}>{t('supplierList.clickToUpload')}</span> {t('supplierList.orDragDrop')}
                         </p>
                         <p style={{ margin: '0.25rem 0 0', color: '#94a3b8', fontSize: '0.75rem' }}>
-                          PDF file up to 10MB
+                          {t('supplierList.pdfFileLimit')}
                         </p>
                         <input
                           type="file"
@@ -1039,7 +1040,7 @@ function SupplierList() {
                 onClick={closeRequestModal}
                 disabled={isSubmitting}
               >
-                Cancel
+                {t('supplierList.cancel')}
               </button>
               <button
                 className="bid-btn-accept"
@@ -1047,11 +1048,11 @@ function SupplierList() {
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
-                  'Submitting...'
+                  t('supplierList.submitting')
                 ) : (
                   <>
                     <Send size={16} />
-                    Submit Request
+                    {t('supplierList.submitRequest')}
                   </>
                 )}
               </button>

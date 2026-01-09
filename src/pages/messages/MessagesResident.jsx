@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useSocket } from '../../contexts/SocketContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { Image as ImageIcon, Paperclip, X, File, Download, Loader2 } from 'lucide-react';
 import Nav from '../../components/Nav';
 import '../../styles/resident/messagesresident.css';
@@ -66,6 +67,7 @@ async function fetchWithAuth(url, options = {}) {
 const MessagesResident = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
   // defensive: useSocket() may return null if context not available during refresh
   const socketContext = useSocket();
   const socket = socketContext?.socket;
@@ -165,7 +167,7 @@ const MessagesResident = () => {
     try {
       const userProfile = JSON.parse(localStorage.getItem('userProfile'));
       if (!userProfile?.token) {
-        setError('Please log in to view messages');
+        setError(t('messagesResident.pleaseLoginToView'));
         return;
       }
 
@@ -197,7 +199,7 @@ const MessagesResident = () => {
       }
     } catch (error) {
       console.error('❌ Error fetching group chats:', error);
-      setError(error.message || 'Failed to load chats');
+      setError(error.message || t('messagesResident.failedToLoadChats'));
     } finally {
       console.log('✅ Finished fetching group chats');
     }
@@ -512,7 +514,7 @@ const MessagesResident = () => {
       }
     } catch (error) {
       console.error('❌ Error sending message:', error);
-      alert('Failed to send message: ' + error.message);
+      alert(t('messagesResident.failedToSendMessage') + ': ' + error.message);
     }
   };
 
@@ -644,7 +646,7 @@ const MessagesResident = () => {
       }
     } catch (error) {
       console.error('❌ Error creating group chat:', error);
-      alert('Failed to create group chat');
+      alert(t('messagesResident.failedToCreateGroup'));
     }
   };
 
@@ -666,12 +668,12 @@ const MessagesResident = () => {
     console.log('📷 Attempting to upload image:', file.name);
 
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
+      alert(t('messagesResident.pleaseSelectImage'));
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      alert('Image must be less than 10MB');
+      alert(t('messagesResident.imageMustBeLessThan'));
       return;
     }
 
@@ -683,7 +685,7 @@ const MessagesResident = () => {
 
       const userProfile = JSON.parse(localStorage.getItem('userProfile'));
       if (!userProfile?.token) {
-        alert('You must be logged in to upload files');
+        alert(t('messagesResident.mustBeLoggedIn'));
         return;
       }
 
@@ -702,7 +704,7 @@ const MessagesResident = () => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Upload failed:', errorText);
-        alert(`Failed to upload image: ${response.statusText}`);
+        alert(t('messagesResident.failedToUploadImage'));
         return;
       }
 
@@ -713,11 +715,11 @@ const MessagesResident = () => {
         setUploadedImage(data.file);
         console.log('✅ Image uploaded successfully:', data.file);
       } else {
-        alert(data.message || 'Failed to upload image');
+        alert(data.message || t('messagesResident.failedToUploadImage'));
       }
     } catch (error) {
       console.error('❌ Image upload error:', error);
-      alert(`Failed to upload image: ${error.message}`);
+      alert(t('messagesResident.failedToUploadImage'));
     } finally {
       setIsUploadingImage(false);
       // Reset the input
@@ -735,7 +737,7 @@ const MessagesResident = () => {
     console.log('📎 Attempting to upload file:', file.name);
 
     if (file.size > 10 * 1024 * 1024) {
-      alert('File must be less than 10MB');
+      alert(t('messagesResident.fileMustBeLessThan'));
       return;
     }
 
@@ -747,7 +749,7 @@ const MessagesResident = () => {
 
       const userProfile = JSON.parse(localStorage.getItem('userProfile'));
       if (!userProfile?.token) {
-        alert('You must be logged in to upload files');
+        alert(t('messagesResident.mustBeLoggedIn'));
         return;
       }
 
@@ -766,7 +768,7 @@ const MessagesResident = () => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Upload failed:', errorText);
-        alert(`Failed to upload file: ${response.statusText}`);
+        alert(t('messagesResident.failedToUploadFile'));
         return;
       }
 
@@ -777,11 +779,11 @@ const MessagesResident = () => {
         setUploadedFiles(prev => [...prev, data.file]);
         console.log('✅ File uploaded successfully:', data.file);
       } else {
-        alert(data.message || 'Failed to upload file');
+        alert(data.message || t('messagesResident.failedToUploadFile'));
       }
     } catch (error) {
       console.error('❌ File upload error:', error);
-      alert(`Failed to upload file: ${error.message}`);
+      alert(t('messagesResident.failedToUploadFile'));
     } finally {
       setIsUploadingFile(false);
       // Reset the input
@@ -808,7 +810,7 @@ const MessagesResident = () => {
         {/* SIDEBAR */}
         <div className={`chat-sidebar-resident ${showMobileChat ? 'hide-mobile' : ''}`}>
           <div className="sidebar-header-resident">
-            <h2>Messages</h2>
+            <h2>{t('messagesResident.title')}</h2>
 
             {/* Tab Navigation */}
             <div className="tabs-section-resident">
@@ -816,13 +818,13 @@ const MessagesResident = () => {
                 className={`tab-btn-resident ${activeTab === 'group' ? 'active' : ''}`}
                 onClick={() => switchTab('group')}
               >
-                Group Chats
+                {t('messagesResident.groupChats')}
               </button>
               <button
                 className={`tab-btn-resident ${activeTab === 'dm' ? 'active' : ''}`}
                 onClick={() => switchTab('dm')}
               >
-                Direct Messages
+                {t('messagesResident.directMessages')}
               </button>
             </div>
 
@@ -842,7 +844,7 @@ const MessagesResident = () => {
             {loading ? (
               <div className="loading-container">
                 <div className="loading-spinner"></div>
-                <p>Loading...</p>
+                <p>{t('messagesResident.loading')}</p>
               </div>
             ) : error ? (
               <div className="error-container">
@@ -850,7 +852,7 @@ const MessagesResident = () => {
               </div>
             ) : activeTab === 'group' ? (
               groupChats.length === 0 ? (
-                <div className="empty-list-message">No group chats yet</div>
+                <div className="empty-list-message">{t('messagesResident.noGroupChatsYet')}</div>
               ) : (
                 groupChats.map((chat) => (
                   <div
@@ -868,14 +870,14 @@ const MessagesResident = () => {
                       <div className="chat-top-resident">
                         <h4 className="chat-name-resident">{chat.name}</h4>
                       </div>
-                      <p className="chat-preview-resident">{chat.description || 'Building group chat'}</p>
+                      <p className="chat-preview-resident">{chat.description || t('messagesResident.buildingGroupChat')}</p>
                     </div>
                   </div>
                 ))
               )
             ) : (
               directMessages.length === 0 ? (
-                <div className="empty-list-message">No direct messages yet</div>
+                <div className="empty-list-message">{t('messagesResident.noDirectMessagesYet')}</div>
               ) : (
                 directMessages.map((dm) => (
                   <div
@@ -893,7 +895,7 @@ const MessagesResident = () => {
                       <div className="chat-top-resident">
                         <h4 className="chat-name-resident">{dm.first_name} {dm.last_name}</h4>
                       </div>
-                      <p className="chat-preview-resident">{dm.last_message || 'No messages yet'}</p>
+                      <p className="chat-preview-resident">{dm.last_message || t('messagesResident.noMessagesYet')}</p>
                     </div>
                   </div>
                 ))
@@ -907,8 +909,8 @@ const MessagesResident = () => {
           {!activeChat && !activeDM ? (
             <div className="empty-chat-resident">
               <div className="empty-icon">💬</div>
-              <h3>Select a chat to start messaging</h3>
-              <p>Choose a conversation from the list</p>
+              <h3>{t('messagesResident.selectChatToStart')}</h3>
+              <p>{t('messagesResident.chooseConversation')}</p>
             </div>
           ) : activeTab === 'group' && activeChat ? (
             <>
@@ -916,7 +918,7 @@ const MessagesResident = () => {
                 <button
                   className="mobile-back-btn"
                   onClick={() => setShowMobileChat(false)}
-                  title="Back to conversations"
+                  title={t('messagesResident.backToConversations')}
                 >
                   ←
                 </button>
@@ -926,7 +928,7 @@ const MessagesResident = () => {
                   </div>
                   <div>
                     <h3 className="header-name-resident">{activeChat.name}</h3>
-                    <p className="user-status-text">{activeChat.member_count || 0} members</p>
+                    <p className="user-status-text">{activeChat.member_count || 0} {t('messagesResident.members')}</p>
                   </div>
                 </div>
               </div>
@@ -972,7 +974,7 @@ const MessagesResident = () => {
                           )}
                         </div>
                         <span className="message-time-resident">
-                          {new Date(msg.created_at).toLocaleTimeString([], {
+                          {new Date(msg.created_at).toLocaleTimeString(language === 'fr' ? 'fr-FR' : 'en-US', {
                             hour: '2-digit',
                             minute: '2-digit'
                           })}
@@ -992,7 +994,7 @@ const MessagesResident = () => {
                       <div className="typing-dot"></div>
                       <div className="typing-dot"></div>
                     </div>
-                    <span className="typing-text">{typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...</span>
+                    <span className="typing-text">{typingUsers.join(', ')} {typingUsers.length === 1 ? t('messagesResident.isTyping') : t('messagesResident.areTyping')}</span>
                   </div>
                 )}
               </div>
@@ -1043,7 +1045,7 @@ const MessagesResident = () => {
                     <button
                       type="button"
                       className="input-action-btn"
-                      title="Send image"
+                      title={t('messagesResident.sendImage')}
                       onClick={() => imageInputRef.current?.click()}
                       disabled={isUploadingImage}
                     >
@@ -1063,7 +1065,7 @@ const MessagesResident = () => {
                     <button
                       type="button"
                       className="input-action-btn"
-                      title="Attach file"
+                      title={t('messagesResident.attachFile')}
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isUploadingFile}
                     >
@@ -1076,7 +1078,7 @@ const MessagesResident = () => {
                   </div>
                   <input
                     type="text"
-                    placeholder="Type a message..."
+                    placeholder={t('messagesResident.typeMessage')}
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     onKeyDown={handleTyping}
@@ -1101,7 +1103,7 @@ const MessagesResident = () => {
                 <button
                   className="mobile-back-btn"
                   onClick={() => setShowMobileChat(false)}
-                  title="Back to conversations"
+                  title={t('messagesResident.backToConversations')}
                 >
                   ←
                 </button>
@@ -1111,11 +1113,11 @@ const MessagesResident = () => {
                   </div>
                   <div>
                     <h3 className="header-name-resident">{activeDM.first_name} {activeDM.last_name}</h3>
-                    <p className="user-status-text">Resident</p>
+                    <p className="user-status-text">{t('messagesResident.resident')}</p>
                   </div>
                 </div>
                 <div className="header-actions-resident">
-                  <button className="header-action-btn" title="Call">
+                  <button className="header-action-btn" title={t('messagesResident.call')}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
                     </svg>
@@ -1161,7 +1163,7 @@ const MessagesResident = () => {
                           )}
                         </div>
                         <span className="message-time-resident">
-                          {new Date(msg.created_at).toLocaleTimeString([], {
+                          {new Date(msg.created_at).toLocaleTimeString(language === 'fr' ? 'fr-FR' : 'en-US', {
                             hour: '2-digit',
                             minute: '2-digit'
                           })}
@@ -1221,7 +1223,7 @@ const MessagesResident = () => {
                     <button
                       type="button"
                       className="input-action-btn"
-                      title="Send image"
+                      title={t('messagesResident.sendImage')}
                       onClick={() => imageInputRef.current?.click()}
                       disabled={isUploadingImage}
                     >
@@ -1241,7 +1243,7 @@ const MessagesResident = () => {
                     <button
                       type="button"
                       className="input-action-btn"
-                      title="Attach file"
+                      title={t('messagesResident.attachFile')}
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isUploadingFile}
                     >
@@ -1254,7 +1256,7 @@ const MessagesResident = () => {
                   </div>
                   <input
                     type="text"
-                    placeholder="Type a message..."
+                    placeholder={t('messagesResident.typeMessage')}
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     className="message-input-resident"
@@ -1279,7 +1281,7 @@ const MessagesResident = () => {
           <div className="modal-overlay" onClick={() => setShowCreateGroupModal(false)}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
-                <h2>Create Group Chat</h2>
+                <h2>{t('messagesResident.createGroupChat')}</h2>
                 <button
                   className="modal-close"
                   onClick={() => setShowCreateGroupModal(false)}
@@ -1290,24 +1292,24 @@ const MessagesResident = () => {
 
               <form onSubmit={createGroupChat}>
                 <div className="form-group">
-                  <label htmlFor="groupName">Group Name *</label>
+                  <label htmlFor="groupName">{t('messagesResident.groupName')} *</label>
                   <input
                     type="text"
                     id="groupName"
                     value={newGroupName}
                     onChange={(e) => setNewGroupName(e.target.value)}
-                    placeholder="e.g., Floor 3 Residents"
+                    placeholder={t('messagesResident.groupNamePlaceholder')}
                     required
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="groupDescription">Description</label>
+                  <label htmlFor="groupDescription">{t('messagesResident.description')}</label>
                   <textarea
                     id="groupDescription"
                     value={newGroupDescription}
                     onChange={(e) => setNewGroupDescription(e.target.value)}
-                    placeholder="What is this group chat for?"
+                    placeholder={t('messagesResident.descriptionPlaceholder')}
                     rows="3"
                   />
                 </div>
@@ -1318,14 +1320,14 @@ const MessagesResident = () => {
                     className="btn-secondary"
                     onClick={() => setShowCreateGroupModal(false)}
                   >
-                    Cancel
+                    {t('messagesResident.cancel')}
                   </button>
                   <button
                     type="submit"
                     className="btn-primary"
                     disabled={!newGroupName.trim()}
                   >
-                    Create Group
+                    {t('messagesResident.createGroupButton')}
                   </button>
                 </div>
               </form>

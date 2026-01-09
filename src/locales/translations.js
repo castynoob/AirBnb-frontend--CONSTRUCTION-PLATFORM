@@ -178,6 +178,17 @@ const translations = {
       loadingJobDetails: 'Loading job details...',
       // User roles
       user: 'User',
+      // File upload
+      selectImageFile: 'Please select an image file',
+      imageTooLarge: 'Image must be less than 10MB',
+      fileTooLarge: 'File must be less than 10MB',
+      mustBeLoggedIn: 'You must be logged in to upload files',
+      authTokenNotFound: 'Authentication token not found. Please log in again.',
+      failedUploadImage: 'Failed to upload image',
+      failedUploadFile: 'Failed to upload file',
+      failedSendMessage: 'Failed to send message. Please try again.',
+      failedLoadProfile: 'Failed to load profile',
+      failedLoadSupplierProfile: 'Failed to load supplier profile',
     },
 
     // Time formatting
@@ -685,6 +696,278 @@ const translations = {
       profileFailed: 'Failed to load profile',
     },
 
+    // Entrepreneur Homepage
+    entrepreneurHome: {
+      // Search & Navigation
+      searchPlaceholder: 'Search properties...',
+      filters: 'Filters',
+      map: 'Map',
+      list: 'List',
+      showPanel: 'Show Panel',
+      hidePanel: 'Hide Panel',
+      backToAllProperties: 'Back to All Properties',
+
+      // Property Details
+      openJobs: 'Open Jobs',
+      managedBy: 'Managed by',
+      allProperties: 'All Properties',
+      properties: 'Properties',
+      viewLocation: 'View Location',
+      viewJobs: 'View Jobs',
+      noPropertiesFound: 'No properties found',
+
+      // Subscription/Premium
+      jobsAvailable: 'Jobs Available',
+      unlockPremiumAccess: 'Unlock Premium Access',
+      unlockDescription: 'Get instant access to job details, submit bids, and start winning contracts on this property.',
+      fullJobDetails: 'Full Job Details',
+      submitBids: 'Submit Bids',
+      viewBudgets: 'View Budgets',
+      directChat: 'Direct Chat',
+      viewPlans: 'View Plans',
+      freeTrial: '14-day free trial',
+      cancelAnytime: 'Cancel anytime',
+      unlockAccess: 'Unlock Access',
+      unlockAccessDescription: 'View job details and start bidding on this property.',
+      details: 'Details',
+      bids: 'bids',
+      budget: 'Budget',
+      chat: 'Chat',
+
+      // Jobs
+      availableJobsForBidding: 'Available Jobs for Bidding',
+      availableJobs: 'Available Jobs',
+      jobs: 'Jobs',
+      budgetRange: 'Budget Range',
+      showBudget: 'Show budget',
+      duration: 'Duration',
+      days: 'days',
+      neededIn: 'Needed In',
+      urgent: 'Urgent',
+      bidSubmitted: 'Bid Submitted',
+      submitYourBid: 'Submit Your Bid',
+      noOpenJobs: 'No Open Jobs',
+      noOpenJobsDescription: 'This property has no available jobs for bidding at the moment.',
+      viewBid: 'View Bid',
+
+      // Filters Modal
+      filterJobs: 'Filter Jobs',
+      location: 'Location',
+      region: 'Region',
+      workType: 'Work Type',
+      urgency: 'Urgency',
+      minBudget: 'Min ($)',
+      maxBudget: 'Max ($)',
+      any: 'Any',
+      maxDuration: 'Max Duration (days)',
+      propertyType: 'Property Type',
+      clearAllFilters: 'Clear All Filters',
+      applyFilters: 'Apply Filters',
+
+      // Bid Modal
+      bidsRemaining: 'Bids Remaining',
+      lowBidsWarning: 'Running low on bids! Upgrade to Premium for unlimited bids.',
+      yourBidAmount: 'Your Bid Amount ($)',
+      enterBidAmount: 'Enter your bid amount',
+      proposalMessage: 'Proposal Message',
+      proposalPlaceholder: 'Describe your approach, experience, and why you\'re the best fit for this job...',
+      submitBid: 'Submit Bid',
+
+      // View/Edit Bid Modal
+      editYourBid: 'Edit Your Bid',
+      yourSubmittedBid: 'Your Submitted Bid',
+      status: 'Status',
+      bidAmountLabel: 'Bid Amount ($)',
+      describeApproach: 'Describe your approach...',
+      saving: 'Saving...',
+      saveChanges: 'Save Changes',
+      yourBidAmountLabel: 'Your Bid Amount',
+      submittedOn: 'Submitted On',
+      yourProposalMessage: 'Your Proposal Message',
+      editBid: 'Edit Bid',
+      deleting: 'Deleting...',
+      deleteBid: 'Delete Bid',
+      bidApprovedMessage: 'Congratulations! Your bid has been approved.',
+      bidDeclinedMessage: 'This bid has been declined.',
+
+      // Toast Messages
+      fillAllFields: 'Please fill in all required fields',
+      bidSubmittedSuccess: 'Bid submitted successfully!',
+      enterBidAmountError: 'Please enter a bid amount',
+      bidUpdatedSuccess: 'Bid updated successfully!',
+      bidDeletedSuccess: 'Bid deleted successfully!',
+      failedLoadManagerProfile: 'Failed to load manager profile',
+      failedLoadJobs: 'Failed to load jobs. Please refresh the page.',
+      paymentSetupComplete: 'Payment setup complete!',
+
+      // Map Loading
+      gettingLocation: 'Getting your location...',
+      loadingMap: 'Loading map...',
+      usingDefaultLocation: 'Using default location',
+
+      // Map Controls
+      zoomIn: 'Zoom In',
+      zoomOut: 'Zoom Out',
+      resetView: 'Reset View',
+
+      // Property Manager
+      viewManagerProfile: 'View property manager profile',
+    },
+
+    // Submitted Bids Page (Entrepreneur)
+    submittedBids: {
+      // Page Header
+      title: 'SUBMITTED BIDS',
+      bids: 'bids',
+      // Status Labels
+      pending: 'Pending',
+      accepted: 'Accepted',
+      approved: 'Approved',
+      declined: 'Declined',
+      urgent: 'Urgent',
+      // Tabs
+      allBids: 'All Bids',
+      // Search
+      searchPlaceholder: 'Search by job title, category, or location...',
+      // Time Labels
+      today: 'Today',
+      oneDayAgo: '1 day ago',
+      daysAgo: 'days ago',
+      weeksAgo: 'weeks ago',
+      monthsAgo: 'months ago',
+      // Card Actions
+      details: 'Details',
+      // Empty States
+      noBidsFound: 'No bids found',
+      adjustSearch: 'Try adjusting your search criteria',
+      noSubmittedBids: "You haven't submitted any bids yet",
+      noStatusBids: 'No {{status}} bids at the moment',
+      // Error State
+      errorLoading: 'Error Loading Bids',
+      // Modal - Bid Details
+      bidDetails: 'Bid Details',
+      jobInformation: 'Job Information',
+      jobTitle: 'Job Title',
+      category: 'Category',
+      urgency: 'Urgency',
+      dueDate: 'Due Date',
+      description: 'Description',
+      propertyLocation: 'Property Location',
+      propertyManager: 'Property Manager',
+      viewManagerProfile: 'View property manager profile',
+      yourBidInformation: 'Your Bid Information',
+      bidAmount: 'Bid Amount',
+      yourProposalMessage: 'Your Proposal Message',
+      submittedOn: 'Submitted On',
+      status: 'Status',
+      // Modal Actions
+      messageManager: 'Message Manager',
+      close: 'Close',
+    },
+
+    // Entrepreneur Jobs Page
+    entrepreneurJobs: {
+      // Page Header
+      title: 'MY PROJECTS',
+      projects: 'projects',
+      active: 'Active',
+      // Status Labels
+      accepted: 'Accepted',
+      ongoing: 'Ongoing',
+      completed: 'Completed',
+      urgent: 'Urgent',
+      // Search
+      searchPlaceholder: 'Search projects...',
+      // Empty State
+      noProjectsFound: 'No {{status}} projects found',
+      adjustSearchOrTabs: 'Try adjusting your search or check other tabs',
+      // Card Actions
+      viewDetails: 'View Details',
+      messageManager: 'Message Manager',
+      startProject: 'Start Project',
+      markComplete: 'Mark Complete',
+      leaveReview: 'Leave Review',
+      viewReview: 'View Review',
+      due: 'Due',
+      // Payment Status
+      awaitingPayment: 'Awaiting Payment',
+      paymentInEscrow: 'Payment in Escrow',
+      awaitingApproval: 'Awaiting Approval',
+      fundsReleased: 'Funds Released',
+      refunded: 'Refunded',
+      disputed: 'Disputed',
+      unknown: 'Unknown',
+      managerNotPaid: 'Manager has not yet paid for this job',
+      managerNotCompletedPayment: 'Manager has not yet completed payment',
+      paymentHeldSecurely: 'Payment is held securely until work is approved',
+      workMarkedComplete: 'Work marked complete, waiting for manager to approve and release funds',
+      paymentReleased: 'Payment has been released to your account',
+      paymentRefunded: 'Payment was refunded to the manager',
+      disputeRegarding: 'There is a dispute regarding this contract',
+      paymentStatusUnknown: 'Payment status unknown',
+      // Review Modal
+      leaveAReview: 'Leave a Review',
+      howWouldYouRate: 'How would you rate your experience?',
+      shareExperience: 'Share your experience',
+      reviewPlaceholder: 'Tell us about your experience with this property manager...',
+      characters: 'characters',
+      minimumTen: '(minimum 10)',
+      addPhotos: 'Add photos (optional)',
+      uploadPhotosHint: 'Upload up to 5 photos to showcase the work',
+      chooseImages: 'Choose Images',
+      removeImage: 'Remove image',
+      cancel: 'Cancel',
+      submitting: 'Submitting...',
+      submitReview: 'Submit Review',
+      // Confirmation Modal
+      startProjectQuestion: 'Start this project?',
+      markCompleteQuestion: 'Mark this project as completed?',
+      statusChangeOngoing: 'This will change the project status to ongoing.',
+      statusChangeCompleted: 'This will mark the project as completed.',
+      loading: 'Loading...',
+      confirm: 'Confirm',
+      // View Review Modal
+      projectDetails: 'Project Details',
+      category: 'Category',
+      dueDate: 'Due Date',
+      budgetRange: 'Budget Range',
+      propertyManager: 'Property Manager',
+      company: 'Company',
+      address: 'Address',
+      yourReview: 'Your Review',
+      outOfFiveStars: 'out of 5 stars',
+      comment: 'Comment',
+      attachedPhotos: 'Attached Photos',
+      // Project Details Modal
+      projectInformation: 'Project Information',
+      titleLabel: 'Title',
+      status: 'Status',
+      description: 'Description',
+      timelineBudget: 'Timeline & Budget',
+      estimatedDuration: 'Estimated Duration',
+      days: 'days',
+      urgencyLabel: 'Urgency',
+      yourBid: 'Your Bid',
+      bidAmount: 'Bid Amount',
+      submittedOn: 'Submitted On',
+      yourProposalMessage: 'Your Proposal Message',
+      paymentStatus: 'Payment Status',
+      contractAmount: 'Contract Amount',
+      yourPayout: 'Your Payout (after fees)',
+      paymentReceived: 'Payment Received',
+      fundsReleasedDate: 'Funds Released',
+      noPaymentNote: 'The property manager has not yet made a payment for this job. Payment is required before work can begin.',
+      escrowNote: 'Funds are held securely in escrow. They will be released to you once you complete the work and the manager approves it.',
+      awaitingApprovalNote: "You've marked this job complete. Waiting for the property manager to review and release payment.",
+      fundsReleasedNote: 'Payment has been released! Funds should arrive in your connected bank account within 2-3 business days.',
+      viewManagerProfile: 'View property manager profile',
+      propertyLocation: 'Property Location',
+      viewFullscreenMap: 'View fullscreen map',
+      fullView: 'Full View',
+      close: 'Close',
+      chatWithManager: 'Chat with Manager',
+    },
+
     // Customer Service Page
     customerService: {
       // Header
@@ -775,6 +1058,330 @@ const translations = {
       daysAgo: 'd ago',
     },
 
+    // Supplier Homepage
+    supplierHomepage: {
+      // Loading
+      loading: 'Loading...',
+      // Profile Completion
+      profileComplete: 'Profile {{percentage}}% complete',
+      completeNow: 'Complete now',
+      profilePicture: 'Profile Picture',
+      catalogUpload: 'Catalog Upload',
+      phoneNumber: 'Phone Number',
+      // Welcome Section
+      welcomeBack: 'Welcome back, {{companyName}}!',
+      welcomeDescription: 'Manage your material requests and communicate with construction companies',
+      supplier: 'Supplier',
+      // Stats
+      totalRequests: 'Total Requests',
+      pendingRequests: 'Pending Requests',
+      completedLabel: 'Completed',
+      unreadMessages: 'Unread Messages',
+      // Section Headers
+      materialRequests: 'Material Requests',
+      quickActions: 'Quick Actions',
+      // Search & Filter
+      searchPlaceholder: 'Search by company or details...',
+      allStatus: 'All Status',
+      pending: 'Pending',
+      inProgress: 'In Progress',
+      completed: 'Completed',
+      cancelled: 'Cancelled',
+      // Request Actions
+      viewRequest: 'View Request',
+      accept: 'Accept',
+      decline: 'Decline',
+      chat: 'Chat',
+      markAsCompleted: 'Mark as Completed',
+      addReceipt: 'Add Receipt',
+      chatWithEntrepreneur: 'Chat with Entrepreneur',
+      // Empty States
+      noMatchingRequests: 'No Matching Requests',
+      noRequestsYet: 'No Requests Yet',
+      tryAdjustingFilters: 'Try adjusting your search or filters',
+      requestsWillAppear: 'Material requests from entrepreneurs will appear here',
+      // Quick Actions
+      viewProfile: 'View Profile',
+      updateCompanyInfo: 'Update your company information',
+      messages: 'Messages',
+      chatWithEntrepreneurs: 'Chat with entrepreneurs',
+      uploadCatalog: 'Upload Catalog',
+      addProductCatalog: 'Add your product catalog',
+      // Request Details Modal
+      requestDetails: 'Request Details',
+      company: 'Company:',
+      status: 'Status:',
+      dateSubmitted: 'Date Submitted:',
+      contactEmail: 'Contact Email:',
+      contactPhone: 'Contact Phone:',
+      attachedDocument: 'Attached Document',
+      openDownloadPDF: 'Open/Download PDF',
+      acceptRequest: 'Accept Request',
+      declineRequest: 'Decline Request',
+      close: 'Close',
+      // Invoice Modal
+      createInvoiceReceipt: 'Create Invoice/Receipt',
+      requestId: 'Request ID:',
+      invoiceItems: 'Invoice Items',
+      addItem: '+ Add Item',
+      description: 'Description *',
+      quantity: 'Quantity *',
+      unitPrice: 'Unit Price (₱) *',
+      subtotal: 'Subtotal',
+      totalAmount: 'Total Amount:',
+      deliveryTerms: 'Delivery Terms',
+      deliveryTermsPlaceholder: 'Enter delivery terms, conditions, or notes...',
+      cancel: 'Cancel',
+      creating: 'Creating...',
+      createInvoice: 'Create Invoice',
+      // Confirmation Modal
+      declineRequestTitle: 'Decline Request',
+      declineConfirmMessage: 'Are you sure you want to decline this request? This action cannot be undone.',
+      completeRequestTitle: 'Complete Request',
+      completeConfirmMessage: 'Mark this request as completed? You can add a receipt/invoice after completion.',
+      confirm: 'Confirm',
+      complete: 'Complete',
+      // Toast Messages
+      statusUpdatedSuccess: 'Request status updated successfully',
+      failedUpdateStatus: 'Failed to update request status',
+      fillAllDescriptions: 'Please fill in all item descriptions',
+      enterValidQuantities: 'Please enter valid quantities for all items',
+      enterValidPrices: 'Please enter valid prices for all items',
+      invoiceCreatedSuccess: 'Invoice/Receipt created successfully!',
+      failedCreateInvoice: 'Failed to create invoice',
+      // Item description placeholder
+      itemDescriptionPlaceholder: 'Item description',
+    },
+
+    // Entrepreneur Profile Page
+    profileEntrepreneur: {
+      // Tab Labels
+      account: 'Account',
+      subscription: 'Subscription',
+      payouts: 'Payouts',
+      billingHistory: 'Billing History',
+      performanceReviews: 'Performance & Reviews',
+      settings: 'Settings',
+      // Toast Messages
+      paymentAccountSetUp: 'Your payment account is already set up!',
+      failedPaymentSetup: 'Failed to start payment setup',
+      failedOpenDashboard: 'Failed to open Stripe dashboard',
+      selectValidImage: 'Please select a valid image file',
+      imageSizeExceed: 'Image size should not exceed 5MB',
+      fillRequiredFields: 'Please fill in all required fields',
+      profileUpdatedImageFailed: 'Profile updated successfully, but the image upload failed. Please try uploading your image again later.',
+      profileUpdatedSuccess: 'Profile updated successfully!',
+      failedUpdateProfile: 'Failed to update profile. Please try again.',
+      passwordChangedSuccess: 'Password changed successfully!',
+      // Sidebar
+      entrepreneur: 'Entrepreneur',
+      logout: 'Logout',
+      // Account Tab
+      accountInformation: 'Account Information',
+      manageCompanyProfile: 'Manage your company profile and contact details',
+      editProfile: 'Edit Profile',
+      paymentAccount: 'Payment Account',
+      connected: 'Connected',
+      notConnected: 'Not Connected',
+      connecting: 'Connecting...',
+      setUp: 'Set Up',
+      companyInformation: 'Company Information',
+      companyName: 'Company Name',
+      licenseNumber: 'License Number',
+      yearsInBusiness: 'Years in Business',
+      years: 'years',
+      numberOfEmployees: 'Number of Employees',
+      contactInformation: 'Contact Information',
+      email: 'Email',
+      phone: 'Phone',
+      address: 'Address',
+      specializations: 'Specializations',
+      notProvided: 'Not provided',
+      // Subscription Tab
+      subscriptionManagement: 'Subscription Management',
+      manageSubscriptionPlan: 'Manage your subscription plan and billing',
+      noActiveSubscription: 'No Active Subscription',
+      noSubscriptionDesc: 'Subscribe to unlock powerful features like submitting bids, unlocking project budgets, and messaging on approved projects.',
+      viewSubscriptionPlans: 'View Subscription Plans',
+      premiumTrialActive: 'Premium Trial Active',
+      trialPeriod: 'Trial Period',
+      day: 'day',
+      days: 'days',
+      remaining: 'remaining',
+      trialEndsOn: 'Trial ends on',
+      daysLeft: 'Days Left',
+      active: 'Active',
+      premiumPlan: 'Premium Plan',
+      basicPlan: 'Basic Plan',
+      bestForProfessionals: 'Best for professionals',
+      perfectForGettingStarted: 'Perfect for getting started',
+      month: '/month',
+      billingCycle: 'Billing Cycle',
+      started: 'Started',
+      nextBilling: 'Next Billing',
+      daysUntilRenewal: 'days until renewal',
+      youreOnPremium: "You're on Premium",
+      viewPlans: 'View Plans',
+      unlimitedBidsAccess: 'You have access to unlimited bids and priority support',
+      explorePlansDesc: 'Explore available plans and upgrade to get more features',
+      usageAnalytics: 'Usage Analytics',
+      monitorBiddingActivity: 'Monitor your monthly bidding activity',
+      bidsSubmitted: 'Bids Submitted',
+      remainingBids: 'Remaining Bids',
+      budgetUnlocks: 'Budget Unlocks',
+      unlimited: 'Unlimited',
+      activeChats: 'Active Chats',
+      // Billing Tab
+      viewBillingHistory: 'View your subscription payments and budget unlock history',
+      refreshBilling: 'Refresh',
+      totalSpent: 'Total Spent',
+      thisMonth: 'This Month',
+      lastPayment: 'Last Payment',
+      subscriptionPayments: 'Subscription Payments',
+      budgetUnlockPayments: 'Budget Unlock Payments',
+      noBillingRecords: 'No Billing Records',
+      noBillingDesc: 'Your payment history will appear here once you make a payment',
+      date: 'Date',
+      description: 'Description',
+      amount: 'Amount',
+      status: 'Status',
+      completed: 'Completed',
+      pending: 'Pending',
+      failed: 'Failed',
+      // Payouts Tab
+      payoutsEarnings: 'Payouts & Earnings',
+      managePayouts: 'Manage your earnings and payment account',
+      connectPaymentAccount: 'Connect Payment Account',
+      connectPaymentDesc: 'Set up your Stripe account to receive payments for completed jobs',
+      setUpPaymentAccount: 'Set Up Payment Account',
+      availableBalance: 'Available Balance',
+      withdraw: 'Withdraw',
+      totalEarnings: 'Total Earnings',
+      allTime: 'All time',
+      pendingPayouts: 'Pending Payouts',
+      processing: 'Processing',
+      completedPayouts: 'Completed Payouts',
+      recentTransactions: 'Recent Transactions',
+      viewAll: 'View All',
+      noTransactionsYet: 'No Transactions Yet',
+      noTransactionsDesc: 'Your payout history will appear here once you receive payments',
+      payout: 'Payout',
+      payment: 'Payment',
+      // Performance Tab
+      performanceOverview: 'Performance Overview',
+      trackReputation: 'Track your reputation and client feedback',
+      averageRating: 'Average Rating',
+      basedOnReviews: 'Based on {{count}} reviews',
+      totalReviews: 'Total Reviews',
+      fromClients: 'From clients',
+      responseRate: 'Response Rate',
+      toMessages: 'To messages',
+      clientReviews: 'Client Reviews',
+      noReviewsYet: 'No Reviews Yet',
+      noReviewsDesc: 'Your reviews will appear here once clients rate your work',
+      anonymous: 'Anonymous',
+      // Settings Tab
+      accountSettings: 'Account Settings',
+      manageSecurityPreferences: 'Manage your security and preferences',
+      changePassword: 'Change Password',
+      updatePasswordDesc: 'Update your password to keep your account secure',
+      currentPassword: 'Current Password',
+      newPassword: 'New Password',
+      confirmNewPassword: 'Confirm New Password',
+      passwordStrength: 'Password Strength',
+      updatePassword: 'Update Password',
+      changingPassword: 'Changing...',
+      languagePreferences: 'Language Preferences',
+      selectLanguage: 'Select your preferred language',
+      // Password strength labels
+      veryWeak: 'Very Weak',
+      weak: 'Weak',
+      fair: 'Fair',
+      good: 'Good',
+      strong: 'Strong',
+      // Password errors
+      allFieldsRequired: 'All fields are required',
+      passwordsDoNotMatch: 'New passwords do not match',
+      passwordMinLength: 'Password must be at least 8 characters long',
+      passwordRequirements: 'Password must contain uppercase, lowercase, number, and special character',
+      pleaseLoginAgain: 'Please log in again',
+      failedChangePassword: 'Failed to change password',
+      // Edit Modal
+      editCompanyProfile: 'Edit Company Profile',
+      companyNameLabel: 'Company Name',
+      licenseNumberLabel: 'License Number',
+      yearsInBusinessLabel: 'Years in Business',
+      numberOfEmployeesLabel: 'Number of Employees',
+      addressLabel: 'Address',
+      phoneLabel: 'Phone',
+      profilePicture: 'Profile Picture',
+      changePhoto: 'Change Photo',
+      uploadPhoto: 'Upload Photo',
+      removePhoto: 'Remove',
+      selectSpecializations: 'Select your specializations',
+      cancel: 'Cancel',
+      saving: 'Saving...',
+      saveChanges: 'Save Changes',
+      // Billing Tab - Additional
+      paymentHistory: 'Payment History',
+      loadingBillingHistory: 'Loading billing history...',
+      periodEnds: 'Period ends',
+      paid: 'Paid',
+      trial: 'Trial',
+      noPaymentHistory: 'No Payment History',
+      noPaymentHistoryDesc: 'Your subscription and budget unlock payments will appear here',
+      // Performance Tab - Additional
+      experience: 'Experience',
+      employees: 'Employees',
+      loadingReviews: 'Loading reviews...',
+      completeJobsForReviews: 'Complete jobs to receive reviews from clients',
+      // Payouts Tab - Additional
+      setUpPayouts: 'Set Up Payouts',
+      connectStripeDesc: 'Connect your Stripe account to receive payments from completed contracts',
+      connectStripeAccount: 'Connect Stripe Account',
+      loadingEarningsData: 'Loading earnings data...',
+      netEarnings: 'Net Earnings',
+      totalReceived: 'Total Received',
+      contracts: 'Contracts',
+      platformFeeBreakdown: 'Platform Fee Breakdown',
+      platformFeeOverviewDesc: 'Overview of contract amounts and platform fees',
+      grossContractValue: 'Gross Contract Value',
+      platformFee: 'Platform Fee',
+      yourNetEarnings: 'Your Net Earnings',
+      revenueOverview: 'Revenue Overview',
+      weekly: 'Weekly',
+      monthly: 'Monthly',
+      job: 'job',
+      jobs: 'jobs',
+      noDataForPeriod: 'No data for this period',
+      transactionHistory: 'Transaction History',
+      transactions: 'transactions',
+      tableHeaderJob: 'Job',
+      tableHeaderClient: 'Client',
+      tableHeaderContract: 'Contract',
+      tableHeaderFee: 'Fee',
+      tableHeaderNet: 'Net',
+      tableHeaderStatus: 'Status',
+      tableHeaderDate: 'Date',
+      contractAmountLabel: 'Contract Amount:',
+      platformFeeLabel: 'Platform Fee',
+      yourPayout: 'Your Payout:',
+      paymentReceivedLabel: 'Payment Received:',
+      payoutCompletedLabel: 'Payout Completed:',
+      noTransactions: 'No transactions yet',
+      completeContractsForHistory: 'Complete contracts to see your transaction history',
+      payoutSchedule: 'Payout Schedule',
+      payoutFrequency: 'Payout Frequency',
+      afterWorkApproval: 'After work approval',
+      processingTime: 'Processing Time',
+      processingTimeValue: '1-2 business days',
+      minimumPayout: 'Minimum Payout',
+      noMinimum: 'No minimum',
+      payoutScheduleNote: 'Payouts are automatically transferred to your connected bank account after the property manager approves completed work.',
+      couldNotLoadEarnings: 'Could not load earnings data',
+      tryAgain: 'Try Again',
+    },
+
     // Report Modal
     reportModal: {
       // Header
@@ -817,6 +1424,929 @@ const translations = {
       reportSubmitted: 'Report Submitted!',
       thankYouMessage: 'Thank you for your report. Our support team will review it and get back to you as soon as possible.',
       close: 'Close',
+    },
+
+    // Supplier List Page
+    supplierList: {
+      // Page Header
+      title: 'Material Suppliers',
+      suppliers: 'suppliers',
+      myRequests: 'My Requests',
+      total: 'Total',
+      // Search & Filters
+      searchPlaceholder: 'Search by company name, license, email, or phone...',
+      filters: 'Filters',
+      location: 'Location',
+      materialType: 'Material Type',
+      yearsInBusiness: 'Years in Business',
+      certification: 'Certification',
+      clearAllFilters: 'Clear All Filters',
+      // Filter Options
+      all: 'All',
+      allAreas: 'All Areas',
+      allMaterials: 'All Materials',
+      yearsNew: 'New (0-2 years)',
+      yearsEstablished: 'Established (3-5 years)',
+      yearsExperienced: 'Experienced (6-10 years)',
+      yearsVeteran: 'Veteran (10+ years)',
+      certifiedOnly: 'Certified Only',
+      nonCertified: 'Non-Certified',
+      // Empty State
+      noSuppliersFound: 'No suppliers found',
+      adjustFilters: 'Try adjusting your search or filter criteria',
+      // Card Labels
+      certified: 'Certified',
+      notCertified: 'Not Certified',
+      yrs: 'yrs',
+      deliveryAreas: 'Delivery Areas',
+      details: 'Details',
+      request: 'Request',
+      viewCatalog: 'View Catalog',
+      chatWithSupplier: 'Chat with Supplier',
+      // Details Modal
+      companyInformation: 'Company Information',
+      years: 'years',
+      licenseNumber: 'License Number',
+      contactInformation: 'Contact Information',
+      phone: 'Phone',
+      email: 'Email',
+      website: 'Website',
+      materialsSupplied: 'Materials Supplied',
+      requestMaterials: 'Request Materials',
+      // Request Modal
+      requestMaterialsTitle: 'Request Materials',
+      supplierInstructions: "Please review the supplier's catalog (if available) to identify specific materials and quantities needed. The supplier will create a custom invoice based on your request.",
+      submitRequestAs: 'Submit Your Request As',
+      textDescription: 'Text Description',
+      pdfDocument: 'PDF Document',
+      materialRequestDetails: 'Material Request Details',
+      requestPlaceholder: "Please specify the materials you need, quantities, and any special requirements...\n\nExample:\n- Cement: 50 bags\n- Steel bars: 100 pieces (10mm)\n- Sand: 5 cubic meters\n- Delivery needed by: [Date]",
+      beSpecific: 'Be as specific as possible to receive an accurate quote',
+      uploadRequestDocument: 'Upload Request Document (PDF)',
+      clickToUpload: 'Click to upload',
+      orDragDrop: 'or drag and drop',
+      pdfFileLimit: 'PDF file up to 10MB',
+      cancel: 'Cancel',
+      submitting: 'Submitting...',
+      submitRequest: 'Submit Request',
+      // Toast Messages
+      selectPdfFile: 'Please select a PDF file',
+      fileSizeLimit: 'File size should not exceed 10MB',
+      enterRequestDetails: 'Please enter your material request details',
+      uploadPdfRequest: 'Please upload a PDF file with your request details',
+      requestSubmitted: 'Material request submitted successfully! The supplier will review and create an invoice for you.',
+      failedLoadProfile: 'Failed to load supplier profile',
+    },
+
+    // Supplier Profile Modal
+    supplierProfileModal: {
+      // Tabs
+      tabCompanyInfo: 'Company Info',
+      tabContact: 'Contact',
+      tabReviews: 'Reviews',
+      tabDeliveryAreas: 'Delivery Areas',
+      tabBusinessOverview: 'Business Overview',
+      tabProductCatalog: 'Product Catalog',
+      tabServices: 'Services',
+      // Company Tab
+      supplier: 'Supplier',
+      reviews: 'reviews',
+      review: 'review',
+      companyName: 'Company Name',
+      notProvided: 'Not provided',
+      businessType: 'Business Type',
+      notSpecified: 'Not specified',
+      yearsInBusiness: 'Years in Business',
+      years: 'years',
+      status: 'Status',
+      active: 'Active',
+      // Contact Tab
+      contactInformation: 'Contact Information',
+      contactPerson: 'Contact Person',
+      emailAddress: 'Email Address',
+      phoneNumber: 'Phone Number',
+      website: 'Website',
+      businessAddress: 'Business Address',
+      // Reviews Tab
+      customerReviews: 'Customer Reviews',
+      loadingReviews: 'Loading reviews...',
+      noReviewsYet: 'No Reviews Yet',
+      noReviewsMessage: "This supplier hasn't received any reviews yet.",
+      anonymous: 'Anonymous',
+      reviewer: 'Reviewer',
+      // Delivery Tab
+      deliveryAreas: 'Delivery Areas',
+      deliveryIntro: 'This supplier delivers to the following areas:',
+      noDeliveryAreas: 'No Delivery Areas Listed',
+      noDeliveryAreasMessage: 'This supplier has not specified their delivery areas yet.',
+      deliveryNote: 'Contact the supplier directly for specific delivery schedules and coverage in your area.',
+      // Business Tab
+      businessOverview: 'Business Overview',
+      businessRegistration: 'Business Registration',
+      taxId: 'Tax ID',
+      businessLicense: 'Business License',
+      verified: 'Verified',
+      // Catalog Tab
+      productCatalog: 'Product Catalog',
+      catalogAvailable: 'Product Catalog Available',
+      catalogDescription: "View or download the supplier's complete product catalog",
+      viewCatalog: 'View Catalog',
+      noCatalog: 'No Catalog Available',
+      noCatalogMessage: 'This supplier has not uploaded a product catalog yet.',
+      contactForInfo: 'Contact them directly for product information.',
+      // Services Tab
+      serviceInformation: 'Service Information',
+      supplyServices: 'Supply Services',
+      supplyServicesDesc: '{{companyName}} provides construction materials and supplies to contractors and property managers.',
+      thisSupplier: 'This supplier',
+      qualityMaterials: 'Quality Materials',
+      competitivePricing: 'Competitive Pricing',
+      reliableDelivery: 'Reliable Delivery',
+      establishedBusiness: 'Established Business',
+      servicesNote: 'Contact the supplier for quotes, bulk pricing, and specific product inquiries.',
+      // Footer
+      requestMaterials: 'Request Materials',
+    },
+
+    // Stripe Connect Modal
+    stripeConnectModal: {
+      // Success state
+      paymentSetupComplete: 'Payment Setup Complete!',
+      accountConnectedDesc: 'Your Stripe account is fully connected. You can receive payments for your work.',
+      accountStatus: 'Account Status',
+      active: 'Active',
+      canReceivePayments: 'Can Receive Payments',
+      yes: 'Yes',
+      viewStripeDashboard: 'View Stripe Dashboard',
+      continue: 'Continue',
+      // Setup state
+      setUpPaymentAccount: 'Set Up Payment Account',
+      bidApprovedDesc: 'Your bid has been approved! Complete your payment setup to receive payments for this job.',
+      connectStripeDesc: 'Connect your Stripe account to receive payments directly to your bank account when you complete jobs.',
+      // Benefits
+      securePayments: 'Secure Payments',
+      securePaymentsDesc: 'Payments are processed securely through Stripe',
+      directDeposits: 'Direct Deposits',
+      directDepositsDesc: 'Funds deposited directly to your bank account',
+      protectedEarnings: 'Protected Earnings',
+      protectedEarningsDesc: 'Funds held securely until job completion',
+      // Actions
+      skipForNow: 'Skip for Now',
+      connecting: 'Connecting...',
+      connectWithStripe: 'Connect with Stripe',
+      footerNote: 'Takes about 5 minutes. You can skip and set this up later from your profile.',
+      poweredBy: 'Powered by',
+      // Errors
+      failedOnboarding: 'Failed to start onboarding. Please try again.',
+      failedDashboard: 'Failed to open dashboard. Please try again.',
+    },
+
+    // Messages Supplier Page
+    messagesSupplier: {
+      // Sidebar
+      title: 'Messages',
+      subtitle: 'Chat with construction companies',
+      searchPlaceholder: 'Search entrepreneurs...',
+
+      // Loading & Error states
+      loadingConversations: 'Loading conversations...',
+      pleaseLoginToView: 'Please log in to view messages',
+      tryAgain: 'Try Again',
+      sessionExpired: 'Session expired. Please log in again.',
+
+      // Empty states
+      noMatchingConversations: 'No matching conversations',
+      noConversationsYet: 'No conversations yet',
+      emptyListHint: 'You can message entrepreneurs after you accept their material requests. Check your homepage for pending requests.',
+
+      // Chat window empty state
+      selectConversation: 'Select a conversation',
+      chooseEntrepreneur: 'Choose an entrepreneur from the list to start messaging',
+      messagingEnabledInfo: 'Messaging is enabled after you accept a material request. You can then:',
+      discussMaterialSpecs: 'Discuss material specifications',
+      negotiatePricing: 'Negotiate pricing and terms',
+      confirmDeliveryDates: 'Confirm delivery dates',
+      sendInvoicesQuotes: 'Send invoices and quotes',
+
+      // Chat header
+      backToConversations: 'Back to conversations',
+      viewEntrepreneurProfile: 'View entrepreneur profile',
+      entrepreneur: 'Entrepreneur',
+
+      // Messages
+      noMessagesYet: 'No messages yet',
+      attachment: '[Attachment]',
+
+      // Input area
+      typeMessage: 'Type a message...',
+      sendImage: 'Send image',
+      attachFile: 'Attach file',
+
+      // File upload messages
+      pleaseSelectImage: 'Please select an image file',
+      imageMustBeLessThan: 'Image must be less than 10MB',
+      fileMustBeLessThan: 'File must be less than 10MB',
+      mustBeLoggedIn: 'You must be logged in to upload files',
+      failedToUploadImage: 'Failed to upload image',
+      failedToUploadFile: 'Failed to upload file',
+      failedToSendMessage: 'Failed to send message',
+      failedToLoadProfile: 'Failed to load entrepreneur profile',
+    },
+
+    // Supplier Profile Page
+    supplierProfile: {
+      // Loading
+      loadingProfile: 'Loading supplier profile...',
+
+      // Tabs
+      account: 'Account',
+      overview: 'Overview',
+      catalog: 'Catalog',
+      service: 'Service',
+      settings: 'Settings',
+
+      // Sidebar
+      supplier: 'Supplier',
+      logout: 'Logout',
+
+      // Mobile
+      editProfile: 'Edit Profile',
+
+      // Account Tab
+      accountInformation: 'Account Information',
+      manageCompanyProfile: 'Manage your company profile and contact details',
+
+      // Company Information
+      companyInformation: 'Company Information',
+      companyName: 'Company Name',
+      businessLicense: 'Business License',
+      yearsInBusiness: 'Years in Business',
+      years: 'years',
+      website: 'Website',
+      notProvided: 'Not provided',
+
+      // Contact Information
+      contactInformation: 'Contact Information',
+      email: 'Email',
+      phone: 'Phone',
+      address: 'Address',
+
+      // Delivery Areas
+      deliveryAreas: 'Delivery Areas',
+      noDeliveryAreas: 'No delivery areas specified',
+      areas: 'areas',
+      locations: 'locations',
+
+      // Overview Tab
+      businessOverview: 'Business Overview',
+      viewBusinessStats: 'View your business statistics and performance',
+      catalogStatus: 'Catalog Status',
+      uploaded: 'Uploaded',
+      notUploaded: 'Not Uploaded',
+      deliveryCoverage: 'Delivery Coverage',
+
+      // Catalog Tab
+      productCatalog: 'Product Catalog',
+      manageCatalog: 'Manage your product catalog and documentation',
+      productCatalogPDF: 'Product Catalog PDF',
+      viewCatalogDescription: 'View our complete product catalog with pricing and specifications',
+      downloadCatalog: 'Download Catalog',
+      noCatalogUploaded: 'No Catalog Uploaded',
+      uploadCatalogDescription: 'Upload a PDF catalog to showcase your products to potential clients',
+      uploadCatalog: 'Upload Catalog',
+
+      // Service Tab
+      serviceInformation: 'Service Information',
+      viewDeliveryCoverage: 'View delivery coverage and service areas',
+      companyExperience: 'Company Experience',
+      yearsInIndustry: 'Years in Industry',
+      serviceAreas: 'Service Areas',
+
+      // Settings Tab
+      managePreferences: 'Manage your preferences and security',
+      language: 'Language',
+      chooseLanguage: 'Choose your preferred language for the app',
+      changePassword: 'Change Password',
+      updatePassword: 'Update your account password',
+      currentPassword: 'Current Password',
+      newPassword: 'New Password',
+      confirmNewPassword: 'Confirm New Password',
+      enterCurrentPassword: 'Enter current password',
+      enterNewPassword: 'Enter new password',
+      confirmPasswordPlaceholder: 'Confirm new password',
+      passwordsDoNotMatch: 'Passwords do not match',
+      cancel: 'Cancel',
+      changing: 'Changing...',
+
+      // Password strength
+      veryWeak: 'Very Weak',
+      weak: 'Weak',
+      fair: 'Fair',
+      good: 'Good',
+      strong: 'Strong',
+      characters: '8+ characters',
+      uppercase: 'Uppercase',
+      lowercase: 'Lowercase',
+      number: 'Number',
+      specialChar: 'Special char',
+
+      // Password errors
+      allFieldsRequired: 'All fields are required',
+      passwordsMustMatch: 'New passwords do not match',
+      passwordMinLength: 'Password must be at least 8 characters',
+      passwordChangedSuccess: 'Password changed successfully!',
+      pleaseLoginToChange: 'Please log in to change password',
+
+      // Edit Modal
+      uploadLogo: 'Upload Logo',
+      change: 'Change',
+      remove: 'Remove',
+      required: '*',
+      licenseNumber: 'License number',
+      fullBusinessAddress: 'Full business address',
+      businessAddress: 'Business Address',
+      addArea: 'Add area...',
+      saveChanges: 'Save Changes',
+      saving: 'Saving...',
+
+      // Toast messages
+      selectValidImage: 'Please select a valid image file',
+      imageSizeLimit: 'Image size should not exceed 5MB',
+      selectPdfFile: 'Please select a PDF file',
+      pdfSizeLimit: 'PDF size should not exceed 50MB',
+      fillRequiredFields: 'Please fill in all required fields',
+      profileUpdatedSuccess: 'Profile updated successfully!',
+      failedToUpdate: 'Failed to update profile. Please try again.',
+    },
+
+    // HomePageResident
+    homePageResident: {
+      // Page header
+      title: 'Community Updates',
+      subtitle: 'Stay informed about building announcements and events',
+
+      // Search and filters
+      searchPlaceholder: 'Search announcements...',
+      clearSearch: 'Clear search',
+
+      // Filter types
+      all: 'All',
+      maintenance: 'Maintenance',
+      event: 'Event',
+      notice: 'Notice',
+      emergency: 'Emergency',
+
+      // Loading state
+      loadingAnnouncements: 'Loading announcements...',
+
+      // Error states
+      authenticationRequired: 'Authentication required',
+      failedToFetchProfile: 'Failed to fetch user profile',
+      noPropertyAssigned: 'No property assigned to your profile',
+      failedToLoadProfile: 'Failed to load your profile',
+      noAnnouncementsAvailable: 'No announcements available',
+      failedToFetchAnnouncements: 'Failed to fetch announcements',
+      tryAgain: 'Try Again',
+
+      // Empty state
+      noAnnouncementsFound: 'No announcements found',
+      adjustSearchOrFilter: 'Try adjusting your search or filter',
+      noAnnouncementsAtThisTime: 'There are no announcements at this time',
+      clearFilters: 'Clear Filters',
+
+      // Notification
+      newAnnouncement: 'New Announcement',
+    },
+
+    // MessagesResident
+    messagesResident: {
+      // Sidebar header
+      title: 'Messages',
+      groupChats: 'Group Chats',
+      directMessages: 'Direct Messages',
+      createGroup: '+ Create Group',
+
+      // Loading and error states
+      loading: 'Loading...',
+      pleaseLoginToView: 'Please log in to view messages',
+      failedToLoadChats: 'Failed to load chats',
+
+      // Empty states
+      noGroupChatsYet: 'No group chats yet',
+      noDirectMessagesYet: 'No direct messages yet',
+      noMessagesYet: 'No messages yet',
+      buildingGroupChat: 'Building group chat',
+
+      // Empty chat
+      selectChatToStart: 'Select a chat to start messaging',
+      chooseConversation: 'Choose a conversation from the list',
+
+      // Chat header
+      backToConversations: 'Back to conversations',
+      members: 'members',
+      resident: 'Resident',
+      call: 'Call',
+
+      // Typing indicator
+      isTyping: 'is typing...',
+      areTyping: 'are typing...',
+
+      // Message input
+      typeMessage: 'Type a message...',
+      sendImage: 'Send image',
+      attachFile: 'Attach file',
+
+      // Upload messages
+      pleaseSelectImage: 'Please select an image file',
+      imageMustBeLessThan: 'Image must be less than 10MB',
+      fileMustBeLessThan: 'File must be less than 10MB',
+      mustBeLoggedIn: 'You must be logged in to upload files',
+      failedToUploadImage: 'Failed to upload image',
+      failedToUploadFile: 'Failed to upload file',
+
+      // Send messages
+      failedToSendMessage: 'Failed to send message',
+
+      // Create group modal
+      createGroupChat: 'Create Group Chat',
+      groupName: 'Group Name',
+      groupNamePlaceholder: 'e.g., Floor 3 Residents',
+      description: 'Description',
+      descriptionPlaceholder: 'What is this group chat for?',
+      cancel: 'Cancel',
+      createGroupButton: 'Create Group',
+      failedToCreateGroup: 'Failed to create group chat',
+    },
+
+    // Members Resident Page
+    membersResident: {
+      title: 'Building Members',
+      subtitle: 'Connect with your neighbors',
+      searchPlaceholder: 'Search residents by name or unit...',
+      clearSearch: 'Clear search',
+      showOnlineOnly: 'Show online only',
+      loadingMembers: 'Loading members...',
+      tryAgain: 'Try Again',
+      noMembersFound: 'No members found',
+      adjustSearchOrFilters: 'Try adjusting your search or filters',
+      noResidentsInBuilding: 'No residents are currently in your building',
+      clearFilters: 'Clear Filters',
+      owner: 'Owner',
+      unit: 'Unit',
+      floor: 'Floor',
+      propertyManager: 'Property Manager',
+      movedIn: 'Moved in:',
+      sendMessage: 'Send message',
+      showingMembers: 'Showing {{shown}} of {{total}} members',
+      pleaseLogIn: 'Please log in to view members',
+      failedToLoadMembers: 'Failed to load building members',
+    },
+
+    // Profile Page Resident
+    profilePageResident: {
+      // Tabs
+      account: 'Account',
+      settings: 'Settings',
+
+      // Loading and errors
+      loadingProfile: 'Loading profile...',
+      pleaseLogIn: 'Please log in to view your profile',
+      failedToFetchProfile: 'Failed to fetch profile',
+      failedToLoadProfile: 'Failed to load profile',
+      failedToSaveChanges: 'Failed to save changes',
+      tryAgain: 'Try Again',
+
+      // Success messages
+      profileUpdatedSuccess: 'Profile updated successfully!',
+      passwordChangedSuccess: 'Password changed successfully!',
+
+      // Account tab header
+      accountInformation: 'Account Information',
+      manageProfileDetails: 'Manage your profile and contact details',
+      editProfile: 'Edit Profile',
+      save: 'Save',
+      saving: 'Saving...',
+      cancel: 'Cancel',
+
+      // Role
+      resident: 'Resident',
+
+      // About me section
+      aboutMe: 'About Me',
+      bioPlaceholder: 'Tell your neighbors about yourself...',
+      noBioYet: 'No bio added yet.',
+
+      // Unit information section
+      unitInformation: 'Unit Information',
+      unitNumber: 'Unit Number',
+      floor: 'Floor',
+      buildingSection: 'Building Section',
+      moveInDate: 'Move-in Date',
+      unit: 'Unit',
+      section: 'Section',
+      notSpecified: 'Not specified',
+
+      // Contact information section
+      contactInformation: 'Contact Information',
+      email: 'Email',
+      phone: 'Phone',
+      notProvided: 'Not provided',
+
+      // Privacy settings
+      privacySettings: 'Privacy Settings',
+      showEmailToResidents: 'Show email to other residents',
+      showPhoneToResidents: 'Show phone to other residents',
+      showUnitToResidents: 'Show unit number to other residents',
+      showMoveInDate: 'Show move-in date',
+      showOnlineStatus: 'Show when I\'m online',
+      allowMessages: 'Allow other residents to message me',
+
+      // Contact preferences
+      contactPreferences: 'Contact Preferences',
+      allowContactViaEmail: 'Allow contact via email',
+      allowContactViaPhone: 'Allow contact via phone',
+      allowContactViaMessage: 'Allow contact via direct message',
+
+      // Settings tab
+      customizePreferences: 'Customize your preferences and security',
+
+      // Language settings
+      language: 'Language',
+      selectPreferredLanguage: 'Select your preferred language',
+
+      // Password settings
+      changePassword: 'Change Password',
+      updateAccountPassword: 'Update your account password',
+      currentPassword: 'Current Password',
+      enterCurrentPassword: 'Enter current password',
+      newPassword: 'New Password',
+      enterNewPassword: 'Enter new password',
+      confirmNewPassword: 'Confirm New Password',
+      confirmPasswordPlaceholder: 'Confirm new password',
+      passwordsDoNotMatch: 'Passwords do not match',
+      changing: 'Changing...',
+
+      // Password validation
+      allFieldsRequired: 'All fields are required',
+      passwordsMustMatch: 'New passwords do not match',
+      passwordMinLength: 'Password must be at least 8 characters',
+      pleaseLoginToChange: 'Please log in to change password',
+
+      // Password strength
+      veryWeak: 'Very Weak',
+      weak: 'Weak',
+      fair: 'Fair',
+      good: 'Good',
+      strong: 'Strong',
+
+      // Password requirements
+      characters: '8+ characters',
+      uppercase: 'Uppercase',
+      lowercase: 'Lowercase',
+      number: 'Number',
+      specialChar: 'Special char',
+
+      // Actions
+      logout: 'Logout',
+    },
+
+    // Subscription Modal
+    subscriptionModal: {
+      // Reopen button
+      viewSubscriptionPlans: 'View Subscription Plans',
+
+      // Modal header
+      title: 'Choose Your Subscription Plan',
+      subtitle: 'Select the plan that fits your business needs and start bidding on projects today',
+      closeModal: 'Close modal',
+
+      // Plan cards - Basic
+      basicPlan: 'Basic Plan',
+      basicPrice: '250',
+      basicPeriod: '/month',
+      basicDescription: 'Essential features for contractors',
+
+      // Plan cards - Premium
+      premiumPlan: 'Premium Plan',
+      premiumPrice: '429',
+      premiumPeriod: '/month',
+      premiumDescription: 'Unlimited bidding for growing businesses',
+      recommended: 'RECOMMENDED',
+
+      // Feature list
+      browseViewJobs: 'Browse & view jobs',
+      submitUpTo30Bids: 'Submit up to 30 bids',
+      unlockBudgets: 'Unlock budgets',
+      messageApprovedContacts: 'Message approved contacts',
+      submitUnlimitedBids: 'Submit unlimited bids',
+      prioritySupport: 'Priority support',
+
+      // CTA buttons
+      startBasicTrial: 'Start Basic Trial',
+      startPremiumTrial: 'Start Premium Trial',
+
+      // Comparison table
+      comparisonTitle: 'Detailed Feature Comparison',
+      feature: 'Feature',
+      noSub: 'No Sub',
+      trialBasic: 'Trial Basic',
+      trialPremium: 'Trial Premium',
+      activeBasic: 'Active Basic',
+      activePremium: 'Active Premium',
+
+      // Feature names in table
+      browseJobs: 'Browse jobs',
+      viewJobDetails: 'View job details',
+      submitBids: 'Submit bids',
+      unlockBudget: 'Unlock budget ($20)',
+      messageApproved: 'Message (approved)',
+      max30: '30 max',
+      unlimited: 'unlimited',
+
+      // Disclaimer
+      disclaimer: 'All plans include a 14-day free trial. No credit card required. Cancel anytime.',
+    },
+
+    // Landing Page
+    landingPage: {
+      // Navigation
+      nav: {
+        about: 'About',
+        features: 'Features',
+        forYou: 'For You',
+        howItWorks: 'How It Works',
+        login: 'Login',
+        getStarted: 'Get Started',
+        toggleMenu: 'Toggle menu',
+        closeMenu: 'Close menu',
+      },
+
+      // Hero Section
+      hero: {
+        badge: 'Trusted by 1,000+ Property Managers & Contractors',
+        title: 'Property Maintenance, Managed',
+        titleHighlight: 'Smarter',
+        subtitle: 'INTERVOS automates your entire construction workflow - from emergency repairs to major renovations. One platform. Zero stress. Full control from day one.',
+        startProject: 'Start Your First Project',
+        seeHowItWorks: 'See How It Works',
+      },
+
+      // About Section
+      about: {
+        founderQuote: '"You wake up to a flooded basement. A tenant\'s HVAC breaks mid-winter. The roof\'s leaking - again. You\'ve got 12 contractors ghosting you, two crews overcharging, and a spreadsheet that stopped making sense three months ago."',
+        founderAttribution: '- Every property manager, at some point.',
+        realProblemTitle: 'This is the real problem.',
+        realProblemText1: 'Not finding contractors. Managing the chaos between jobs posted, bids received, work tracked, and payments made.',
+        realProblemText2: "I've watched property managers spend 60% of their time on admin. Contractors lose jobs because they couldn't respond fast enough. Residents wait weeks for repairs that should take days.",
+        realProblemText3: "INTERVOS was built by someone who's seen every broken system in this industry - and decided to fix it.",
+        stat1Value: '10K+',
+        stat1Label: 'Jobs Managed',
+        stat2Value: '98%',
+        stat2Label: 'Satisfaction Rate',
+        stat3Value: '40%',
+        stat3Label: 'Faster Resolution',
+      },
+
+      // Features Section
+      features: {
+        title: 'Everything You Need. Nothing You Don\'t.',
+        subtitle: 'Built for modern property management - no complexity, just results',
+        smartBidding: 'Smart Bidding Engine',
+        smartBiddingDesc: 'Stop overpaying. Get competitive bids from vetted contractors automatically.',
+        verifiedProfessionals: 'Verified Professionals',
+        verifiedProfessionalsDesc: 'No more bad hires. Every contractor is background-checked and community-rated.',
+        liveDashboard: 'Live Project Dashboard',
+        liveDashboardDesc: 'Know exactly what\'s happening - always. No phone calls required.',
+        multiProperty: 'Multi-Property Command Center',
+        multiPropertyDesc: 'Manage 10 buildings or 100. One login. Complete control.',
+        builtInMessaging: 'Built-In Messaging',
+        builtInMessagingDesc: 'Stop chasing people. Instant communication with everyone on your project.',
+        protectedPayments: 'Protected Payments',
+        protectedPaymentsDesc: 'Get paid faster with escrow protection and milestone-based billing.',
+      },
+
+      // Roles Section
+      roles: {
+        title: 'Who uses INTERVOS?',
+        subtitle: 'Everyone involved in getting work done on buildings.',
+
+        // Property Managers
+        propertyManagers: {
+          label: 'Property Managers',
+          headline: 'Stop chasing. Start managing.',
+          story: '"I used to spend 10+ hours a week just tracking down contractors. Did they start the job? When will they finish? Why hasn\'t the invoice come through? Now I just open the dashboard. Everything\'s there."',
+          attribution: '- Sarah M., manages 8 buildings in Toronto',
+          feature1Title: 'Post a job in 60 seconds',
+          feature1Desc: 'Building address, issue description, photos. Done.',
+          feature2Title: 'Get bids from verified entrepreneurs',
+          feature2Desc: 'No more calling around. They come to you.',
+          feature3Title: 'Track everything in one place',
+          feature3Desc: 'Who\'s working where. What\'s done. What\'s pending.',
+          cta: 'Start managing smarter',
+        },
+
+        // Entrepreneurs/Contractors
+        entrepreneurs: {
+          label: 'Entrepreneurs & Contractors',
+          headline: 'Bid on real jobs. Get paid faster.',
+          story: '"Most platforms take 20% and you\'re competing with 50 other people who undercut you. Here, property managers see your profile, your past work, your ratings. I\'ve closed 4 jobs this month without a single phone call."',
+          attribution: '- Mike T., general contractor, 6 years experience',
+          feature1Title: 'Jobs sent to your inbox',
+          feature1Desc: 'Filter by location, budget, and trade. Only see what matters.',
+          feature2Title: 'Milestone payments',
+          feature2Desc: 'Get paid as you complete work. No more waiting 60 days.',
+          feature3Title: 'Build your reputation',
+          feature3Desc: 'Every completed job adds to your profile.',
+          cta: 'Find work today',
+        },
+
+        // Residents
+        residents: {
+          label: 'Residents',
+          headline: 'Know what\'s happening in your building.',
+          story: '"I submitted a maintenance request about a leaky faucet. Got a notification when the plumber was assigned. Another when they were on their way. Another when it was fixed. Felt like magic compared to the old \'we\'ll get to it\' approach."',
+          attribution: '- James L., resident since 2019',
+          feature1Title: 'Submit requests instantly',
+          feature1Desc: 'Broken appliance? Maintenance issue? Submit it from your phone.',
+          feature2Title: 'Get real updates',
+          feature2Desc: 'No more "we\'re working on it." See actual progress.',
+          feature3Title: 'Message your property manager',
+          feature3Desc: 'Direct line. No phone tag.',
+          cta: 'Connect to your building',
+        },
+
+        // Visual cards
+        activeProjects: 'Active Projects',
+        inProgress: 'In Progress',
+        completed: 'Completed',
+        receivingBids: 'Receiving Bids',
+        availableJobs: 'Available Jobs Near You',
+        yourRequests: 'Your Requests',
+        fixedYesterday: 'Fixed yesterday',
+        scheduledTomorrow: 'Scheduled for tomorrow',
+      },
+
+      // How It Works Section
+      howItWorks: {
+        title: 'From Problem to Solution in 4 Simple Steps',
+        subtitle: 'Start controlling your projects today - no complexity, just results',
+        step1Title: 'Post Your Project',
+        step1Desc: 'Describe what needs fixing. Set your budget. Define your timeline.',
+        step2Title: 'Review Smart Bids',
+        step2Desc: 'Vetted contractors compete for your work. Compare proposals side-by-side.',
+        step3Title: 'Track in Real-Time',
+        step3Desc: 'Know exactly where your project stands - from first nail to final invoice.',
+        step4Title: 'Pay with Confidence',
+        step4Desc: 'Release payments only when milestones are complete. Everyone stays protected.',
+      },
+
+      // CTA Section
+      cta: {
+        title: 'Stop Wasting Time. Start Building Smarter.',
+        subtitle: 'Every day you wait is another day of chasing contractors, dealing with cost overruns, and frustrated residents. INTERVOS eliminates all of it.',
+        button: 'Start Your First Project - Free',
+        disclaimer: 'No credit card required. Cancel anytime. Full control from day one.',
+      },
+
+      // Footer
+      footer: {
+        tagline: 'Connecting every corner of construction. From posting jobs to winning bids - INTERVOS simplifies it all.',
+        platform: 'Platform',
+        company: 'Company',
+        legal: 'Legal',
+        contact: 'Contact',
+        aboutUs: 'About Us',
+        pricing: 'Pricing',
+        privacyPolicy: 'Privacy Policy',
+        termsOfService: 'Terms of Service',
+        cookiePolicy: 'Cookie Policy',
+        copyright: '© 2025 INTERVOS. All rights reserved.',
+      },
+
+      // Login Modal
+      login: {
+        title: 'Welcome Back',
+        subtitle: 'Log in to continue managing your projects',
+        emailLabel: 'Email',
+        emailPlaceholder: 'Enter your email',
+        passwordLabel: 'Password',
+        passwordPlaceholder: 'Enter your password',
+        rememberMe: 'Remember me',
+        forgotPassword: 'Forgot Password?',
+        loginButton: 'Log In',
+        loggingIn: 'Logging in...',
+        noAccount: "Don't have an account?",
+        signUp: 'Sign up',
+        orContinueWith: 'Or continue with',
+        googleLogin: 'Continue with Google',
+      },
+
+      // Register Modal
+      register: {
+        title: 'Join INTERVOS',
+        subtitle: 'Start managing construction projects effortlessly',
+
+        // Step indicators
+        step1: 'Role',
+        step2: 'Details',
+        step3: 'Account',
+
+        // Role selection
+        selectRole: 'I want to...',
+        rolePropertyManager: 'Manage Properties',
+        rolePropertyManagerDesc: 'Post jobs, find contractors, manage your buildings',
+        roleEntrepreneur: 'Find Work',
+        roleEntrepreneurDesc: 'Bid on jobs, build your reputation, grow your business',
+        roleResident: 'Submit Requests',
+        roleResidentDesc: 'Report issues, track repairs, communicate with management',
+        roleSupplier: 'Supply Materials',
+        roleSupplierDesc: 'Connect with contractors, sell building materials',
+
+        // Form labels
+        firstName: 'First Name',
+        lastName: 'Last Name',
+        email: 'Email',
+        phone: 'Phone Number',
+        password: 'Password',
+        confirmPassword: 'Confirm Password',
+        companyName: 'Company Name',
+        address: 'Address',
+        licenseNumber: 'License Number',
+        yearsInBusiness: 'Years in Business',
+        numEmployees: 'Number of Employees',
+        specializations: 'Specializations',
+        propertyName: 'Property/Building Name',
+        unitNumber: 'Unit Number',
+        moveInDate: 'Move-in Date',
+        website: 'Website',
+        deliveryAreas: 'Delivery Areas',
+        numProperties: 'Number of Properties',
+
+        // Placeholders
+        firstNamePlaceholder: 'Enter your first name',
+        lastNamePlaceholder: 'Enter your last name',
+        emailPlaceholder: 'Enter your email',
+        passwordPlaceholder: 'Create a password',
+        confirmPasswordPlaceholder: 'Confirm your password',
+        companyNamePlaceholder: 'Enter company name',
+        addressPlaceholder: 'Start typing your address...',
+        licenseNumberPlaceholder: 'Enter license number',
+        yearsInBusinessPlaceholder: 'e.g., 5',
+        numEmployeesPlaceholder: 'e.g., 10',
+        specializationsPlaceholder: 'e.g., Plumbing, Electrical, HVAC',
+        unitNumberPlaceholder: 'e.g., 101',
+        websitePlaceholder: 'e.g., https://example.com',
+        deliveryAreasPlaceholder: 'e.g., Toronto, GTA, Ontario',
+        numPropertiesPlaceholder: 'e.g., 5',
+        searchProperty: 'Search by building name, address, or city...',
+
+        // Property selection
+        selectProperty: 'Select Your Property',
+        loadingProperties: 'Loading properties...',
+        noPropertiesFound: 'No properties found',
+        tryDifferentSearch: 'Try a different search term',
+        propertyNotListed: "Can't find your property?",
+        contactSupport: 'Contact support to add it',
+
+        // Password requirements
+        passwordRequirements: 'Password must contain:',
+        reqLength: 'At least 8 characters',
+        reqUppercase: 'One uppercase letter',
+        reqLowercase: 'One lowercase letter',
+        reqNumber: 'One number',
+        reqSpecial: 'One special character (!@#$%^&*)',
+
+        // Buttons
+        back: 'Back',
+        next: 'Next',
+        createAccount: 'Create Account',
+        creating: 'Creating account...',
+
+        // Messages
+        haveAccount: 'Already have an account?',
+        logIn: 'Log in',
+        orContinueWith: 'Or continue with',
+        googleSignUp: 'Sign up with Google',
+
+        // Success
+        successTitle: 'Check Your Email',
+        successMessage: 'We\'ve sent a verification link to',
+        successInstructions: 'Click the link in the email to verify your account and start using INTERVOS.',
+        checkSpam: 'Didn\'t receive the email? Check your spam folder or',
+        resendEmail: 'resend verification email',
+        resending: 'Resending...',
+        resendSuccess: 'Verification email resent!',
+        backToLogin: 'Back to Login',
+      },
+
+      // Verification messages
+      verification: {
+        success: 'Email verified successfully! You can now log in.',
+        failed: 'Email verification failed.',
+        missingToken: 'Verification link is invalid (missing token).',
+        invalidToken: 'Verification link is invalid or expired.',
+        serverError: 'Server error during verification. Please try again.',
+      },
     },
   },
 
@@ -996,6 +2526,17 @@ const translations = {
       loadingJobDetails: 'Chargement des détails du travail...',
       // User roles
       user: 'Utilisateur',
+      // File upload
+      selectImageFile: 'Veuillez sélectionner un fichier image',
+      imageTooLarge: "L'image doit être inférieure à 10 Mo",
+      fileTooLarge: 'Le fichier doit être inférieur à 10 Mo',
+      mustBeLoggedIn: 'Vous devez être connecté pour télécharger des fichiers',
+      authTokenNotFound: "Jeton d'authentification introuvable. Veuillez vous reconnecter.",
+      failedUploadImage: "Échec du téléchargement de l'image",
+      failedUploadFile: 'Échec du téléchargement du fichier',
+      failedSendMessage: "Échec de l'envoi du message. Veuillez réessayer.",
+      failedLoadProfile: 'Échec du chargement du profil',
+      failedLoadSupplierProfile: 'Échec du chargement du profil du fournisseur',
     },
 
     // Time formatting
@@ -1503,6 +3044,278 @@ const translations = {
       profileFailed: 'Échec du chargement du profil',
     },
 
+    // Entrepreneur Homepage
+    entrepreneurHome: {
+      // Search & Navigation
+      searchPlaceholder: 'Rechercher des propriétés...',
+      filters: 'Filtres',
+      map: 'Carte',
+      list: 'Liste',
+      showPanel: 'Afficher le Panneau',
+      hidePanel: 'Masquer le Panneau',
+      backToAllProperties: 'Retour aux Propriétés',
+
+      // Property Details
+      openJobs: 'Travaux Ouverts',
+      managedBy: 'Géré par',
+      allProperties: 'Toutes les Propriétés',
+      properties: 'Propriétés',
+      viewLocation: 'Voir l\'Emplacement',
+      viewJobs: 'Voir les Travaux',
+      noPropertiesFound: 'Aucune propriété trouvée',
+
+      // Subscription/Premium
+      jobsAvailable: 'Travaux Disponibles',
+      unlockPremiumAccess: 'Débloquer l\'Accès Premium',
+      unlockDescription: 'Accédez instantanément aux détails des travaux, soumettez des offres et commencez à gagner des contrats sur cette propriété.',
+      fullJobDetails: 'Détails Complets',
+      submitBids: 'Soumettre des Offres',
+      viewBudgets: 'Voir les Budgets',
+      directChat: 'Chat Direct',
+      viewPlans: 'Voir les Plans',
+      freeTrial: '14 jours d\'essai gratuit',
+      cancelAnytime: 'Annuler à tout moment',
+      unlockAccess: 'Débloquer l\'Accès',
+      unlockAccessDescription: 'Consultez les détails des travaux et commencez à enchérir sur cette propriété.',
+      details: 'Détails',
+      bids: 'offres',
+      budget: 'Budget',
+      chat: 'Chat',
+
+      // Jobs
+      availableJobsForBidding: 'Travaux Disponibles pour Soumissionner',
+      availableJobs: 'Travaux Disponibles',
+      jobs: 'Travaux',
+      budgetRange: 'Fourchette Budgétaire',
+      showBudget: 'Afficher le budget',
+      duration: 'Durée',
+      days: 'jours',
+      neededIn: 'Requis Dans',
+      urgent: 'Urgent',
+      bidSubmitted: 'Offre Soumise',
+      submitYourBid: 'Soumettre Votre Offre',
+      noOpenJobs: 'Aucun Travail Ouvert',
+      noOpenJobsDescription: 'Cette propriété n\'a pas de travaux disponibles pour soumissionner en ce moment.',
+      viewBid: 'Voir l\'Offre',
+
+      // Filters Modal
+      filterJobs: 'Filtrer les Travaux',
+      location: 'Emplacement',
+      region: 'Région',
+      workType: 'Type de Travail',
+      urgency: 'Urgence',
+      minBudget: 'Min ($)',
+      maxBudget: 'Max ($)',
+      any: 'Tous',
+      maxDuration: 'Durée Max (jours)',
+      propertyType: 'Type de Propriété',
+      clearAllFilters: 'Effacer Tous les Filtres',
+      applyFilters: 'Appliquer les Filtres',
+
+      // Bid Modal
+      bidsRemaining: 'Offres Restantes',
+      lowBidsWarning: 'Offres limitées! Passez à Premium pour des offres illimitées.',
+      yourBidAmount: 'Montant de Votre Offre ($)',
+      enterBidAmount: 'Entrez le montant de votre offre',
+      proposalMessage: 'Message de Proposition',
+      proposalPlaceholder: 'Décrivez votre approche, votre expérience et pourquoi vous êtes le meilleur candidat pour ce travail...',
+      submitBid: 'Soumettre l\'Offre',
+
+      // View/Edit Bid Modal
+      editYourBid: 'Modifier Votre Offre',
+      yourSubmittedBid: 'Votre Offre Soumise',
+      status: 'Statut',
+      bidAmountLabel: 'Montant de l\'Offre ($)',
+      describeApproach: 'Décrivez votre approche...',
+      saving: 'Enregistrement...',
+      saveChanges: 'Enregistrer les Modifications',
+      yourBidAmountLabel: 'Montant de Votre Offre',
+      submittedOn: 'Soumis le',
+      yourProposalMessage: 'Votre Message de Proposition',
+      editBid: 'Modifier l\'Offre',
+      deleting: 'Suppression...',
+      deleteBid: 'Supprimer l\'Offre',
+      bidApprovedMessage: 'Félicitations! Votre offre a été approuvée.',
+      bidDeclinedMessage: 'Cette offre a été refusée.',
+
+      // Toast Messages
+      fillAllFields: 'Veuillez remplir tous les champs obligatoires',
+      bidSubmittedSuccess: 'Offre soumise avec succès!',
+      enterBidAmountError: 'Veuillez entrer un montant d\'offre',
+      bidUpdatedSuccess: 'Offre mise à jour avec succès!',
+      bidDeletedSuccess: 'Offre supprimée avec succès!',
+      failedLoadManagerProfile: 'Échec du chargement du profil du gestionnaire',
+      failedLoadJobs: 'Échec du chargement des travaux. Veuillez actualiser la page.',
+      paymentSetupComplete: 'Configuration du paiement terminée!',
+
+      // Map Loading
+      gettingLocation: 'Obtention de votre position...',
+      loadingMap: 'Chargement de la carte...',
+      usingDefaultLocation: 'Utilisation de l\'emplacement par défaut',
+
+      // Map Controls
+      zoomIn: 'Zoom Avant',
+      zoomOut: 'Zoom Arrière',
+      resetView: 'Réinitialiser la Vue',
+
+      // Property Manager
+      viewManagerProfile: 'Voir le profil du gestionnaire',
+    },
+
+    // Submitted Bids Page (Entrepreneur)
+    submittedBids: {
+      // Page Header
+      title: 'OFFRES SOUMISES',
+      bids: 'offres',
+      // Status Labels
+      pending: 'En Attente',
+      accepted: 'Acceptée',
+      approved: 'Approuvée',
+      declined: 'Refusée',
+      urgent: 'Urgent',
+      // Tabs
+      allBids: 'Toutes les Offres',
+      // Search
+      searchPlaceholder: 'Rechercher par titre, catégorie ou emplacement...',
+      // Time Labels
+      today: 'Aujourd\'hui',
+      oneDayAgo: 'Il y a 1 jour',
+      daysAgo: 'jours',
+      weeksAgo: 'semaines',
+      monthsAgo: 'mois',
+      // Card Actions
+      details: 'Détails',
+      // Empty States
+      noBidsFound: 'Aucune offre trouvée',
+      adjustSearch: 'Essayez d\'ajuster vos critères de recherche',
+      noSubmittedBids: 'Vous n\'avez pas encore soumis d\'offre',
+      noStatusBids: 'Aucune offre {{status}} pour le moment',
+      // Error State
+      errorLoading: 'Erreur de Chargement des Offres',
+      // Modal - Bid Details
+      bidDetails: 'Détails de l\'Offre',
+      jobInformation: 'Informations sur le Travail',
+      jobTitle: 'Titre du Travail',
+      category: 'Catégorie',
+      urgency: 'Urgence',
+      dueDate: 'Date d\'Échéance',
+      description: 'Description',
+      propertyLocation: 'Emplacement de la Propriété',
+      propertyManager: 'Gestionnaire de Propriété',
+      viewManagerProfile: 'Voir le profil du gestionnaire',
+      yourBidInformation: 'Informations sur Votre Offre',
+      bidAmount: 'Montant de l\'Offre',
+      yourProposalMessage: 'Votre Message de Proposition',
+      submittedOn: 'Soumis le',
+      status: 'Statut',
+      // Modal Actions
+      messageManager: 'Contacter le Gestionnaire',
+      close: 'Fermer',
+    },
+
+    // Entrepreneur Jobs Page
+    entrepreneurJobs: {
+      // Page Header
+      title: 'MES PROJETS',
+      projects: 'projets',
+      active: 'Actifs',
+      // Status Labels
+      accepted: 'Accepté',
+      ongoing: 'En Cours',
+      completed: 'Terminé',
+      urgent: 'Urgent',
+      // Search
+      searchPlaceholder: 'Rechercher des projets...',
+      // Empty State
+      noProjectsFound: 'Aucun projet {{status}} trouvé',
+      adjustSearchOrTabs: 'Essayez d\'ajuster votre recherche ou consultez les autres onglets',
+      // Card Actions
+      viewDetails: 'Voir les Détails',
+      messageManager: 'Contacter le Gestionnaire',
+      startProject: 'Démarrer le Projet',
+      markComplete: 'Marquer comme Terminé',
+      leaveReview: 'Laisser un Avis',
+      viewReview: 'Voir l\'Avis',
+      due: 'Échéance',
+      // Payment Status
+      awaitingPayment: 'En Attente de Paiement',
+      paymentInEscrow: 'Paiement en Dépôt',
+      awaitingApproval: 'En Attente d\'Approbation',
+      fundsReleased: 'Fonds Libérés',
+      refunded: 'Remboursé',
+      disputed: 'Contesté',
+      unknown: 'Inconnu',
+      managerNotPaid: 'Le gestionnaire n\'a pas encore payé pour ce travail',
+      managerNotCompletedPayment: 'Le gestionnaire n\'a pas encore effectué le paiement',
+      paymentHeldSecurely: 'Le paiement est conservé en sécurité jusqu\'à approbation du travail',
+      workMarkedComplete: 'Travail marqué comme terminé, en attente de l\'approbation du gestionnaire',
+      paymentReleased: 'Le paiement a été libéré sur votre compte',
+      paymentRefunded: 'Le paiement a été remboursé au gestionnaire',
+      disputeRegarding: 'Il y a un litige concernant ce contrat',
+      paymentStatusUnknown: 'Statut du paiement inconnu',
+      // Review Modal
+      leaveAReview: 'Laisser un Avis',
+      howWouldYouRate: 'Comment évalueriez-vous votre expérience?',
+      shareExperience: 'Partagez votre expérience',
+      reviewPlaceholder: 'Parlez-nous de votre expérience avec ce gestionnaire de propriété...',
+      characters: 'caractères',
+      minimumTen: '(minimum 10)',
+      addPhotos: 'Ajouter des photos (optionnel)',
+      uploadPhotosHint: 'Téléchargez jusqu\'à 5 photos pour présenter le travail',
+      chooseImages: 'Choisir des Images',
+      removeImage: 'Supprimer l\'image',
+      cancel: 'Annuler',
+      submitting: 'Envoi en cours...',
+      submitReview: 'Soumettre l\'Avis',
+      // Confirmation Modal
+      startProjectQuestion: 'Démarrer ce projet?',
+      markCompleteQuestion: 'Marquer ce projet comme terminé?',
+      statusChangeOngoing: 'Cela changera le statut du projet à En Cours.',
+      statusChangeCompleted: 'Cela marquera le projet comme terminé.',
+      loading: 'Chargement...',
+      confirm: 'Confirmer',
+      // View Review Modal
+      projectDetails: 'Détails du Projet',
+      category: 'Catégorie',
+      dueDate: 'Date d\'Échéance',
+      budgetRange: 'Fourchette Budgétaire',
+      propertyManager: 'Gestionnaire de Propriété',
+      company: 'Entreprise',
+      address: 'Adresse',
+      yourReview: 'Votre Avis',
+      outOfFiveStars: 'sur 5 étoiles',
+      comment: 'Commentaire',
+      attachedPhotos: 'Photos Jointes',
+      // Project Details Modal
+      projectInformation: 'Informations du Projet',
+      titleLabel: 'Titre',
+      status: 'Statut',
+      description: 'Description',
+      timelineBudget: 'Calendrier & Budget',
+      estimatedDuration: 'Durée Estimée',
+      days: 'jours',
+      urgencyLabel: 'Urgence',
+      yourBid: 'Votre Offre',
+      bidAmount: 'Montant de l\'Offre',
+      submittedOn: 'Soumis le',
+      yourProposalMessage: 'Votre Message de Proposition',
+      paymentStatus: 'Statut du Paiement',
+      contractAmount: 'Montant du Contrat',
+      yourPayout: 'Votre Paiement (après frais)',
+      paymentReceived: 'Paiement Reçu',
+      fundsReleasedDate: 'Fonds Libérés',
+      noPaymentNote: 'Le gestionnaire de propriété n\'a pas encore effectué de paiement pour ce travail. Le paiement est requis avant de commencer.',
+      escrowNote: 'Les fonds sont conservés en dépôt fiduciaire. Ils seront libérés une fois que vous aurez terminé le travail et que le gestionnaire l\'aura approuvé.',
+      awaitingApprovalNote: 'Vous avez marqué ce travail comme terminé. En attente de l\'approbation du gestionnaire pour libérer le paiement.',
+      fundsReleasedNote: 'Le paiement a été libéré! Les fonds devraient arriver sur votre compte bancaire dans 2-3 jours ouvrables.',
+      viewManagerProfile: 'Voir le profil du gestionnaire',
+      propertyLocation: 'Emplacement de la Propriété',
+      viewFullscreenMap: 'Voir la carte en plein écran',
+      fullView: 'Plein Écran',
+      close: 'Fermer',
+      chatWithManager: 'Discuter avec le Gestionnaire',
+    },
+
     // Customer Service Page
     customerService: {
       // Header
@@ -1593,6 +3406,330 @@ const translations = {
       daysAgo: 'j',
     },
 
+    // Supplier Homepage
+    supplierHomepage: {
+      // Loading
+      loading: 'Chargement...',
+      // Profile Completion
+      profileComplete: 'Profil complété à {{percentage}}%',
+      completeNow: 'Compléter maintenant',
+      profilePicture: 'Photo de profil',
+      catalogUpload: 'Téléchargement du catalogue',
+      phoneNumber: 'Numéro de téléphone',
+      // Welcome Section
+      welcomeBack: 'Bon retour, {{companyName}} !',
+      welcomeDescription: 'Gérez vos demandes de matériaux et communiquez avec les entreprises de construction',
+      supplier: 'Fournisseur',
+      // Stats
+      totalRequests: 'Total des Demandes',
+      pendingRequests: 'Demandes en Attente',
+      completedLabel: 'Terminées',
+      unreadMessages: 'Messages Non Lus',
+      // Section Headers
+      materialRequests: 'Demandes de Matériaux',
+      quickActions: 'Actions Rapides',
+      // Search & Filter
+      searchPlaceholder: 'Rechercher par entreprise ou détails...',
+      allStatus: 'Tous les Statuts',
+      pending: 'En attente',
+      inProgress: 'En cours',
+      completed: 'Terminé',
+      cancelled: 'Annulé',
+      // Request Actions
+      viewRequest: 'Voir la Demande',
+      accept: 'Accepter',
+      decline: 'Refuser',
+      chat: 'Discuter',
+      markAsCompleted: 'Marquer comme Terminé',
+      addReceipt: 'Ajouter un Reçu',
+      chatWithEntrepreneur: 'Discuter avec l\'Entrepreneur',
+      // Empty States
+      noMatchingRequests: 'Aucune Demande Correspondante',
+      noRequestsYet: 'Aucune Demande',
+      tryAdjustingFilters: 'Essayez d\'ajuster votre recherche ou vos filtres',
+      requestsWillAppear: 'Les demandes de matériaux des entrepreneurs apparaîtront ici',
+      // Quick Actions
+      viewProfile: 'Voir le Profil',
+      updateCompanyInfo: 'Mettre à jour les informations de votre entreprise',
+      messages: 'Messages',
+      chatWithEntrepreneurs: 'Discuter avec les entrepreneurs',
+      uploadCatalog: 'Télécharger le Catalogue',
+      addProductCatalog: 'Ajouter votre catalogue de produits',
+      // Request Details Modal
+      requestDetails: 'Détails de la Demande',
+      company: 'Entreprise :',
+      status: 'Statut :',
+      dateSubmitted: 'Date de Soumission :',
+      contactEmail: 'Email de Contact :',
+      contactPhone: 'Téléphone de Contact :',
+      attachedDocument: 'Document Joint',
+      openDownloadPDF: 'Ouvrir/Télécharger PDF',
+      acceptRequest: 'Accepter la Demande',
+      declineRequest: 'Refuser la Demande',
+      close: 'Fermer',
+      // Invoice Modal
+      createInvoiceReceipt: 'Créer une Facture/Reçu',
+      requestId: 'ID de Demande :',
+      invoiceItems: 'Articles de la Facture',
+      addItem: '+ Ajouter un Article',
+      description: 'Description *',
+      quantity: 'Quantité *',
+      unitPrice: 'Prix Unitaire (₱) *',
+      subtotal: 'Sous-total',
+      totalAmount: 'Montant Total :',
+      deliveryTerms: 'Conditions de Livraison',
+      deliveryTermsPlaceholder: 'Entrez les conditions de livraison, notes...',
+      cancel: 'Annuler',
+      creating: 'Création...',
+      createInvoice: 'Créer la Facture',
+      // Confirmation Modal
+      declineRequestTitle: 'Refuser la Demande',
+      declineConfirmMessage: 'Êtes-vous sûr de vouloir refuser cette demande ? Cette action est irréversible.',
+      completeRequestTitle: 'Terminer la Demande',
+      completeConfirmMessage: 'Marquer cette demande comme terminée ? Vous pourrez ajouter un reçu/facture après.',
+      confirm: 'Confirmer',
+      complete: 'Terminer',
+      // Toast Messages
+      statusUpdatedSuccess: 'Statut de la demande mis à jour avec succès',
+      failedUpdateStatus: 'Échec de la mise à jour du statut de la demande',
+      fillAllDescriptions: 'Veuillez remplir toutes les descriptions d\'articles',
+      enterValidQuantities: 'Veuillez entrer des quantités valides pour tous les articles',
+      enterValidPrices: 'Veuillez entrer des prix valides pour tous les articles',
+      invoiceCreatedSuccess: 'Facture/Reçu créé avec succès !',
+      failedCreateInvoice: 'Échec de la création de la facture',
+      // Item description placeholder
+      itemDescriptionPlaceholder: 'Description de l\'article',
+    },
+
+    // Entrepreneur Profile Page
+    profileEntrepreneur: {
+      // Tab Labels
+      account: 'Compte',
+      subscription: 'Abonnement',
+      payouts: 'Paiements',
+      billingHistory: 'Historique de Facturation',
+      performanceReviews: 'Performance & Avis',
+      settings: 'Paramètres',
+      // Toast Messages
+      paymentAccountSetUp: 'Votre compte de paiement est déjà configuré!',
+      failedPaymentSetup: 'Échec du démarrage de la configuration de paiement',
+      failedOpenDashboard: 'Échec de l\'ouverture du tableau de bord Stripe',
+      selectValidImage: 'Veuillez sélectionner un fichier image valide',
+      imageSizeExceed: 'La taille de l\'image ne doit pas dépasser 5 Mo',
+      fillRequiredFields: 'Veuillez remplir tous les champs obligatoires',
+      profileUpdatedImageFailed: 'Profil mis à jour avec succès, mais le téléchargement de l\'image a échoué. Veuillez réessayer de télécharger votre image plus tard.',
+      profileUpdatedSuccess: 'Profil mis à jour avec succès!',
+      failedUpdateProfile: 'Échec de la mise à jour du profil. Veuillez réessayer.',
+      passwordChangedSuccess: 'Mot de passe modifié avec succès!',
+      // Sidebar
+      entrepreneur: 'Entrepreneur',
+      logout: 'Déconnexion',
+      // Account Tab
+      accountInformation: 'Informations du Compte',
+      manageCompanyProfile: 'Gérez votre profil d\'entreprise et vos coordonnées',
+      editProfile: 'Modifier le Profil',
+      paymentAccount: 'Compte de Paiement',
+      connected: 'Connecté',
+      notConnected: 'Non Connecté',
+      connecting: 'Connexion...',
+      setUp: 'Configurer',
+      companyInformation: 'Informations de l\'Entreprise',
+      companyName: 'Nom de l\'Entreprise',
+      licenseNumber: 'Numéro de Licence',
+      yearsInBusiness: 'Années d\'Activité',
+      years: 'ans',
+      numberOfEmployees: 'Nombre d\'Employés',
+      contactInformation: 'Coordonnées',
+      email: 'Email',
+      phone: 'Téléphone',
+      address: 'Adresse',
+      specializations: 'Spécialisations',
+      notProvided: 'Non fourni',
+      // Subscription Tab
+      subscriptionManagement: 'Gestion de l\'Abonnement',
+      manageSubscriptionPlan: 'Gérez votre plan d\'abonnement et facturation',
+      noActiveSubscription: 'Aucun Abonnement Actif',
+      noSubscriptionDesc: 'Abonnez-vous pour débloquer des fonctionnalités comme soumettre des offres, débloquer les budgets et envoyer des messages.',
+      viewSubscriptionPlans: 'Voir les Plans d\'Abonnement',
+      premiumTrialActive: 'Essai Premium Actif',
+      trialPeriod: 'Période d\'Essai',
+      day: 'jour',
+      days: 'jours',
+      remaining: 'restant',
+      trialEndsOn: 'L\'essai se termine le',
+      daysLeft: 'Jours Restants',
+      active: 'Actif',
+      premiumPlan: 'Plan Premium',
+      basicPlan: 'Plan Basique',
+      bestForProfessionals: 'Idéal pour les professionnels',
+      perfectForGettingStarted: 'Parfait pour commencer',
+      month: '/mois',
+      billingCycle: 'Cycle de Facturation',
+      started: 'Commencé',
+      nextBilling: 'Prochaine Facturation',
+      daysUntilRenewal: 'jours avant renouvellement',
+      youreOnPremium: 'Vous êtes sur Premium',
+      viewPlans: 'Voir les Plans',
+      unlimitedBidsAccess: 'Vous avez accès aux offres illimitées et au support prioritaire',
+      explorePlansDesc: 'Explorez les plans disponibles et améliorez pour plus de fonctionnalités',
+      usageAnalytics: 'Analyse d\'Utilisation',
+      monitorBiddingActivity: 'Surveillez votre activité mensuelle d\'offres',
+      bidsSubmitted: 'Offres Soumises',
+      remainingBids: 'Offres Restantes',
+      budgetUnlocks: 'Déblocages de Budget',
+      unlimited: 'Illimité',
+      activeChats: 'Discussions Actives',
+      // Billing Tab
+      viewBillingHistory: 'Consultez vos paiements d\'abonnement et historique de déblocages',
+      refreshBilling: 'Actualiser',
+      totalSpent: 'Total Dépensé',
+      thisMonth: 'Ce Mois',
+      lastPayment: 'Dernier Paiement',
+      subscriptionPayments: 'Paiements d\'Abonnement',
+      budgetUnlockPayments: 'Paiements de Déblocage',
+      noBillingRecords: 'Aucun Enregistrement',
+      noBillingDesc: 'Votre historique de paiement apparaîtra ici une fois un paiement effectué',
+      date: 'Date',
+      description: 'Description',
+      amount: 'Montant',
+      status: 'Statut',
+      completed: 'Terminé',
+      pending: 'En Attente',
+      failed: 'Échoué',
+      // Payouts Tab
+      payoutsEarnings: 'Paiements & Revenus',
+      managePayouts: 'Gérez vos revenus et compte de paiement',
+      connectPaymentAccount: 'Connecter le Compte de Paiement',
+      connectPaymentDesc: 'Configurez votre compte Stripe pour recevoir les paiements des travaux terminés',
+      setUpPaymentAccount: 'Configurer le Compte de Paiement',
+      availableBalance: 'Solde Disponible',
+      withdraw: 'Retirer',
+      totalEarnings: 'Revenus Totaux',
+      allTime: 'Depuis le début',
+      pendingPayouts: 'Paiements en Attente',
+      processing: 'En traitement',
+      completedPayouts: 'Paiements Effectués',
+      recentTransactions: 'Transactions Récentes',
+      viewAll: 'Voir Tout',
+      noTransactionsYet: 'Aucune Transaction',
+      noTransactionsDesc: 'Votre historique de paiements apparaîtra ici une fois des paiements reçus',
+      payout: 'Versement',
+      payment: 'Paiement',
+      // Performance Tab
+      performanceOverview: 'Aperçu des Performances',
+      trackReputation: 'Suivez votre réputation et les retours clients',
+      averageRating: 'Note Moyenne',
+      basedOnReviews: 'Basé sur {{count}} avis',
+      totalReviews: 'Total des Avis',
+      fromClients: 'Des clients',
+      responseRate: 'Taux de Réponse',
+      toMessages: 'Aux messages',
+      clientReviews: 'Avis des Clients',
+      noReviewsYet: 'Aucun Avis',
+      noReviewsDesc: 'Vos avis apparaîtront ici une fois que les clients noteront votre travail',
+      anonymous: 'Anonyme',
+      // Settings Tab
+      accountSettings: 'Paramètres du Compte',
+      manageSecurityPreferences: 'Gérez votre sécurité et vos préférences',
+      changePassword: 'Changer le Mot de Passe',
+      updatePasswordDesc: 'Mettez à jour votre mot de passe pour sécuriser votre compte',
+      currentPassword: 'Mot de Passe Actuel',
+      newPassword: 'Nouveau Mot de Passe',
+      confirmNewPassword: 'Confirmer le Nouveau Mot de Passe',
+      passwordStrength: 'Force du Mot de Passe',
+      updatePassword: 'Mettre à Jour',
+      changingPassword: 'Modification...',
+      languagePreferences: 'Préférences de Langue',
+      selectLanguage: 'Sélectionnez votre langue préférée',
+      // Password strength labels
+      veryWeak: 'Très Faible',
+      weak: 'Faible',
+      fair: 'Moyen',
+      good: 'Bon',
+      strong: 'Fort',
+      // Password errors
+      allFieldsRequired: 'Tous les champs sont requis',
+      passwordsDoNotMatch: 'Les mots de passe ne correspondent pas',
+      passwordMinLength: 'Le mot de passe doit contenir au moins 8 caractères',
+      passwordRequirements: 'Le mot de passe doit contenir majuscule, minuscule, chiffre et caractère spécial',
+      pleaseLoginAgain: 'Veuillez vous reconnecter',
+      failedChangePassword: 'Échec du changement de mot de passe',
+      // Edit Modal
+      editCompanyProfile: 'Modifier le Profil de l\'Entreprise',
+      companyNameLabel: 'Nom de l\'Entreprise',
+      licenseNumberLabel: 'Numéro de Licence',
+      yearsInBusinessLabel: 'Années d\'Activité',
+      numberOfEmployeesLabel: 'Nombre d\'Employés',
+      addressLabel: 'Adresse',
+      phoneLabel: 'Téléphone',
+      profilePicture: 'Photo de Profil',
+      changePhoto: 'Changer la Photo',
+      uploadPhoto: 'Télécharger Photo',
+      removePhoto: 'Supprimer',
+      selectSpecializations: 'Sélectionnez vos spécialisations',
+      cancel: 'Annuler',
+      saving: 'Enregistrement...',
+      saveChanges: 'Enregistrer',
+      // Billing Tab - Additional
+      paymentHistory: 'Historique des Paiements',
+      loadingBillingHistory: 'Chargement de l\'historique de facturation...',
+      periodEnds: 'Période se termine le',
+      paid: 'Payé',
+      trial: 'Essai',
+      noPaymentHistory: 'Aucun Historique de Paiement',
+      noPaymentHistoryDesc: 'Vos paiements d\'abonnement et déblocages de budget apparaîtront ici',
+      // Performance Tab - Additional
+      experience: 'Expérience',
+      employees: 'Employés',
+      loadingReviews: 'Chargement des avis...',
+      completeJobsForReviews: 'Terminez des travaux pour recevoir des avis de clients',
+      // Payouts Tab - Additional
+      setUpPayouts: 'Configurer les Paiements',
+      connectStripeDesc: 'Connectez votre compte Stripe pour recevoir les paiements des contrats terminés',
+      connectStripeAccount: 'Connecter le Compte Stripe',
+      loadingEarningsData: 'Chargement des données de revenus...',
+      netEarnings: 'Revenus Nets',
+      totalReceived: 'Total Reçu',
+      contracts: 'Contrats',
+      platformFeeBreakdown: 'Détail des Frais de Plateforme',
+      platformFeeOverviewDesc: 'Aperçu des montants des contrats et des frais de plateforme',
+      grossContractValue: 'Valeur Brute du Contrat',
+      platformFee: 'Frais de Plateforme',
+      yourNetEarnings: 'Vos Revenus Nets',
+      revenueOverview: 'Aperçu des Revenus',
+      weekly: 'Hebdomadaire',
+      monthly: 'Mensuel',
+      job: 'travail',
+      jobs: 'travaux',
+      noDataForPeriod: 'Aucune donnée pour cette période',
+      transactionHistory: 'Historique des Transactions',
+      transactions: 'transactions',
+      tableHeaderJob: 'Travail',
+      tableHeaderClient: 'Client',
+      tableHeaderContract: 'Contrat',
+      tableHeaderFee: 'Frais',
+      tableHeaderNet: 'Net',
+      tableHeaderStatus: 'Statut',
+      tableHeaderDate: 'Date',
+      contractAmountLabel: 'Montant du Contrat:',
+      platformFeeLabel: 'Frais de Plateforme',
+      yourPayout: 'Votre Versement:',
+      paymentReceivedLabel: 'Paiement Reçu:',
+      payoutCompletedLabel: 'Versement Effectué:',
+      noTransactions: 'Aucune transaction',
+      completeContractsForHistory: 'Terminez des contrats pour voir votre historique de transactions',
+      payoutSchedule: 'Calendrier des Versements',
+      payoutFrequency: 'Fréquence des Versements',
+      afterWorkApproval: 'Après approbation du travail',
+      processingTime: 'Délai de Traitement',
+      processingTimeValue: '1-2 jours ouvrables',
+      minimumPayout: 'Versement Minimum',
+      noMinimum: 'Aucun minimum',
+      payoutScheduleNote: 'Les versements sont automatiquement transférés sur votre compte bancaire connecté après que le gestionnaire immobilier approuve le travail terminé.',
+      couldNotLoadEarnings: 'Impossible de charger les données de revenus',
+      tryAgain: 'Réessayer',
+    },
+
     // Report Modal
     reportModal: {
       // Header
@@ -1635,6 +3772,929 @@ const translations = {
       reportSubmitted: 'Signalement Envoyé!',
       thankYouMessage: 'Merci pour votre signalement. Notre équipe de support l\'examinera et vous répondra dès que possible.',
       close: 'Fermer',
+    },
+
+    // Supplier List Page
+    supplierList: {
+      // Page Header
+      title: 'Fournisseurs de Matériaux',
+      suppliers: 'fournisseurs',
+      myRequests: 'Mes Demandes',
+      total: 'Total',
+      // Search & Filters
+      searchPlaceholder: 'Rechercher par nom, licence, email ou téléphone...',
+      filters: 'Filtres',
+      location: 'Localisation',
+      materialType: 'Type de Matériau',
+      yearsInBusiness: "Années d'Activité",
+      certification: 'Certification',
+      clearAllFilters: 'Effacer Tous les Filtres',
+      // Filter Options
+      all: 'Tous',
+      allAreas: 'Toutes les Zones',
+      allMaterials: 'Tous les Matériaux',
+      yearsNew: 'Nouveau (0-2 ans)',
+      yearsEstablished: 'Établi (3-5 ans)',
+      yearsExperienced: 'Expérimenté (6-10 ans)',
+      yearsVeteran: 'Vétéran (10+ ans)',
+      certifiedOnly: 'Certifié Uniquement',
+      nonCertified: 'Non Certifié',
+      // Empty State
+      noSuppliersFound: 'Aucun fournisseur trouvé',
+      adjustFilters: 'Essayez de modifier vos critères de recherche ou de filtre',
+      // Card Labels
+      certified: 'Certifié',
+      notCertified: 'Non Certifié',
+      yrs: 'ans',
+      deliveryAreas: 'Zones de Livraison',
+      details: 'Détails',
+      request: 'Demande',
+      viewCatalog: 'Voir le Catalogue',
+      chatWithSupplier: 'Discuter avec le Fournisseur',
+      // Details Modal
+      companyInformation: 'Informations sur l\'Entreprise',
+      years: 'ans',
+      licenseNumber: 'Numéro de Licence',
+      contactInformation: 'Coordonnées',
+      phone: 'Téléphone',
+      email: 'Email',
+      website: 'Site Web',
+      materialsSupplied: 'Matériaux Fournis',
+      requestMaterials: 'Demander des Matériaux',
+      // Request Modal
+      requestMaterialsTitle: 'Demander des Matériaux',
+      supplierInstructions: "Veuillez consulter le catalogue du fournisseur (si disponible) pour identifier les matériaux et quantités nécessaires. Le fournisseur créera une facture personnalisée basée sur votre demande.",
+      submitRequestAs: 'Soumettre Votre Demande Sous Forme De',
+      textDescription: 'Description Textuelle',
+      pdfDocument: 'Document PDF',
+      materialRequestDetails: 'Détails de la Demande de Matériaux',
+      requestPlaceholder: "Veuillez préciser les matériaux dont vous avez besoin, les quantités et toute exigence particulière...\n\nExemple:\n- Ciment: 50 sacs\n- Barres d'acier: 100 pièces (10mm)\n- Sable: 5 mètres cubes\n- Livraison souhaitée le: [Date]",
+      beSpecific: 'Soyez aussi précis que possible pour recevoir un devis exact',
+      uploadRequestDocument: 'Télécharger le Document de Demande (PDF)',
+      clickToUpload: 'Cliquez pour télécharger',
+      orDragDrop: 'ou glissez-déposez',
+      pdfFileLimit: 'Fichier PDF jusqu\'à 10 Mo',
+      cancel: 'Annuler',
+      submitting: 'Envoi...',
+      submitRequest: 'Soumettre la Demande',
+      // Toast Messages
+      selectPdfFile: 'Veuillez sélectionner un fichier PDF',
+      fileSizeLimit: 'La taille du fichier ne doit pas dépasser 10 Mo',
+      enterRequestDetails: 'Veuillez entrer les détails de votre demande de matériaux',
+      uploadPdfRequest: 'Veuillez télécharger un fichier PDF avec les détails de votre demande',
+      requestSubmitted: 'Demande de matériaux soumise avec succès! Le fournisseur examinera et créera une facture pour vous.',
+      failedLoadProfile: 'Échec du chargement du profil du fournisseur',
+    },
+
+    // Supplier Profile Modal
+    supplierProfileModal: {
+      // Tabs
+      tabCompanyInfo: 'Info Entreprise',
+      tabContact: 'Contact',
+      tabReviews: 'Avis',
+      tabDeliveryAreas: 'Zones de Livraison',
+      tabBusinessOverview: "Vue d'Ensemble",
+      tabProductCatalog: 'Catalogue Produits',
+      tabServices: 'Services',
+      // Company Tab
+      supplier: 'Fournisseur',
+      reviews: 'avis',
+      review: 'avis',
+      companyName: "Nom de l'Entreprise",
+      notProvided: 'Non fourni',
+      businessType: "Type d'Entreprise",
+      notSpecified: 'Non spécifié',
+      yearsInBusiness: "Années d'Activité",
+      years: 'ans',
+      status: 'Statut',
+      active: 'Actif',
+      // Contact Tab
+      contactInformation: 'Coordonnées',
+      contactPerson: 'Personne de Contact',
+      emailAddress: 'Adresse Email',
+      phoneNumber: 'Numéro de Téléphone',
+      website: 'Site Web',
+      businessAddress: 'Adresse Professionnelle',
+      // Reviews Tab
+      customerReviews: 'Avis Clients',
+      loadingReviews: 'Chargement des avis...',
+      noReviewsYet: 'Aucun Avis',
+      noReviewsMessage: "Ce fournisseur n'a pas encore reçu d'avis.",
+      anonymous: 'Anonyme',
+      reviewer: 'Évaluateur',
+      // Delivery Tab
+      deliveryAreas: 'Zones de Livraison',
+      deliveryIntro: 'Ce fournisseur livre dans les zones suivantes:',
+      noDeliveryAreas: 'Aucune Zone de Livraison',
+      noDeliveryAreasMessage: "Ce fournisseur n'a pas encore spécifié ses zones de livraison.",
+      deliveryNote: 'Contactez le fournisseur directement pour les horaires de livraison et la couverture dans votre zone.',
+      // Business Tab
+      businessOverview: "Vue d'Ensemble",
+      businessRegistration: "Immatriculation de l'Entreprise",
+      taxId: 'Numéro Fiscal',
+      businessLicense: 'Licence Commerciale',
+      verified: 'Vérifié',
+      // Catalog Tab
+      productCatalog: 'Catalogue Produits',
+      catalogAvailable: 'Catalogue Produits Disponible',
+      catalogDescription: 'Consultez ou téléchargez le catalogue complet du fournisseur',
+      viewCatalog: 'Voir le Catalogue',
+      noCatalog: 'Aucun Catalogue Disponible',
+      noCatalogMessage: "Ce fournisseur n'a pas encore téléchargé de catalogue produits.",
+      contactForInfo: 'Contactez-les directement pour les informations produits.',
+      // Services Tab
+      serviceInformation: 'Informations sur les Services',
+      supplyServices: 'Services de Fourniture',
+      supplyServicesDesc: '{{companyName}} fournit des matériaux de construction aux entrepreneurs et gestionnaires immobiliers.',
+      thisSupplier: 'Ce fournisseur',
+      qualityMaterials: 'Matériaux de Qualité',
+      competitivePricing: 'Prix Compétitifs',
+      reliableDelivery: 'Livraison Fiable',
+      establishedBusiness: 'Entreprise Établie',
+      servicesNote: 'Contactez le fournisseur pour les devis, les prix de gros et les demandes de produits spécifiques.',
+      // Footer
+      requestMaterials: 'Demander des Matériaux',
+    },
+
+    // Stripe Connect Modal
+    stripeConnectModal: {
+      // Success state
+      paymentSetupComplete: 'Configuration de Paiement Terminée!',
+      accountConnectedDesc: 'Votre compte Stripe est entièrement connecté. Vous pouvez recevoir des paiements pour votre travail.',
+      accountStatus: 'Statut du Compte',
+      active: 'Actif',
+      canReceivePayments: 'Peut Recevoir des Paiements',
+      yes: 'Oui',
+      viewStripeDashboard: 'Voir le Tableau de Bord Stripe',
+      continue: 'Continuer',
+      // Setup state
+      setUpPaymentAccount: 'Configurer le Compte de Paiement',
+      bidApprovedDesc: 'Votre offre a été approuvée! Complétez la configuration de paiement pour recevoir les paiements pour ce travail.',
+      connectStripeDesc: 'Connectez votre compte Stripe pour recevoir les paiements directement sur votre compte bancaire lorsque vous terminez des travaux.',
+      // Benefits
+      securePayments: 'Paiements Sécurisés',
+      securePaymentsDesc: 'Les paiements sont traités de manière sécurisée via Stripe',
+      directDeposits: 'Dépôts Directs',
+      directDepositsDesc: 'Fonds déposés directement sur votre compte bancaire',
+      protectedEarnings: 'Revenus Protégés',
+      protectedEarningsDesc: 'Fonds conservés en sécurité jusqu\'à la fin du travail',
+      // Actions
+      skipForNow: 'Passer pour le Moment',
+      connecting: 'Connexion...',
+      connectWithStripe: 'Connecter avec Stripe',
+      footerNote: 'Prend environ 5 minutes. Vous pouvez passer et configurer cela plus tard depuis votre profil.',
+      poweredBy: 'Propulsé par',
+      // Errors
+      failedOnboarding: 'Échec du démarrage de l\'intégration. Veuillez réessayer.',
+      failedDashboard: 'Échec de l\'ouverture du tableau de bord. Veuillez réessayer.',
+    },
+
+    // Messages Supplier Page
+    messagesSupplier: {
+      // Sidebar
+      title: 'Messages',
+      subtitle: 'Discuter avec les entreprises de construction',
+      searchPlaceholder: 'Rechercher des entrepreneurs...',
+
+      // Loading & Error states
+      loadingConversations: 'Chargement des conversations...',
+      pleaseLoginToView: 'Veuillez vous connecter pour voir les messages',
+      tryAgain: 'Réessayer',
+      sessionExpired: 'Session expirée. Veuillez vous reconnecter.',
+
+      // Empty states
+      noMatchingConversations: 'Aucune conversation correspondante',
+      noConversationsYet: 'Aucune conversation pour le moment',
+      emptyListHint: 'Vous pouvez envoyer des messages aux entrepreneurs après avoir accepté leurs demandes de matériaux. Consultez votre page d\'accueil pour les demandes en attente.',
+
+      // Chat window empty state
+      selectConversation: 'Sélectionner une conversation',
+      chooseEntrepreneur: 'Choisissez un entrepreneur dans la liste pour commencer à discuter',
+      messagingEnabledInfo: 'La messagerie est activée après avoir accepté une demande de matériaux. Vous pouvez ensuite:',
+      discussMaterialSpecs: 'Discuter des spécifications des matériaux',
+      negotiatePricing: 'Négocier les prix et les conditions',
+      confirmDeliveryDates: 'Confirmer les dates de livraison',
+      sendInvoicesQuotes: 'Envoyer des factures et des devis',
+
+      // Chat header
+      backToConversations: 'Retour aux conversations',
+      viewEntrepreneurProfile: 'Voir le profil de l\'entrepreneur',
+      entrepreneur: 'Entrepreneur',
+
+      // Messages
+      noMessagesYet: 'Aucun message pour le moment',
+      attachment: '[Pièce jointe]',
+
+      // Input area
+      typeMessage: 'Tapez un message...',
+      sendImage: 'Envoyer une image',
+      attachFile: 'Joindre un fichier',
+
+      // File upload messages
+      pleaseSelectImage: 'Veuillez sélectionner un fichier image',
+      imageMustBeLessThan: 'L\'image doit faire moins de 10 Mo',
+      fileMustBeLessThan: 'Le fichier doit faire moins de 10 Mo',
+      mustBeLoggedIn: 'Vous devez être connecté pour télécharger des fichiers',
+      failedToUploadImage: 'Échec du téléchargement de l\'image',
+      failedToUploadFile: 'Échec du téléchargement du fichier',
+      failedToSendMessage: 'Échec de l\'envoi du message',
+      failedToLoadProfile: 'Échec du chargement du profil de l\'entrepreneur',
+    },
+
+    // Supplier Profile Page
+    supplierProfile: {
+      // Loading
+      loadingProfile: 'Chargement du profil fournisseur...',
+
+      // Tabs
+      account: 'Compte',
+      overview: 'Aperçu',
+      catalog: 'Catalogue',
+      service: 'Service',
+      settings: 'Paramètres',
+
+      // Sidebar
+      supplier: 'Fournisseur',
+      logout: 'Déconnexion',
+
+      // Mobile
+      editProfile: 'Modifier le profil',
+
+      // Account Tab
+      accountInformation: 'Informations du compte',
+      manageCompanyProfile: 'Gérez votre profil d\'entreprise et vos coordonnées',
+
+      // Company Information
+      companyInformation: 'Informations de l\'entreprise',
+      companyName: 'Nom de l\'entreprise',
+      businessLicense: 'Licence commerciale',
+      yearsInBusiness: 'Années d\'activité',
+      years: 'ans',
+      website: 'Site web',
+      notProvided: 'Non fourni',
+
+      // Contact Information
+      contactInformation: 'Coordonnées',
+      email: 'E-mail',
+      phone: 'Téléphone',
+      address: 'Adresse',
+
+      // Delivery Areas
+      deliveryAreas: 'Zones de livraison',
+      noDeliveryAreas: 'Aucune zone de livraison spécifiée',
+      areas: 'zones',
+      locations: 'emplacements',
+
+      // Overview Tab
+      businessOverview: 'Aperçu de l\'entreprise',
+      viewBusinessStats: 'Consultez vos statistiques et performances commerciales',
+      catalogStatus: 'Statut du catalogue',
+      uploaded: 'Téléchargé',
+      notUploaded: 'Non téléchargé',
+      deliveryCoverage: 'Couverture de livraison',
+
+      // Catalog Tab
+      productCatalog: 'Catalogue de produits',
+      manageCatalog: 'Gérez votre catalogue de produits et documentation',
+      productCatalogPDF: 'Catalogue de produits PDF',
+      viewCatalogDescription: 'Consultez notre catalogue complet avec les prix et spécifications',
+      downloadCatalog: 'Télécharger le catalogue',
+      noCatalogUploaded: 'Aucun catalogue téléchargé',
+      uploadCatalogDescription: 'Téléchargez un catalogue PDF pour présenter vos produits aux clients potentiels',
+      uploadCatalog: 'Télécharger un catalogue',
+
+      // Service Tab
+      serviceInformation: 'Informations sur le service',
+      viewDeliveryCoverage: 'Consultez la couverture et les zones de service',
+      companyExperience: 'Expérience de l\'entreprise',
+      yearsInIndustry: 'Années dans l\'industrie',
+      serviceAreas: 'Zones de service',
+
+      // Settings Tab
+      managePreferences: 'Gérez vos préférences et votre sécurité',
+      language: 'Langue',
+      chooseLanguage: 'Choisissez votre langue préférée pour l\'application',
+      changePassword: 'Changer le mot de passe',
+      updatePassword: 'Mettre à jour le mot de passe de votre compte',
+      currentPassword: 'Mot de passe actuel',
+      newPassword: 'Nouveau mot de passe',
+      confirmNewPassword: 'Confirmer le nouveau mot de passe',
+      enterCurrentPassword: 'Entrez le mot de passe actuel',
+      enterNewPassword: 'Entrez le nouveau mot de passe',
+      confirmPasswordPlaceholder: 'Confirmez le nouveau mot de passe',
+      passwordsDoNotMatch: 'Les mots de passe ne correspondent pas',
+      cancel: 'Annuler',
+      changing: 'Modification...',
+
+      // Password strength
+      veryWeak: 'Très faible',
+      weak: 'Faible',
+      fair: 'Moyen',
+      good: 'Bon',
+      strong: 'Fort',
+      characters: '8+ caractères',
+      uppercase: 'Majuscule',
+      lowercase: 'Minuscule',
+      number: 'Chiffre',
+      specialChar: 'Caractère spécial',
+
+      // Password errors
+      allFieldsRequired: 'Tous les champs sont requis',
+      passwordsMustMatch: 'Les nouveaux mots de passe ne correspondent pas',
+      passwordMinLength: 'Le mot de passe doit contenir au moins 8 caractères',
+      passwordChangedSuccess: 'Mot de passe modifié avec succès!',
+      pleaseLoginToChange: 'Veuillez vous connecter pour changer le mot de passe',
+
+      // Edit Modal
+      uploadLogo: 'Télécharger le logo',
+      change: 'Changer',
+      remove: 'Supprimer',
+      required: '*',
+      licenseNumber: 'Numéro de licence',
+      fullBusinessAddress: 'Adresse commerciale complète',
+      businessAddress: 'Adresse commerciale',
+      addArea: 'Ajouter une zone...',
+      saveChanges: 'Enregistrer les modifications',
+      saving: 'Enregistrement...',
+
+      // Toast messages
+      selectValidImage: 'Veuillez sélectionner un fichier image valide',
+      imageSizeLimit: 'La taille de l\'image ne doit pas dépasser 5 Mo',
+      selectPdfFile: 'Veuillez sélectionner un fichier PDF',
+      pdfSizeLimit: 'La taille du PDF ne doit pas dépasser 50 Mo',
+      fillRequiredFields: 'Veuillez remplir tous les champs obligatoires',
+      profileUpdatedSuccess: 'Profil mis à jour avec succès!',
+      failedToUpdate: 'Échec de la mise à jour du profil. Veuillez réessayer.',
+    },
+
+    // HomePageResident
+    homePageResident: {
+      // Page header
+      title: 'Actualités Communautaires',
+      subtitle: 'Restez informé des annonces et événements de l\'immeuble',
+
+      // Search and filters
+      searchPlaceholder: 'Rechercher des annonces...',
+      clearSearch: 'Effacer la recherche',
+
+      // Filter types
+      all: 'Tout',
+      maintenance: 'Maintenance',
+      event: 'Événement',
+      notice: 'Avis',
+      emergency: 'Urgence',
+
+      // Loading state
+      loadingAnnouncements: 'Chargement des annonces...',
+
+      // Error states
+      authenticationRequired: 'Authentification requise',
+      failedToFetchProfile: 'Échec de la récupération du profil utilisateur',
+      noPropertyAssigned: 'Aucune propriété associée à votre profil',
+      failedToLoadProfile: 'Échec du chargement de votre profil',
+      noAnnouncementsAvailable: 'Aucune annonce disponible',
+      failedToFetchAnnouncements: 'Échec de la récupération des annonces',
+      tryAgain: 'Réessayer',
+
+      // Empty state
+      noAnnouncementsFound: 'Aucune annonce trouvée',
+      adjustSearchOrFilter: 'Essayez d\'ajuster votre recherche ou filtre',
+      noAnnouncementsAtThisTime: 'Il n\'y a pas d\'annonces pour le moment',
+      clearFilters: 'Effacer les Filtres',
+
+      // Notification
+      newAnnouncement: 'Nouvelle Annonce',
+    },
+
+    // MessagesResident
+    messagesResident: {
+      // Sidebar header
+      title: 'Messages',
+      groupChats: 'Discussions de groupe',
+      directMessages: 'Messages directs',
+      createGroup: '+ Créer un groupe',
+
+      // Loading and error states
+      loading: 'Chargement...',
+      pleaseLoginToView: 'Veuillez vous connecter pour voir les messages',
+      failedToLoadChats: 'Échec du chargement des discussions',
+
+      // Empty states
+      noGroupChatsYet: 'Pas encore de discussions de groupe',
+      noDirectMessagesYet: 'Pas encore de messages directs',
+      noMessagesYet: 'Pas encore de messages',
+      buildingGroupChat: 'Discussion de groupe de l\'immeuble',
+
+      // Empty chat
+      selectChatToStart: 'Sélectionnez une discussion pour commencer',
+      chooseConversation: 'Choisissez une conversation dans la liste',
+
+      // Chat header
+      backToConversations: 'Retour aux conversations',
+      members: 'membres',
+      resident: 'Résident',
+      call: 'Appeler',
+
+      // Typing indicator
+      isTyping: 'est en train d\'écrire...',
+      areTyping: 'sont en train d\'écrire...',
+
+      // Message input
+      typeMessage: 'Tapez un message...',
+      sendImage: 'Envoyer une image',
+      attachFile: 'Joindre un fichier',
+
+      // Upload messages
+      pleaseSelectImage: 'Veuillez sélectionner un fichier image',
+      imageMustBeLessThan: 'L\'image doit faire moins de 10 Mo',
+      fileMustBeLessThan: 'Le fichier doit faire moins de 10 Mo',
+      mustBeLoggedIn: 'Vous devez être connecté pour télécharger des fichiers',
+      failedToUploadImage: 'Échec du téléchargement de l\'image',
+      failedToUploadFile: 'Échec du téléchargement du fichier',
+
+      // Send messages
+      failedToSendMessage: 'Échec de l\'envoi du message',
+
+      // Create group modal
+      createGroupChat: 'Créer une discussion de groupe',
+      groupName: 'Nom du groupe',
+      groupNamePlaceholder: 'ex: Résidents du 3ème étage',
+      description: 'Description',
+      descriptionPlaceholder: 'À quoi sert cette discussion de groupe ?',
+      cancel: 'Annuler',
+      createGroupButton: 'Créer le groupe',
+      failedToCreateGroup: 'Échec de la création du groupe',
+    },
+
+    // Members Resident Page
+    membersResident: {
+      title: 'Membres de l\'immeuble',
+      subtitle: 'Connectez-vous avec vos voisins',
+      searchPlaceholder: 'Rechercher des résidents par nom ou unité...',
+      clearSearch: 'Effacer la recherche',
+      showOnlineOnly: 'Afficher uniquement les en ligne',
+      loadingMembers: 'Chargement des membres...',
+      tryAgain: 'Réessayer',
+      noMembersFound: 'Aucun membre trouvé',
+      adjustSearchOrFilters: 'Essayez d\'ajuster votre recherche ou vos filtres',
+      noResidentsInBuilding: 'Aucun résident n\'est actuellement dans votre immeuble',
+      clearFilters: 'Effacer les filtres',
+      owner: 'Propriétaire',
+      unit: 'Unité',
+      floor: 'Étage',
+      propertyManager: 'Gestionnaire immobilier',
+      movedIn: 'Emménagé le :',
+      sendMessage: 'Envoyer un message',
+      showingMembers: 'Affichage de {{shown}} sur {{total}} membres',
+      pleaseLogIn: 'Veuillez vous connecter pour voir les membres',
+      failedToLoadMembers: 'Échec du chargement des membres de l\'immeuble',
+    },
+
+    // Profile Page Resident
+    profilePageResident: {
+      // Tabs
+      account: 'Compte',
+      settings: 'Paramètres',
+
+      // Loading and errors
+      loadingProfile: 'Chargement du profil...',
+      pleaseLogIn: 'Veuillez vous connecter pour voir votre profil',
+      failedToFetchProfile: 'Échec de la récupération du profil',
+      failedToLoadProfile: 'Échec du chargement du profil',
+      failedToSaveChanges: 'Échec de l\'enregistrement des modifications',
+      tryAgain: 'Réessayer',
+
+      // Success messages
+      profileUpdatedSuccess: 'Profil mis à jour avec succès !',
+      passwordChangedSuccess: 'Mot de passe modifié avec succès !',
+
+      // Account tab header
+      accountInformation: 'Informations du compte',
+      manageProfileDetails: 'Gérez votre profil et vos coordonnées',
+      editProfile: 'Modifier le profil',
+      save: 'Enregistrer',
+      saving: 'Enregistrement...',
+      cancel: 'Annuler',
+
+      // Role
+      resident: 'Résident',
+
+      // About me section
+      aboutMe: 'À propos de moi',
+      bioPlaceholder: 'Parlez de vous à vos voisins...',
+      noBioYet: 'Aucune biographie ajoutée.',
+
+      // Unit information section
+      unitInformation: 'Informations sur l\'unité',
+      unitNumber: 'Numéro d\'unité',
+      floor: 'Étage',
+      buildingSection: 'Section du bâtiment',
+      moveInDate: 'Date d\'emménagement',
+      unit: 'Unité',
+      section: 'Section',
+      notSpecified: 'Non spécifié',
+
+      // Contact information section
+      contactInformation: 'Coordonnées',
+      email: 'E-mail',
+      phone: 'Téléphone',
+      notProvided: 'Non fourni',
+
+      // Privacy settings
+      privacySettings: 'Paramètres de confidentialité',
+      showEmailToResidents: 'Afficher l\'e-mail aux autres résidents',
+      showPhoneToResidents: 'Afficher le téléphone aux autres résidents',
+      showUnitToResidents: 'Afficher le numéro d\'unité aux autres résidents',
+      showMoveInDate: 'Afficher la date d\'emménagement',
+      showOnlineStatus: 'Afficher quand je suis en ligne',
+      allowMessages: 'Autoriser les autres résidents à m\'envoyer des messages',
+
+      // Contact preferences
+      contactPreferences: 'Préférences de contact',
+      allowContactViaEmail: 'Autoriser le contact par e-mail',
+      allowContactViaPhone: 'Autoriser le contact par téléphone',
+      allowContactViaMessage: 'Autoriser le contact par message direct',
+
+      // Settings tab
+      customizePreferences: 'Personnalisez vos préférences et votre sécurité',
+
+      // Language settings
+      language: 'Langue',
+      selectPreferredLanguage: 'Sélectionnez votre langue préférée',
+
+      // Password settings
+      changePassword: 'Changer le mot de passe',
+      updateAccountPassword: 'Mettre à jour le mot de passe de votre compte',
+      currentPassword: 'Mot de passe actuel',
+      enterCurrentPassword: 'Entrez le mot de passe actuel',
+      newPassword: 'Nouveau mot de passe',
+      enterNewPassword: 'Entrez le nouveau mot de passe',
+      confirmNewPassword: 'Confirmer le nouveau mot de passe',
+      confirmPasswordPlaceholder: 'Confirmez le nouveau mot de passe',
+      passwordsDoNotMatch: 'Les mots de passe ne correspondent pas',
+      changing: 'Modification...',
+
+      // Password validation
+      allFieldsRequired: 'Tous les champs sont requis',
+      passwordsMustMatch: 'Les nouveaux mots de passe ne correspondent pas',
+      passwordMinLength: 'Le mot de passe doit contenir au moins 8 caractères',
+      pleaseLoginToChange: 'Veuillez vous connecter pour changer le mot de passe',
+
+      // Password strength
+      veryWeak: 'Très faible',
+      weak: 'Faible',
+      fair: 'Correct',
+      good: 'Bon',
+      strong: 'Fort',
+
+      // Password requirements
+      characters: '8+ caractères',
+      uppercase: 'Majuscule',
+      lowercase: 'Minuscule',
+      number: 'Chiffre',
+      specialChar: 'Caractère spécial',
+
+      // Actions
+      logout: 'Déconnexion',
+    },
+
+    // Subscription Modal
+    subscriptionModal: {
+      // Reopen button
+      viewSubscriptionPlans: 'Voir les forfaits d\'abonnement',
+
+      // Modal header
+      title: 'Choisissez votre forfait d\'abonnement',
+      subtitle: 'Sélectionnez le forfait adapté à vos besoins et commencez à soumettre des offres dès aujourd\'hui',
+      closeModal: 'Fermer la fenêtre',
+
+      // Plan cards - Basic
+      basicPlan: 'Forfait de Base',
+      basicPrice: '250',
+      basicPeriod: '/mois',
+      basicDescription: 'Fonctionnalités essentielles pour les entrepreneurs',
+
+      // Plan cards - Premium
+      premiumPlan: 'Forfait Premium',
+      premiumPrice: '429',
+      premiumPeriod: '/mois',
+      premiumDescription: 'Offres illimitées pour les entreprises en croissance',
+      recommended: 'RECOMMANDÉ',
+
+      // Feature list
+      browseViewJobs: 'Parcourir et voir les travaux',
+      submitUpTo30Bids: 'Soumettre jusqu\'à 30 offres',
+      unlockBudgets: 'Débloquer les budgets',
+      messageApprovedContacts: 'Contacter les contacts approuvés',
+      submitUnlimitedBids: 'Soumettre des offres illimitées',
+      prioritySupport: 'Support prioritaire',
+
+      // CTA buttons
+      startBasicTrial: 'Démarrer l\'essai de base',
+      startPremiumTrial: 'Démarrer l\'essai Premium',
+
+      // Comparison table
+      comparisonTitle: 'Comparaison détaillée des fonctionnalités',
+      feature: 'Fonctionnalité',
+      noSub: 'Sans abonnement',
+      trialBasic: 'Essai de base',
+      trialPremium: 'Essai Premium',
+      activeBasic: 'Base actif',
+      activePremium: 'Premium actif',
+
+      // Feature names in table
+      browseJobs: 'Parcourir les travaux',
+      viewJobDetails: 'Voir les détails des travaux',
+      submitBids: 'Soumettre des offres',
+      unlockBudget: 'Débloquer le budget (20$)',
+      messageApproved: 'Message (approuvé)',
+      max30: '30 max',
+      unlimited: 'illimité',
+
+      // Disclaimer
+      disclaimer: 'Tous les forfaits incluent un essai gratuit de 14 jours. Aucune carte de crédit requise. Annulez à tout moment.',
+    },
+
+    // Landing Page
+    landingPage: {
+      // Navigation
+      nav: {
+        about: 'À propos',
+        features: 'Fonctionnalités',
+        forYou: 'Pour vous',
+        howItWorks: 'Comment ça marche',
+        login: 'Connexion',
+        getStarted: 'Commencer',
+        toggleMenu: 'Ouvrir le menu',
+        closeMenu: 'Fermer le menu',
+      },
+
+      // Hero Section
+      hero: {
+        badge: 'Approuvé par plus de 1 000 gestionnaires immobiliers et entrepreneurs',
+        title: 'Maintenance immobilière, gérée',
+        titleHighlight: 'intelligemment',
+        subtitle: 'INTERVOS automatise l\'ensemble de votre flux de travail de construction - des réparations d\'urgence aux rénovations majeures. Une seule plateforme. Zéro stress. Contrôle total dès le premier jour.',
+        startProject: 'Commencez votre premier projet',
+        seeHowItWorks: 'Voir comment ça marche',
+      },
+
+      // About Section
+      about: {
+        founderQuote: '"Vous vous réveillez avec un sous-sol inondé. Le système CVAC d\'un locataire tombe en panne en plein hiver. Le toit fuit - encore. Vous avez 12 entrepreneurs qui vous ignorent, deux équipes qui surfacturent, et un tableur qui n\'a plus de sens depuis trois mois."',
+        founderAttribution: '- Chaque gestionnaire immobilier, à un moment donné.',
+        realProblemTitle: 'C\'est le vrai problème.',
+        realProblemText1: 'Pas trouver des entrepreneurs. Gérer le chaos entre les travaux affichés, les offres reçues, le suivi du travail et les paiements effectués.',
+        realProblemText2: 'J\'ai vu des gestionnaires immobiliers passer 60% de leur temps sur l\'administration. Des entrepreneurs perdent des contrats parce qu\'ils n\'ont pas pu répondre assez vite. Les résidents attendent des semaines pour des réparations qui devraient prendre des jours.',
+        realProblemText3: 'INTERVOS a été créé par quelqu\'un qui a vu chaque système défaillant de cette industrie - et qui a décidé de le corriger.',
+        stat1Value: '10K+',
+        stat1Label: 'Travaux gérés',
+        stat2Value: '98%',
+        stat2Label: 'Taux de satisfaction',
+        stat3Value: '40%',
+        stat3Label: 'Résolution plus rapide',
+      },
+
+      // Features Section
+      features: {
+        title: 'Tout ce dont vous avez besoin. Rien de superflu.',
+        subtitle: 'Conçu pour la gestion immobilière moderne - sans complexité, juste des résultats',
+        smartBidding: 'Moteur de soumissions intelligent',
+        smartBiddingDesc: 'Arrêtez de surpayer. Obtenez des offres compétitives d\'entrepreneurs vérifiés automatiquement.',
+        verifiedProfessionals: 'Professionnels vérifiés',
+        verifiedProfessionalsDesc: 'Plus de mauvaises embauches. Chaque entrepreneur est vérifié et évalué par la communauté.',
+        liveDashboard: 'Tableau de bord en direct',
+        liveDashboardDesc: 'Sachez exactement ce qui se passe - toujours. Aucun appel téléphonique requis.',
+        multiProperty: 'Centre de commande multi-propriétés',
+        multiPropertyDesc: 'Gérez 10 immeubles ou 100. Une seule connexion. Contrôle complet.',
+        builtInMessaging: 'Messagerie intégrée',
+        builtInMessagingDesc: 'Arrêtez de courir après les gens. Communication instantanée avec tout le monde sur votre projet.',
+        protectedPayments: 'Paiements protégés',
+        protectedPaymentsDesc: 'Soyez payé plus rapidement avec la protection escrow et la facturation par étapes.',
+      },
+
+      // Roles Section
+      roles: {
+        title: 'Qui utilise INTERVOS?',
+        subtitle: 'Tous ceux qui participent aux travaux sur les immeubles.',
+
+        // Property Managers
+        propertyManagers: {
+          label: 'Gestionnaires immobiliers',
+          headline: 'Arrêtez de courir. Commencez à gérer.',
+          story: '"Je passais plus de 10 heures par semaine à traquer les entrepreneurs. Ont-ils commencé le travail? Quand vont-ils finir? Pourquoi la facture n\'est-elle pas arrivée? Maintenant j\'ouvre simplement le tableau de bord. Tout est là."',
+          attribution: '- Sarah M., gère 8 immeubles à Toronto',
+          feature1Title: 'Publiez un travail en 60 secondes',
+          feature1Desc: 'Adresse de l\'immeuble, description du problème, photos. C\'est fait.',
+          feature2Title: 'Recevez des offres d\'entrepreneurs vérifiés',
+          feature2Desc: 'Plus besoin d\'appeler partout. Ils viennent à vous.',
+          feature3Title: 'Suivez tout au même endroit',
+          feature3Desc: 'Qui travaille où. Ce qui est fait. Ce qui est en attente.',
+          cta: 'Commencez à gérer intelligemment',
+        },
+
+        // Entrepreneurs/Contractors
+        entrepreneurs: {
+          label: 'Entrepreneurs et contracteurs',
+          headline: 'Soumissionnez sur de vrais travaux. Soyez payé plus vite.',
+          story: '"La plupart des plateformes prennent 20% et vous êtes en concurrence avec 50 autres personnes qui vous sous-cotent. Ici, les gestionnaires immobiliers voient votre profil, vos travaux passés, vos évaluations. J\'ai conclu 4 contrats ce mois-ci sans un seul appel téléphonique."',
+          attribution: '- Mike T., entrepreneur général, 6 ans d\'expérience',
+          feature1Title: 'Travaux envoyés dans votre boîte de réception',
+          feature1Desc: 'Filtrez par emplacement, budget et métier. Ne voyez que ce qui compte.',
+          feature2Title: 'Paiements par étapes',
+          feature2Desc: 'Soyez payé au fur et à mesure que vous terminez le travail. Plus besoin d\'attendre 60 jours.',
+          feature3Title: 'Bâtissez votre réputation',
+          feature3Desc: 'Chaque travail terminé s\'ajoute à votre profil.',
+          cta: 'Trouvez du travail aujourd\'hui',
+        },
+
+        // Residents
+        residents: {
+          label: 'Résidents',
+          headline: 'Sachez ce qui se passe dans votre immeuble.',
+          story: '"J\'ai soumis une demande de maintenance pour un robinet qui fuit. J\'ai reçu une notification quand le plombier a été assigné. Une autre quand il était en route. Une autre quand c\'était réparé. Ça ressemblait à de la magie comparé à l\'ancienne approche \"on s\'en occupe\"."',
+          attribution: '- James L., résident depuis 2019',
+          feature1Title: 'Soumettez des demandes instantanément',
+          feature1Desc: 'Appareil cassé? Problème de maintenance? Soumettez-le depuis votre téléphone.',
+          feature2Title: 'Obtenez de vraies mises à jour',
+          feature2Desc: 'Plus de "on travaille dessus." Voyez la progression réelle.',
+          feature3Title: 'Messagez votre gestionnaire',
+          feature3Desc: 'Ligne directe. Pas de téléphone manqué.',
+          cta: 'Connectez-vous à votre immeuble',
+        },
+
+        // Visual cards
+        activeProjects: 'Projets actifs',
+        inProgress: 'En cours',
+        completed: 'Terminé',
+        receivingBids: 'Réception d\'offres',
+        availableJobs: 'Travaux disponibles près de vous',
+        yourRequests: 'Vos demandes',
+        fixedYesterday: 'Réparé hier',
+        scheduledTomorrow: 'Prévu pour demain',
+      },
+
+      // How It Works Section
+      howItWorks: {
+        title: 'Du problème à la solution en 4 étapes simples',
+        subtitle: 'Commencez à contrôler vos projets aujourd\'hui - pas de complexité, juste des résultats',
+        step1Title: 'Publiez votre projet',
+        step1Desc: 'Décrivez ce qui doit être réparé. Fixez votre budget. Définissez votre calendrier.',
+        step2Title: 'Examinez les offres intelligentes',
+        step2Desc: 'Des entrepreneurs vérifiés se disputent votre travail. Comparez les propositions côte à côte.',
+        step3Title: 'Suivez en temps réel',
+        step3Desc: 'Sachez exactement où en est votre projet - du premier clou à la facture finale.',
+        step4Title: 'Payez en toute confiance',
+        step4Desc: 'Libérez les paiements uniquement lorsque les étapes sont terminées. Tout le monde est protégé.',
+      },
+
+      // CTA Section
+      cta: {
+        title: 'Arrêtez de perdre du temps. Construisez plus intelligemment.',
+        subtitle: 'Chaque jour que vous attendez est un autre jour à courir après les entrepreneurs, à gérer les dépassements de coûts et les résidents frustrés. INTERVOS élimine tout cela.',
+        button: 'Commencez votre premier projet - Gratuit',
+        disclaimer: 'Aucune carte de crédit requise. Annulez à tout moment. Contrôle total dès le premier jour.',
+      },
+
+      // Footer
+      footer: {
+        tagline: 'Connecter chaque coin de la construction. De la publication de travaux aux soumissions gagnantes - INTERVOS simplifie tout.',
+        platform: 'Plateforme',
+        company: 'Entreprise',
+        legal: 'Légal',
+        contact: 'Contact',
+        aboutUs: 'À propos de nous',
+        pricing: 'Tarification',
+        privacyPolicy: 'Politique de confidentialité',
+        termsOfService: 'Conditions d\'utilisation',
+        cookiePolicy: 'Politique des cookies',
+        copyright: '© 2025 INTERVOS. Tous droits réservés.',
+      },
+
+      // Login Modal
+      login: {
+        title: 'Bon retour',
+        subtitle: 'Connectez-vous pour continuer à gérer vos projets',
+        emailLabel: 'Courriel',
+        emailPlaceholder: 'Entrez votre courriel',
+        passwordLabel: 'Mot de passe',
+        passwordPlaceholder: 'Entrez votre mot de passe',
+        rememberMe: 'Se souvenir de moi',
+        forgotPassword: 'Mot de passe oublié?',
+        loginButton: 'Se connecter',
+        loggingIn: 'Connexion en cours...',
+        noAccount: 'Vous n\'avez pas de compte?',
+        signUp: 'Inscrivez-vous',
+        orContinueWith: 'Ou continuez avec',
+        googleLogin: 'Continuer avec Google',
+      },
+
+      // Register Modal
+      register: {
+        title: 'Rejoignez INTERVOS',
+        subtitle: 'Commencez à gérer vos projets de construction sans effort',
+
+        // Step indicators
+        step1: 'Rôle',
+        step2: 'Détails',
+        step3: 'Compte',
+
+        // Role selection
+        selectRole: 'Je veux...',
+        rolePropertyManager: 'Gérer des propriétés',
+        rolePropertyManagerDesc: 'Publier des travaux, trouver des entrepreneurs, gérer vos immeubles',
+        roleEntrepreneur: 'Trouver du travail',
+        roleEntrepreneurDesc: 'Soumissionner sur des travaux, bâtir votre réputation, développer votre entreprise',
+        roleResident: 'Soumettre des demandes',
+        roleResidentDesc: 'Signaler des problèmes, suivre les réparations, communiquer avec la gestion',
+        roleSupplier: 'Fournir des matériaux',
+        roleSupplierDesc: 'Connecter avec des entrepreneurs, vendre des matériaux de construction',
+
+        // Form labels
+        firstName: 'Prénom',
+        lastName: 'Nom',
+        email: 'Courriel',
+        phone: 'Numéro de téléphone',
+        password: 'Mot de passe',
+        confirmPassword: 'Confirmer le mot de passe',
+        companyName: 'Nom de l\'entreprise',
+        address: 'Adresse',
+        licenseNumber: 'Numéro de licence',
+        yearsInBusiness: 'Années en affaires',
+        numEmployees: 'Nombre d\'employés',
+        specializations: 'Spécialisations',
+        propertyName: 'Nom de la propriété/immeuble',
+        unitNumber: 'Numéro d\'unité',
+        moveInDate: 'Date d\'emménagement',
+        website: 'Site web',
+        deliveryAreas: 'Zones de livraison',
+        numProperties: 'Nombre de propriétés',
+
+        // Placeholders
+        firstNamePlaceholder: 'Entrez votre prénom',
+        lastNamePlaceholder: 'Entrez votre nom',
+        emailPlaceholder: 'Entrez votre courriel',
+        passwordPlaceholder: 'Créez un mot de passe',
+        confirmPasswordPlaceholder: 'Confirmez votre mot de passe',
+        companyNamePlaceholder: 'Entrez le nom de l\'entreprise',
+        addressPlaceholder: 'Commencez à taper votre adresse...',
+        licenseNumberPlaceholder: 'Entrez le numéro de licence',
+        yearsInBusinessPlaceholder: 'ex. 5',
+        numEmployeesPlaceholder: 'ex. 10',
+        specializationsPlaceholder: 'ex. Plomberie, Électricité, CVAC',
+        unitNumberPlaceholder: 'ex. 101',
+        websitePlaceholder: 'ex. https://exemple.com',
+        deliveryAreasPlaceholder: 'ex. Montréal, Laval, Rive-Sud',
+        numPropertiesPlaceholder: 'ex. 5',
+        searchProperty: 'Rechercher par nom d\'immeuble, adresse ou ville...',
+
+        // Property selection
+        selectProperty: 'Sélectionnez votre propriété',
+        loadingProperties: 'Chargement des propriétés...',
+        noPropertiesFound: 'Aucune propriété trouvée',
+        tryDifferentSearch: 'Essayez un autre terme de recherche',
+        propertyNotListed: 'Vous ne trouvez pas votre propriété?',
+        contactSupport: 'Contactez le support pour l\'ajouter',
+
+        // Password requirements
+        passwordRequirements: 'Le mot de passe doit contenir:',
+        reqLength: 'Au moins 8 caractères',
+        reqUppercase: 'Une lettre majuscule',
+        reqLowercase: 'Une lettre minuscule',
+        reqNumber: 'Un chiffre',
+        reqSpecial: 'Un caractère spécial (!@#$%^&*)',
+
+        // Buttons
+        back: 'Retour',
+        next: 'Suivant',
+        createAccount: 'Créer un compte',
+        creating: 'Création en cours...',
+
+        // Messages
+        haveAccount: 'Vous avez déjà un compte?',
+        logIn: 'Connectez-vous',
+        orContinueWith: 'Ou continuez avec',
+        googleSignUp: 'S\'inscrire avec Google',
+
+        // Success
+        successTitle: 'Vérifiez votre courriel',
+        successMessage: 'Nous avons envoyé un lien de vérification à',
+        successInstructions: 'Cliquez sur le lien dans le courriel pour vérifier votre compte et commencer à utiliser INTERVOS.',
+        checkSpam: 'Vous n\'avez pas reçu le courriel? Vérifiez votre dossier spam ou',
+        resendEmail: 'renvoyer le courriel de vérification',
+        resending: 'Renvoi en cours...',
+        resendSuccess: 'Courriel de vérification renvoyé!',
+        backToLogin: 'Retour à la connexion',
+      },
+
+      // Verification messages
+      verification: {
+        success: 'Courriel vérifié avec succès! Vous pouvez maintenant vous connecter.',
+        failed: 'La vérification du courriel a échoué.',
+        missingToken: 'Le lien de vérification est invalide (jeton manquant).',
+        invalidToken: 'Le lien de vérification est invalide ou expiré.',
+        serverError: 'Erreur du serveur lors de la vérification. Veuillez réessayer.',
+      },
     },
   },
 };

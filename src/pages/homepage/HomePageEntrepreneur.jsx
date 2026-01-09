@@ -39,6 +39,7 @@ import {
   Trash2,
 } from "lucide-react"
 import toast from "react-hot-toast"
+import { useLanguage } from "../../contexts/LanguageContext"
 import Nav from "../../components/Nav"
 import "../../styles/entrepreneur/homepageentrepreneur.css"
 import SubscriptionModal from "../../components/SubcriptionModal"
@@ -193,6 +194,7 @@ const SkeletonJobCard = () => (
 )
 
 function HomePageEntrepreneur() {
+  const { t, language } = useLanguage()
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedProperty, setSelectedProperty] = useState(null)
   const [bidModalOpen, setBidModalOpen] = useState(false)
@@ -711,7 +713,7 @@ function HomePageEntrepreneur() {
 
   const handleSubmitBid = async () => {
     if (!bidAmount || !bidMessage) {
-      toast.error("Please fill in all required fields")
+      toast.error(t('entrepreneurHome.fillAllFields'))
       return
     }
 
@@ -777,7 +779,7 @@ function HomePageEntrepreneur() {
           setUserProfile(updatedProfile)
         }
 
-        toast.success("Bid submitted successfully!")
+        toast.success(t('entrepreneurHome.bidSubmittedSuccess'))
         setBidModalOpen(false)
         setBidAmount("")
         setBidMessage("")
@@ -830,7 +832,7 @@ function HomePageEntrepreneur() {
   // Handle updating a bid
   const handleUpdateBid = async () => {
     if (!editBidAmount) {
-      toast.error("Please enter a bid amount")
+      toast.error(t('entrepreneurHome.enterBidAmountError'))
       return
     }
 
@@ -858,7 +860,7 @@ function HomePageEntrepreneur() {
         throw new Error(errorData.message || 'Failed to update bid')
       }
 
-      toast.success("Bid updated successfully!")
+      toast.success(t('entrepreneurHome.bidUpdatedSuccess'))
       setViewBidModalOpen(false)
       setIsEditingBid(false)
       setSelectedBidToView(null)
@@ -892,7 +894,7 @@ function HomePageEntrepreneur() {
         throw new Error(errorData.message || 'Failed to delete bid')
       }
 
-      toast.success("Bid deleted successfully!")
+      toast.success(t('entrepreneurHome.bidDeletedSuccess'))
       setViewBidModalOpen(false)
       setSelectedBidToView(null)
       fetchBids() // Refresh bids
@@ -931,7 +933,7 @@ function HomePageEntrepreneur() {
       setShowManagerModal(true)
     } catch (error) {
       console.error('Error fetching manager profile:', error)
-      toast.error('Failed to load manager profile')
+      toast.error(t('entrepreneurHome.failedLoadManagerProfile'))
     } finally {
       setIsLoadingManagerProfile(false)
     }
@@ -1137,7 +1139,7 @@ function HomePageEntrepreneur() {
         }
       } catch (error) {
         console.error("Error fetching jobs:", error)
-        toast.error('Failed to load jobs. Please refresh the page.')
+        toast.error(t('entrepreneurHome.failedLoadJobs'))
       }
     }
 
@@ -1312,7 +1314,7 @@ function HomePageEntrepreneur() {
                       <h3>{property.name}</h3>
                       <p>{property.address}</p>
                       <div className="eh-popup-stats">
-                        <span className="eh-popup-stat eh-highlight">{jobCount} Open Jobs</span>
+                        <span className="eh-popup-stat eh-highlight">{jobCount} {t('entrepreneurHome.openJobs')}</span>
                       </div>
                     </div>
                   </Popup>
@@ -1324,9 +1326,9 @@ function HomePageEntrepreneur() {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', background: '#f5f5f5', gap: '10px' }}>
             <div style={{ width: '40px', height: '40px', border: '4px solid #e0e0e0', borderTop: '4px solid #00A5A9', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
             <p style={{ color: '#666', fontSize: '14px' }}>
-              {isLoadingLocation ? 'Getting your location...' : 'Loading map...'}
+              {isLoadingLocation ? t('entrepreneurHome.gettingLocation') : t('entrepreneurHome.loadingMap')}
             </p>
-            {error && <p style={{ color: '#999', fontSize: '12px' }}>Using default location</p>}
+            {error && <p style={{ color: '#999', fontSize: '12px' }}>{t('entrepreneurHome.usingDefaultLocation')}</p>}
           </div>
         )}
       </div>
@@ -1336,14 +1338,14 @@ function HomePageEntrepreneur() {
         <button
           className="eh-map-zoom-btn"
           onClick={handleZoomIn}
-          title="Zoom In"
+          title={t('entrepreneurHome.zoomIn')}
         >
           <Plus size={20} />
         </button>
         <button
           className="eh-map-zoom-btn"
           onClick={handleZoomOut}
-          title="Zoom Out"
+          title={t('entrepreneurHome.zoomOut')}
         >
           <Minus size={20} />
         </button>
@@ -1351,7 +1353,7 @@ function HomePageEntrepreneur() {
         <button
           className="eh-map-zoom-btn"
           onClick={handleResetView}
-          title="Reset View"
+          title={t('entrepreneurHome.resetView')}
         >
           <LocateFixed size={20} />
         </button>
@@ -1373,7 +1375,7 @@ function HomePageEntrepreneur() {
           isApprovedBid={false}
           onComplete={() => {
             setShowStripeConnectModal(false);
-            toast.success('Payment setup complete!');
+            toast.success(t('entrepreneurHome.paymentSetupComplete'));
           }}
         />
       )}
@@ -1388,7 +1390,7 @@ function HomePageEntrepreneur() {
             ref={searchInputRef}
             type="text"
             className="eh-search-input-full"
-            placeholder="Search properties..."
+            placeholder={t('entrepreneurHome.searchPlaceholder')}
             value={searchTerm}
             onChange={handleSearchChange}
           />
@@ -1421,13 +1423,13 @@ function HomePageEntrepreneur() {
                       <div className="eh-search-result-address">{property.address}</div>
                     </div>
                     <div className="eh-search-result-badge">
-                      {getPropertyOpenJobsCount(property.id)} Jobs
+                      {getPropertyOpenJobsCount(property.id)} {t('entrepreneurHome.jobs')}
                     </div>
                   </div>
                 ))
               ) : (
                 <div className="eh-no-results">
-                  <p>No properties found</p>
+                  <p>{t('entrepreneurHome.noPropertiesFound')}</p>
                 </div>
               )}
             </div>
@@ -1439,7 +1441,7 @@ function HomePageEntrepreneur() {
           onClick={() => setFiltersPanelOpen(true)}
         >
           <Filter size={16} />
-          <span className="eh-filter-btn-text">Filters</span>
+          <span className="eh-filter-btn-text">{t('entrepreneurHome.filters')}</span>
           {activeFiltersCount > 0 && <span className="eh-filter-count">{activeFiltersCount}</span>}
         </button>
       </div>
@@ -1451,14 +1453,14 @@ function HomePageEntrepreneur() {
           onClick={() => setMobileView("map")}
         >
           <Map size={18} />
-          <span>Map</span>
+          <span>{t('entrepreneurHome.map')}</span>
         </button>
         <button
           className={`eh-view-toggle-btn ${mobileView === "list" ? "eh-active" : ""}`}
           onClick={() => setMobileView("list")}
         >
           <List size={18} />
-          <span>List</span>
+          <span>{t('entrepreneurHome.list')}</span>
         </button>
       </div>
 
@@ -1470,12 +1472,12 @@ function HomePageEntrepreneur() {
         {isPanelCollapsed ? (
           <>
             <ChevronLeft size={16} />
-            <span>Show Panel</span>
+            <span>{t('entrepreneurHome.showPanel')}</span>
           </>
         ) : (
           <>
             <ChevronRight size={16} />
-            <span>Hide Panel</span>
+            <span>{t('entrepreneurHome.hidePanel')}</span>
           </>
         )}
       </button>
@@ -1493,7 +1495,7 @@ function HomePageEntrepreneur() {
                   onClick={handleBackToAllProperties}
                 >
                   <ArrowLeft size={16} />
-                  <span>Back to All Properties</span>
+                  <span>{t('entrepreneurHome.backToAllProperties')}</span>
                 </button>
 
                 <div className="eh-details-header">
@@ -1513,7 +1515,7 @@ function HomePageEntrepreneur() {
 
                 <div className="eh-stats-grid">
                   <div className="eh-stat-card eh-highlight">
-                    <span className="eh-stat-label">Open Jobs</span>
+                    <span className="eh-stat-label">{t('entrepreneurHome.openJobs')}</span>
                     <span className="eh-stat-value">{getPropertyOpenJobsCount(selectedProperty.id)}</span>
                   </div>
                 </div>
@@ -1523,7 +1525,7 @@ function HomePageEntrepreneur() {
                   <div
                     className="eh-manager-info"
                     onClick={() => handleViewManagerProfile(selectedProperty)}
-                    title="View property manager profile"
+                    title={t('entrepreneurHome.viewManagerProfile')}
                   >
                     <div className="eh-manager-avatar">
                       {selectedProperty.managerImage ? (
@@ -1533,7 +1535,7 @@ function HomePageEntrepreneur() {
                       )}
                     </div>
                     <div className="eh-manager-details">
-                      <span className="eh-manager-label">Managed by</span>
+                      <span className="eh-manager-label">{t('entrepreneurHome.managedBy')}</span>
                       <span className="eh-manager-name">{selectedProperty.managerCompanyName}</span>
                     </div>
                     <ChevronRight size={16} className="eh-manager-chevron" />
@@ -1564,12 +1566,12 @@ function HomePageEntrepreneur() {
                       {/* Job count badge */}
                       <div className="eh-subscribe-job-badge">
                         <Hammer size={14} />
-                        <span>{getPropertyOpenJobsCount(selectedProperty.id)} Jobs Available</span>
+                        <span>{getPropertyOpenJobsCount(selectedProperty.id)} {t('entrepreneurHome.jobsAvailable')}</span>
                       </div>
 
-                      <h3 className="eh-subscribe-title">Unlock Premium Access</h3>
+                      <h3 className="eh-subscribe-title">{t('entrepreneurHome.unlockPremiumAccess')}</h3>
                       <p className="eh-subscribe-description">
-                        Get instant access to job details, submit bids, and start winning contracts on this property.
+                        {t('entrepreneurHome.unlockDescription')}
                       </p>
 
                       {/* Features grid */}
@@ -1578,25 +1580,25 @@ function HomePageEntrepreneur() {
                           <div className="eh-feature-icon">
                             <FileText size={18} />
                           </div>
-                          <span>Full Job Details</span>
+                          <span>{t('entrepreneurHome.fullJobDetails')}</span>
                         </div>
                         <div className="eh-subscribe-feature-card">
                           <div className="eh-feature-icon">
                             <Send size={18} />
                           </div>
-                          <span>Submit Bids</span>
+                          <span>{t('entrepreneurHome.submitBids')}</span>
                         </div>
                         <div className="eh-subscribe-feature-card">
                           <div className="eh-feature-icon">
                             <DollarSign size={18} />
                           </div>
-                          <span>View Budgets</span>
+                          <span>{t('entrepreneurHome.viewBudgets')}</span>
                         </div>
                         <div className="eh-subscribe-feature-card">
                           <div className="eh-feature-icon">
                             <MessageSquare size={18} />
                           </div>
-                          <span>Direct Chat</span>
+                          <span>{t('entrepreneurHome.directChat')}</span>
                         </div>
                       </div>
 
@@ -1607,14 +1609,14 @@ function HomePageEntrepreneur() {
                           onClick={() => setShowSubscriptionModal(true)}
                         >
                           <Crown size={18} />
-                          <span>View Plans</span>
+                          <span>{t('entrepreneurHome.viewPlans')}</span>
                           <ChevronRight size={18} />
                         </button>
 
                         <div className="eh-subscribe-trial-badge">
-                          <span className="eh-trial-text">14-day free trial</span>
+                          <span className="eh-trial-text">{t('entrepreneurHome.freeTrial')}</span>
                           <span className="eh-trial-dot">•</span>
-                          <span className="eh-trial-text">Cancel anytime</span>
+                          <span className="eh-trial-text">{t('entrepreneurHome.cancelAnytime')}</span>
                         </div>
                       </div>
                     </div>
@@ -1622,8 +1624,8 @@ function HomePageEntrepreneur() {
                 ) : (
                   <div className="eh-section-tabs">
                     <div className="eh-section-header">
-                      <h3>Available Jobs for Bidding</h3>
-                      <span className="eh-job-count-badge">{getPropertyOpenJobs(selectedProperty.id).length} Jobs</span>
+                      <h3>{t('entrepreneurHome.availableJobsForBidding')}</h3>
+                      <span className="eh-job-count-badge">{getPropertyOpenJobs(selectedProperty.id).length} {t('entrepreneurHome.jobs')}</span>
                     </div>
                     <div className="eh-jobs-list">
                       {getPropertyOpenJobs(selectedProperty.id).length > 0 ? (
@@ -1649,7 +1651,7 @@ function HomePageEntrepreneur() {
                                   <DollarSign size={16} />
                                   <div>
                                     {/* unlock */}
-                                    <span className="eh-detail-label">Budget Range</span>
+                                    <span className="eh-detail-label">{t('entrepreneurHome.budgetRange')}</span>
                                     <span className="eh-detail-value">
                                       {
                                         job.budgetData.unlocked?
@@ -1659,7 +1661,7 @@ function HomePageEntrepreneur() {
                                         <button className="unlock-budget-button" onClick={() => {
                                           setBudgetJobId(job.id)
                                           setShowUnlockBudgetModal(true)
-                                        }}>Show budget</button>
+                                        }}>{t('entrepreneurHome.showBudget')}</button>
                                        </>
                                       }
                                     </span>
@@ -1668,16 +1670,16 @@ function HomePageEntrepreneur() {
                                 <div className="eh-detail-item">
                                   <Clock size={16} />
                                   <div>
-                                    <span className="eh-detail-label">Duration</span>
-                                    <span className="eh-detail-value">{job.estimated_duration_days} days</span>
+                                    <span className="eh-detail-label">{t('entrepreneurHome.duration')}</span>
+                                    <span className="eh-detail-value">{job.estimated_duration_days} {t('entrepreneurHome.days')}</span>
                                   </div>
                                 </div>
                                 <div className="eh-detail-item">
                                   <AlertCircle size={16} />
                                   <div>
-                                    <span className="eh-detail-label">Needed In</span>
+                                    <span className="eh-detail-label">{t('entrepreneurHome.neededIn')}</span>
                                     <span className={`eh-detail-value ${job.daysUntilNeeded <= 0 ? 'eh-urgent-value' : ''}`}>
-                                      {job.daysUntilNeeded <= 0 ? 'Urgent' : `${job.daysUntilNeeded} days`}
+                                      {job.daysUntilNeeded <= 0 ? t('entrepreneurHome.urgent') : `${job.daysUntilNeeded} ${t('entrepreneurHome.days')}`}
                                     </span>
                                   </div>
                                 </div>
@@ -1688,12 +1690,12 @@ function HomePageEntrepreneur() {
                                   <>
                                     <button className="eh-bid-button eh-submitted-bid" disabled>
                                       <Check size={18} />
-                                      Bid Submitted
+                                      {t('entrepreneurHome.bidSubmitted')}
                                     </button>
                                     <button
                                       className="eh-view-bid-icon-btn"
                                       onClick={() => handleViewBid(job.id)}
-                                      title="View Bid"
+                                      title={t('entrepreneurHome.viewBid')}
                                     >
                                       <Eye size={20} />
                                     </button>
@@ -1701,7 +1703,7 @@ function HomePageEntrepreneur() {
                                 ) : (
                                   <button className="eh-bid-button" onClick={() => handleBidClick(job)}>
                                     <Hammer size={18} />
-                                    Submit Your Bid
+                                    {t('entrepreneurHome.submitYourBid')}
                                   </button>
                                 )}
                               </div>
@@ -1711,8 +1713,8 @@ function HomePageEntrepreneur() {
                       ) : (
                         <div className="eh-no-jobs">
                           <Hammer size={48} color="var(--color-border-divider)" />
-                          <p className="eh-no-jobs-title">No Open Jobs</p>
-                          <p className="eh-no-jobs-text">This property has no available jobs for bidding at the moment.</p>
+                          <p className="eh-no-jobs-title">{t('entrepreneurHome.noOpenJobs')}</p>
+                          <p className="eh-no-jobs-text">{t('entrepreneurHome.noOpenJobsDescription')}</p>
                         </div>
                       )}
                     </div>
@@ -1722,8 +1724,8 @@ function HomePageEntrepreneur() {
             ) : (
               <div className="eh-all-properties-list">
                 <div className="eh-list-header">
-                  <h3>All Properties</h3>
-                  <span className="eh-property-count-badge">{filteredProperties.length} Properties</span>
+                  <h3>{t('entrepreneurHome.allProperties')}</h3>
+                  <span className="eh-property-count-badge">{filteredProperties.length} {t('entrepreneurHome.properties')}</span>
                 </div>
                 <div className="eh-properties-grid">
                   {filteredProperties.map((property) => {
@@ -1747,17 +1749,17 @@ function HomePageEntrepreneur() {
                         <div className="eh-property-card-footer">
                           <div className="eh-job-count-indicator">
                             <Hammer size={16} />
-                            <span>{jobCount} Open Jobs</span>
+                            <span>{jobCount} {t('entrepreneurHome.openJobs')}</span>
                           </div>
                           <div className="eh-property-card-actions">
                             <button
                               className="eh-view-location-btn"
                               onClick={(e) => handleViewLocation(property, e)}
-                              title="View Location"
+                              title={t('entrepreneurHome.viewLocation')}
                             >
                               <MapPin size={16} />
                             </button>
-                            <button className="eh-view-jobs-btn">View Jobs</button>
+                            <button className="eh-view-jobs-btn">{t('entrepreneurHome.viewJobs')}</button>
                           </div>
                         </div>
                       </div>
@@ -1782,7 +1784,7 @@ function HomePageEntrepreneur() {
                 <div className="eh-header-icon-wrapper">
                   <SlidersHorizontal size={24} />
                 </div>
-                <h2>Filter Jobs</h2>
+                <h2>{t('entrepreneurHome.filterJobs')}</h2>
               </div>
               <button className="eh-modal-close" onClick={() => setFiltersPanelOpen(false)}>
                 <X size={24} />
@@ -1795,10 +1797,10 @@ function HomePageEntrepreneur() {
                 <div className="eh-filter-group">
                   <div className="eh-filter-group-header">
                     <MapPin size={18} />
-                    <h3>Location</h3>
+                    <h3>{t('entrepreneurHome.location')}</h3>
                   </div>
                   <div className="eh-filter-section">
-                    <div className="eh-filter-subsection-title">Region</div>
+                    <div className="eh-filter-subsection-title">{t('entrepreneurHome.region')}</div>
                     <div className="eh-checkbox-group">
                       {["NCR", "Ilocos", "Calabarzon"].map((region) => (
                         <label key={region} className="eh-checkbox-label">
@@ -1818,7 +1820,7 @@ function HomePageEntrepreneur() {
                 <div className="eh-filter-group">
                   <div className="eh-filter-group-header">
                     <Wrench size={18} />
-                    <h3>Work Type</h3>
+                    <h3>{t('entrepreneurHome.workType')}</h3>
                   </div>
                   <div className="eh-checkbox-group">
                     {["Plumbing", "Electrical", "HVAC", "General Maintenance", "Carpentry"].map((type) => (
@@ -1838,7 +1840,7 @@ function HomePageEntrepreneur() {
                 <div className="eh-filter-group">
                   <div className="eh-filter-group-header">
                     <Zap size={18} />
-                    <h3>Urgency</h3>
+                    <h3>{t('entrepreneurHome.urgency')}</h3>
                   </div>
                   <div className="eh-checkbox-group">
                     {["Critical", "High", "Medium", "Low"].map((urgency) => (
@@ -1858,11 +1860,11 @@ function HomePageEntrepreneur() {
                 <div className="eh-filter-group">
                   <div className="eh-filter-group-header">
                     <DollarSign size={18} />
-                    <h3>Budget Range</h3>
+                    <h3>{t('entrepreneurHome.budgetRange')}</h3>
                   </div>
                   <div className="eh-budget-inputs">
                     <div className="eh-input-group">
-                      <label>Min ($)</label>
+                      <label>{t('entrepreneurHome.minBudget')}</label>
                       <input
                         type="number"
                         value={filters.budgetMin}
@@ -1871,12 +1873,12 @@ function HomePageEntrepreneur() {
                       />
                     </div>
                     <div className="eh-input-group">
-                      <label>Max ($)</label>
+                      <label>{t('entrepreneurHome.maxBudget')}</label>
                       <input
                         type="number"
                         value={filters.budgetMax}
                         onChange={(e) => handleFilterChange("budgetMax", e.target.value)}
-                        placeholder="Any"
+                        placeholder={t('entrepreneurHome.any')}
                       />
                     </div>
                   </div>
@@ -1886,15 +1888,15 @@ function HomePageEntrepreneur() {
                 <div className="eh-filter-group">
                   <div className="eh-filter-group-header">
                     <Clock size={18} />
-                    <h3>Duration</h3>
+                    <h3>{t('entrepreneurHome.duration')}</h3>
                   </div>
                   <div className="eh-input-group">
-                    <label>Max Duration (days)</label>
+                    <label>{t('entrepreneurHome.maxDuration')}</label>
                     <input
                       type="number"
                       value={filters.duration}
                       onChange={(e) => handleFilterChange("duration", e.target.value)}
-                      placeholder="Any"
+                      placeholder={t('entrepreneurHome.any')}
                     />
                   </div>
                 </div>
@@ -1903,7 +1905,7 @@ function HomePageEntrepreneur() {
                 <div className="eh-filter-group">
                   <div className="eh-filter-group-header">
                     <Building2 size={18} />
-                    <h3>Property Type</h3>
+                    <h3>{t('entrepreneurHome.propertyType')}</h3>
                   </div>
                   <div className="eh-checkbox-group">
                     {["Commercial", "Residential", "Industrial"].map((type) => (
@@ -1922,18 +1924,18 @@ function HomePageEntrepreneur() {
 
               {hasActiveFilters && (
                 <button className="eh-clear-filters-btn" onClick={clearFilters}>
-                  Clear All Filters
+                  {t('entrepreneurHome.clearAllFilters')}
                 </button>
               )}
             </div>
 
             <div className="eh-filters-modal-footer">
               <button className="eh-cancel-btn" onClick={() => setFiltersPanelOpen(false)}>
-                Cancel
+                {t('common.cancel')}
               </button>
               <button className="eh-apply-filters-btn" onClick={() => setFiltersPanelOpen(false)}>
                 <Filter size={18} />
-                Apply Filters
+                {t('entrepreneurHome.applyFilters')}
                 {activeFiltersCount > 0 && <span className="eh-footer-badge">{activeFiltersCount}</span>}
               </button>
             </div>
@@ -1957,7 +1959,7 @@ function HomePageEntrepreneur() {
                 <p className="eh-property-modal-address">{selectedProperty.address}</p>
                 <div className="eh-property-modal-meta">
                   <span className="eh-meta-badge">{selectedProperty.propertyType}</span>
-                  <span className="eh-jobs-count-meta">{getPropertyOpenJobsCount(selectedProperty.id)} Open Jobs</span>
+                  <span className="eh-jobs-count-meta">{getPropertyOpenJobsCount(selectedProperty.id)} {t('entrepreneurHome.openJobs')}</span>
                 </div>
                 <button
                   className="eh-view-location-btn eh-modal-location-btn"
@@ -1990,12 +1992,12 @@ function HomePageEntrepreneur() {
                     {/* Job count badge */}
                     <div className="eh-subscribe-job-badge">
                       <Hammer size={12} />
-                      <span>{getPropertyOpenJobsCount(selectedProperty.id)} Jobs</span>
+                      <span>{getPropertyOpenJobsCount(selectedProperty.id)} {t('entrepreneurHome.jobs')}</span>
                     </div>
 
-                    <h3 className="eh-subscribe-title">Unlock Access</h3>
+                    <h3 className="eh-subscribe-title">{t('entrepreneurHome.unlockAccess')}</h3>
                     <p className="eh-subscribe-description">
-                      View job details and start bidding on this property.
+                      {t('entrepreneurHome.unlockAccessDescription')}
                     </p>
 
                     {/* Features grid - compact for mobile */}
@@ -2004,25 +2006,25 @@ function HomePageEntrepreneur() {
                         <div className="eh-feature-icon">
                           <FileText size={16} />
                         </div>
-                        <span>Details</span>
+                        <span>{t('entrepreneurHome.details')}</span>
                       </div>
                       <div className="eh-subscribe-feature-card">
                         <div className="eh-feature-icon">
                           <Send size={16} />
                         </div>
-                        <span>Bids</span>
+                        <span>{t('entrepreneurHome.bids')}</span>
                       </div>
                       <div className="eh-subscribe-feature-card">
                         <div className="eh-feature-icon">
                           <DollarSign size={16} />
                         </div>
-                        <span>Budget</span>
+                        <span>{t('entrepreneurHome.budget')}</span>
                       </div>
                       <div className="eh-subscribe-feature-card">
                         <div className="eh-feature-icon">
                           <MessageSquare size={16} />
                         </div>
-                        <span>Chat</span>
+                        <span>{t('entrepreneurHome.chat')}</span>
                       </div>
                     </div>
 
@@ -2036,19 +2038,19 @@ function HomePageEntrepreneur() {
                         }}
                       >
                         <Crown size={16} />
-                        <span>View Plans</span>
+                        <span>{t('entrepreneurHome.viewPlans')}</span>
                         <ChevronRight size={16} />
                       </button>
 
                       <div className="eh-subscribe-trial-badge">
-                        <span className="eh-trial-text">14-day free trial</span>
+                        <span className="eh-trial-text">{t('entrepreneurHome.freeTrial')}</span>
                       </div>
                     </div>
                   </div>
                 </div>
               ) : (
                 <div className="eh-section-tabs">
-                  <h3 className="eh-modal-section-title">Available Jobs</h3>
+                  <h3 className="eh-modal-section-title">{t('entrepreneurHome.availableJobs')}</h3>
                   <div className="eh-jobs-list">
                     {getPropertyOpenJobs(selectedProperty.id).length > 0 ? (
                       getPropertyOpenJobs(selectedProperty.id).map((job) => {
@@ -2059,7 +2061,7 @@ function HomePageEntrepreneur() {
                                 <h4 className="eh-job-title">{job.title}</h4>
                                 <div className="eh-job-meta-row">
                                   <span className="eh-job-category">{job.category}</span>
-                                  <span className="eh-bid-count-badge">{job.bidCount} bids</span>
+                                  <span className="eh-bid-count-badge">{job.bidCount} {t('entrepreneurHome.bids')}</span>
                                 </div>
                               </div>
                               <span className="eh-urgency-badge" style={{ backgroundColor: getUrgencyColor(job.urgency) }}>
@@ -2073,7 +2075,7 @@ function HomePageEntrepreneur() {
                               <div className="eh-detail-item">
                                 <DollarSign size={16} />
                                 <div>
-                                  <span className="eh-detail-label">Budget Range</span>
+                                  <span className="eh-detail-label">{t('entrepreneurHome.budgetRange')}</span>
                                   <span className="eh-detail-value">
                                     {
                                         job.budgetData.unlocked?
@@ -2083,7 +2085,7 @@ function HomePageEntrepreneur() {
                                         <button className="unlock-budget-button" onClick={() => {
                                           setBudgetJobId(job.id)
                                           setShowUnlockBudgetModal(true)
-                                        }}>Show budget</button>
+                                        }}>{t('entrepreneurHome.showBudget')}</button>
                                        </>
                                       }
                                   </span>
@@ -2092,16 +2094,16 @@ function HomePageEntrepreneur() {
                               <div className="eh-detail-item">
                                 <Clock size={16} />
                                 <div>
-                                  <span className="eh-detail-label">Duration</span>
-                                  <span className="eh-detail-value">{job.estimated_duration_days} days</span>
+                                  <span className="eh-detail-label">{t('entrepreneurHome.duration')}</span>
+                                  <span className="eh-detail-value">{job.estimated_duration_days} {t('entrepreneurHome.days')}</span>
                                 </div>
                               </div>
                               <div className="eh-detail-item">
                                 <AlertCircle size={16} />
                                 <div>
-                                  <span className="eh-detail-label">Needed In</span>
+                                  <span className="eh-detail-label">{t('entrepreneurHome.neededIn')}</span>
                                   <span className={`eh-detail-value ${job.daysUntilNeeded <= 0 ? 'eh-urgent-value' : ''}`}>
-                                    {job.daysUntilNeeded <= 0 ? 'Urgent' : `${job.daysUntilNeeded} days`}
+                                    {job.daysUntilNeeded <= 0 ? t('entrepreneurHome.urgent') : `${job.daysUntilNeeded} ${t('entrepreneurHome.days')}`}
                                   </span>
                                 </div>
                               </div>
@@ -2112,7 +2114,7 @@ function HomePageEntrepreneur() {
                                 <>
                                   <button className="eh-bid-button eh-submitted-bid" disabled>
                                     <Check size={18} />
-                                    Bid Submitted
+                                    {t('entrepreneurHome.bidSubmitted')}
                                   </button>
                                   <button
                                     className="eh-view-bid-icon-btn"
@@ -2120,7 +2122,7 @@ function HomePageEntrepreneur() {
                                       setPropertyModalOpen(false)
                                       handleViewBid(job.id)
                                     }}
-                                    title="View Bid"
+                                    title={t('entrepreneurHome.viewBid')}
                                   >
                                     <Eye size={20} />
                                   </button>
@@ -2131,7 +2133,7 @@ function HomePageEntrepreneur() {
                                   handleBidClick(job)
                                 }}>
                                   <Hammer size={18} />
-                                  Submit Your Bid
+                                  {t('entrepreneurHome.submitYourBid')}
                                 </button>
                               )}
                             </div>
@@ -2141,8 +2143,8 @@ function HomePageEntrepreneur() {
                     ) : (
                       <div className="eh-no-jobs">
                         <Hammer size={48} color="var(--color-border-divider)" />
-                        <p className="eh-no-jobs-title">No Open Jobs</p>
-                        <p className="eh-no-jobs-text">This property has no available jobs for bidding at the moment.</p>
+                        <p className="eh-no-jobs-title">{t('entrepreneurHome.noOpenJobs')}</p>
+                        <p className="eh-no-jobs-text">{t('entrepreneurHome.noOpenJobsDescription')}</p>
                       </div>
                     )}
                   </div>
@@ -2158,7 +2160,7 @@ function HomePageEntrepreneur() {
         <div className="eh-modal-overlay eh-submit-bid" onClick={() => setBidModalOpen(false)}>
           <div className="eh-modal-content eh-bid-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="eh-modal-header eh-submit-bid">
-              <h2>Submit Your Bid</h2>
+              <h2>{t('entrepreneurHome.submitYourBid')}</h2>
               <button className="eh-modal-close" onClick={() => setBidModalOpen(false)}>
                 <X size={24} />
               </button>
@@ -2169,7 +2171,7 @@ function HomePageEntrepreneur() {
                 <h3>{selectedJob.title}</h3>
                 <p className="eh-job-summary-category">{selectedJob.category}</p>
                 <p className="eh-job-summary-budget">
-                  Budget Range: {
+                  {t('entrepreneurHome.budgetRange')}: {
                     selectedJob.budgetData.unlocked ?
                     `$${Number.parseFloat(selectedJob.budget_min).toLocaleString()} -
                      $${Number.parseFloat(selectedJob.budget_max).toLocaleString()}` :
@@ -2177,7 +2179,7 @@ function HomePageEntrepreneur() {
                     <button className="unlock-budget-button" onClick={() => {
                       setBudgetJobId(selectedJob.id)
                       setShowUnlockBudgetModal(true)
-                    }}>Show budget</button>
+                    }}>{t('entrepreneurHome.showBudget')}</button>
                     </>
                   }
                 </p>
@@ -2188,7 +2190,7 @@ function HomePageEntrepreneur() {
                userProfile?.entrepProfile?.subscription?.subscription?.bids && (
                 <div className="eh-bid-count-indicator">
                   <div className="eh-bid-count-info">
-                    <span className="eh-bid-count-label">Bids Remaining:</span>
+                    <span className="eh-bid-count-label">{t('entrepreneurHome.bidsRemaining')}:</span>
                     <span className="eh-bid-count-value">
                       {userProfile.entrepProfile.subscription.subscription.bids.remaining ??
                        (userProfile.entrepProfile.subscription.subscription.bids.limit -
@@ -2210,7 +2212,7 @@ function HomePageEntrepreneur() {
                    (userProfile.entrepProfile.subscription.subscription.bids.limit -
                     userProfile.entrepProfile.subscription.subscription.bids.used)) <= 5 && (
                     <p className="eh-bid-count-warning">
-                      Running low on bids! Upgrade to Premium for unlimited bids.
+                      {t('entrepreneurHome.lowBidsWarning')}
                     </p>
                   )}
                 </div>
@@ -2218,32 +2220,32 @@ function HomePageEntrepreneur() {
 
               <div className="eh-bid-form">
                 <div className="eh-form-group">
-                  <label htmlFor="bidAmount">Your Bid Amount ($) *</label>
+                  <label htmlFor="bidAmount">{t('entrepreneurHome.yourBidAmount')} *</label>
                   <input
                     type="number"
                     id="bidAmount"
                     value={bidAmount}
                     onChange={(e) => setBidAmount(e.target.value)}
-                    placeholder="Enter your bid amount"
+                    placeholder={t('entrepreneurHome.enterBidAmount')}
                     min={selectedJob.budget_min}
                     max={selectedJob.budget_max}
                   />
                 </div>
 
                 <div className="eh-form-group">
-                  <label htmlFor="bidMessage">Proposal Message *</label>
+                  <label htmlFor="bidMessage">{t('entrepreneurHome.proposalMessage')} *</label>
                   <textarea
                     id="bidMessage"
                     value={bidMessage}
                     onChange={(e) => setBidMessage(e.target.value)}
-                    placeholder="Describe your approach, experience, and why you're the best fit for this job..."
+                    placeholder={t('entrepreneurHome.proposalPlaceholder')}
                     rows="5"
                   />
                 </div>
 
                 <button onClick={handleSubmitBid} className="eh-submit-bid-button">
                   <Send size={18} />
-                  Submit Bid
+                  {t('entrepreneurHome.submitBid')}
                 </button>
               </div>
             </div>
@@ -2260,7 +2262,7 @@ function HomePageEntrepreneur() {
         }}>
           <div className="eh-modal-content eh-view-bid-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="eh-modal-header eh-view-bid">
-              <h2>{isEditingBid ? 'Edit Your Bid' : 'Your Submitted Bid'}</h2>
+              <h2>{isEditingBid ? t('entrepreneurHome.editYourBid') : t('entrepreneurHome.yourSubmittedBid')}</h2>
               <button className="eh-modal-close" onClick={() => {
                 setViewBidModalOpen(false)
                 setIsEditingBid(false)
@@ -2285,30 +2287,30 @@ function HomePageEntrepreneur() {
 
               {/* Bid Status Badge */}
               <div className={`eh-view-bid-status eh-status-${selectedBidToView.status}`}>
-                <span>Status: {selectedBidToView.status.charAt(0).toUpperCase() + selectedBidToView.status.slice(1)}</span>
+                <span>{t('entrepreneurHome.status')}: {selectedBidToView.status.charAt(0).toUpperCase() + selectedBidToView.status.slice(1)}</span>
               </div>
 
               {/* Bid Details */}
               {isEditingBid ? (
                 <div className="eh-edit-bid-form">
                   <div className="eh-form-group">
-                    <label htmlFor="editBidAmount">Bid Amount ($) *</label>
+                    <label htmlFor="editBidAmount">{t('entrepreneurHome.bidAmountLabel')} *</label>
                     <input
                       type="number"
                       id="editBidAmount"
                       value={editBidAmount}
                       onChange={(e) => setEditBidAmount(e.target.value)}
-                      placeholder="Enter your bid amount"
+                      placeholder={t('entrepreneurHome.enterBidAmount')}
                     />
                   </div>
 
                   <div className="eh-form-group">
-                    <label htmlFor="editBidMessage">Proposal Message</label>
+                    <label htmlFor="editBidMessage">{t('entrepreneurHome.proposalMessage')}</label>
                     <textarea
                       id="editBidMessage"
                       value={editBidMessage}
                       onChange={(e) => setEditBidMessage(e.target.value)}
-                      placeholder="Describe your approach..."
+                      placeholder={t('entrepreneurHome.describeApproach')}
                       rows="5"
                     />
                   </div>
@@ -2323,14 +2325,14 @@ function HomePageEntrepreneur() {
                       }}
                       disabled={isSubmittingBidAction}
                     >
-                      Cancel
+                      {t('common.cancel')}
                     </button>
                     <button
                       className="eh-save-bid-btn"
                       onClick={handleUpdateBid}
                       disabled={isSubmittingBidAction}
                     >
-                      {isSubmittingBidAction ? 'Saving...' : 'Save Changes'}
+                      {isSubmittingBidAction ? t('entrepreneurHome.saving') : t('entrepreneurHome.saveChanges')}
                     </button>
                   </div>
                 </div>
@@ -2340,7 +2342,7 @@ function HomePageEntrepreneur() {
                     <div className="eh-view-bid-detail-item">
                       <DollarSign size={20} />
                       <div>
-                        <span className="eh-view-bid-label">Your Bid Amount</span>
+                        <span className="eh-view-bid-label">{t('entrepreneurHome.yourBidAmountLabel')}</span>
                         <span className="eh-view-bid-value">${Number(selectedBidToView.amount).toLocaleString()}</span>
                       </div>
                     </div>
@@ -2348,9 +2350,9 @@ function HomePageEntrepreneur() {
                     <div className="eh-view-bid-detail-item">
                       <Clock size={20} />
                       <div>
-                        <span className="eh-view-bid-label">Submitted On</span>
+                        <span className="eh-view-bid-label">{t('entrepreneurHome.submittedOn')}</span>
                         <span className="eh-view-bid-value">
-                          {new Date(selectedBidToView.created_at).toLocaleDateString('en-US', {
+                          {new Date(selectedBidToView.created_at).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric',
@@ -2364,7 +2366,7 @@ function HomePageEntrepreneur() {
 
                   {selectedBidToView.message && (
                     <div className="eh-view-bid-message">
-                      <h4>Your Proposal Message</h4>
+                      <h4>{t('entrepreneurHome.yourProposalMessage')}</h4>
                       <p>{selectedBidToView.message}</p>
                     </div>
                   )}
@@ -2378,7 +2380,7 @@ function HomePageEntrepreneur() {
                         disabled={isSubmittingBidAction}
                       >
                         <Edit3 size={18} />
-                        Edit Bid
+                        {t('entrepreneurHome.editBid')}
                       </button>
                       <button
                         className="eh-delete-bid-btn"
@@ -2386,7 +2388,7 @@ function HomePageEntrepreneur() {
                         disabled={isSubmittingBidAction}
                       >
                         <Trash2 size={18} />
-                        {isSubmittingBidAction ? 'Deleting...' : 'Delete Bid'}
+                        {isSubmittingBidAction ? t('entrepreneurHome.deleting') : t('entrepreneurHome.deleteBid')}
                       </button>
                     </div>
                   )}
@@ -2395,8 +2397,8 @@ function HomePageEntrepreneur() {
                     <div className="eh-view-bid-status-message">
                       <p>
                         {selectedBidToView.status === 'approved'
-                          ? 'Congratulations! Your bid has been approved.'
-                          : 'This bid has been declined.'}
+                          ? t('entrepreneurHome.bidApprovedMessage')
+                          : t('entrepreneurHome.bidDeclinedMessage')}
                       </p>
                     </div>
                   )}

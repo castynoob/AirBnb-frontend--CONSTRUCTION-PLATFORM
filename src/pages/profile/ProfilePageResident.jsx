@@ -71,12 +71,12 @@ const ProfilePageResident = () => {
   });
 
   // Language context
-  const { language, changeLanguage, languages } = useLanguage();
+  const { t, language, changeLanguage, languages } = useLanguage();
 
   // Tab labels for mobile header
   const tabLabels = {
-    account: 'Account',
-    settings: 'Settings'
+    account: t('profilePageResident.account'),
+    settings: t('profilePageResident.settings')
   };
 
   useEffect(() => {
@@ -90,7 +90,7 @@ const ProfilePageResident = () => {
 
       const userProfile = JSON.parse(localStorage.getItem('userProfile'));
       if (!userProfile?.token) {
-        setError('Please log in to view your profile');
+        setError(t('profilePageResident.pleaseLogIn'));
         setLoading(false);
         return;
       }
@@ -126,7 +126,7 @@ const ProfilePageResident = () => {
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
-      setError('Failed to load profile');
+      setError(t('profilePageResident.failedToLoadProfile'));
     } finally {
       setLoading(false);
     }
@@ -154,12 +154,12 @@ const ProfilePageResident = () => {
       if (data.success) {
         setProfile(data.profile);
         setIsEditing(false);
-        toast.success('Profile updated successfully!');
+        toast.success(t('profilePageResident.profileUpdatedSuccess'));
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      setError('Failed to save changes');
-      toast.error('Failed to save changes');
+      setError(t('profilePageResident.failedToSaveChanges'));
+      toast.error(t('profilePageResident.failedToSaveChanges'));
     } finally {
       setSaving(false);
     }
@@ -240,8 +240,14 @@ const ProfilePageResident = () => {
   };
 
   const getStrengthLabel = (strength) => {
-    const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
-    return labels[strength - 1] || 'Very Weak';
+    const labels = [
+      t('profilePageResident.veryWeak'),
+      t('profilePageResident.weak'),
+      t('profilePageResident.fair'),
+      t('profilePageResident.good'),
+      t('profilePageResident.strong')
+    ];
+    return labels[strength - 1] || t('profilePageResident.veryWeak');
   };
 
   const handleChangePassword = async (e) => {
@@ -250,17 +256,17 @@ const ProfilePageResident = () => {
     setPasswordSuccess('');
 
     if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-      setPasswordError('All fields are required');
+      setPasswordError(t('profilePageResident.allFieldsRequired'));
       return;
     }
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError('New passwords do not match');
+      setPasswordError(t('profilePageResident.passwordsMustMatch'));
       return;
     }
 
     if (passwordForm.newPassword.length < 8) {
-      setPasswordError('Password must be at least 8 characters');
+      setPasswordError(t('profilePageResident.passwordMinLength'));
       return;
     }
 
@@ -269,7 +275,7 @@ const ProfilePageResident = () => {
     try {
       const userProfile = JSON.parse(localStorage.getItem('userProfile'));
       if (!userProfile?.token) {
-        throw new Error('Please log in to change password');
+        throw new Error(t('profilePageResident.pleaseLoginToChange'));
       }
 
       const response = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
@@ -291,13 +297,13 @@ const ProfilePageResident = () => {
         throw new Error(data.message || 'Failed to change password');
       }
 
-      setPasswordSuccess('Password changed successfully!');
+      setPasswordSuccess(t('profilePageResident.passwordChangedSuccess'));
       setPasswordForm({
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
       });
-      toast.success('Password changed successfully!');
+      toast.success(t('profilePageResident.passwordChangedSuccess'));
     } catch (error) {
       setPasswordError(error.message);
       toast.error(error.message);
@@ -312,7 +318,7 @@ const ProfilePageResident = () => {
         <Nav />
         <div className="rp-loading-container">
           <div className="rp-loader"></div>
-          <p>Loading profile...</p>
+          <p>{t('profilePageResident.loadingProfile')}</p>
         </div>
       </div>
     );
@@ -326,7 +332,7 @@ const ProfilePageResident = () => {
           <AlertCircle size={48} />
           <p>{error}</p>
           <button className="rp-btn rp-btn-primary" onClick={fetchProfile}>
-            Try Again
+            {t('profilePageResident.tryAgain')}
           </button>
         </div>
       </div>
@@ -414,7 +420,7 @@ const ProfilePageResident = () => {
             </div>
             <div className="rp-sidebar-user">
               <h3>{profile?.first_name} {profile?.last_name}</h3>
-              <span>Resident</span>
+              <span>{t('profilePageResident.resident')}</span>
             </div>
           </div>
 
@@ -424,14 +430,14 @@ const ProfilePageResident = () => {
               onClick={() => handleTabChange('account')}
             >
               <User size={18} />
-              <span>Account</span>
+              <span>{t('profilePageResident.account')}</span>
             </button>
             <button
               className={`rp-nav-item ${activeTab === 'settings' ? 'rp-nav-active' : ''}`}
               onClick={() => handleTabChange('settings')}
             >
               <Settings size={18} />
-              <span>Settings</span>
+              <span>{t('profilePageResident.settings')}</span>
             </button>
           </nav>
         </aside>
@@ -444,23 +450,23 @@ const ProfilePageResident = () => {
               <>
                 <div className="rp-content-header">
                   <div className="rp-content-header-left">
-                    <h2>Account Information</h2>
-                    <p>Manage your profile and contact details</p>
+                    <h2>{t('profilePageResident.accountInformation')}</h2>
+                    <p>{t('profilePageResident.manageProfileDetails')}</p>
                   </div>
                   {!isEditing ? (
                     <button className="rp-btn rp-btn-primary rp-desktop-only" onClick={() => setIsEditing(true)}>
                       <Edit size={16} />
-                      Edit Profile
+                      {t('profilePageResident.editProfile')}
                     </button>
                   ) : (
                     <div className="rp-edit-actions rp-desktop-only">
                       <button className="rp-btn rp-btn-primary" onClick={handleSave} disabled={saving}>
                         <Save size={16} />
-                        {saving ? 'Saving...' : 'Save'}
+                        {saving ? t('profilePageResident.saving') : t('profilePageResident.save')}
                       </button>
                       <button className="rp-btn rp-btn-ghost" onClick={handleCancel} disabled={saving}>
                         <X size={16} />
-                        Cancel
+                        {t('profilePageResident.cancel')}
                       </button>
                     </div>
                   )}
@@ -492,7 +498,7 @@ const ProfilePageResident = () => {
                       <h3>{profile?.first_name} {profile?.last_name}</h3>
                       <span className="rp-role-tag">
                         <User size={12} />
-                        Resident
+                        {t('profilePageResident.resident')}
                       </span>
                     </div>
                   </div>
@@ -500,33 +506,33 @@ const ProfilePageResident = () => {
 
                 {/* Bio Section */}
                 <div className="rp-info-section">
-                  <h4 className="rp-info-section-title">About Me</h4>
+                  <h4 className="rp-info-section-title">{t('profilePageResident.aboutMe')}</h4>
                   {isEditing ? (
                     <div className="rp-form-group">
                       <textarea
                         value={formData.bio}
                         onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                        placeholder="Tell your neighbors about yourself..."
+                        placeholder={t('profilePageResident.bioPlaceholder')}
                         rows={4}
                         className="rp-form-textarea"
                       />
                     </div>
                   ) : (
                     <p className="rp-bio-text">
-                      {profile?.bio || 'No bio added yet.'}
+                      {profile?.bio || t('profilePageResident.noBioYet')}
                     </p>
                   )}
                 </div>
 
                 {/* Unit Information */}
                 <div className="rp-info-section">
-                  <h4 className="rp-info-section-title">Unit Information</h4>
+                  <h4 className="rp-info-section-title">{t('profilePageResident.unitInformation')}</h4>
                   {isEditing ? (
                     <div className="rp-form-grid">
                       <div className="rp-form-group">
                         <label className="rp-form-label">
                           <MapPin size={14} />
-                          Unit Number
+                          {t('profilePageResident.unitNumber')}
                         </label>
                         <input
                           type="text"
@@ -537,7 +543,7 @@ const ProfilePageResident = () => {
                         />
                       </div>
                       <div className="rp-form-group">
-                        <label className="rp-form-label">Floor</label>
+                        <label className="rp-form-label">{t('profilePageResident.floor')}</label>
                         <input
                           type="number"
                           value={formData.floor}
@@ -547,7 +553,7 @@ const ProfilePageResident = () => {
                         />
                       </div>
                       <div className="rp-form-group">
-                        <label className="rp-form-label">Building Section</label>
+                        <label className="rp-form-label">{t('profilePageResident.buildingSection')}</label>
                         <input
                           type="text"
                           value={formData.building_section}
@@ -557,7 +563,7 @@ const ProfilePageResident = () => {
                         />
                       </div>
                       <div className="rp-form-group">
-                        <label className="rp-form-label">Move-in Date</label>
+                        <label className="rp-form-label">{t('profilePageResident.moveInDate')}</label>
                         <input
                           type="date"
                           value={formData.move_in_date}
@@ -573,8 +579,8 @@ const ProfilePageResident = () => {
                           <MapPin size={18} />
                         </div>
                         <div className="rp-info-details">
-                          <label>Unit</label>
-                          <span>{profile?.unit_number || 'Not specified'}</span>
+                          <label>{t('profilePageResident.unit')}</label>
+                          <span>{profile?.unit_number || t('profilePageResident.notSpecified')}</span>
                         </div>
                       </div>
                       <div className="rp-info-item">
@@ -582,8 +588,8 @@ const ProfilePageResident = () => {
                           <MapPin size={18} />
                         </div>
                         <div className="rp-info-details">
-                          <label>Floor</label>
-                          <span>{profile?.floor || 'Not specified'}</span>
+                          <label>{t('profilePageResident.floor')}</label>
+                          <span>{profile?.floor || t('profilePageResident.notSpecified')}</span>
                         </div>
                       </div>
                       <div className="rp-info-item">
@@ -591,8 +597,8 @@ const ProfilePageResident = () => {
                           <MapPin size={18} />
                         </div>
                         <div className="rp-info-details">
-                          <label>Section</label>
-                          <span>{profile?.building_section || 'Not specified'}</span>
+                          <label>{t('profilePageResident.section')}</label>
+                          <span>{profile?.building_section || t('profilePageResident.notSpecified')}</span>
                         </div>
                       </div>
                       <div className="rp-info-item">
@@ -600,11 +606,11 @@ const ProfilePageResident = () => {
                           <MapPin size={18} />
                         </div>
                         <div className="rp-info-details">
-                          <label>Move-in Date</label>
+                          <label>{t('profilePageResident.moveInDate')}</label>
                           <span>
                             {profile?.move_in_date
-                              ? new Date(profile.move_in_date).toLocaleDateString()
-                              : 'Not specified'}
+                              ? new Date(profile.move_in_date).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US')
+                              : t('profilePageResident.notSpecified')}
                           </span>
                         </div>
                       </div>
@@ -614,15 +620,15 @@ const ProfilePageResident = () => {
 
                 {/* Contact Information */}
                 <div className="rp-info-section">
-                  <h4 className="rp-info-section-title">Contact Information</h4>
+                  <h4 className="rp-info-section-title">{t('profilePageResident.contactInformation')}</h4>
                   <div className="rp-info-grid">
                     <div className="rp-info-item">
                       <div className="rp-info-icon">
                         <Mail size={18} />
                       </div>
                       <div className="rp-info-details">
-                        <label>Email</label>
-                        <span>{profile?.email || 'Not provided'}</span>
+                        <label>{t('profilePageResident.email')}</label>
+                        <span>{profile?.email || t('profilePageResident.notProvided')}</span>
                       </div>
                     </div>
                     <div className="rp-info-item">
@@ -630,8 +636,8 @@ const ProfilePageResident = () => {
                         <Phone size={18} />
                       </div>
                       <div className="rp-info-details">
-                        <label>Phone</label>
-                        <span>{profile?.phone || 'Not provided'}</span>
+                        <label>{t('profilePageResident.phone')}</label>
+                        <span>{profile?.phone || t('profilePageResident.notProvided')}</span>
                       </div>
                     </div>
                   </div>
@@ -640,7 +646,7 @@ const ProfilePageResident = () => {
                 {/* Privacy Settings (only when editing) */}
                 {isEditing && (
                   <div className="rp-info-section">
-                    <h4 className="rp-info-section-title">Privacy Settings</h4>
+                    <h4 className="rp-info-section-title">{t('profilePageResident.privacySettings')}</h4>
                     <div className="rp-privacy-settings">
                       <label className="rp-checkbox-label">
                         <input
@@ -648,7 +654,7 @@ const ProfilePageResident = () => {
                           checked={formData.show_email}
                           onChange={(e) => setFormData({ ...formData, show_email: e.target.checked })}
                         />
-                        <span>Show email to other residents</span>
+                        <span>{t('profilePageResident.showEmailToResidents')}</span>
                       </label>
                       <label className="rp-checkbox-label">
                         <input
@@ -656,7 +662,7 @@ const ProfilePageResident = () => {
                           checked={formData.show_phone}
                           onChange={(e) => setFormData({ ...formData, show_phone: e.target.checked })}
                         />
-                        <span>Show phone to other residents</span>
+                        <span>{t('profilePageResident.showPhoneToResidents')}</span>
                       </label>
                       <label className="rp-checkbox-label">
                         <input
@@ -664,7 +670,7 @@ const ProfilePageResident = () => {
                           checked={formData.show_unit}
                           onChange={(e) => setFormData({ ...formData, show_unit: e.target.checked })}
                         />
-                        <span>Show unit number to other residents</span>
+                        <span>{t('profilePageResident.showUnitToResidents')}</span>
                       </label>
                       <label className="rp-checkbox-label">
                         <input
@@ -672,7 +678,7 @@ const ProfilePageResident = () => {
                           checked={formData.show_move_in_date}
                           onChange={(e) => setFormData({ ...formData, show_move_in_date: e.target.checked })}
                         />
-                        <span>Show move-in date</span>
+                        <span>{t('profilePageResident.showMoveInDate')}</span>
                       </label>
                       <label className="rp-checkbox-label">
                         <input
@@ -680,7 +686,7 @@ const ProfilePageResident = () => {
                           checked={formData.show_online_status}
                           onChange={(e) => setFormData({ ...formData, show_online_status: e.target.checked })}
                         />
-                        <span>Show when I'm online</span>
+                        <span>{t('profilePageResident.showOnlineStatus')}</span>
                       </label>
                       <label className="rp-checkbox-label">
                         <input
@@ -688,10 +694,10 @@ const ProfilePageResident = () => {
                           checked={formData.allow_messages}
                           onChange={(e) => setFormData({ ...formData, allow_messages: e.target.checked })}
                         />
-                        <span>Allow other residents to message me</span>
+                        <span>{t('profilePageResident.allowMessages')}</span>
                       </label>
 
-                      <h5 className="rp-subsection-title">Contact Preferences</h5>
+                      <h5 className="rp-subsection-title">{t('profilePageResident.contactPreferences')}</h5>
 
                       <label className="rp-checkbox-label">
                         <input
@@ -699,7 +705,7 @@ const ProfilePageResident = () => {
                           checked={formData.contact_via_email}
                           onChange={(e) => setFormData({ ...formData, contact_via_email: e.target.checked })}
                         />
-                        <span>Allow contact via email</span>
+                        <span>{t('profilePageResident.allowContactViaEmail')}</span>
                       </label>
                       <label className="rp-checkbox-label">
                         <input
@@ -707,7 +713,7 @@ const ProfilePageResident = () => {
                           checked={formData.contact_via_phone}
                           onChange={(e) => setFormData({ ...formData, contact_via_phone: e.target.checked })}
                         />
-                        <span>Allow contact via phone</span>
+                        <span>{t('profilePageResident.allowContactViaPhone')}</span>
                       </label>
                       <label className="rp-checkbox-label">
                         <input
@@ -715,7 +721,7 @@ const ProfilePageResident = () => {
                           checked={formData.contact_via_message}
                           onChange={(e) => setFormData({ ...formData, contact_via_message: e.target.checked })}
                         />
-                        <span>Allow contact via direct message</span>
+                        <span>{t('profilePageResident.allowContactViaMessage')}</span>
                       </label>
                     </div>
                   </div>
@@ -728,8 +734,8 @@ const ProfilePageResident = () => {
               <>
                 <div className="rp-content-header">
                   <div className="rp-content-header-left">
-                    <h2>Settings</h2>
-                    <p>Customize your preferences and security</p>
+                    <h2>{t('profilePageResident.settings')}</h2>
+                    <p>{t('profilePageResident.customizePreferences')}</p>
                   </div>
                 </div>
 
@@ -741,8 +747,8 @@ const ProfilePageResident = () => {
                         <Globe size={20} />
                       </div>
                       <div>
-                        <h3 className="rp-settings-title">Language</h3>
-                        <p className="rp-settings-subtitle">Select your preferred language</p>
+                        <h3 className="rp-settings-title">{t('profilePageResident.language')}</h3>
+                        <p className="rp-settings-subtitle">{t('profilePageResident.selectPreferredLanguage')}</p>
                       </div>
                     </div>
 
@@ -775,8 +781,8 @@ const ProfilePageResident = () => {
                         <Key size={20} />
                       </div>
                       <div>
-                        <h3 className="rp-settings-title">Change Password</h3>
-                        <p className="rp-settings-subtitle">Update your account password</p>
+                        <h3 className="rp-settings-title">{t('profilePageResident.changePassword')}</h3>
+                        <p className="rp-settings-subtitle">{t('profilePageResident.updateAccountPassword')}</p>
                       </div>
                     </div>
 
@@ -795,14 +801,14 @@ const ProfilePageResident = () => {
                       )}
 
                       <div className="rp-form-group">
-                        <label className="rp-form-label">Current Password</label>
+                        <label className="rp-form-label">{t('profilePageResident.currentPassword')}</label>
                         <div className="rp-input-wrapper">
                           <input
                             type={showPasswords.current ? 'text' : 'password'}
                             name="currentPassword"
                             value={passwordForm.currentPassword}
                             onChange={handlePasswordInputChange}
-                            placeholder="Enter current password"
+                            placeholder={t('profilePageResident.enterCurrentPassword')}
                             className="rp-form-input"
                           />
                           <button
@@ -816,14 +822,14 @@ const ProfilePageResident = () => {
                       </div>
 
                       <div className="rp-form-group">
-                        <label className="rp-form-label">New Password</label>
+                        <label className="rp-form-label">{t('profilePageResident.newPassword')}</label>
                         <div className="rp-input-wrapper">
                           <input
                             type={showPasswords.new ? 'text' : 'password'}
                             name="newPassword"
                             value={passwordForm.newPassword}
                             onChange={handlePasswordInputChange}
-                            placeholder="Enter new password"
+                            placeholder={t('profilePageResident.enterNewPassword')}
                             className="rp-form-input"
                           />
                           <button
@@ -852,19 +858,19 @@ const ProfilePageResident = () => {
                             </div>
                             <div className="rp-requirements-grid">
                               <span className={`rp-req-item ${passwordForm.newPassword.length >= 8 ? 'rp-req-met' : ''}`}>
-                                <Check size={12} /> 8+ characters
+                                <Check size={12} /> {t('profilePageResident.characters')}
                               </span>
                               <span className={`rp-req-item ${/[A-Z]/.test(passwordForm.newPassword) ? 'rp-req-met' : ''}`}>
-                                <Check size={12} /> Uppercase
+                                <Check size={12} /> {t('profilePageResident.uppercase')}
                               </span>
                               <span className={`rp-req-item ${/[a-z]/.test(passwordForm.newPassword) ? 'rp-req-met' : ''}`}>
-                                <Check size={12} /> Lowercase
+                                <Check size={12} /> {t('profilePageResident.lowercase')}
                               </span>
                               <span className={`rp-req-item ${/[0-9]/.test(passwordForm.newPassword) ? 'rp-req-met' : ''}`}>
-                                <Check size={12} /> Number
+                                <Check size={12} /> {t('profilePageResident.number')}
                               </span>
                               <span className={`rp-req-item ${/[!@#$%^&*(),.?":{}|<>]/.test(passwordForm.newPassword) ? 'rp-req-met' : ''}`}>
-                                <Check size={12} /> Special char
+                                <Check size={12} /> {t('profilePageResident.specialChar')}
                               </span>
                             </div>
                           </>
@@ -872,14 +878,14 @@ const ProfilePageResident = () => {
                       </div>
 
                       <div className="rp-form-group">
-                        <label className="rp-form-label">Confirm New Password</label>
+                        <label className="rp-form-label">{t('profilePageResident.confirmNewPassword')}</label>
                         <div className="rp-input-wrapper">
                           <input
                             type={showPasswords.confirm ? 'text' : 'password'}
                             name="confirmPassword"
                             value={passwordForm.confirmPassword}
                             onChange={handlePasswordInputChange}
-                            placeholder="Confirm new password"
+                            placeholder={t('profilePageResident.confirmPasswordPlaceholder')}
                             className="rp-form-input"
                           />
                           <button
@@ -891,7 +897,7 @@ const ProfilePageResident = () => {
                           </button>
                         </div>
                         {passwordForm.confirmPassword && passwordForm.newPassword !== passwordForm.confirmPassword && (
-                          <span className="rp-input-error">Passwords do not match</span>
+                          <span className="rp-input-error">{t('profilePageResident.passwordsDoNotMatch')}</span>
                         )}
                       </div>
 
@@ -902,7 +908,7 @@ const ProfilePageResident = () => {
                           onClick={() => setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })}
                           disabled={isChangingPassword}
                         >
-                          Cancel
+                          {t('profilePageResident.cancel')}
                         </button>
                         <button
                           type="submit"
@@ -912,12 +918,12 @@ const ProfilePageResident = () => {
                           {isChangingPassword ? (
                             <>
                               <span className="rp-spinner"></span>
-                              Changing...
+                              {t('profilePageResident.changing')}
                             </>
                           ) : (
                             <>
                               <Lock size={16} />
-                              Change Password
+                              {t('profilePageResident.changePassword')}
                             </>
                           )}
                         </button>

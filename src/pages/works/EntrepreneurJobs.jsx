@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import "../../styles/entrepreneur/entrepreneurjobs.css"
 import "../../styles/manager/submissions.css"
 import Nav from "../../components/Nav"
+import { useLanguage } from "../../contexts/LanguageContext"
 import {
   Search,
   X,
@@ -42,6 +43,7 @@ L.Icon.Default.mergeOptions({
 })
 
 function EntrepreneurJobs() {
+  const { t, language } = useLanguage()
   const navigate = useNavigate()
   const [jobs, setJobs] = useState([])
   const [isLoading, setIsLoading] = useState(true)
@@ -487,7 +489,8 @@ function EntrepreneurJobs() {
   }
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
+    const locale = language === 'fr' ? 'fr-FR' : 'en-US'
+    return new Date(dateString).toLocaleDateString(locale, {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -506,25 +509,25 @@ function EntrepreneurJobs() {
   // Get payment/contract status info for display
   const getPaymentStatusInfo = (contract) => {
     if (!contract) {
-      return { class: "payment-pending", icon: Clock, label: "Awaiting Payment", description: "Manager has not yet paid for this job" }
+      return { class: "payment-pending", icon: Clock, label: t('entrepreneurJobs.awaitingPayment'), description: t('entrepreneurJobs.managerNotPaid') }
     }
 
     const status = contract.status
     switch (status) {
       case "pending_payment":
-        return { class: "payment-pending", icon: Clock, label: "Awaiting Payment", description: "Manager has not yet completed payment" }
+        return { class: "payment-pending", icon: Clock, label: t('entrepreneurJobs.awaitingPayment'), description: t('entrepreneurJobs.managerNotCompletedPayment') }
       case "paid":
-        return { class: "payment-escrow", icon: Wallet, label: "Payment in Escrow", description: "Payment is held securely until work is approved" }
+        return { class: "payment-escrow", icon: Wallet, label: t('entrepreneurJobs.paymentInEscrow'), description: t('entrepreneurJobs.paymentHeldSecurely') }
       case "work_completed":
-        return { class: "payment-review", icon: AlertCircle, label: "Awaiting Approval", description: "Work marked complete, waiting for manager to approve and release funds" }
+        return { class: "payment-review", icon: AlertCircle, label: t('entrepreneurJobs.awaitingApproval'), description: t('entrepreneurJobs.workMarkedComplete') }
       case "completed":
-        return { class: "payment-released", icon: Banknote, label: "Funds Released", description: "Payment has been released to your account" }
+        return { class: "payment-released", icon: Banknote, label: t('entrepreneurJobs.fundsReleased'), description: t('entrepreneurJobs.paymentReleased') }
       case "refunded":
-        return { class: "payment-refunded", icon: AlertCircle, label: "Refunded", description: "Payment was refunded to the manager" }
+        return { class: "payment-refunded", icon: AlertCircle, label: t('entrepreneurJobs.refunded'), description: t('entrepreneurJobs.paymentRefunded') }
       case "disputed":
-        return { class: "payment-disputed", icon: AlertCircle, label: "Disputed", description: "There is a dispute regarding this contract" }
+        return { class: "payment-disputed", icon: AlertCircle, label: t('entrepreneurJobs.disputed'), description: t('entrepreneurJobs.disputeRegarding') }
       default:
-        return { class: "payment-unknown", icon: CreditCard, label: "Unknown", description: "Payment status unknown" }
+        return { class: "payment-unknown", icon: CreditCard, label: t('entrepreneurJobs.unknown'), description: t('entrepreneurJobs.paymentStatusUnknown') }
     }
   }
 
@@ -612,14 +615,14 @@ function EntrepreneurJobs() {
         <header className="ej-page-header">
           <div className="ej-header-left">
             <div className="ej-header-title-group">
-              <h1>MY PROJECTS</h1>
-              <span className="ej-project-count">{jobs.length} projects</span>
+              <h1>{t('entrepreneurJobs.title')}</h1>
+              <span className="ej-project-count">{jobs.length} {t('entrepreneurJobs.projects')}</span>
             </div>
           </div>
           <div className="ej-header-actions">
             <div className="ej-btn-header">
               <PlayCircle size={18} />
-              <span>{jobs.filter((j) => j.status === "ongoing").length} Active</span>
+              <span>{jobs.filter((j) => j.status === "ongoing").length} {t('entrepreneurJobs.active')}</span>
             </div>
           </div>
         </header>
@@ -632,7 +635,7 @@ function EntrepreneurJobs() {
               className={`ej-tab-btn ${activeStatus === status ? "active" : ""}`}
               onClick={() => setActiveStatus(status)}
             >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
+              {t(`entrepreneurJobs.${status}`)}
               <span className="ej-tab-count">{getStatusCount(status)}</span>
             </button>
           ))}
@@ -644,7 +647,7 @@ function EntrepreneurJobs() {
             <Search size={18} />
             <input
               type="text"
-              placeholder="Search projects..."
+              placeholder={t('entrepreneurJobs.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -660,17 +663,17 @@ function EntrepreneurJobs() {
         {filteredJobs.length === 0 ? (
           <div className="ej-empty-state">
             <FileText size={48} />
-            <h3>No {activeStatus} projects found</h3>
-            <p>Try adjusting your search or check other tabs</p>
+            <h3>{t('entrepreneurJobs.noProjectsFound', { status: t(`entrepreneurJobs.${activeStatus}`) })}</h3>
+            <p>{t('entrepreneurJobs.adjustSearchOrTabs')}</p>
           </div>
         ) : (
           <div className="ej-projects-grid">
             {filteredJobs.map((job) => {
               const getStatusInfo = (status) => {
                 const statusMap = {
-                  accepted: { class: "status-accepted", icon: CheckCircle, label: "Accepted" },
-                  ongoing: { class: "status-ongoing", icon: PlayCircle, label: "Ongoing" },
-                  completed: { class: "status-completed", icon: CheckCircle, label: "Completed" },
+                  accepted: { class: "status-accepted", icon: CheckCircle, label: t('entrepreneurJobs.accepted') },
+                  ongoing: { class: "status-ongoing", icon: PlayCircle, label: t('entrepreneurJobs.ongoing') },
+                  completed: { class: "status-completed", icon: CheckCircle, label: t('entrepreneurJobs.completed') },
                 }
                 return statusMap[status] || { class: "status-open", icon: FolderOpen, label: status }
               }
@@ -690,7 +693,7 @@ function EntrepreneurJobs() {
                     {job.is_emergency && (
                       <span className="ej-urgent-badge">
                         <AlertCircle size={12} />
-                        Urgent
+                        {t('entrepreneurJobs.urgent')}
                       </span>
                     )}
                   </div>
@@ -722,7 +725,7 @@ function EntrepreneurJobs() {
                     <div className="ej-meta-row">
                       <div className="ej-meta-item">
                         <Calendar size={14} />
-                        <span>Due {formatDate(job.due_date)}</span>
+                        <span>{t('entrepreneurJobs.due')} {formatDate(job.due_date)}</span>
                       </div>
                       {job.budget_min && job.budget_max && (
                         <div className="ej-meta-item">
@@ -739,14 +742,14 @@ function EntrepreneurJobs() {
                       <button
                         className="ej-icon-action"
                         onClick={(e) => { e.stopPropagation(); handleViewDetails(job); }}
-                        title="View Details"
+                        title={t('entrepreneurJobs.viewDetails')}
                       >
                         <FileText size={16} />
                       </button>
                       <button
                         className="ej-icon-action"
                         onClick={(e) => { e.stopPropagation(); handleChatManager(job); }}
-                        title="Message Manager"
+                        title={t('entrepreneurJobs.messageManager')}
                       >
                         <MessageSquare size={16} />
                       </button>
@@ -759,7 +762,7 @@ function EntrepreneurJobs() {
                           onClick={(e) => { e.stopPropagation(); openModal(job, "start"); }}
                         >
                           <PlayCircle size={16} />
-                          Start Project
+                          {t('entrepreneurJobs.startProject')}
                         </button>
                       )}
 
@@ -769,7 +772,7 @@ function EntrepreneurJobs() {
                           onClick={(e) => { e.stopPropagation(); openModal(job, "done"); }}
                         >
                           <CheckCircle size={16} />
-                          Mark Complete
+                          {t('entrepreneurJobs.markComplete')}
                         </button>
                       )}
 
@@ -787,7 +790,7 @@ function EntrepreneurJobs() {
                           }}
                         >
                           <Star size={16} />
-                          {job.review.length === 0 ? 'Leave Review' : 'View Review'}
+                          {job.review.length === 0 ? t('entrepreneurJobs.leaveReview') : t('entrepreneurJobs.viewReview')}
                         </button>
                       )}
                     </div>
@@ -810,7 +813,7 @@ function EntrepreneurJobs() {
           <div className="rm-modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="rm-modal-header">
               <div className="rm-header-content">
-                <h2 className="rm-modal-title">Leave a Review</h2>
+                <h2 className="rm-modal-title">{t('entrepreneurJobs.leaveAReview')}</h2>
                 <p className="rm-modal-subtitle">{selectedJob?.title}</p>
               </div>
               <button
@@ -829,7 +832,7 @@ function EntrepreneurJobs() {
             <div className="rm-modal-body">
               {/* Rating Section */}
               <div className="rm-rating-section">
-                <label className="rm-section-label">How would you rate your experience?</label>
+                <label className="rm-section-label">{t('entrepreneurJobs.howWouldYouRate')}</label>
                 <div className="rm-stars-container">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
@@ -847,23 +850,23 @@ function EntrepreneurJobs() {
 
               {/* Comment Section */}
               <div className="rm-comment-section">
-                <label className="rm-section-label">Share your experience</label>
+                <label className="rm-section-label">{t('entrepreneurJobs.shareExperience')}</label>
                 <textarea
                   className="rm-textarea"
-                  placeholder="Tell us about your experience with this property manager..."
+                  placeholder={t('entrepreneurJobs.reviewPlaceholder')}
                   value={reviewForm.comment}
                   onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
                   rows={5}
                 />
                 <div className="rm-char-count">
-                  {reviewForm.comment.length} characters {reviewForm.comment.trim().length < 10 && '(minimum 10)'}
+                  {reviewForm.comment.length} {t('entrepreneurJobs.characters')} {reviewForm.comment.trim().length < 10 && t('entrepreneurJobs.minimumTen')}
                 </div>
               </div>
 
               {/* Image Upload Section */}
               <div className="rm-image-section">
-                <label className="rm-section-label">Add photos (optional)</label>
-                <p className="rm-section-hint">Upload up to 5 photos to showcase the work</p>
+                <label className="rm-section-label">{t('entrepreneurJobs.addPhotos')}</label>
+                <p className="rm-section-hint">{t('entrepreneurJobs.uploadPhotosHint')}</p>
 
                 <input
                   type="file"
@@ -875,7 +878,7 @@ function EntrepreneurJobs() {
                 />
                 <label htmlFor="rm-review-images" className="rm-upload-btn">
                   <FileText size={18} />
-                  <span>Choose Images</span>
+                  <span>{t('entrepreneurJobs.chooseImages')}</span>
                 </label>
 
                 {reviewImagePreviews.length > 0 && (
@@ -887,7 +890,7 @@ function EntrepreneurJobs() {
                           type="button"
                           className="rm-remove-btn"
                           onClick={() => removeReviewImage(index)}
-                          title="Remove image"
+                          title={t('entrepreneurJobs.removeImage')}
                         >
                           <X size={16} />
                         </button>
@@ -909,7 +912,7 @@ function EntrepreneurJobs() {
                 }}
                 disabled={isSubmittingReview}
               >
-                Cancel
+                {t('entrepreneurJobs.cancel')}
               </button>
               <button
                 className="rm-btn rm-btn-submit"
@@ -919,12 +922,12 @@ function EntrepreneurJobs() {
                 {isSubmittingReview ? (
                   <>
                     <div className="rm-spinner"></div>
-                    <span>Submitting...</span>
+                    <span>{t('entrepreneurJobs.submitting')}</span>
                   </>
                 ) : (
                   <>
                     <Star size={16} />
-                    <span>Submit Review</span>
+                    <span>{t('entrepreneurJobs.submitReview')}</span>
                   </>
                 )}
               </button>
@@ -939,8 +942,8 @@ function EntrepreneurJobs() {
           <div className="bid-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
             <div className="bid-modal-header">
               <h2>
-                {modalType === "start" && "Start this project?"}
-                {modalType === "done" && "Mark this project as completed?"}
+                {modalType === "start" && t('entrepreneurJobs.startProjectQuestion')}
+                {modalType === "done" && t('entrepreneurJobs.markCompleteQuestion')}
               </h2>
               <button className="bid-modal-close" onClick={closeModal}>
                 <X size={24} />
@@ -953,16 +956,16 @@ function EntrepreneurJobs() {
                   {selectedJob.title}
                 </h3>
                 <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: 0 }}>
-                  {modalType === "start" ? "This will change the project status to ongoing." : "This will mark the project as completed."}
+                  {modalType === "start" ? t('entrepreneurJobs.statusChangeOngoing') : t('entrepreneurJobs.statusChangeCompleted')}
                 </p>
               </section>
             </div>
             <div className="bid-modal-footer">
               <button className="bid-btn-decline" onClick={closeModal}>
-                Cancel
+                {t('entrepreneurJobs.cancel')}
               </button>
               <button className="bid-btn-accept" onClick={handleConfirmAction} disabled={isConfirming}>
-                {isConfirming ? "Loading..." : "Confirm"}
+                {isConfirming ? t('entrepreneurJobs.loading') : t('entrepreneurJobs.confirm')}
               </button>
             </div>
           </div>
@@ -984,20 +987,20 @@ function EntrepreneurJobs() {
               <section className="bid-modal-section">
                 <h3 className="bid-section-title">
                   <FileText size={20} />
-                  Project Details
+                  {t('entrepreneurJobs.projectDetails')}
                 </h3>
                 <div className="bid-info-grid">
                   <div className="bid-info-item">
-                    <label>Category</label>
+                    <label>{t('entrepreneurJobs.category')}</label>
                     <p>{selectedJob.category}</p>
                   </div>
                   <div className="bid-info-item">
-                    <label><Calendar size={14} /> Due Date</label>
+                    <label><Calendar size={14} /> {t('entrepreneurJobs.dueDate')}</label>
                     <p>{formatDate(selectedJob.due_date)}</p>
                   </div>
                   {selectedJob.budget_min && selectedJob.budget_max && (
                     <div className="bid-info-item">
-                      <label><DollarSign size={14} /> Budget Range</label>
+                      <label><DollarSign size={14} /> {t('entrepreneurJobs.budgetRange')}</label>
                       <p>{formatCurrency(selectedJob.budget_min)} - {formatCurrency(selectedJob.budget_max)}</p>
                     </div>
                   )}
@@ -1007,15 +1010,15 @@ function EntrepreneurJobs() {
               <section className="bid-modal-section">
                 <h3 className="bid-section-title">
                   <Building2 size={20} />
-                  Property Manager
+                  {t('entrepreneurJobs.propertyManager')}
                 </h3>
                 <div className="bid-info-grid">
                   <div className="bid-info-item">
-                    <label>Company</label>
+                    <label>{t('entrepreneurJobs.company')}</label>
                     <p>{manager.company_name}</p>
                   </div>
                   <div className="bid-info-item">
-                    <label>Address</label>
+                    <label>{t('entrepreneurJobs.address')}</label>
                     <p>{manager.address}</p>
                   </div>
                 </div>
@@ -1025,7 +1028,7 @@ function EntrepreneurJobs() {
                 <section className="bid-modal-section bid-modal-highlight">
                   <h3 className="bid-section-title">
                     <Star size={20} />
-                    Your Review
+                    {t('entrepreneurJobs.yourReview')}
                   </h3>
                   <div className="bid-rating-display">
                     <div className="bid-rating-stars">
@@ -1038,10 +1041,10 @@ function EntrepreneurJobs() {
                         />
                       ))}
                     </div>
-                    <p className="bid-rating-text">{reviewed[0].rating} out of 5 stars</p>
+                    <p className="bid-rating-text">{reviewed[0].rating} {t('entrepreneurJobs.outOfFiveStars')}</p>
                   </div>
                   <div className="bid-message">
-                    <label>Comment</label>
+                    <label>{t('entrepreneurJobs.comment')}</label>
                     <p>"{reviewed[0].comment}"</p>
                   </div>
                   <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.5rem' }}>
@@ -1051,7 +1054,7 @@ function EntrepreneurJobs() {
                   {/* Display attached images */}
                   {reviewed[0].images && reviewed[0].images.length > 0 && (
                     <div className="review-images-section" style={{ marginTop: '1rem' }}>
-                      <label>Attached Photos ({reviewed[0].images.length}):</label>
+                      <label>{t('entrepreneurJobs.attachedPhotos')} ({reviewed[0].images.length}):</label>
                       <div className="review-images-grid">
                         {reviewed[0].images.map((image, index) => (
                           <div key={index} className="review-image-item">
@@ -1077,7 +1080,7 @@ function EntrepreneurJobs() {
         <div className="bid-modal-overlay" onClick={() => setShowDetailsModal(false)}>
           <div className="bid-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="bid-modal-header">
-              <h2>Project Details</h2>
+              <h2>{t('entrepreneurJobs.projectDetails')}</h2>
               <button className="bid-modal-close" onClick={() => setShowDetailsModal(false)}>
                 <X size={24} />
               </button>
@@ -1088,26 +1091,26 @@ function EntrepreneurJobs() {
               <section className="bid-modal-section">
                 <h3 className="bid-section-title">
                   <FileText size={20} />
-                  Project Information
+                  {t('entrepreneurJobs.projectInformation')}
                 </h3>
                 <div className="bid-info-grid">
                   <div className="bid-info-item">
-                    <label>Title</label>
+                    <label>{t('entrepreneurJobs.titleLabel')}</label>
                     <p>{detailsJob.title}</p>
                   </div>
                   <div className="bid-info-item">
-                    <label>Category</label>
+                    <label>{t('entrepreneurJobs.category')}</label>
                     <p>{detailsJob.category}</p>
                   </div>
                   <div className="bid-info-item">
-                    <label>Status</label>
+                    <label>{t('entrepreneurJobs.status')}</label>
                     <span className={`bid-status-badge-modal status-${detailsJob.status === 'approved' ? 'approved' : detailsJob.status}`}>
-                      {detailsJob.status.charAt(0).toUpperCase() + detailsJob.status.slice(1)}
+                      {t(`entrepreneurJobs.${detailsJob.status}`)}
                     </span>
                   </div>
                 </div>
                 <div className="bid-info-item" style={{ marginTop: '1rem' }}>
-                  <label>Description</label>
+                  <label>{t('entrepreneurJobs.description')}</label>
                   <p>{detailsJob.description}</p>
                 </div>
               </section>
@@ -1116,28 +1119,28 @@ function EntrepreneurJobs() {
               <section className="bid-modal-section bid-modal-highlight">
                 <h3 className="bid-section-title">
                   <DollarSign size={20} />
-                  Timeline & Budget
+                  {t('entrepreneurJobs.timelineBudget')}
                 </h3>
                 <div className="bid-info-grid">
                   <div className="bid-info-item">
-                    <label><Calendar size={14} /> Due Date</label>
+                    <label><Calendar size={14} /> {t('entrepreneurJobs.dueDate')}</label>
                     <p>{formatDate(detailsJob.due_date)}</p>
                   </div>
                   {detailsJob.estimated_duration_days && (
                     <div className="bid-info-item">
-                      <label><Clock size={14} /> Estimated Duration</label>
-                      <p>{detailsJob.estimated_duration_days} days</p>
+                      <label><Clock size={14} /> {t('entrepreneurJobs.estimatedDuration')}</label>
+                      <p>{detailsJob.estimated_duration_days} {t('entrepreneurJobs.days')}</p>
                     </div>
                   )}
                   {detailsJob.budget_min && detailsJob.budget_max && (
                     <div className="bid-info-item">
-                      <label><DollarSign size={14} /> Budget Range</label>
+                      <label><DollarSign size={14} /> {t('entrepreneurJobs.budgetRange')}</label>
                       <p>{formatCurrency(detailsJob.budget_min)} - {formatCurrency(detailsJob.budget_max)}</p>
                     </div>
                   )}
                   {detailsJob.urgency && (
                     <div className="bid-info-item">
-                      <label>Urgency</label>
+                      <label>{t('entrepreneurJobs.urgencyLabel')}</label>
                       <p>{detailsJob.urgency}</p>
                     </div>
                   )}
@@ -1149,25 +1152,25 @@ function EntrepreneurJobs() {
                 <section className="bid-modal-section bid-modal-highlight">
                   <h3 className="bid-section-title">
                     <Hammer size={20} />
-                    Your Bid
+                    {t('entrepreneurJobs.yourBid')}
                   </h3>
                   <div className="bid-info-grid">
                     <div className="bid-info-item">
-                      <label><DollarSign size={14} /> Bid Amount</label>
+                      <label><DollarSign size={14} /> {t('entrepreneurJobs.bidAmount')}</label>
                       <p style={{ fontWeight: '600', color: 'var(--color-secondary)', fontSize: '1.125rem' }}>
                         {formatCurrency(detailsJob.bid_amount)}
                       </p>
                     </div>
                     {detailsJob.bid_submitted_at && (
                       <div className="bid-info-item">
-                        <label><Clock size={14} /> Submitted On</label>
+                        <label><Clock size={14} /> {t('entrepreneurJobs.submittedOn')}</label>
                         <p>{formatDate(detailsJob.bid_submitted_at)}</p>
                       </div>
                     )}
                   </div>
                   {detailsJob.bid_message && (
                     <div className="bid-info-item" style={{ marginTop: '1rem' }}>
-                      <label><MessageSquare size={14} /> Your Proposal Message</label>
+                      <label><MessageSquare size={14} /> {t('entrepreneurJobs.yourProposalMessage')}</label>
                       <p style={{
                         marginTop: '0.5rem',
                         padding: '0.875rem',
@@ -1187,7 +1190,7 @@ function EntrepreneurJobs() {
               <section className="bid-modal-section ej-payment-section">
                 <h3 className="bid-section-title">
                   <CreditCard size={20} />
-                  Payment Status
+                  {t('entrepreneurJobs.paymentStatus')}
                 </h3>
                 {(() => {
                   const paymentInfo = getPaymentStatusInfo(detailsJob.contract)
@@ -1205,24 +1208,24 @@ function EntrepreneurJobs() {
                         {detailsJob.contract && (
                           <div className="ej-payment-details">
                             <div className="ej-payment-detail-row">
-                              <span>Contract Amount</span>
+                              <span>{t('entrepreneurJobs.contractAmount')}</span>
                               <span className="ej-payment-detail-value">{formatCurrency(detailsJob.contract.contract_amount || detailsJob.bid_amount || 0)}</span>
                             </div>
                             {detailsJob.contract.status === 'completed' && detailsJob.contract.payout_amount && (
                               <div className="ej-payment-detail-row">
-                                <span>Your Payout (after fees)</span>
+                                <span>{t('entrepreneurJobs.yourPayout')}</span>
                                 <span className="ej-payment-detail-value ej-payout-amount">{formatCurrency(detailsJob.contract.payout_amount)}</span>
                               </div>
                             )}
                             {detailsJob.contract.paid_at && (
                               <div className="ej-payment-detail-row">
-                                <span>Payment Received</span>
+                                <span>{t('entrepreneurJobs.paymentReceived')}</span>
                                 <span className="ej-payment-detail-value">{formatDate(detailsJob.contract.paid_at)}</span>
                               </div>
                             )}
                             {detailsJob.contract.completed_at && (
                               <div className="ej-payment-detail-row">
-                                <span>Funds Released</span>
+                                <span>{t('entrepreneurJobs.fundsReleasedDate')}</span>
                                 <span className="ej-payment-detail-value">{formatDate(detailsJob.contract.completed_at)}</span>
                               </div>
                             )}
@@ -1232,25 +1235,25 @@ function EntrepreneurJobs() {
                       {!detailsJob.contract && (
                         <p className="ej-payment-note">
                           <AlertCircle size={14} />
-                          The property manager has not yet made a payment for this job. Payment is required before work can begin.
+                          {t('entrepreneurJobs.noPaymentNote')}
                         </p>
                       )}
                       {detailsJob.contract?.status === 'paid' && (
                         <p className="ej-payment-note ej-payment-note-escrow">
                           <Wallet size={14} />
-                          Funds are held securely in escrow. They will be released to you once you complete the work and the manager approves it.
+                          {t('entrepreneurJobs.escrowNote')}
                         </p>
                       )}
                       {detailsJob.contract?.status === 'work_completed' && (
                         <p className="ej-payment-note ej-payment-note-pending">
                           <Clock size={14} />
-                          You've marked this job complete. Waiting for the property manager to review and release payment.
+                          {t('entrepreneurJobs.awaitingApprovalNote')}
                         </p>
                       )}
                       {detailsJob.contract?.status === 'completed' && (
                         <p className="ej-payment-note ej-payment-note-success">
                           <CheckCircle size={14} />
-                          Payment has been released! Funds should arrive in your connected bank account within 2-3 business days.
+                          {t('entrepreneurJobs.fundsReleasedNote')}
                         </p>
                       )}
                     </>
@@ -1263,12 +1266,12 @@ function EntrepreneurJobs() {
                 <section className="bid-modal-section">
                   <h3 className="bid-section-title">
                     <User size={20} />
-                    Property Manager
+                    {t('entrepreneurJobs.propertyManager')}
                   </h3>
                   <div
                     className="bid-manager-card"
                     onClick={() => handleViewManagerProfile(detailsJob)}
-                    title="View property manager profile"
+                    title={t('entrepreneurJobs.viewManagerProfile')}
                   >
                     <div className="bid-manager-avatar">
                       {detailsJob.manager_company_name?.charAt(0) || detailsJob.manager_first_name?.charAt(0) || 'P'}
@@ -1297,12 +1300,12 @@ function EntrepreneurJobs() {
                   <div className="bid-section-title-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h3 className="bid-section-title" style={{ margin: 0 }}>
                       <MapPin size={20} />
-                      Property Location
+                      {t('entrepreneurJobs.propertyLocation')}
                     </h3>
                     <button
                       className="ej-map-fullscreen-btn"
                       onClick={() => setIsMapFullscreen(true)}
-                      title="View fullscreen map"
+                      title={t('entrepreneurJobs.viewFullscreenMap')}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -1318,7 +1321,7 @@ function EntrepreneurJobs() {
                       }}
                     >
                       <Maximize2 size={14} />
-                      Full View
+                      {t('entrepreneurJobs.fullView')}
                     </button>
                   </div>
                   <div className="bid-info-item" style={{ marginBottom: '0.75rem', marginTop: '0.75rem' }}>
@@ -1366,7 +1369,7 @@ function EntrepreneurJobs() {
             <div className="bid-modal-footer ej-modal-footer-redesign">
               {/* Left: Close button */}
               <button className="ej-modal-close-btn" onClick={() => setShowDetailsModal(false)}>
-                Close
+                {t('entrepreneurJobs.close')}
               </button>
 
               {/* Right: Action buttons */}
@@ -1380,7 +1383,7 @@ function EntrepreneurJobs() {
                   }}
                 >
                   <MessageSquare size={16} />
-                  Chat with Manager
+                  {t('entrepreneurJobs.chatWithManager')}
                 </button>
 
                 {/* Primary action based on status */}
@@ -1393,7 +1396,7 @@ function EntrepreneurJobs() {
                     }}
                   >
                     <PlayCircle size={16} />
-                    Start Project
+                    {t('entrepreneurJobs.startProject')}
                   </button>
                 )}
 
@@ -1406,7 +1409,7 @@ function EntrepreneurJobs() {
                     }}
                   >
                     <CheckCircle size={16} />
-                    Mark Complete
+                    {t('entrepreneurJobs.markComplete')}
                   </button>
                 )}
 
@@ -1424,7 +1427,7 @@ function EntrepreneurJobs() {
                     }}
                   >
                     <Star size={16} />
-                    {detailsJob.review && detailsJob.review.length === 0 ? 'Leave Review' : 'View Review'}
+                    {detailsJob.review && detailsJob.review.length === 0 ? t('entrepreneurJobs.leaveReview') : t('entrepreneurJobs.viewReview')}
                   </button>
                 )}
               </div>
@@ -1486,7 +1489,7 @@ function EntrepreneurJobs() {
               }}
             >
               <Minimize2 size={18} />
-              Close
+              {t('entrepreneurJobs.close')}
             </button>
           </div>
 
