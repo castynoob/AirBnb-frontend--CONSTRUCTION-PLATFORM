@@ -24,7 +24,7 @@ function ContactButton({
   const currentUserRole = localStorage.getItem('userRole');
 
   // ============================================
-  // CHECK MESSAGING ACCESS ON MOUNTS
+  // CHECK MESSAGING ACCESS ON MOUNTs
   // ============================================
   useEffect(() => {
     checkAccess();
