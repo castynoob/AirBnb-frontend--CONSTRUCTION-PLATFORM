@@ -741,6 +741,11 @@ function HomePageEntrepreneur() {
       return
     }
 
+    if (!selectedJob) {
+      toast.error(t('entrepreneurHome.selectJobError') || 'Please select a job first')
+      return
+    }
+
     const storedProfile = localStorage.getItem('userProfile')
 
     if(storedProfile) {
