@@ -252,21 +252,27 @@ function HomePageEntrepreneur() {
     center: null // {lat, lng}
   })
 
-  // Filter states
-  const [filters, setFilters] = useState({
-    regions: [],
+  // Filter states - appliedFilters is what's actually used for filtering
+  const initialFilters = {
+    countries: [],
+    otherCountry: "",
     cities: [],
     neighborhoods: [],
     workTypes: [],
+    otherWorkType: "",
     urgency: [],
     daysUntilNeeded: "",
     duration: "",
     budgetMin: "",
     budgetMax: "",
+    budgetPreset: "",
+    durationPreset: "",
     bidCount: "",
     propertyTypes: [],
     propertySizes: [],
-  })
+  }
+  const [filters, setFilters] = useState(initialFilters) // Pending filters (in modal)
+  const [appliedFilters, setAppliedFilters] = useState(initialFilters) // Actually applied filters
 
   const [userLocation, setUserLocation] = useState(null)
   const [error, setError] = useState(null);
@@ -538,11 +544,18 @@ function HomePageEntrepreneur() {
         property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         property.address.toLowerCase().includes(searchTerm.toLowerCase())
 
-      const matchesRegion = filters.regions.length === 0 || filters.regions.includes(property.region)
-      const matchesCity = filters.cities.length === 0 || filters.cities.includes(property.city)
+      // Country filter - combine checkbox selections and text field input
+      const selectedCountries = [...appliedFilters.countries]
+      if (appliedFilters.otherCountry && appliedFilters.otherCountry.trim()) {
+        selectedCountries.push(appliedFilters.otherCountry.trim())
+      }
+      const matchesCountry = selectedCountries.length === 0 || selectedCountries.some(country =>
+        property.region?.toLowerCase().includes(country.toLowerCase())
+      )
+      const matchesCity = appliedFilters.cities.length === 0 || appliedFilters.cities.includes(property.city)
 
       const matchesPropertyType =
-        filters.propertyTypes.length === 0 || filters.propertyTypes.includes(property.propertyType)
+        appliedFilters.propertyTypes.length === 0 || appliedFilters.propertyTypes.includes(property.propertyType)
 
       // Radius filter
       const matchesRadius = !radiusFilter.enabled || !radiusFilter.center ||
@@ -555,38 +568,45 @@ function HomePageEntrepreneur() {
 
       const propertyJobs = jobs.filter((job) => job.property_id === property.id && job.status?.toLowerCase() === "open")
 
+      // Work type filter - combine checkbox selections and text field input
+      const selectedWorkTypes = [...appliedFilters.workTypes]
+      if (appliedFilters.otherWorkType && appliedFilters.otherWorkType.trim()) {
+        selectedWorkTypes.push(appliedFilters.otherWorkType.trim())
+      }
       const matchesWorkType =
-        filters.workTypes.length === 0 || propertyJobs.some((job) => filters.workTypes.includes(job.category))
+        selectedWorkTypes.length === 0 || propertyJobs.some((job) =>
+          selectedWorkTypes.some(type => job.category?.toLowerCase().includes(type.toLowerCase()))
+        )
 
       const matchesUrgency =
-        filters.urgency.length === 0 || propertyJobs.some((job) => filters.urgency.includes(job.urgency))
+        appliedFilters.urgency.length === 0 || propertyJobs.some((job) => appliedFilters.urgency.includes(job.urgency))
 
       const matchesDays =
-        !filters.daysUntilNeeded ||
-        propertyJobs.some((job) => job.daysUntilNeeded <= Number.parseInt(filters.daysUntilNeeded))
+        !appliedFilters.daysUntilNeeded ||
+        propertyJobs.some((job) => job.daysUntilNeeded <= Number.parseInt(appliedFilters.daysUntilNeeded))
 
       const matchesDuration =
-        !filters.duration ||
-        propertyJobs.some((job) => job.estimated_duration_days <= Number.parseInt(filters.duration))
+        !appliedFilters.duration ||
+        propertyJobs.some((job) => job.estimated_duration_days <= Number.parseInt(appliedFilters.duration))
 
       const matchesBudget =
-        (!filters.budgetMin && !filters.budgetMax) ||
+        (!appliedFilters.budgetMin && !appliedFilters.budgetMax) ||
         propertyJobs.some((job) => {
-          const min = filters.budgetMin
-            ? Number.parseFloat(job.budget_min) >= Number.parseFloat(filters.budgetMin)
+          const min = appliedFilters.budgetMin
+            ? Number.parseFloat(job.budget_min) >= Number.parseFloat(appliedFilters.budgetMin)
             : true
-          const max = filters.budgetMax
-            ? Number.parseFloat(job.budget_max) <= Number.parseFloat(filters.budgetMax)
+          const max = appliedFilters.budgetMax
+            ? Number.parseFloat(job.budget_max) <= Number.parseFloat(appliedFilters.budgetMax)
             : true
           return min && max
         })
 
       const matchesBidCount =
-        !filters.bidCount || propertyJobs.some((job) => job.bidCount <= Number.parseInt(filters.bidCount))
+        !appliedFilters.bidCount || propertyJobs.some((job) => job.bidCount <= Number.parseInt(appliedFilters.bidCount))
 
       return (
         matchesSearch &&
-        matchesRegion &&
+        matchesCountry &&
         matchesCity &&
         matchesPropertyType &&
         matchesRadius &&
@@ -600,7 +620,7 @@ function HomePageEntrepreneur() {
     })
 
     return filtered
-  }, [properties, jobs, searchTerm, filters, radiusFilter, calculateDistance])
+  }, [properties, jobs, searchTerm, appliedFilters, radiusFilter, calculateDistance])
 
   // Get search results for dropdown (only based on search term, not other filters)
   const searchResults = useMemo(() => {
@@ -616,40 +636,44 @@ function HomePageEntrepreneur() {
       .slice(0, 5) // Limit to 5 results
   }, [searchTerm, properties, jobs])
 
-  // Check if any filters are active
+  // Check if any filters are active (in the modal - pending)
   const hasActiveFilters = useMemo(() => {
     return (
-      filters.regions.length > 0 ||
+      filters.countries.length > 0 ||
+      filters.otherCountry !== "" ||
       filters.cities.length > 0 ||
       filters.neighborhoods.length > 0 ||
       filters.workTypes.length > 0 ||
+      filters.otherWorkType !== "" ||
       filters.urgency.length > 0 ||
       filters.daysUntilNeeded !== "" ||
       filters.duration !== "" ||
       filters.budgetMin !== "" ||
       filters.budgetMax !== "" ||
+      filters.budgetPreset !== "" ||
+      filters.durationPreset !== "" ||
       filters.bidCount !== "" ||
       filters.propertyTypes.length > 0 ||
       filters.propertySizes.length > 0
     )
   }, [filters])
 
-  // Count active filters
+  // Count applied filters (shown in badge)
   const activeFiltersCount = useMemo(() => {
     let count = 0
-    if (filters.regions.length > 0) count++
-    if (filters.cities.length > 0) count++
-    if (filters.neighborhoods.length > 0) count++
-    if (filters.workTypes.length > 0) count++
-    if (filters.urgency.length > 0) count++
-    if (filters.daysUntilNeeded !== "") count++
-    if (filters.duration !== "") count++
-    if (filters.budgetMin !== "" || filters.budgetMax !== "") count++
-    if (filters.bidCount !== "") count++
-    if (filters.propertyTypes.length > 0) count++
-    if (filters.propertySizes.length > 0) count++
+    if (appliedFilters.countries.length > 0 || appliedFilters.otherCountry !== "") count++
+    if (appliedFilters.cities.length > 0) count++
+    if (appliedFilters.neighborhoods.length > 0) count++
+    if (appliedFilters.workTypes.length > 0 || appliedFilters.otherWorkType !== "") count++
+    if (appliedFilters.urgency.length > 0) count++
+    if (appliedFilters.daysUntilNeeded !== "") count++
+    if (appliedFilters.duration !== "" || appliedFilters.durationPreset !== "") count++
+    if (appliedFilters.budgetMin !== "" || appliedFilters.budgetMax !== "" || appliedFilters.budgetPreset !== "") count++
+    if (appliedFilters.bidCount !== "") count++
+    if (appliedFilters.propertyTypes.length > 0) count++
+    if (appliedFilters.propertySizes.length > 0) count++
     return count
-  }, [filters])
+  }, [appliedFilters])
 
   // Handle filter changes
   const handleFilterChange = (filterType, value) => {
@@ -666,20 +690,20 @@ function HomePageEntrepreneur() {
   }
 
   const clearFilters = () => {
-    setFilters({
-      regions: [],
-      cities: [],
-      neighborhoods: [],
-      workTypes: [],
-      urgency: [],
-      daysUntilNeeded: "",
-      duration: "",
-      budgetMin: "",
-      budgetMax: "",
-      bidCount: "",
-      propertyTypes: [],
-      propertySizes: [],
-    })
+    setFilters(initialFilters)
+    setAppliedFilters(initialFilters)
+  }
+
+  // Apply filters - this is called when "Apply Filters" button is clicked
+  const applyFilters = () => {
+    setAppliedFilters({ ...filters })
+    setFiltersPanelOpen(false)
+  }
+
+  // Cancel filters - reset pending filters to applied filters
+  const cancelFilters = () => {
+    setFilters({ ...appliedFilters })
+    setFiltersPanelOpen(false)
   }
 
   const handleBidClick = (job) => {
@@ -1437,8 +1461,11 @@ function HomePageEntrepreneur() {
         </div>
 
         <button
-          className={`eh-filters-btn ${hasActiveFilters ? "eh-active" : ""}`}
-          onClick={() => setFiltersPanelOpen(true)}
+          className={`eh-filters-btn ${activeFiltersCount > 0 ? "eh-active" : ""}`}
+          onClick={() => {
+            setFilters({ ...appliedFilters }) // Sync pending filters with applied
+            setFiltersPanelOpen(true)
+          }}
         >
           <Filter size={16} />
           <span className="eh-filter-btn-text">{t('entrepreneurHome.filters')}</span>
@@ -1793,37 +1820,46 @@ function HomePageEntrepreneur() {
 
             <div className="eh-modal-body">
               <div className="eh-filters-grid">
-                {/* Location Filters */}
+                {/* Location Filters - Country based */}
                 <div className="eh-filter-group">
                   <div className="eh-filter-group-header">
                     <MapPin size={18} />
                     <h3>{t('entrepreneurHome.location')}</h3>
                   </div>
                   <div className="eh-filter-section">
-                    <div className="eh-filter-subsection-title">{t('entrepreneurHome.region')}</div>
+                    <div className="eh-filter-subsection-title">Country</div>
                     <div className="eh-checkbox-group">
-                      {["NCR", "Ilocos", "Calabarzon"].map((region) => (
-                        <label key={region} className="eh-checkbox-label">
+                      {["US", "Canada"].map((country) => (
+                        <label key={country} className="eh-checkbox-label">
                           <input
                             type="checkbox"
-                            checked={filters.regions.includes(region)}
-                            onChange={() => handleFilterChange("regions", region)}
+                            checked={filters.countries.includes(country)}
+                            onChange={() => handleFilterChange("countries", country)}
                           />
-                          <span className="eh-checkbox-text">{region}</span>
+                          <span className="eh-checkbox-text">{country}</span>
                         </label>
                       ))}
+                    </div>
+                    <div className="eh-input-group eh-other-input">
+                      <label>Other Country</label>
+                      <input
+                        type="text"
+                        value={filters.otherCountry}
+                        onChange={(e) => handleFilterChange("otherCountry", e.target.value)}
+                        placeholder="Type country name..."
+                      />
                     </div>
                   </div>
                 </div>
 
-                {/* Work Type Filters */}
+                {/* Work Type Filters - Top 3 + Others */}
                 <div className="eh-filter-group">
                   <div className="eh-filter-group-header">
                     <Wrench size={18} />
                     <h3>{t('entrepreneurHome.workType')}</h3>
                   </div>
                   <div className="eh-checkbox-group">
-                    {["Plumbing", "Electrical", "HVAC", "General Maintenance", "Carpentry"].map((type) => (
+                    {["Plumbing", "Electrical", "HVAC"].map((type) => (
                       <label key={type} className="eh-checkbox-label">
                         <input
                           type="checkbox"
@@ -1834,33 +1870,72 @@ function HomePageEntrepreneur() {
                       </label>
                     ))}
                   </div>
+                  <div className="eh-input-group eh-other-input">
+                    <label>Other Work Type</label>
+                    <input
+                      type="text"
+                      value={filters.otherWorkType}
+                      onChange={(e) => handleFilterChange("otherWorkType", e.target.value)}
+                      placeholder="Type work type..."
+                    />
+                  </div>
                 </div>
 
-                {/* Urgency Filters */}
+                {/* Urgency Filters - with color coding */}
                 <div className="eh-filter-group">
                   <div className="eh-filter-group-header">
                     <Zap size={18} />
                     <h3>{t('entrepreneurHome.urgency')}</h3>
                   </div>
                   <div className="eh-checkbox-group">
-                    {["Critical", "High", "Medium", "Low"].map((urgency) => (
-                      <label key={urgency} className="eh-checkbox-label">
+                    {[
+                      { value: "Critical", color: "#dc2626" },
+                      { value: "High", color: "#f97316" },
+                      { value: "Medium", color: "#eab308" },
+                      { value: "Low", color: "#22c55e" }
+                    ].map((urgency) => (
+                      <label key={urgency.value} className="eh-checkbox-label">
                         <input
                           type="checkbox"
-                          checked={filters.urgency.includes(urgency)}
-                          onChange={() => handleFilterChange("urgency", urgency)}
+                          checked={filters.urgency.includes(urgency.value)}
+                          onChange={() => handleFilterChange("urgency", urgency.value)}
                         />
-                        <span className="eh-checkbox-text">{urgency}</span>
+                        <span className="eh-checkbox-text">
+                          <span className="eh-urgency-dot" style={{ backgroundColor: urgency.color }}></span>
+                          {urgency.value}
+                        </span>
                       </label>
                     ))}
                   </div>
                 </div>
 
-                {/* Budget Filters */}
+                {/* Budget Filters - with presets */}
                 <div className="eh-filter-group">
                   <div className="eh-filter-group-header">
                     <DollarSign size={18} />
                     <h3>{t('entrepreneurHome.budgetRange')}</h3>
+                  </div>
+                  <div className="eh-preset-buttons">
+                    {[
+                      { label: "Under $1K", min: "0", max: "1000" },
+                      { label: "$1K - $5K", min: "1000", max: "5000" },
+                      { label: "$5K - $10K", min: "5000", max: "10000" },
+                      { label: "$10K+", min: "10000", max: "" }
+                    ].map((preset) => (
+                      <button
+                        key={preset.label}
+                        className={`eh-preset-btn ${filters.budgetPreset === preset.label ? 'active' : ''}`}
+                        onClick={() => {
+                          if (filters.budgetPreset === preset.label) {
+                            setFilters({ ...filters, budgetPreset: "", budgetMin: "", budgetMax: "" })
+                          } else {
+                            setFilters({ ...filters, budgetPreset: preset.label, budgetMin: preset.min, budgetMax: preset.max })
+                          }
+                        }}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
                   </div>
                   <div className="eh-budget-inputs">
                     <div className="eh-input-group">
@@ -1868,7 +1943,7 @@ function HomePageEntrepreneur() {
                       <input
                         type="number"
                         value={filters.budgetMin}
-                        onChange={(e) => handleFilterChange("budgetMin", e.target.value)}
+                        onChange={(e) => setFilters({ ...filters, budgetMin: e.target.value, budgetPreset: "" })}
                         placeholder="0"
                       />
                     </div>
@@ -1877,25 +1952,47 @@ function HomePageEntrepreneur() {
                       <input
                         type="number"
                         value={filters.budgetMax}
-                        onChange={(e) => handleFilterChange("budgetMax", e.target.value)}
+                        onChange={(e) => setFilters({ ...filters, budgetMax: e.target.value, budgetPreset: "" })}
                         placeholder={t('entrepreneurHome.any')}
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Duration Filters */}
+                {/* Duration Filters - with presets */}
                 <div className="eh-filter-group">
                   <div className="eh-filter-group-header">
                     <Clock size={18} />
                     <h3>{t('entrepreneurHome.duration')}</h3>
+                  </div>
+                  <div className="eh-preset-buttons">
+                    {[
+                      { label: "1-3 days", value: "3" },
+                      { label: "1 week", value: "7" },
+                      { label: "2 weeks", value: "14" },
+                      { label: "1 month+", value: "30" }
+                    ].map((preset) => (
+                      <button
+                        key={preset.label}
+                        className={`eh-preset-btn ${filters.durationPreset === preset.label ? 'active' : ''}`}
+                        onClick={() => {
+                          if (filters.durationPreset === preset.label) {
+                            setFilters({ ...filters, durationPreset: "", duration: "" })
+                          } else {
+                            setFilters({ ...filters, durationPreset: preset.label, duration: preset.value })
+                          }
+                        }}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
                   </div>
                   <div className="eh-input-group">
                     <label>{t('entrepreneurHome.maxDuration')}</label>
                     <input
                       type="number"
                       value={filters.duration}
-                      onChange={(e) => handleFilterChange("duration", e.target.value)}
+                      onChange={(e) => setFilters({ ...filters, duration: e.target.value, durationPreset: "" })}
                       placeholder={t('entrepreneurHome.any')}
                     />
                   </div>
@@ -1930,13 +2027,13 @@ function HomePageEntrepreneur() {
             </div>
 
             <div className="eh-filters-modal-footer">
-              <button className="eh-cancel-btn" onClick={() => setFiltersPanelOpen(false)}>
+              <button className="eh-cancel-btn" onClick={cancelFilters}>
                 {t('common.cancel')}
               </button>
-              <button className="eh-apply-filters-btn" onClick={() => setFiltersPanelOpen(false)}>
+              <button className="eh-apply-filters-btn" onClick={applyFilters}>
                 <Filter size={18} />
                 {t('entrepreneurHome.applyFilters')}
-                {activeFiltersCount > 0 && <span className="eh-footer-badge">{activeFiltersCount}</span>}
+                {hasActiveFilters && <span className="eh-footer-badge">!</span>}
               </button>
             </div>
           </div>

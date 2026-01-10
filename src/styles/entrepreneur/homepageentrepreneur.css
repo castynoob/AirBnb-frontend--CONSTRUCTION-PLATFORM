@@ -1639,6 +1639,107 @@
   letter-spacing: 0.5px;
 }
 
+/* Other input field for text entries */
+.eh-other-input {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed var(--color-border-divider);
+}
+
+.eh-other-input input[type="text"] {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border-divider);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  color: var(--color-text-dark);
+  transition: all 0.2s ease;
+  font-family: inherit;
+  background-color: var(--color-white);
+  width: 100%;
+}
+
+.eh-other-input input[type="text"]:focus {
+  outline: none;
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 2px rgba(0, 165, 169, 0.1);
+}
+
+.eh-other-input input[type="text"]::placeholder {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+/* Province/State input styling */
+.eh-province-input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border-divider);
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  color: var(--color-text-dark);
+  transition: all 0.2s ease;
+  font-family: inherit;
+  background-color: var(--color-white);
+  width: 100%;
+}
+
+.eh-province-input:focus {
+  outline: none;
+  border-color: var(--color-secondary);
+  box-shadow: 0 0 0 2px rgba(0, 165, 169, 0.1);
+}
+
+.eh-province-input::placeholder {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+/* Urgency dot color indicator */
+.eh-urgency-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.eh-checkbox-text {
+  display: flex;
+  align-items: center;
+}
+
+/* Preset buttons for budget and duration */
+.eh-preset-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.eh-preset-btn {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--color-border-divider);
+  border-radius: 20px;
+  background-color: var(--color-white);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.eh-preset-btn:hover {
+  border-color: var(--color-secondary);
+  color: var(--color-secondary);
+}
+
+.eh-preset-btn.active {
+  background-color: var(--color-secondary);
+  border-color: var(--color-secondary);
+  color: var(--color-white);
+}
+
 .eh-clear-filters-btn {
   width: 100%;
   padding: 0.625rem;

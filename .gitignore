@@ -30,3 +30,6 @@ dist-ssr
 .env.production
 .env.test
 
+# Windows reserved file names
+nul
+

@@ -190,6 +190,10 @@ body {
   font-size: 15px;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(20, 145, 155, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 
 .lp-btn-register:hover {
@@ -3137,6 +3141,12 @@ body {
   .lp-btn-register {
     padding: 8px 16px;
     font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-width: fit-content;
+    white-space: nowrap;
   }
 
   /* ==================== HERO SECTION - MOBILE FIRST ==================== */
