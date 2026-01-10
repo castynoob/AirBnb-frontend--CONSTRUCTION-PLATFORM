@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { X, CreditCard, Shield, CheckCircle, AlertCircle, Building2, User, Briefcase } from 'lucide-react';
 import '../styles/manager/paymentmodal.css';
 import { stripePromise } from '../utils/stripeConfig';
+import { useLanguage } from '../contexts/LanguageContext';
 
 // Stripe is now initialized dynamically from backend config
 console.log('Stripe configured from backend');
 
 // Payment Form Component (inside Elements provider)
-function PaymentForm({ amount, onSuccess, onError, isProcessing, setIsProcessing }) {
+function PaymentForm({ amount, onSuccess, onError, isProcessing, setIsProcessing, t }) {
   const stripe = useStripe();
   const elements = useElements();
   const [paymentError, setPaymentError] = useState(null);
@@ -27,7 +28,7 @@ function PaymentForm({ amount, onSuccess, onError, isProcessing, setIsProcessing
 
     if (!stripe || !elements) {
       console.error('Stripe or elements not loaded');
-      setPaymentError('Payment system not ready. Please try again.');
+      setPaymentError(t('paymentModal.paymentSystemNotReady'));
       return;
     }
 
@@ -51,7 +52,7 @@ function PaymentForm({ amount, onSuccess, onError, isProcessing, setIsProcessing
         console.log('Payment succeeded:', paymentIntent);
         onSuccess(paymentIntent);
       } else if (paymentIntent && paymentIntent.status === 'requires_action') {
-        setPaymentError('Additional authentication required. Please complete the verification.');
+        setPaymentError(t('paymentModal.additionalAuthRequired'));
       }
     } catch (err) {
       console.error('Payment exception:', err);
@@ -75,7 +76,7 @@ function PaymentForm({ amount, onSuccess, onError, isProcessing, setIsProcessing
           }}
           onLoadError={(err) => {
             console.error('PaymentElement load error:', err);
-            setPaymentError('Failed to load payment form. Please refresh and try again.');
+            setPaymentError(t('paymentModal.failedLoadPaymentForm'));
           }}
         />
       </div>
@@ -95,12 +96,12 @@ function PaymentForm({ amount, onSuccess, onError, isProcessing, setIsProcessing
         {isProcessing ? (
           <>
             <div className="pm-spinner"></div>
-            <span>Processing Payment...</span>
+            <span>{t('paymentModal.processingPayment')}</span>
           </>
         ) : (
           <>
             <CreditCard size={18} />
-            <span>Pay ${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+            <span>{t('paymentModal.pay')} ${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
           </>
         )}
       </button>
@@ -118,6 +119,7 @@ export default function PaymentModal({
   onPaymentSuccess,
   onPaymentError
 }) {
+  const { t } = useLanguage();
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [stripeError, setStripeError] = useState(null);
@@ -132,9 +134,9 @@ export default function PaymentModal({
       console.log('- stripePromise:', !!stripePromise);
 
       if (!stripePromise) {
-        setStripeError('Stripe is not configured. Please add VITE_STRIPE_PUBLISHABLE_KEY to your .env file.');
+        setStripeError(t('paymentModal.stripeNotConfigured'));
       } else if (!clientSecret) {
-        setStripeError('Payment session not initialized. Please try again.');
+        setStripeError(t('paymentModal.paymentSessionError'));
       } else {
         setStripeError(null);
       }
@@ -200,8 +202,8 @@ export default function PaymentModal({
             <CreditCard size={24} />
           </div>
           <div className="pm-header-text">
-            <h2>Approve & Pay</h2>
-            <p>Complete payment to approve this bid</p>
+            <h2>{t('paymentModal.approveAndPay')}</h2>
+            <p>{t('paymentModal.completePayment')}</p>
           </div>
           <button
             className="pm-close-btn"
@@ -219,10 +221,10 @@ export default function PaymentModal({
               <div className="pm-success-icon">
                 <CheckCircle size={64} />
               </div>
-              <h3>Payment Successful!</h3>
-              <p>The bid has been approved and payment is being held securely until the work is completed.</p>
+              <h3>{t('paymentModal.paymentSuccessful')}</h3>
+              <p>{t('paymentModal.paymentHeldSecurely')}</p>
               <button className="pm-done-button" onClick={handleClose}>
-                Done
+                {t('paymentModal.done')}
               </button>
             </div>
           ) : (
@@ -233,22 +235,22 @@ export default function PaymentModal({
                   <div className="pm-info-row">
                     <Briefcase size={16} />
                     <div className="pm-info-content">
-                      <span className="pm-info-label">Job</span>
-                      <span className="pm-info-value">{bidData?.job_title || 'Job Title'}</span>
+                      <span className="pm-info-label">{t('paymentModal.job')}</span>
+                      <span className="pm-info-value">{bidData?.job_title || t('paymentModal.job')}</span>
                     </div>
                   </div>
                   <div className="pm-info-row">
                     <Building2 size={16} />
                     <div className="pm-info-content">
-                      <span className="pm-info-label">Contractor</span>
-                      <span className="pm-info-value">{bidData?.company_name || 'Company'}</span>
+                      <span className="pm-info-label">{t('paymentModal.contractor')}</span>
+                      <span className="pm-info-value">{bidData?.company_name || t('paymentModal.contractor')}</span>
                     </div>
                   </div>
                   <div className="pm-info-row">
                     <User size={16} />
                     <div className="pm-info-content">
-                      <span className="pm-info-label">Contact</span>
-                      <span className="pm-info-value">{bidData?.contractor_name || 'Contractor'}</span>
+                      <span className="pm-info-label">{t('paymentModal.contact')}</span>
+                      <span className="pm-info-value">{bidData?.contractor_name || t('paymentModal.contact')}</span>
                     </div>
                   </div>
                 </div>
@@ -256,26 +258,26 @@ export default function PaymentModal({
 
               {/* Payment Breakdown */}
               <div className="pm-breakdown-section">
-                <h4>Payment Breakdown</h4>
+                <h4>{t('paymentModal.paymentBreakdown')}</h4>
                 <div className="pm-breakdown-card">
                   <div className="pm-breakdown-row">
-                    <span>Bid Amount</span>
+                    <span>{t('paymentModal.bidAmount')}</span>
                     <span className="pm-amount">${bidAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="pm-breakdown-row pm-total">
-                    <span>Total Payment</span>
+                    <span>{t('paymentModal.totalPayment')}</span>
                     <span className="pm-amount pm-total-amount">${bidAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
                 <p className="pm-breakdown-note">
                   <Shield size={14} />
-                  Payment is held securely until you approve the completed work
+                  {t('paymentModal.paymentHeldNote')}
                 </p>
               </div>
 
               {/* Stripe Payment Form */}
               <div className="pm-payment-section">
-                <h4>Payment Method</h4>
+                <h4>{t('paymentModal.paymentMethod')}</h4>
                 {stripeError ? (
                   <div className="pm-payment-error">
                     <AlertCircle size={16} />
@@ -289,12 +291,13 @@ export default function PaymentModal({
                       onError={handlePaymentError}
                       isProcessing={isProcessing}
                       setIsProcessing={setIsProcessing}
+                      t={t}
                     />
                   </Elements>
                 ) : (
                   <div className="pm-loading-state">
                     <div className="pm-spinner"></div>
-                    <span>Loading payment form...</span>
+                    <span>{t('paymentModal.loadingPaymentForm')}</span>
                   </div>
                 )}
               </div>
@@ -302,7 +305,7 @@ export default function PaymentModal({
               {/* Security Note */}
               <div className="pm-security-note">
                 <Shield size={16} />
-                <span>Payments are securely processed by Stripe</span>
+                <span>{t('paymentModal.securePayments')}</span>
               </div>
             </>
           )}

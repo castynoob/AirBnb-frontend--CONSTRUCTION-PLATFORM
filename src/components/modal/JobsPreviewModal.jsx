@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { X, CheckCircle, Edit2, Trash2, Save, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useLanguage } from '../../contexts/LanguageContext';
 import '../../styles/manager/jobspreviewmodal.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess }) => {
+  const { t } = useLanguage();
   const [jobs, setJobs] = useState([]);
   const [editingIndex, setEditingIndex] = useState(null);
   const [editedJob, setEditedJob] = useState(null);
@@ -41,7 +43,7 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
 
   const saveEdit = () => {
     if (!editedJob.title?.trim()) {
-      toast.error('Job title is required');
+      toast.error(t('jobsPreview.jobTitleRequired'));
       return;
     }
 
@@ -50,18 +52,18 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
     setJobs(updatedJobs);
     setEditingIndex(null);
     setEditedJob(null);
-    toast.success('Job updated');
+    toast.success(t('jobsPreview.jobUpdated'));
   };
 
   const deleteJob = (index) => {
     if (jobs.length === 1) {
-      toast.error('Cannot delete the last job. At least one job is required.');
+      toast.error(t('jobsPreview.cannotDeleteLast'));
       return;
     }
 
     const updatedJobs = jobs.filter((_, i) => i !== index);
     setJobs(updatedJobs);
-    toast.success('Job removed');
+    toast.success(t('jobsPreview.jobRemoved'));
   };
 
   const handleEditChange = (field, value) => {
@@ -73,14 +75,14 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
 
   const handleCreateJobs = async () => {
     if (jobs.length === 0) {
-      toast.error('No jobs to create');
+      toast.error(t('jobsPreview.noJobsToCreate'));
       return;
     }
 
     // Validate all jobs
     const invalidJobs = jobs.filter(job => !job.title?.trim());
     if (invalidJobs.length > 0) {
-      toast.error('All jobs must have a title');
+      toast.error(t('jobsPreview.allJobsMustHaveTitle'));
       return;
     }
 
@@ -100,12 +102,12 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create jobs');
+        throw new Error(errorData.message || t('jobsPreview.failedToCreateJobs'));
       }
 
       const result = await response.json();
 
-      toast.success(`Successfully created ${result.jobs.length} job(s)!`, {
+      toast.success(t('jobsPreview.successfullyCreated', { count: result.jobs.length }), {
         duration: 3000,
         icon: '✅'
       });
@@ -117,7 +119,7 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
 
     } catch (error) {
       console.error('Error creating jobs:', error);
-      toast.error(error.message || 'Failed to create jobs');
+      toast.error(error.message || t('jobsPreview.failedToCreateJobs'));
     } finally {
       setIsSubmitting(false);
     }
@@ -133,8 +135,8 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
           <div className="preview-loading-overlay">
             <div className="preview-loading-content">
               <Loader2 size={48} className="preview-spinner" />
-              <h3>Creating Jobs...</h3>
-              <p>Please wait while we create your jobs</p>
+              <h3>{t('jobsPreview.creatingJobs')}</h3>
+              <p>{t('jobsPreview.pleaseWait')}</p>
             </div>
           </div>
         )}
@@ -144,9 +146,9 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
           <div className="preview-title-wrapper">
             <CheckCircle size={24} className="preview-icon-success" />
             <div>
-              <h2>Review Extracted Jobs</h2>
+              <h2>{t('jobsPreview.reviewExtractedJobs')}</h2>
               <p className="preview-subtitle">
-                {jobs.length} job{jobs.length !== 1 ? 's' : ''} extracted from Excel • Review and edit before creating
+                {jobs.length} {jobs.length !== 1 ? t('jobsPreview.jobs') : t('jobsPreview.job')} {t('jobsPreview.extractedFromExcel')}
               </p>
             </div>
           </div>
@@ -159,15 +161,15 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
         <div className="preview-stats">
           <div className="preview-stat-card">
             <span className="preview-stat-value">{parsedData?.totalRows || 0}</span>
-            <span className="preview-stat-label">Total Rows</span>
+            <span className="preview-stat-label">{t('jobsPreview.totalRows')}</span>
           </div>
           <div className="preview-stat-card success">
             <span className="preview-stat-value">{jobs.length}</span>
-            <span className="preview-stat-label">Valid Jobs</span>
+            <span className="preview-stat-label">{t('jobsPreview.validJobs')}</span>
           </div>
           <div className="preview-stat-card error">
             <span className="preview-stat-value">{parsedData?.errorCount || 0}</span>
-            <span className="preview-stat-label">Errors</span>
+            <span className="preview-stat-label">{t('jobsPreview.errors')}</span>
           </div>
         </div>
 
@@ -176,7 +178,7 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
           {jobs.length === 0 ? (
             <div className="preview-empty">
               <AlertCircle size={48} />
-              <p>No valid jobs to display</p>
+              <p>{t('jobsPreview.noValidJobs')}</p>
             </div>
           ) : (
             <div className="preview-jobs-list">
@@ -186,7 +188,7 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
                     // Edit Mode
                     <div className="preview-job-edit">
                       <div className="preview-edit-header">
-                        <span className="preview-job-number">Job #{index + 1}</span>
+                        <span className="preview-job-number">{t('jobsPreview.job')} #{index + 1}</span>
                         <div className="preview-edit-actions">
                           <button
                             onClick={saveEdit}
@@ -194,7 +196,7 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
                             type="button"
                           >
                             <Save size={16} />
-                            <span>Save</span>
+                            <span>{t('jobsPreview.save')}</span>
                           </button>
                           <button
                             onClick={cancelEditing}
@@ -202,7 +204,7 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
                             type="button"
                           >
                             <XCircle size={16} />
-                            <span>Cancel</span>
+                            <span>{t('jobsPreview.cancel')}</span>
                           </button>
                         </div>
                       </div>
@@ -211,21 +213,21 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
                         {/* Title */}
                         <div className="preview-form-group">
                           <label className="preview-label">
-                            Title <span className="required">*</span>
+                            {t('jobsPreview.title')} <span className="required">*</span>
                           </label>
                           <input
                             type="text"
                             value={editedJob.title || ''}
                             onChange={(e) => handleEditChange('title', e.target.value)}
                             className="preview-input"
-                            placeholder="Job title"
+                            placeholder={t('jobsPreview.jobTitlePlaceholder')}
                           />
                         </div>
 
                         {/* Category & Urgency */}
                         <div className="preview-form-row">
                           <div className="preview-form-group">
-                            <label className="preview-label">Category</label>
+                            <label className="preview-label">{t('jobsPreview.category')}</label>
                             <select
                               value={editedJob.category || 'Other'}
                               onChange={(e) => handleEditChange('category', e.target.value)}
@@ -237,7 +239,7 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
                             </select>
                           </div>
                           <div className="preview-form-group">
-                            <label className="preview-label">Urgency</label>
+                            <label className="preview-label">{t('jobsPreview.urgency')}</label>
                             <select
                               value={editedJob.urgency || 'Next Year'}
                               onChange={(e) => handleEditChange('urgency', e.target.value)}
@@ -252,20 +254,20 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
 
                         {/* Description */}
                         <div className="preview-form-group">
-                          <label className="preview-label">Description</label>
+                          <label className="preview-label">{t('jobsPreview.description')}</label>
                           <textarea
                             value={editedJob.description || ''}
                             onChange={(e) => handleEditChange('description', e.target.value)}
                             className="preview-textarea"
                             rows="2"
-                            placeholder="Job description"
+                            placeholder={t('jobsPreview.descriptionPlaceholder')}
                           />
                         </div>
 
                         {/* Budget & Location */}
                         <div className="preview-form-row">
                           <div className="preview-form-group">
-                            <label className="preview-label">Budget</label>
+                            <label className="preview-label">{t('jobsPreview.budget')}</label>
                             <input
                               type="number"
                               value={editedJob.budget || ''}
@@ -277,20 +279,20 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
                             />
                           </div>
                           <div className="preview-form-group">
-                            <label className="preview-label">Location</label>
+                            <label className="preview-label">{t('jobsPreview.location')}</label>
                             <input
                               type="text"
                               value={editedJob.location || ''}
                               onChange={(e) => handleEditChange('location', e.target.value)}
                               className="preview-input"
-                              placeholder="Location"
+                              placeholder={t('jobsPreview.locationPlaceholder')}
                             />
                           </div>
                         </div>
 
                         {/* Due Date */}
                         <div className="preview-form-group">
-                          <label className="preview-label">Due Date</label>
+                          <label className="preview-label">{t('jobsPreview.dueDate')}</label>
                           <input
                             type="date"
                             value={editedJob.dueDate || ''}
@@ -305,8 +307,8 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
                     <>
                       <div className="preview-job-header">
                         <div className="preview-job-title-section">
-                          <span className="preview-job-number">Job #{index + 1}</span>
-                          <h3 className="preview-job-title">{job.title || 'Untitled Job'}</h3>
+                          <span className="preview-job-number">{t('jobsPreview.job')} #{index + 1}</span>
+                          <h3 className="preview-job-title">{job.title || t('jobsPreview.untitledJob')}</h3>
                         </div>
                         <div className="preview-job-actions">
                           <button
@@ -316,7 +318,7 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
                             type="button"
                           >
                             <Edit2 size={16} />
-                            <span>Edit</span>
+                            <span>{t('jobsPreview.edit')}</span>
                           </button>
                           <button
                             onClick={() => deleteJob(index)}
@@ -325,18 +327,18 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
                             type="button"
                           >
                             <Trash2 size={16} />
-                            <span>Delete</span>
+                            <span>{t('jobsPreview.delete')}</span>
                           </button>
                         </div>
                       </div>
 
                       <div className="preview-job-details">
                         <div className="preview-detail-row">
-                          <span className="preview-detail-label">Category:</span>
+                          <span className="preview-detail-label">{t('jobsPreview.category')}:</span>
                           <span className="preview-detail-value">{job.category || 'Other'}</span>
                         </div>
                         <div className="preview-detail-row">
-                          <span className="preview-detail-label">Urgency:</span>
+                          <span className="preview-detail-label">{t('jobsPreview.urgency')}:</span>
                           <span className={`preview-urgency-badge ${
                             job.urgency?.includes('Urgent') ? 'urgent' :
                             job.urgency?.includes('Next') ? 'medium' : 'low'
@@ -346,32 +348,32 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
                         </div>
                         {job.description && (
                           <div className="preview-detail-row">
-                            <span className="preview-detail-label">Description:</span>
+                            <span className="preview-detail-label">{t('jobsPreview.description')}:</span>
                             <span className="preview-detail-value">{job.description}</span>
                           </div>
                         )}
                         {job.budget && (
                           <div className="preview-detail-row">
-                            <span className="preview-detail-label">Budget:</span>
+                            <span className="preview-detail-label">{t('jobsPreview.budget')}:</span>
                             <span className="preview-detail-value">${job.budget}</span>
                           </div>
                         )}
                         {job.location && (
                           <div className="preview-detail-row">
-                            <span className="preview-detail-label">Location:</span>
+                            <span className="preview-detail-label">{t('jobsPreview.location')}:</span>
                             <span className="preview-detail-value">{job.location}</span>
                           </div>
                         )}
                         {job.dueDate && (
                           <div className="preview-detail-row">
-                            <span className="preview-detail-label">Due Date:</span>
+                            <span className="preview-detail-label">{t('jobsPreview.dueDate')}:</span>
                             <span className="preview-detail-value">{job.dueDate}</span>
                           </div>
                         )}
                         {job.sourceRow && (
                           <div className="preview-detail-row">
-                            <span className="preview-detail-label">Source:</span>
-                            <span className="preview-detail-value">Row {job.sourceRow}</span>
+                            <span className="preview-detail-label">{t('jobsPreview.source')}:</span>
+                            <span className="preview-detail-value">{t('jobsPreview.row')} {job.sourceRow}</span>
                           </div>
                         )}
                       </div>
@@ -391,7 +393,7 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
             disabled={isSubmitting}
             type="button"
           >
-            Cancel
+            {t('jobsPreview.cancel')}
           </button>
           <button
             onClick={handleCreateJobs}
@@ -399,7 +401,7 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
             disabled={isSubmitting || jobs.length === 0}
             type="button"
           >
-            {isSubmitting ? 'Creating...' : `Create ${jobs.length} Job${jobs.length !== 1 ? 's' : ''}`}
+            {isSubmitting ? t('jobsPreview.creating') : `${t('jobsPreview.create')} ${jobs.length} ${jobs.length !== 1 ? t('jobsPreview.jobs') : t('jobsPreview.job')}`}
           </button>
         </div>
       </div>
