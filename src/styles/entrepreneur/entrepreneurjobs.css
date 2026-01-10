@@ -527,9 +527,27 @@
   color: white;
 }
 
-.ej-btn-start:hover {
+.ej-btn-start:hover:not(:disabled) {
   background: #2563eb;
   box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.ej-btn-start:disabled,
+.ej-btn-start.ej-btn-disabled,
+.ej-modal-start:disabled,
+.ej-modal-start.ej-btn-disabled {
+  background: #94a3b8;
+  color: #e2e8f0;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.ej-btn-start:disabled:hover,
+.ej-btn-start.ej-btn-disabled:hover,
+.ej-modal-start:disabled:hover,
+.ej-modal-start.ej-btn-disabled:hover {
+  background: #94a3b8;
+  box-shadow: none;
 }
 
 .ej-btn-complete {

@@ -299,6 +299,16 @@ const translations = {
       decline: 'Decline',
       acceptBid: 'Accept Bid',
       bidDecided: 'This bid has been',
+      // Payment related
+      couldNotVerifyPaymentSetup: 'Could not verify contractor\'s payment setup. Please try again.',
+      contractorNotCompletedStripe: 'The contractor hasn\'t completed their payment setup yet. They need to complete Stripe onboarding before you can approve this bid.',
+      failedToInitiatePayment: 'Failed to initiate payment. Please try again.',
+      paymentSuccessApprovalPending: 'Payment successful! Bid approval pending - please contact support if not updated.',
+      paymentSuccessBidApproved: 'Payment successful! Bid approved and contractor notified.',
+      paymentSuccessUpdateIssue: 'Payment successful! There was an issue updating the bid status. Please refresh the page.',
+      paymentFailed: 'Payment failed',
+      viewFullscreen: 'View fullscreen',
+      propertyLocation: 'Property Location',
     },
 
     // Add Property Modal
@@ -899,6 +909,7 @@ const translations = {
       unknown: 'Unknown',
       managerNotPaid: 'Manager has not yet paid for this job',
       managerNotCompletedPayment: 'Manager has not yet completed payment',
+      awaitingPaymentToStart: 'Cannot start project until manager completes payment',
       paymentHeldSecurely: 'Payment is held securely until work is approved',
       workMarkedComplete: 'Work marked complete, waiting for manager to approve and release funds',
       paymentReleased: 'Payment has been released to your account',
@@ -2253,13 +2264,13 @@ const translations = {
 
         // Role selection
         selectRole: 'I want to...',
-        rolePropertyManager: 'Manage Properties',
+        rolePropertyManager: 'Property Manager',
         rolePropertyManagerDesc: 'Post jobs, find contractors, manage your buildings',
-        roleEntrepreneur: 'Find Work',
+        roleEntrepreneur: 'Entrepreneur',
         roleEntrepreneurDesc: 'Bid on jobs, build your reputation, grow your business',
-        roleResident: 'Submit Requests',
+        roleResident: 'Resident',
         roleResidentDesc: 'Report issues, track repairs, communicate with management',
-        roleSupplier: 'Supply Materials',
+        roleSupplier: 'Supplier',
         roleSupplierDesc: 'Connect with contractors, sell building materials',
 
         // Form labels
@@ -2281,6 +2292,16 @@ const translations = {
         website: 'Website',
         deliveryAreas: 'Delivery Areas',
         numProperties: 'Number of Properties',
+        emailAddress: 'Email Address',
+        businessAddress: 'Business Address',
+        optional: '(Optional)',
+
+        // Form section dividers
+        propertyManagerDetails: 'Property Manager Details',
+        entrepreneurDetails: 'Entrepreneur Details',
+        residentDetails: 'Resident Details',
+        supplierDetails: 'Supplier Details',
+        selectYourBuilding: 'Select your building',
 
         // Placeholders
         firstNamePlaceholder: 'Enter your first name',
@@ -2647,6 +2668,16 @@ const translations = {
       decline: 'Refuser',
       acceptBid: 'Accepter l\'Offre',
       bidDecided: 'Cette offre a été',
+      // Payment related
+      couldNotVerifyPaymentSetup: 'Impossible de vérifier la configuration de paiement de l\'entrepreneur. Veuillez réessayer.',
+      contractorNotCompletedStripe: 'L\'entrepreneur n\'a pas encore complété sa configuration de paiement. Il doit compléter l\'intégration Stripe avant que vous puissiez approuver cette offre.',
+      failedToInitiatePayment: 'Échec de l\'initiation du paiement. Veuillez réessayer.',
+      paymentSuccessApprovalPending: 'Paiement réussi! Approbation de l\'offre en attente - contactez le support si non mis à jour.',
+      paymentSuccessBidApproved: 'Paiement réussi! Offre approuvée et entrepreneur notifié.',
+      paymentSuccessUpdateIssue: 'Paiement réussi! Un problème est survenu lors de la mise à jour du statut de l\'offre. Veuillez actualiser la page.',
+      paymentFailed: 'Échec du paiement',
+      viewFullscreen: 'Voir en plein écran',
+      propertyLocation: 'Emplacement de la Propriété',
     },
 
     // Add Property Modal
@@ -3247,6 +3278,7 @@ const translations = {
       unknown: 'Inconnu',
       managerNotPaid: 'Le gestionnaire n\'a pas encore payé pour ce travail',
       managerNotCompletedPayment: 'Le gestionnaire n\'a pas encore effectué le paiement',
+      awaitingPaymentToStart: 'Impossible de démarrer le projet tant que le gestionnaire n\'a pas effectué le paiement',
       paymentHeldSecurely: 'Le paiement est conservé en sécurité jusqu\'à approbation du travail',
       workMarkedComplete: 'Travail marqué comme terminé, en attente de l\'approbation du gestionnaire',
       paymentReleased: 'Le paiement a été libéré sur votre compte',
@@ -4601,13 +4633,13 @@ const translations = {
 
         // Role selection
         selectRole: 'Je veux...',
-        rolePropertyManager: 'Gérer des propriétés',
+        rolePropertyManager: 'Gestionnaire immobilier',
         rolePropertyManagerDesc: 'Publier des travaux, trouver des entrepreneurs, gérer vos immeubles',
-        roleEntrepreneur: 'Trouver du travail',
+        roleEntrepreneur: 'Entrepreneur',
         roleEntrepreneurDesc: 'Soumissionner sur des travaux, bâtir votre réputation, développer votre entreprise',
-        roleResident: 'Soumettre des demandes',
+        roleResident: 'Résident',
         roleResidentDesc: 'Signaler des problèmes, suivre les réparations, communiquer avec la gestion',
-        roleSupplier: 'Fournir des matériaux',
+        roleSupplier: 'Fournisseur',
         roleSupplierDesc: 'Connecter avec des entrepreneurs, vendre des matériaux de construction',
 
         // Form labels
@@ -4629,6 +4661,16 @@ const translations = {
         website: 'Site web',
         deliveryAreas: 'Zones de livraison',
         numProperties: 'Nombre de propriétés',
+        emailAddress: 'Adresse courriel',
+        businessAddress: 'Adresse professionnelle',
+        optional: '(Optionnel)',
+
+        // Form section dividers
+        propertyManagerDetails: 'Détails du gestionnaire immobilier',
+        entrepreneurDetails: 'Détails de l\'entrepreneur',
+        residentDetails: 'Détails du résident',
+        supplierDetails: 'Détails du fournisseur',
+        selectYourBuilding: 'Sélectionnez votre immeuble',
 
         // Placeholders
         firstNamePlaceholder: 'Entrez votre prénom',

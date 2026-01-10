@@ -31,7 +31,7 @@ import { useLanguage } from "../../contexts/LanguageContext"
 import toast from "react-hot-toast"
 import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal"
 import PaymentModal from "../../components/PaymentModal"
-import { checkEntrepreneurStripeStatus, createContract, createPaymentIntent, getContractByJob, approveWorkAndReleaseFunds } from "../../utils/contractApi"
+import { checkEntrepreneurStripeStatus, createContract, createPaymentIntent, getContractByJob, approveWorkAndReleaseFunds, confirmPayment } from "../../utils/contractApi"
 
 function SubmissionsPage() {
   const { t } = useLanguage()
@@ -483,6 +483,7 @@ function SubmissionsPage() {
         bidId,
         jobId,
         entrepreneurId,
+        entrepreneurUserId: submission.entrepreneur_profile.user_id,
         submission
       })
 
@@ -542,7 +543,7 @@ function SubmissionsPage() {
   }
 
   // Handle successful payment - NOW approve the bid and update job status
-  const handlePaymentSuccess = async () => {
+  const handlePaymentSuccess = async (paymentIntent) => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
     try {
@@ -551,7 +552,19 @@ function SubmissionsPage() {
         return
       }
 
-      const { bidId, jobId, entrepreneurId } = pendingApprovalBid
+      const { bidId, jobId, entrepreneurUserId } = pendingApprovalBid
+
+      // Step 0: Confirm payment with backend (backup for webhook)
+      // This ensures contract status is updated to 'paid' even if webhook fails
+      if (paymentContractData?.id) {
+        try {
+          console.log("Confirming payment with backend for contract:", paymentContractData.id)
+          await confirmPayment(paymentContractData.id, paymentIntent?.id)
+          console.log("Payment confirmed with backend successfully")
+        } catch (confirmErr) {
+          console.warn("Could not confirm payment with backend (webhook may handle it):", confirmErr)
+        }
+      }
 
       // Step 1: NOW approve the bid (after payment succeeded)
       console.log("Payment successful, now approving bid:", bidId)
@@ -578,14 +591,14 @@ function SubmissionsPage() {
 
       console.log("Bid approved successfully after payment")
 
-      // Step 2: Update job status to 'accepted'
+      // Step 2: Update job status to 'accepted' (use user_id, not entrepreneur_profile id)
       const jobResponse = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${uProfile.token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ status: 'accepted', entrepreneur_id: `${entrepreneurId}` })
+        body: JSON.stringify({ status: 'accepted', entrepreneur_id: `${entrepreneurUserId}` })
       })
 
       if (!jobResponse.ok) {
@@ -676,6 +689,9 @@ function SubmissionsPage() {
 
       if (!contractData.has_contract || !contractData.contract) {
         showNotification("No contract found for this job.", "error")
+        releasingFundsRef.current.delete(jobId)
+        setIsProcessing(false)
+        setProcessingJobId(null)
         return
       }
 
@@ -686,19 +702,25 @@ function SubmissionsPage() {
         showNotification("Funds have already been released for this job.", "info")
         // Mark as released locally too
         setReleasedJobIds(prev => new Set([...prev, jobId]))
+        releasingFundsRef.current.delete(jobId)
+        setIsProcessing(false)
+        setProcessingJobId(null)
         return
       }
 
       if (contract.payment_status !== 'succeeded') {
         showNotification("Payment must be completed before releasing funds.", "error")
+        releasingFundsRef.current.delete(jobId)
+        setIsProcessing(false)
+        setProcessingJobId(null)
         return
       }
 
-      // Mark as released BEFORE the API call to prevent double clicks
-      setReleasedJobIds(prev => new Set([...prev, jobId]))
-
       // Release funds
       const result = await approveWorkAndReleaseFunds(contract.id)
+
+      // Only mark as released AFTER successful API call
+      setReleasedJobIds(prev => new Set([...prev, jobId]))
 
       showNotification(
         `Funds released successfully! $${result.payout?.amount?.toLocaleString() || ''} sent to contractor.`,
@@ -715,6 +737,8 @@ function SubmissionsPage() {
         error.message || "Failed to release funds. Please try again.",
         "error"
       )
+      // Remove from ref so user can try again
+      releasingFundsRef.current.delete(jobId)
     } finally {
       setIsProcessing(false)
       setProcessingJobId(null)

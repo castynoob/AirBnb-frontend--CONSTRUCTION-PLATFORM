@@ -177,6 +177,29 @@ export async function approveAndInitiatePayment(bidId) {
 }
 
 /**
+ * Confirm payment after successful Stripe payment (backup for webhook)
+ * @param {string} contractId - The contract ID
+ * @param {string} paymentIntentId - Optional payment intent ID
+ */
+export async function confirmPayment(contractId, paymentIntentId = null) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/contracts/${contractId}/confirm-payment`,
+    {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ payment_intent_id: paymentIntentId })
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || error.error || 'Failed to confirm payment');
+  }
+
+  return response.json();
+}
+
+/**
  * Approve completed work and release funds to entrepreneur
  * @param {number} contractId - The contract ID to approve
  */

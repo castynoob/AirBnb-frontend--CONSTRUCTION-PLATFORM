@@ -706,20 +706,18 @@ function EntrepreneurJobs() {
                       <span className="ej-category-tag">{job.category}</span>
                     </div>
 
-                    {/* Payment Status - Only show for ongoing/completed jobs */}
-                    {(job.status === "ongoing" || job.status === "completed") && (
-                      <div className={`ej-payment-card ${paymentInfo.class}`}>
-                        <div className="ej-payment-icon">
-                          <PaymentIcon size={18} />
-                        </div>
-                        <div className="ej-payment-info">
-                          <span className="ej-payment-label">{paymentInfo.label}</span>
-                          {job.contract && (
-                            <span className="ej-payment-value">{formatCurrency(job.contract.contract_amount || job.bid_amount || 0)}</span>
-                          )}
-                        </div>
+                    {/* Payment Status - Show for all job statuses */}
+                    <div className={`ej-payment-card ${paymentInfo.class}`}>
+                      <div className="ej-payment-icon">
+                        <PaymentIcon size={18} />
                       </div>
-                    )}
+                      <div className="ej-payment-info">
+                        <span className="ej-payment-label">{paymentInfo.label}</span>
+                        {job.contract && (
+                          <span className="ej-payment-value">{formatCurrency(job.contract.contract_amount || job.bid_amount || 0)}</span>
+                        )}
+                      </div>
+                    </div>
 
                     {/* Meta Info */}
                     <div className="ej-meta-row">
@@ -758,8 +756,10 @@ function EntrepreneurJobs() {
                     <div className="ej-primary-action">
                       {job.status === "accepted" && (
                         <button
-                          className="ej-btn ej-btn-start"
-                          onClick={(e) => { e.stopPropagation(); openModal(job, "start"); }}
+                          className={`ej-btn ej-btn-start ${(!job.contract || job.contract.status !== 'paid') ? 'ej-btn-disabled' : ''}`}
+                          onClick={(e) => { e.stopPropagation(); if (job.contract?.status === 'paid') openModal(job, "start"); }}
+                          disabled={!job.contract || job.contract.status !== 'paid'}
+                          title={(!job.contract || job.contract.status !== 'paid') ? t('entrepreneurJobs.awaitingPaymentToStart') : t('entrepreneurJobs.startProject')}
                         >
                           <PlayCircle size={16} />
                           {t('entrepreneurJobs.startProject')}
@@ -1389,11 +1389,15 @@ function EntrepreneurJobs() {
                 {/* Primary action based on status */}
                 {detailsJob.status === "accepted" && (
                   <button
-                    className="ej-modal-action-btn ej-modal-start"
+                    className={`ej-modal-action-btn ej-modal-start ${(!detailsJob.contract || detailsJob.contract.status !== 'paid') ? 'ej-btn-disabled' : ''}`}
                     onClick={() => {
-                      setShowDetailsModal(false)
-                      openModal(detailsJob, "start")
+                      if (detailsJob.contract?.status === 'paid') {
+                        setShowDetailsModal(false)
+                        openModal(detailsJob, "start")
+                      }
                     }}
+                    disabled={!detailsJob.contract || detailsJob.contract.status !== 'paid'}
+                    title={(!detailsJob.contract || detailsJob.contract.status !== 'paid') ? t('entrepreneurJobs.awaitingPaymentToStart') : t('entrepreneurJobs.startProject')}
                   >
                     <PlayCircle size={16} />
                     {t('entrepreneurJobs.startProject')}

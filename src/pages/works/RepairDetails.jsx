@@ -16,6 +16,7 @@ import {
   Clock,
   ChevronRight,
   FileText,
+  Maximize2,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
@@ -23,6 +24,8 @@ import "leaflet/dist/leaflet.css";
 import "../../styles/manager/repairdetails.css";
 import toast from "react-hot-toast";
 import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal";
+import PaymentModal from "../../components/PaymentModal";
+import { checkEntrepreneurStripeStatus, createContract, createPaymentIntent, getContractByJob, confirmPayment } from "../../utils/contractApi";
 import { useLanguage } from "../../contexts/LanguageContext";
 
 // Custom marker icon for the map
@@ -53,6 +56,14 @@ function RepairDetails({ isOpen, onClose, repair }) {
   const [isLoadingCoords, setIsLoadingCoords] = useState(true);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState(null);
+  const [showFullscreenMap, setShowFullscreenMap] = useState(false);
+
+  // Payment modal state
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentClientSecret, setPaymentClientSecret] = useState(null);
+  const [paymentBidData, setPaymentBidData] = useState(null);
+  const [paymentContractData, setPaymentContractData] = useState(null);
+  const [pendingApprovalBid, setPendingApprovalBid] = useState(null);
 
   const showNotification = (message, type = "success") => {
     if (type === "success") {
@@ -203,6 +214,8 @@ function RepairDetails({ isOpen, onClose, repair }) {
           ...prevBidders,
           {
             id: bid.id,
+            entrepreneur_id: bid.entrepreneur_id,
+            user_id: data.profile.user_id,
             company_name: data.profile.company_name,
             address: data.profile.address,
             average_rating: data.profile.average_rating,
@@ -235,12 +248,110 @@ function RepairDetails({ isOpen, onClose, repair }) {
     setIsProcessing(true);
 
     try {
+      // Step 1: Check if entrepreneur has completed Stripe onboarding
+      let stripeStatus;
+      try {
+        stripeStatus = await checkEntrepreneurStripeStatus(selectedBidder.entrepreneur_id);
+        console.log("Entrepreneur Stripe status:", stripeStatus);
+      } catch (stripeErr) {
+        console.error("Error checking Stripe status:", stripeErr);
+        showNotification(
+          t('repairDetails.couldNotVerifyPaymentSetup'),
+          "error"
+        );
+        setIsProcessing(false);
+        return;
+      }
+
+      // If entrepreneur can't receive payments, block approval
+      if (!stripeStatus || !stripeStatus.can_receive_payments) {
+        showNotification(
+          t('repairDetails.contractorNotCompletedStripe'),
+          "error"
+        );
+        setIsProcessing(false);
+        return;
+      }
+
+      // Step 2: Store the pending approval data
+      setPendingApprovalBid({
+        bidId: selectedBidder.id,
+        jobId: repair.data.jobId,
+        entrepreneurId: selectedBidder.entrepreneur_id,
+        entrepreneurUserId: selectedBidder.user_id
+      });
+
+      // Step 3: Check if contract exists or create one
+      let contract;
+      try {
+        const existingContract = await getContractByJob(repair.data.jobId);
+        contract = existingContract.contract;
+        console.log("Existing contract found:", contract);
+      } catch (err) {
+        // No existing contract, create one
+        console.log("Creating new contract for bid:", selectedBidder.id);
+        const contractResult = await createContract(selectedBidder.id);
+        contract = contractResult.contract;
+        console.log("New contract created:", contract);
+      }
+
+      // Step 4: Create payment intent
+      console.log("Creating payment intent for contract:", contract.id);
+      const paymentResult = await createPaymentIntent(contract.id);
+      console.log("Payment intent created:", paymentResult);
+
+      // Step 5: Set up payment modal data
+      setPaymentBidData({
+        bid_id: selectedBidder.id,
+        job_id: repair.data.jobId,
+        entrepreneur_id: selectedBidder.entrepreneur_id,
+        company_name: selectedBidder.company_name,
+        amount: selectedBidder.amount
+      });
+      setPaymentContractData(contract);
+      setPaymentClientSecret(paymentResult.client_secret);
+
+      // Step 6: Show payment modal
+      setShowPaymentModal(true);
+      setShowBidModal(false);
+
+    } catch (error) {
+      console.error("Error initiating payment:", error);
+      showNotification(error.message || t('repairDetails.failedToInitiatePayment'), "error");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Handle successful payment - NOW approve the bid and update job status
+  const handlePaymentSuccess = async (paymentIntent) => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+    try {
+      if (!pendingApprovalBid) {
+        throw new Error("No pending approval data found");
+      }
+
       const userProfile = localStorage.getItem("userProfile");
       const user = JSON.parse(userProfile);
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+      const { bidId, jobId, entrepreneurUserId } = pendingApprovalBid;
 
-      const response = await fetch(
-        `${API_BASE_URL}/api/bids/${selectedBidder.id}/approve`,
+      // Step 0: Confirm payment with backend (backup for webhook)
+      // This ensures contract status is updated to 'paid' even if webhook fails
+      if (paymentContractData?.id) {
+        try {
+          console.log("Confirming payment with backend for contract:", paymentContractData.id);
+          await confirmPayment(paymentContractData.id, paymentIntent?.id);
+          console.log("Payment confirmed with backend successfully");
+        } catch (confirmErr) {
+          console.warn("Could not confirm payment with backend (webhook may handle it):", confirmErr);
+        }
+      }
+
+      // Step 1: NOW approve the bid (after payment succeeded)
+      console.log("Payment successful, now approving bid:", bidId);
+      const approveResponse = await fetch(
+        `${API_BASE_URL}/api/bids/${bidId}/approve`,
         {
           method: "PATCH",
           headers: {
@@ -249,24 +360,32 @@ function RepairDetails({ isOpen, onClose, repair }) {
         }
       );
 
-      if (!response.ok) {
-        throw new Error(`Failed to approve bid: ${response.status}`);
+      if (!approveResponse.ok) {
+        const data = await approveResponse.json();
+        console.error("Failed to approve bid after payment:", data);
+        showNotification(
+          t('repairDetails.paymentSuccessApprovalPending'),
+          "success"
+        );
+        return;
       }
 
-      const data = await response.json();
+      console.log("Bid approved successfully after payment");
 
-      await fetch(`${API_BASE_URL}/api/jobs/${repair.data.jobId}`, {
+      // Step 2: Update job status to 'accepted' (use user_id, not entrepreneur_profile id)
+      await fetch(`${API_BASE_URL}/api/jobs/${jobId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${user.token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ status: 'accepted', entrepreneur_id: `${selectedBidder.profile.id}` })
+        body: JSON.stringify({ status: 'accepted', entrepreneur_id: `${entrepreneurUserId}` })
       });
 
+      // Step 3: Update local state
       setBidders((prevBidders) =>
         prevBidders.map((bidder) =>
-          bidder.id === selectedBidder.id
+          bidder.id === bidId
             ? { ...bidder, bid_status: "approved" }
             : bidder.bid_status === "pending"
             ? { ...bidder, bid_status: "declined" }
@@ -274,15 +393,40 @@ function RepairDetails({ isOpen, onClose, repair }) {
         )
       );
 
-      setSelectedBidder((prev) => ({ ...prev, bid_status: "approved" }));
-      showNotification(data.message || "Bid approved successfully!", "success");
-      setShowBidModal(false);
+      if (selectedBidder && selectedBidder.id === bidId) {
+        setSelectedBidder((prev) => ({ ...prev, bid_status: "approved" }));
+      }
+
+      showNotification(
+        t('repairDetails.paymentSuccessBidApproved'),
+        "success"
+      );
+
     } catch (error) {
-      console.error("Error accepting bid:", error);
-      showNotification(error.message || "Failed to approve bid.", "error");
-    } finally {
-      setIsProcessing(false);
+      console.error("Error finalizing approval after payment:", error);
+      showNotification(
+        t('repairDetails.paymentSuccessUpdateIssue'),
+        "success"
+      );
     }
+  };
+
+  // Handle payment error
+  const handlePaymentError = (error) => {
+    console.error("Payment error:", error);
+    showNotification(
+      t('repairDetails.paymentFailed') + ": " + error,
+      "error"
+    );
+  };
+
+  // Close payment modal and clean up
+  const handleClosePaymentModal = () => {
+    setShowPaymentModal(false);
+    setPaymentClientSecret(null);
+    setPaymentBidData(null);
+    setPaymentContractData(null);
+    setPendingApprovalBid(null);
   };
 
   const handleDeclineBid = async () => {
@@ -447,32 +591,41 @@ function RepairDetails({ isOpen, onClose, repair }) {
                       <div className="rd-spinner"></div>
                     </div>
                   ) : propertyCoords ? (
-                    <MapContainer
-                      center={[propertyCoords.lat, propertyCoords.lng]}
-                      zoom={16}
-                      style={{ height: "100%", width: "100%" }}
-                      zoomControl={true}
-                      scrollWheelZoom={true}
-                      dragging={true}
-                      doubleClickZoom={true}
-                    >
-                      <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                        subdomains="abcd"
-                      />
-                      <Marker
-                        position={[propertyCoords.lat, propertyCoords.lng]}
-                        icon={createPropertyIcon()}
+                    <>
+                      <MapContainer
+                        center={[propertyCoords.lat, propertyCoords.lng]}
+                        zoom={16}
+                        style={{ height: "100%", width: "100%" }}
+                        zoomControl={true}
+                        scrollWheelZoom={true}
+                        dragging={true}
+                        doubleClickZoom={true}
+                        attributionControl={false}
                       >
-                        <Popup>
-                          <div className="rd-map-popup">
-                            <strong>{propertyCoords.name}</strong>
-                            <p>{repair.address || repair.property}</p>
-                          </div>
-                        </Popup>
-                      </Marker>
-                    </MapContainer>
+                        <TileLayer
+                          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                          subdomains="abcd"
+                        />
+                        <Marker
+                          position={[propertyCoords.lat, propertyCoords.lng]}
+                          icon={createPropertyIcon()}
+                        >
+                          <Popup>
+                            <div className="rd-map-popup">
+                              <strong>{propertyCoords.name}</strong>
+                              <p>{repair.address || repair.property}</p>
+                            </div>
+                          </Popup>
+                        </Marker>
+                      </MapContainer>
+                      <button
+                        className="rd-map-fullscreen-btn"
+                        onClick={() => setShowFullscreenMap(true)}
+                        title={t('repairDetails.viewFullscreen') || 'View fullscreen'}
+                      >
+                        <Maximize2 size={16} />
+                      </button>
+                    </>
                   ) : (
                     <div className="rd-compact-map-fallback">
                       <MapPin size={32} />
@@ -513,11 +666,7 @@ function RepairDetails({ isOpen, onClose, repair }) {
                         className={`rd-compact-bid-card ${index === 0 ? 'top' : ''}`}
                         onClick={() => handleBidderClick(bidder)}
                       >
-                        <div
-                          className="rd-bid-avatar rd-bid-avatar-clickable"
-                          onClick={(e) => handleProfileClick(e, bidder)}
-                          title={t('repairDetails.viewProfile')}
-                        >
+                        <div className="rd-bid-avatar">
                           {bidder.company_name?.charAt(0) || 'C'}
                         </div>
                         <div className="rd-bid-main">
@@ -648,6 +797,63 @@ function RepairDetails({ isOpen, onClose, repair }) {
         onClose={() => setShowProfileModal(false)}
         profile={selectedProfile}
       />
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={handleClosePaymentModal}
+        bidData={paymentBidData}
+        contractData={paymentContractData}
+        clientSecret={paymentClientSecret}
+        onPaymentSuccess={handlePaymentSuccess}
+        onPaymentError={handlePaymentError}
+      />
+
+      {/* Fullscreen Map Modal */}
+      {showFullscreenMap && propertyCoords && (
+        <div className="rd-map-fullscreen-overlay" onClick={() => setShowFullscreenMap(false)}>
+          <div className="rd-map-fullscreen-header" onClick={(e) => e.stopPropagation()}>
+            <h3>
+              <MapPin size={18} />
+              {propertyCoords.name || repair.address || t('repairDetails.propertyLocation')}
+            </h3>
+            <button
+              className="rd-map-fullscreen-close"
+              onClick={() => setShowFullscreenMap(false)}
+            >
+              <X size={20} />
+            </button>
+          </div>
+          <div className="rd-map-fullscreen-container" onClick={(e) => e.stopPropagation()}>
+            <MapContainer
+              center={[propertyCoords.lat, propertyCoords.lng]}
+              zoom={17}
+              style={{ height: "100%", width: "100%" }}
+              zoomControl={true}
+              scrollWheelZoom={true}
+              dragging={true}
+              doubleClickZoom={true}
+              attributionControl={false}
+            >
+              <TileLayer
+                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                subdomains="abcd"
+              />
+              <Marker
+                position={[propertyCoords.lat, propertyCoords.lng]}
+                icon={createPropertyIcon()}
+              >
+                <Popup>
+                  <div className="rd-map-popup">
+                    <strong>{propertyCoords.name}</strong>
+                    <p>{repair.address || repair.property}</p>
+                  </div>
+                </Popup>
+              </Marker>
+            </MapContainer>
+          </div>
+        </div>
+      )}
     </>
   );
 }

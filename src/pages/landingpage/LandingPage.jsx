@@ -1898,7 +1898,7 @@ export default function LandingPage() {
 
                   <div className="lp-form-row">
                     <div className="lp-form-group">
-                      <label>First Name</label>
+                      <label>{t('landingPage.register.firstName')}</label>
                       <div className="lp-input-wrapper">
                         <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -1907,7 +1907,7 @@ export default function LandingPage() {
                         <input
                           type="text"
                           name="first_name"
-                          placeholder="John"
+                          placeholder={t('landingPage.register.firstNamePlaceholder')}
                           value={registerFormData.first_name}
                           onChange={handleRegisterChange}
                           required
@@ -1920,7 +1920,7 @@ export default function LandingPage() {
                       )}
                     </div>
                     <div className="lp-form-group">
-                      <label>Last Name {registerFormData.provider === 'google' && '(Optional)'}</label>
+                      <label>{t('landingPage.register.lastName')} {registerFormData.provider === 'google' && t('landingPage.register.optional')}</label>
                       <div className="lp-input-wrapper">
                         <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -1929,7 +1929,7 @@ export default function LandingPage() {
                         <input
                           type="text"
                           name="last_name"
-                          placeholder="Doe"
+                          placeholder={t('landingPage.register.lastNamePlaceholder')}
                           value={registerFormData.last_name}
                           onChange={handleRegisterChange}
                           required={registerFormData.provider !== 'google'}
@@ -1944,7 +1944,7 @@ export default function LandingPage() {
                   </div>
 
                   <div className="lp-form-group">
-                    <label>Email Address</label>
+                    <label>{t('landingPage.register.emailAddress')}</label>
                     <div className="lp-input-wrapper">
                       <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -1953,7 +1953,7 @@ export default function LandingPage() {
                       <input
                         type="email"
                         name="email"
-                        placeholder="john@example.com"
+                        placeholder={t('landingPage.register.emailPlaceholder')}
                         value={registerFormData.email}
                         onChange={handleRegisterChange}
                         required
@@ -1970,7 +1970,7 @@ export default function LandingPage() {
                   {registerFormData.provider !== 'google' && (
                     <>
                       <div className="lp-form-group">
-                        <label>Password</label>
+                        <label>{t('landingPage.register.password')}</label>
                         <div className="lp-input-wrapper">
                           <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -1979,7 +1979,7 @@ export default function LandingPage() {
                           <input
                             type={showRegisterPassword ? "text" : "password"}
                             name="password"
-                            placeholder="Min 8 chars, 1 lowercase, 1 number"
+                            placeholder={t('landingPage.register.passwordPlaceholder')}
                             value={registerFormData.password}
                             onChange={handleRegisterChange}
                             required
@@ -2047,7 +2047,7 @@ export default function LandingPage() {
                       </div>
 
                       <div className="lp-form-group">
-                        <label>Confirm Password</label>
+                        <label>{t('landingPage.register.confirmPassword')}</label>
                         <div className="lp-input-wrapper">
                           <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -2056,7 +2056,7 @@ export default function LandingPage() {
                           <input
                             type={showConfirmPassword ? "text" : "password"}
                             name="confirm_password"
-                            placeholder="Re-enter your password"
+                            placeholder={t('landingPage.register.confirmPasswordPlaceholder')}
                             value={registerFormData.confirm_password}
                             onChange={handleRegisterChange}
                             required
@@ -2129,9 +2129,9 @@ export default function LandingPage() {
                   {/* Property Manager Fields */}
                   {selectedRole === "property-manager" && (
                     <>
-                      <div className="lp-form-divider">Property Manager Details</div>
+                      <div className="lp-form-divider">{t('landingPage.register.propertyManagerDetails')}</div>
                       <div className="lp-form-group">
-                        <label>Company Name</label>
+                        <label>{t('landingPage.register.companyName')}</label>
                         <div className="lp-input-wrapper">
                           <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -2140,7 +2140,7 @@ export default function LandingPage() {
                           <input
                             type="text"
                             name="company_name"
-                            placeholder="Your property management company"
+                            placeholder={t('landingPage.register.companyNamePlaceholder')}
                             value={registerFormData.company_name}
                             onChange={handleRegisterChange}
                             required
@@ -2148,7 +2148,7 @@ export default function LandingPage() {
                         </div>
                       </div>
                       <div className="lp-form-group">
-                        <label>Phone Number</label>
+                        <label>{t('landingPage.register.phone')}</label>
                         <PhoneInput
                           international
                           defaultCountry="US"
@@ -2160,14 +2160,14 @@ export default function LandingPage() {
                             });
                           }}
                           className={`lp-phone-input-wrapper ${registerErrors.phone ? 'error' : ''}`}
-                          placeholder="Enter phone number"
+                          placeholder={t('landingPage.register.phone')}
                         />
                         {registerErrors.phone && (
                           <span className="lp-field-error">{registerErrors.phone}</span>
                         )}
                       </div>
                       <div className="lp-form-group">
-                        <label>Business Address</label>
+                        <label>{t('landingPage.register.businessAddress')}</label>
                         <div className="lp-address-autocomplete-wrapper">
                           <div className="lp-input-wrapper">
                             <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -2177,7 +2177,7 @@ export default function LandingPage() {
                             <input
                               type="text"
                               name="address"
-                              placeholder="Start typing your address..."
+                              placeholder={t('landingPage.register.addressPlaceholder')}
                               value={registerFormData.address}
                               onChange={handleAddressChange}
                               onFocus={() => registerFormData.address.length > 2 && setShowAddressSuggestions(true)}
@@ -2190,7 +2190,7 @@ export default function LandingPage() {
                             <div className="lp-address-suggestions">
                               {isLoadingAddresses && (
                                 <div className="lp-address-suggestion-item loading">
-                                  Loading suggestions...
+                                  {t('common.loading')}
                                 </div>
                               )}
                               {!isLoadingAddresses && addressSuggestions.map((suggestion, index) => (
@@ -2211,7 +2211,7 @@ export default function LandingPage() {
                         </div>
                       </div>
                       <div className="lp-form-group">
-                        <label>Number of Properties</label>
+                        <label>{t('landingPage.register.numProperties')}</label>
                         <div className="lp-input-wrapper">
                           <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M3 21h18M9 8h1m-1 4h1m-1 4h1M14 8h1m-1 4h1m-1 4h1M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
@@ -2219,7 +2219,7 @@ export default function LandingPage() {
                           <input
                             type="number"
                             name="num_properties"
-                            placeholder="How many properties do you manage?"
+                            placeholder={t('landingPage.register.numPropertiesPlaceholder')}
                             value={registerFormData.num_properties || ""}
                             onChange={handleRegisterChange}
                             required
@@ -2233,9 +2233,9 @@ export default function LandingPage() {
                   {/* Entrepreneur Fields */}
                   {selectedRole === "entrepreneur" && (
                     <>
-                      <div className="lp-form-divider">Entrepreneur Details</div>
+                      <div className="lp-form-divider">{t('landingPage.register.entrepreneurDetails')}</div>
                       <div className="lp-form-group">
-                        <label>Company Name</label>
+                        <label>{t('landingPage.register.companyName')}</label>
                         <div className="lp-input-wrapper">
                           <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
@@ -2243,7 +2243,7 @@ export default function LandingPage() {
                           <input
                             type="text"
                             name="company_name"
-                            placeholder="Your construction company"
+                            placeholder={t('landingPage.register.companyNamePlaceholder')}
                             value={registerFormData.company_name}
                             onChange={handleRegisterChange}
                             required
@@ -2251,7 +2251,7 @@ export default function LandingPage() {
                         </div>
                       </div>
                       <div className="lp-form-group">
-                        <label>Phone Number</label>
+                        <label>{t('landingPage.register.phone')}</label>
                         <PhoneInput
                           international
                           defaultCountry="US"
@@ -2263,14 +2263,14 @@ export default function LandingPage() {
                             });
                           }}
                           className={`lp-phone-input-wrapper ${registerErrors.phone ? 'error' : ''}`}
-                          placeholder="Enter phone number"
+                          placeholder={t('landingPage.register.phone')}
                         />
                         {registerErrors.phone && (
                           <span className="lp-field-error">{registerErrors.phone}</span>
                         )}
                       </div>
                       <div className="lp-form-group">
-                        <label>Business Address</label>
+                        <label>{t('landingPage.register.businessAddress')}</label>
                         <div className="lp-address-autocomplete-wrapper">
                           <div className="lp-input-wrapper">
                             <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -2280,7 +2280,7 @@ export default function LandingPage() {
                             <input
                               type="text"
                               name="address"
-                              placeholder="Start typing your address..."
+                              placeholder={t('landingPage.register.addressPlaceholder')}
                               value={registerFormData.address}
                               onChange={handleAddressChange}
                               onFocus={() => registerFormData.address.length > 2 && setShowAddressSuggestions(true)}
@@ -2293,7 +2293,7 @@ export default function LandingPage() {
                             <div className="lp-address-suggestions">
                               {isLoadingAddresses && (
                                 <div className="lp-address-suggestion-item loading">
-                                  Loading suggestions...
+                                  {t('common.loading')}
                                 </div>
                               )}
                               {!isLoadingAddresses && addressSuggestions.map((suggestion, index) => (
@@ -2314,7 +2314,7 @@ export default function LandingPage() {
                         </div>
                       </div>
                       <div className="lp-form-group">
-                        <label>License Number</label>
+                        <label>{t('landingPage.register.licenseNumber')}</label>
                         <div className="lp-input-wrapper">
                           <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -2325,7 +2325,7 @@ export default function LandingPage() {
                           <input
                             type="text"
                             name="license_number"
-                            placeholder="Professional license number"
+                            placeholder={t('landingPage.register.licenseNumberPlaceholder')}
                             value={registerFormData.license_number}
                             onChange={handleRegisterChange}
                             required
@@ -2334,7 +2334,7 @@ export default function LandingPage() {
                       </div>
                       <div className="lp-form-row">
                         <div className="lp-form-group">
-                          <label>Years in Business</label>
+                          <label>{t('landingPage.register.yearsInBusiness')}</label>
                           <div className="lp-input-wrapper">
                             <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <circle cx="12" cy="12" r="10"/>
@@ -2343,7 +2343,7 @@ export default function LandingPage() {
                             <input
                               type="number"
                               name="years_in_business"
-                              placeholder="5"
+                              placeholder={t('landingPage.register.yearsInBusinessPlaceholder')}
                               value={registerFormData.years_in_business}
                               onChange={handleRegisterChange}
                               required
@@ -2352,7 +2352,7 @@ export default function LandingPage() {
                           </div>
                         </div>
                         <div className="lp-form-group">
-                          <label>Number of Employees</label>
+                          <label>{t('landingPage.register.numEmployees')}</label>
                           <div className="lp-input-wrapper">
                             <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -2363,7 +2363,7 @@ export default function LandingPage() {
                             <input
                               type="number"
                               name="num_employees"
-                              placeholder="10"
+                              placeholder={t('landingPage.register.numEmployeesPlaceholder')}
                               value={registerFormData.num_employees}
                               onChange={handleRegisterChange}
                               required
@@ -2373,7 +2373,7 @@ export default function LandingPage() {
                         </div>
                       </div>
                       <div className="lp-form-group">
-                        <label>Specializations</label>
+                        <label>{t('landingPage.register.specializations')}</label>
                         <div className="lp-input-wrapper">
                           <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -2381,7 +2381,7 @@ export default function LandingPage() {
                           <input
                             type="text"
                             name="specializations"
-                            placeholder="e.g., Plumbing, Electrical, HVAC"
+                            placeholder={t('landingPage.register.specializationsPlaceholder')}
                             value={registerFormData.specializations}
                             onChange={handleRegisterChange}
                             required
@@ -2394,9 +2394,9 @@ export default function LandingPage() {
                   {/* Resident Fields */}
                   {selectedRole === "resident" && (
                     <>
-                      <div className="lp-form-divider">Resident Details</div>
+                      <div className="lp-form-divider">{t('landingPage.register.residentDetails')}</div>
                       <div className="lp-form-group">
-                        <label>Phone Number</label>
+                        <label>{t('landingPage.register.phone')}</label>
                         <PhoneInput
                           international
                           defaultCountry="US"
@@ -2408,7 +2408,7 @@ export default function LandingPage() {
                             });
                           }}
                           className={`lp-phone-input-wrapper ${registerErrors.phone ? 'error' : ''}`}
-                          placeholder="Enter phone number"
+                          placeholder={t('landingPage.register.phone')}
                         />
                         {registerErrors.phone && (
                           <span className="lp-field-error">{registerErrors.phone}</span>
@@ -2416,20 +2416,20 @@ export default function LandingPage() {
                       </div>
                       <div className="lp-form-group">
                         <label htmlFor="property_id" className="form-label">
-                          Building/Property <span className="required">*</span>
+                          {t('landingPage.register.selectYourBuilding')} <span className="required">*</span>
                         </label>
                         {isLoadingProperties ? (
-                          <div className="loading-text">Loading properties...</div>
+                          <div className="loading-text">{t('landingPage.register.loadingProperties')}</div>
                         ) : properties.length === 0 ? (
                           <div className="info-message">
-                            No properties found. Please add a property first.
+                            {t('landingPage.register.noPropertiesFound')}
                           </div>
                         ) : (
                           <div className="searchable-dropdown-container">
                             <input
                               type="text"
                               className="lp-form-input"
-                              placeholder="Search by building name, address, or city..."
+                              placeholder={t('landingPage.register.searchProperty')}
                               value={propertySearchTerm}
                               onChange={handlePropertySearchChange}
                               onFocus={() => setShowPropertyDropdown(true)}
@@ -2456,7 +2456,7 @@ export default function LandingPage() {
                             {showPropertyDropdown && filteredProperties.length === 0 && propertySearchTerm && (
                               <div className="property-dropdown-list">
                                 <div className="property-dropdown-item no-results">
-                                  No properties found matching "{propertySearchTerm}"
+                                  {t('landingPage.register.noPropertiesFound')}
                                 </div>
                               </div>
                             )}
@@ -2464,7 +2464,7 @@ export default function LandingPage() {
                         )}
                       </div>
                       <div className="lp-form-group">
-                        <label>Unit Number</label>
+                        <label>{t('landingPage.register.unitNumber')}</label>
                         <div className="lp-input-wrapper">
                           <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -2473,7 +2473,7 @@ export default function LandingPage() {
                           <input
                             type="text"
                             name="unit_number"
-                            placeholder="e.g., Apt 4A"
+                            placeholder={t('landingPage.register.unitNumberPlaceholder')}
                             value={registerFormData.unit_number}
                             onChange={handleRegisterChange}
                             required
@@ -2481,7 +2481,7 @@ export default function LandingPage() {
                         </div>
                       </div>
                       <div className="lp-form-group">
-                        <label>Move-in Date</label>
+                        <label>{t('landingPage.register.moveInDate')}</label>
                         <div className="lp-input-wrapper">
                           <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -2504,9 +2504,9 @@ export default function LandingPage() {
                   {/* Supplier Fields */}
                   {selectedRole === "supplier" && (
                     <>
-                      <div className="lp-form-divider">Supplier Details</div>
+                      <div className="lp-form-divider">{t('landingPage.register.supplierDetails')}</div>
                       <div className="lp-form-group">
-                        <label>Company Name</label>
+                        <label>{t('landingPage.register.companyName')}</label>
                         <div className="lp-input-wrapper">
                           <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M16 16l3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1z"/>
@@ -2518,7 +2518,7 @@ export default function LandingPage() {
                           <input
                             type="text"
                             name="company_name"
-                            placeholder="Your supply company"
+                            placeholder={t('landingPage.register.companyNamePlaceholder')}
                             value={registerFormData.company_name}
                             onChange={handleRegisterChange}
                             required
@@ -2526,7 +2526,7 @@ export default function LandingPage() {
                         </div>
                       </div>
                       <div className="lp-form-group">
-                        <label>Phone Number</label>
+                        <label>{t('landingPage.register.phone')}</label>
                         <PhoneInput
                           international
                           defaultCountry="US"
@@ -2538,14 +2538,14 @@ export default function LandingPage() {
                             });
                           }}
                           className={`lp-phone-input-wrapper ${registerErrors.phone ? 'error' : ''}`}
-                          placeholder="Enter phone number"
+                          placeholder={t('landingPage.register.phone')}
                         />
                         {registerErrors.phone && (
                           <span className="lp-field-error">{registerErrors.phone}</span>
                         )}
                       </div>
                       <div className="lp-form-group">
-                        <label>Business Address</label>
+                        <label>{t('landingPage.register.businessAddress')}</label>
                         <div className="lp-address-autocomplete-wrapper">
                           <div className="lp-input-wrapper">
                             <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -2555,7 +2555,7 @@ export default function LandingPage() {
                             <input
                               type="text"
                               name="address"
-                              placeholder="Start typing your address..."
+                              placeholder={t('landingPage.register.addressPlaceholder')}
                               value={registerFormData.address}
                               onChange={handleAddressChange}
                               onFocus={() => registerFormData.address.length > 2 && setShowAddressSuggestions(true)}
@@ -2568,7 +2568,7 @@ export default function LandingPage() {
                             <div className="lp-address-suggestions">
                               {isLoadingAddresses && (
                                 <div className="lp-address-suggestion-item loading">
-                                  Loading suggestions...
+                                  {t('common.loading')}
                                 </div>
                               )}
                               {!isLoadingAddresses && addressSuggestions.map((suggestion, index) => (
@@ -2589,7 +2589,7 @@ export default function LandingPage() {
                         </div>
                       </div>
                       <div className="lp-form-group">
-                        <label>Website <span className="lp-optional-label">(Optional)</span></label>
+                        <label>{t('landingPage.register.website')} <span className="lp-optional-label">{t('landingPage.register.optional')}</span></label>
                         <div className="lp-input-wrapper">
                           <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <circle cx="12" cy="12" r="10"/>
@@ -2599,14 +2599,14 @@ export default function LandingPage() {
                           <input
                             type="url"
                             name="website"
-                            placeholder="https://yourwebsite.com"
+                            placeholder={t('landingPage.register.websitePlaceholder')}
                             value={registerFormData.website}
                             onChange={handleRegisterChange}
                           />
                         </div>
                       </div>
                       <div className="lp-form-group">
-                        <label>Years in Business</label>
+                        <label>{t('landingPage.register.yearsInBusiness')}</label>
                         <div className="lp-input-wrapper">
                           <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <circle cx="12" cy="12" r="10"/>
@@ -2615,7 +2615,7 @@ export default function LandingPage() {
                           <input
                             type="number"
                             name="years_in_business"
-                            placeholder="10"
+                            placeholder={t('landingPage.register.yearsInBusinessPlaceholder')}
                             value={registerFormData.years_in_business}
                             onChange={handleRegisterChange}
                             required
@@ -2624,7 +2624,7 @@ export default function LandingPage() {
                         </div>
                       </div>
                       <div className="lp-form-group">
-                        <label>Delivery Areas</label>
+                        <label>{t('landingPage.register.deliveryAreas')}</label>
                         <div className="lp-input-wrapper">
                           <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <rect x="1" y="3" width="15" height="13"/>
@@ -2635,7 +2635,7 @@ export default function LandingPage() {
                           <input
                             type="text"
                             name="delivery_areas"
-                            placeholder="Cities or regions you serve"
+                            placeholder={t('landingPage.register.deliveryAreasPlaceholder')}
                             value={registerFormData.delivery_areas}
                             onChange={handleRegisterChange}
                             required
