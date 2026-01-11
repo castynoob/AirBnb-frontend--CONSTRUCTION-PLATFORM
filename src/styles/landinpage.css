@@ -3305,7 +3305,26 @@ body {
   }
   
   .lp-hero-stats {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+
+  .lp-stat-number {
+    font-size: 1.5rem;
+  }
+
+  .lp-stat-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .lp-stat-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .lp-stat-label {
+    font-size: 0.7rem;
   }
 
   /* ==================== MOBILE SECTION REDESIGN ==================== */
