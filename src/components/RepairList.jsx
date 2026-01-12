@@ -4,13 +4,93 @@ import { useLanguage } from '../contexts/LanguageContext';
 
 function RepairList({ repairs, handleRepairClicked }) {
   const { t } = useLanguage();
-  const PLACEHOLDER_IMAGE = "/defaultjobs.png";
+  const PLACEHOLDER_IMAGE = "/defaultjob.jpg";
   const [imagesLoaded, setImagesLoaded] = useState({});
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   const [selectedProperty, setSelectedProperty] = useState('all'); // 'all' or property name
   const [selectedUrgency, setSelectedUrgency] = useState('all'); // 'all' or urgency level
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 12;
+
+  // Map work type keywords to images
+  const workTypeImages = {
+    // Electrical
+    'electrical': '/electrical.jpg',
+    'electric': '/electrical.jpg',
+    'wiring': '/electrical.jpg',
+    'électrique': '/electrical.jpg',
+    // Plumbing
+    'plumbing': '/plumbing.png',
+    'plomb': '/plumbing.png',
+    'faucet': '/plumbing.png',
+    'robinet': '/plumbing.png',
+    'pipe': '/plumbing.png',
+    'tuyau': '/plumbing.png',
+    'drain': '/plumbing.png',
+    'leak': '/plumbing.png',
+    'fuite': '/plumbing.png',
+    // HVAC
+    'hvac': '/HVAC.png',
+    'heating': '/HVAC.png',
+    'chauffage': '/HVAC.png',
+    'cooling': '/HVAC.png',
+    'climatisation': '/HVAC.png',
+    'air conditioning': '/HVAC.png',
+    'ventilation': '/HVAC.png',
+    // Roofing
+    'roofing': '/roofing.png',
+    'roof': '/roofing.png',
+    'toit': '/roofing.png',
+    'toiture': '/roofing.png',
+    'shingle': '/roofing.png',
+    'gutter': '/roofing.png',
+    'gouttière': '/roofing.png',
+    // Painting
+    'painting': '/painting.png',
+    'paint': '/painting.png',
+    'peinture': '/painting.png',
+    // Flooring
+    'flooring': '/flooring.png',
+    'floor': '/flooring.png',
+    'plancher': '/flooring.png',
+    'tile': '/flooring.png',
+    'carrelage': '/flooring.png',
+    // Carpentry
+    'carpentry': '/carpentry.jpg',
+    'menuiserie': '/carpentry.jpg',
+    'wood': '/carpentry.jpg',
+    'bois': '/carpentry.jpg',
+    'cabinet': '/carpentry.jpg',
+    'armoire': '/carpentry.jpg',
+    'door': '/carpentry.jpg',
+    'porte': '/carpentry.jpg',
+    'window': '/carpentry.jpg',
+    'fenêtre': '/carpentry.jpg',
+    // Masonry
+    'masonry': '/masonry.png',
+    'maçonnerie': '/masonry.png',
+    'brick': '/masonry.png',
+    'brique': '/masonry.png',
+    'concrete': '/masonry.png',
+    'béton': '/masonry.png',
+    'stone': '/masonry.png',
+    'pierre': '/masonry.png',
+    'fissure': '/masonry.png',
+    'crack': '/masonry.png',
+    'injection': '/masonry.png',
+  };
+
+  // Get image based on work type/title
+  const getWorkTypeImage = (title) => {
+    if (!title) return PLACEHOLDER_IMAGE;
+    const lowerTitle = title.toLowerCase();
+    for (const [keyword, image] of Object.entries(workTypeImages)) {
+      if (lowerTitle.includes(keyword)) {
+        return image;
+      }
+    }
+    return PLACEHOLDER_IMAGE;
+  };
 
   const handleImageError = (e) => {
     console.log("Image failed to load:", e.target.src);
@@ -192,7 +272,8 @@ function RepairList({ repairs, handleRepairClicked }) {
 
       <div className={viewMode === 'grid' ? 'hp-repair-cards-grid' : 'hp-repair-cards-list'}>
         {paginatedRepairs.map((repair) => {
-          console.log(`Repair ${repair.id} - Image URL:`, repair.images[0]);
+          const workTypeImg = getWorkTypeImage(repair.apartment);
+          console.log(`Repair ${repair.id} - Title: ${repair.apartment} - Using image:`, workTypeImg);
           return (
           <div
             className="hp-repair-card-modern"
@@ -206,7 +287,7 @@ function RepairList({ repairs, handleRepairClicked }) {
                 </div>
               )}
               <img
-                src={repair.images[0]}
+                src={workTypeImg}
                 alt={repair.property}
                 onError={handleImageError}
                 onLoad={(e) => handleImageLoad(repair.id, e.target.src)}
