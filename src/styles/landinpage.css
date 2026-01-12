@@ -3127,25 +3127,39 @@ body {
 
   /* Action buttons - compact spacing and center alignment */
   .lp-navbar-actions {
-    gap: var(--spacing-sm);
+    gap: 4px;
     align-items: center;
+  }
+
+  /* Language toggle - compact for mobile */
+  .lp-language-toggle {
+    gap: 2px;
+    margin-right: 4px;
+  }
+
+  .lp-lang-btn {
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+
+  .lp-lang-divider {
+    font-size: 11px;
   }
 
   /* Login button - small and minimal */
   .lp-btn-login {
-    padding: 8px 12px;
-    font-size: 13px;
+    padding: 6px 8px;
+    font-size: 11px;
   }
 
   /* Get Started button - keep visible but compact */
   .lp-btn-register {
-    padding: 8px 16px;
-    font-size: 13px;
+    padding: 6px 10px;
+    font-size: 11px;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    min-width: fit-content;
     white-space: nowrap;
   }
 
@@ -3305,7 +3319,26 @@ body {
   }
   
   .lp-hero-stats {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+
+  .lp-stat-number {
+    font-size: 1.5rem;
+  }
+
+  .lp-stat-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .lp-stat-icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .lp-stat-label {
+    font-size: 0.7rem;
   }
 
   /* ==================== MOBILE SECTION REDESIGN ==================== */
