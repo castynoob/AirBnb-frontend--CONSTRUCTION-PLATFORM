@@ -807,7 +807,7 @@ function ProfilePageEntrepreneur() {
                   </button>
                 </div>
 
-                {/* Profile Card */}
+                {/* Profile Cards */}
                 <div className="ep-profile-card-modern">
                   <div className="ep-profile-card-left">
                     <div className="ep-avatar-container">
