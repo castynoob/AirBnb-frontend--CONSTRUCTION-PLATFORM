@@ -3,16 +3,18 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Shield, FileText, Cookie } from "lucide-react";
 import logo from "../../assets/logo.png";
 import "../../styles/legal.css";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 export default function LegalPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("privacy");
+  const { t } = useLanguage();
 
   const tabs = [
-    { id: "privacy", label: "Privacy Policy", icon: Shield },
-    { id: "terms", label: "Terms of Service", icon: FileText },
-    { id: "cookies", label: "Cookie Policy", icon: Cookie },
+    { id: "privacy", label: t('legalPage.tabs.privacy'), icon: Shield },
+    { id: "terms", label: t('legalPage.tabs.terms'), icon: FileText },
+    { id: "cookies", label: t('legalPage.tabs.cookies'), icon: Cookie },
   ];
 
   // Set active tab from URL params
@@ -42,7 +44,7 @@ export default function LegalPage() {
           </div>
           <button className="legal-back-btn" onClick={() => navigate("/")}>
             <ArrowLeft size={18} />
-            <span>Back to Home</span>
+            <span>{t('legalPage.backToHome')}</span>
           </button>
         </div>
       </nav>
@@ -50,8 +52,8 @@ export default function LegalPage() {
       {/* Header */}
       <header className="legal-header">
         <div className="legal-container">
-          <h1>Legal Information</h1>
-          <p>Everything you need to know about using INTERVOS</p>
+          <h1>{t('legalPage.title')}</h1>
+          <p>{t('legalPage.subtitle')}</p>
         </div>
       </header>
 
@@ -80,9 +82,9 @@ export default function LegalPage() {
       <section className="legal-content-section">
         <div className="legal-container">
           <div className="legal-content">
-            {activeTab === "privacy" && <PrivacyPolicy />}
-            {activeTab === "terms" && <TermsOfService />}
-            {activeTab === "cookies" && <CookiePolicy />}
+            {activeTab === "privacy" && <PrivacyPolicy t={t} />}
+            {activeTab === "terms" && <TermsOfService t={t} />}
+            {activeTab === "cookies" && <CookiePolicy t={t} />}
           </div>
         </div>
       </section>
@@ -97,7 +99,7 @@ export default function LegalPage() {
               </span>
               <span className="legal-logo-text">INTERVOS</span>
             </div>
-            <p>&copy; 2025 INTERVOS. All rights reserved.</p>
+            <p>{t('legalPage.footer.copyright')}</p>
           </div>
         </div>
       </footer>
@@ -106,90 +108,80 @@ export default function LegalPage() {
 }
 
 /* ==================== PRIVACY POLICY ==================== */
-function PrivacyPolicy() {
+function PrivacyPolicy({ t }) {
   return (
     <article className="legal-article">
       <div className="legal-article-header">
-        <h2>Privacy Policy</h2>
-        <p className="legal-updated">Last updated: January 2025</p>
+        <h2>{t('legalPage.privacy.title')}</h2>
+        <p className="legal-updated">{t('legalPage.privacy.lastUpdated')}</p>
       </div>
 
       <div className="legal-article-body">
         <section>
-          <h3>1. Introduction</h3>
-          <p>
-            Welcome to INTERVOS. We are committed to protecting your personal information
-            and your right to privacy. This Privacy Policy explains how we collect, use,
-            disclose, and safeguard your information when you use our platform.
-          </p>
+          <h3>{t('legalPage.privacy.section1.title')}</h3>
+          <p>{t('legalPage.privacy.section1.content')}</p>
         </section>
 
         <section>
-          <h3>2. Information We Collect</h3>
-          <p>We collect information that you provide directly to us, including:</p>
+          <h3>{t('legalPage.privacy.section2.title')}</h3>
+          <p>{t('legalPage.privacy.section2.intro')}</p>
           <ul>
-            <li><strong>Account Information:</strong> Name, email address, phone number, and password when you register</li>
-            <li><strong>Profile Information:</strong> Company name, license numbers, business address, and professional details</li>
-            <li><strong>Property Information:</strong> Property addresses, unit details, and related documentation</li>
-            <li><strong>Transaction Data:</strong> Bids, job postings, payments, and contract information</li>
-            <li><strong>Communications:</strong> Messages exchanged through our platform</li>
+            <li><strong>{t('legalPage.privacy.section2.item1').split(':')[0]}:</strong>{t('legalPage.privacy.section2.item1').split(':').slice(1).join(':')}</li>
+            <li><strong>{t('legalPage.privacy.section2.item2').split(':')[0]}:</strong>{t('legalPage.privacy.section2.item2').split(':').slice(1).join(':')}</li>
+            <li><strong>{t('legalPage.privacy.section2.item3').split(':')[0]}:</strong>{t('legalPage.privacy.section2.item3').split(':').slice(1).join(':')}</li>
+            <li><strong>{t('legalPage.privacy.section2.item4').split(':')[0]}:</strong>{t('legalPage.privacy.section2.item4').split(':').slice(1).join(':')}</li>
+            <li><strong>{t('legalPage.privacy.section2.item5').split(':')[0]}:</strong>{t('legalPage.privacy.section2.item5').split(':').slice(1).join(':')}</li>
           </ul>
         </section>
 
         <section>
-          <h3>3. How We Use Your Information</h3>
-          <p>We use the information we collect to:</p>
+          <h3>{t('legalPage.privacy.section3.title')}</h3>
+          <p>{t('legalPage.privacy.section3.intro')}</p>
           <ul>
-            <li>Provide, maintain, and improve our services</li>
-            <li>Process transactions and send related information</li>
-            <li>Connect property managers with qualified contractors</li>
-            <li>Send notifications about jobs, bids, and platform updates</li>
-            <li>Respond to your comments, questions, and customer service requests</li>
-            <li>Monitor and analyze usage patterns and trends</li>
-            <li>Detect, investigate, and prevent fraudulent activities</li>
+            <li>{t('legalPage.privacy.section3.item1')}</li>
+            <li>{t('legalPage.privacy.section3.item2')}</li>
+            <li>{t('legalPage.privacy.section3.item3')}</li>
+            <li>{t('legalPage.privacy.section3.item4')}</li>
+            <li>{t('legalPage.privacy.section3.item5')}</li>
+            <li>{t('legalPage.privacy.section3.item6')}</li>
+            <li>{t('legalPage.privacy.section3.item7')}</li>
           </ul>
         </section>
 
         <section>
-          <h3>4. Information Sharing</h3>
-          <p>We may share your information in the following situations:</p>
+          <h3>{t('legalPage.privacy.section4.title')}</h3>
+          <p>{t('legalPage.privacy.section4.intro')}</p>
           <ul>
-            <li><strong>With Other Users:</strong> Profile information is visible to facilitate business connections</li>
-            <li><strong>Service Providers:</strong> Third-party vendors who assist in operating our platform</li>
-            <li><strong>Legal Requirements:</strong> When required by law or to protect our rights</li>
-            <li><strong>Business Transfers:</strong> In connection with any merger or acquisition</li>
+            <li><strong>{t('legalPage.privacy.section4.item1').split(':')[0]}:</strong>{t('legalPage.privacy.section4.item1').split(':').slice(1).join(':')}</li>
+            <li><strong>{t('legalPage.privacy.section4.item2').split(':')[0]}:</strong>{t('legalPage.privacy.section4.item2').split(':').slice(1).join(':')}</li>
+            <li><strong>{t('legalPage.privacy.section4.item3').split(':')[0]}:</strong>{t('legalPage.privacy.section4.item3').split(':').slice(1).join(':')}</li>
+            <li><strong>{t('legalPage.privacy.section4.item4').split(':')[0]}:</strong>{t('legalPage.privacy.section4.item4').split(':').slice(1).join(':')}</li>
           </ul>
         </section>
 
         <section>
-          <h3>5. Data Security</h3>
-          <p>
-            We implement appropriate technical and organizational security measures to protect
-            your personal information. However, no method of transmission over the Internet is
-            100% secure, and we cannot guarantee absolute security.
-          </p>
+          <h3>{t('legalPage.privacy.section5.title')}</h3>
+          <p>{t('legalPage.privacy.section5.content')}</p>
         </section>
 
         <section>
-          <h3>6. Your Rights</h3>
-          <p>Depending on your location, you may have the right to:</p>
+          <h3>{t('legalPage.privacy.section6.title')}</h3>
+          <p>{t('legalPage.privacy.section6.intro')}</p>
           <ul>
-            <li>Access the personal information we hold about you</li>
-            <li>Request correction of inaccurate data</li>
-            <li>Request deletion of your personal information</li>
-            <li>Object to or restrict certain processing activities</li>
-            <li>Data portability</li>
+            <li>{t('legalPage.privacy.section6.item1')}</li>
+            <li>{t('legalPage.privacy.section6.item2')}</li>
+            <li>{t('legalPage.privacy.section6.item3')}</li>
+            <li>{t('legalPage.privacy.section6.item4')}</li>
+            <li>{t('legalPage.privacy.section6.item5')}</li>
           </ul>
         </section>
 
         <section>
-          <h3>7. Contact Us</h3>
-          <p>
-            If you have questions about this Privacy Policy, please contact us at:
-          </p>
+          <h3>{t('legalPage.privacy.section7.title')}</h3>
+          <p>{t('legalPage.privacy.section7.intro')}</p>
           <p className="legal-contact">
-            <strong>Email:</strong> privacy@intervos.com<br />
-            <strong>Phone:</strong> +1 (555) 123-4567
+            <strong>{t('legalPage.privacy.section7.email')}</strong> privacy@intervos.com<br />
+            <strong>{t('legalPage.privacy.section7.phone')}</strong> +1 (555) 123-4567
           </p>
         </section>
       </div>
@@ -198,128 +190,98 @@ function PrivacyPolicy() {
 }
 
 /* ==================== TERMS OF SERVICE ==================== */
-function TermsOfService() {
+function TermsOfService({ t }) {
   return (
     <article className="legal-article">
       <div className="legal-article-header">
-        <h2>Terms of Service</h2>
-        <p className="legal-updated">Last updated: January 2025</p>
+        <h2>{t('legalPage.terms.title')}</h2>
+        <p className="legal-updated">{t('legalPage.terms.lastUpdated')}</p>
       </div>
 
       <div className="legal-article-body">
         <section>
-          <h3>1. Acceptance of Terms</h3>
-          <p>
-            By accessing or using INTERVOS, you agree to be bound by these Terms of Service.
-            If you do not agree to these terms, please do not use our platform.
-          </p>
+          <h3>{t('legalPage.terms.section1.title')}</h3>
+          <p>{t('legalPage.terms.section1.content')}</p>
         </section>
 
         <section>
-          <h3>2. Description of Service</h3>
-          <p>
-            INTERVOS is a construction management platform that connects property managers
-            with contractors and entrepreneurs. Our services include job posting, bid management,
-            messaging, and payment processing.
-          </p>
+          <h3>{t('legalPage.terms.section2.title')}</h3>
+          <p>{t('legalPage.terms.section2.content')}</p>
         </section>
 
         <section>
-          <h3>3. User Accounts</h3>
-          <p>To use our services, you must:</p>
+          <h3>{t('legalPage.terms.section3.title')}</h3>
+          <p>{t('legalPage.terms.section3.intro')}</p>
           <ul>
-            <li>Be at least 18 years old</li>
-            <li>Provide accurate and complete registration information</li>
-            <li>Maintain the security of your account credentials</li>
-            <li>Notify us immediately of any unauthorized access</li>
-            <li>Be responsible for all activities under your account</li>
+            <li>{t('legalPage.terms.section3.item1')}</li>
+            <li>{t('legalPage.terms.section3.item2')}</li>
+            <li>{t('legalPage.terms.section3.item3')}</li>
+            <li>{t('legalPage.terms.section3.item4')}</li>
+            <li>{t('legalPage.terms.section3.item5')}</li>
           </ul>
         </section>
 
         <section>
-          <h3>4. User Responsibilities</h3>
-          <p>As a user of INTERVOS, you agree to:</p>
+          <h3>{t('legalPage.terms.section4.title')}</h3>
+          <p>{t('legalPage.terms.section4.intro')}</p>
           <ul>
-            <li>Provide truthful information about your business and qualifications</li>
-            <li>Maintain valid licenses and insurance as required by law</li>
-            <li>Communicate professionally with other users</li>
-            <li>Honor commitments made through the platform</li>
-            <li>Comply with all applicable laws and regulations</li>
+            <li>{t('legalPage.terms.section4.item1')}</li>
+            <li>{t('legalPage.terms.section4.item2')}</li>
+            <li>{t('legalPage.terms.section4.item3')}</li>
+            <li>{t('legalPage.terms.section4.item4')}</li>
+            <li>{t('legalPage.terms.section4.item5')}</li>
           </ul>
         </section>
 
         <section>
-          <h3>5. Prohibited Activities</h3>
-          <p>You may not use INTERVOS to:</p>
+          <h3>{t('legalPage.terms.section5.title')}</h3>
+          <p>{t('legalPage.terms.section5.intro')}</p>
           <ul>
-            <li>Violate any laws or regulations</li>
-            <li>Post false, misleading, or fraudulent content</li>
-            <li>Harass, abuse, or harm other users</li>
-            <li>Circumvent our fee structure or payment system</li>
-            <li>Scrape, copy, or misuse platform data</li>
-            <li>Interfere with the proper functioning of the platform</li>
+            <li>{t('legalPage.terms.section5.item1')}</li>
+            <li>{t('legalPage.terms.section5.item2')}</li>
+            <li>{t('legalPage.terms.section5.item3')}</li>
+            <li>{t('legalPage.terms.section5.item4')}</li>
+            <li>{t('legalPage.terms.section5.item5')}</li>
+            <li>{t('legalPage.terms.section5.item6')}</li>
           </ul>
         </section>
 
         <section>
-          <h3>6. Payments and Fees</h3>
-          <p>
-            INTERVOS may charge fees for certain services. All fees are non-refundable unless
-            otherwise stated. You agree to pay all applicable fees and authorize us to charge
-            your payment method on file.
-          </p>
+          <h3>{t('legalPage.terms.section6.title')}</h3>
+          <p>{t('legalPage.terms.section6.content')}</p>
         </section>
 
         <section>
-          <h3>7. Intellectual Property</h3>
-          <p>
-            All content, features, and functionality of INTERVOS are owned by us and protected
-            by copyright, trademark, and other intellectual property laws. You may not reproduce,
-            distribute, or create derivative works without our permission.
-          </p>
+          <h3>{t('legalPage.terms.section7.title')}</h3>
+          <p>{t('legalPage.terms.section7.content')}</p>
         </section>
 
         <section>
-          <h3>8. Disclaimer of Warranties</h3>
-          <p>
-            INTERVOS is provided "as is" without warranties of any kind. We do not guarantee
-            the quality of work performed by contractors or the accuracy of information provided
-            by users.
-          </p>
+          <h3>{t('legalPage.terms.section8.title')}</h3>
+          <p>{t('legalPage.terms.section8.content')}</p>
         </section>
 
         <section>
-          <h3>9. Limitation of Liability</h3>
-          <p>
-            To the maximum extent permitted by law, INTERVOS shall not be liable for any indirect,
-            incidental, special, or consequential damages arising from your use of the platform.
-          </p>
+          <h3>{t('legalPage.terms.section9.title')}</h3>
+          <p>{t('legalPage.terms.section9.content')}</p>
         </section>
 
         <section>
-          <h3>10. Termination</h3>
-          <p>
-            We reserve the right to suspend or terminate your account at any time for violations
-            of these terms or for any other reason at our discretion.
-          </p>
+          <h3>{t('legalPage.terms.section10.title')}</h3>
+          <p>{t('legalPage.terms.section10.content')}</p>
         </section>
 
         <section>
-          <h3>11. Changes to Terms</h3>
-          <p>
-            We may update these Terms of Service from time to time. We will notify you of any
-            material changes by posting the new terms on this page and updating the "Last updated" date.
-          </p>
+          <h3>{t('legalPage.terms.section11.title')}</h3>
+          <p>{t('legalPage.terms.section11.content')}</p>
         </section>
 
         <section>
-          <h3>12. Contact Us</h3>
-          <p>
-            For questions about these Terms of Service, please contact us at:
-          </p>
+          <h3>{t('legalPage.terms.section12.title')}</h3>
+          <p>{t('legalPage.terms.section12.intro')}</p>
           <p className="legal-contact">
-            <strong>Email:</strong> legal@intervos.com<br />
-            <strong>Phone:</strong> +1 (555) 123-4567
+            <strong>{t('legalPage.terms.section12.email')}</strong> legal@intervos.com<br />
+            <strong>{t('legalPage.terms.section12.phone')}</strong> +1 (555) 123-4567
           </p>
         </section>
       </div>
@@ -328,65 +290,62 @@ function TermsOfService() {
 }
 
 /* ==================== COOKIE POLICY ==================== */
-function CookiePolicy() {
+function CookiePolicy({ t }) {
   return (
     <article className="legal-article">
       <div className="legal-article-header">
-        <h2>Cookie Policy</h2>
-        <p className="legal-updated">Last updated: January 2025</p>
+        <h2>{t('legalPage.cookies.title')}</h2>
+        <p className="legal-updated">{t('legalPage.cookies.lastUpdated')}</p>
       </div>
 
       <div className="legal-article-body">
         <section>
-          <h3>1. What Are Cookies</h3>
-          <p>
-            Cookies are small text files that are stored on your device when you visit a website.
-            They help websites remember your preferences and improve your browsing experience.
-          </p>
+          <h3>{t('legalPage.cookies.section1.title')}</h3>
+          <p>{t('legalPage.cookies.section1.content')}</p>
         </section>
 
         <section>
-          <h3>2. How We Use Cookies</h3>
-          <p>INTERVOS uses cookies for the following purposes:</p>
+          <h3>{t('legalPage.cookies.section2.title')}</h3>
+          <p>{t('legalPage.cookies.section2.intro')}</p>
           <ul>
-            <li><strong>Essential Cookies:</strong> Required for the platform to function properly, including authentication and security</li>
-            <li><strong>Functional Cookies:</strong> Remember your preferences and settings</li>
-            <li><strong>Analytics Cookies:</strong> Help us understand how visitors interact with our platform</li>
-            <li><strong>Performance Cookies:</strong> Monitor and improve platform performance</li>
+            <li><strong>{t('legalPage.cookies.section2.item1').split(':')[0]}:</strong>{t('legalPage.cookies.section2.item1').split(':').slice(1).join(':')}</li>
+            <li><strong>{t('legalPage.cookies.section2.item2').split(':')[0]}:</strong>{t('legalPage.cookies.section2.item2').split(':').slice(1).join(':')}</li>
+            <li><strong>{t('legalPage.cookies.section2.item3').split(':')[0]}:</strong>{t('legalPage.cookies.section2.item3').split(':').slice(1).join(':')}</li>
+            <li><strong>{t('legalPage.cookies.section2.item4').split(':')[0]}:</strong>{t('legalPage.cookies.section2.item4').split(':').slice(1).join(':')}</li>
           </ul>
         </section>
 
         <section>
-          <h3>3. Types of Cookies We Use</h3>
+          <h3>{t('legalPage.cookies.section3.title')}</h3>
           <div className="legal-table-wrapper">
             <table className="legal-table">
               <thead>
                 <tr>
-                  <th>Cookie Type</th>
-                  <th>Purpose</th>
-                  <th>Duration</th>
+                  <th>{t('legalPage.cookies.section3.tableHeaders.type')}</th>
+                  <th>{t('legalPage.cookies.section3.tableHeaders.purpose')}</th>
+                  <th>{t('legalPage.cookies.section3.tableHeaders.duration')}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>Session Cookies</td>
-                  <td>Maintain your login session</td>
-                  <td>Until browser closes</td>
+                  <td>{t('legalPage.cookies.section3.sessionCookies.type')}</td>
+                  <td>{t('legalPage.cookies.section3.sessionCookies.purpose')}</td>
+                  <td>{t('legalPage.cookies.section3.sessionCookies.duration')}</td>
                 </tr>
                 <tr>
-                  <td>Authentication</td>
-                  <td>Keep you logged in securely</td>
-                  <td>30 days</td>
+                  <td>{t('legalPage.cookies.section3.authentication.type')}</td>
+                  <td>{t('legalPage.cookies.section3.authentication.purpose')}</td>
+                  <td>{t('legalPage.cookies.section3.authentication.duration')}</td>
                 </tr>
                 <tr>
-                  <td>Preferences</td>
-                  <td>Remember your settings</td>
-                  <td>1 year</td>
+                  <td>{t('legalPage.cookies.section3.preferences.type')}</td>
+                  <td>{t('legalPage.cookies.section3.preferences.purpose')}</td>
+                  <td>{t('legalPage.cookies.section3.preferences.duration')}</td>
                 </tr>
                 <tr>
-                  <td>Analytics</td>
-                  <td>Track usage patterns</td>
-                  <td>2 years</td>
+                  <td>{t('legalPage.cookies.section3.analytics.type')}</td>
+                  <td>{t('legalPage.cookies.section3.analytics.purpose')}</td>
+                  <td>{t('legalPage.cookies.section3.analytics.duration')}</td>
                 </tr>
               </tbody>
             </table>
@@ -394,50 +353,38 @@ function CookiePolicy() {
         </section>
 
         <section>
-          <h3>4. Third-Party Cookies</h3>
-          <p>
-            We may use third-party services that set their own cookies, including:
-          </p>
+          <h3>{t('legalPage.cookies.section4.title')}</h3>
+          <p>{t('legalPage.cookies.section4.intro')}</p>
           <ul>
-            <li><strong>Google Analytics:</strong> For website analytics and performance monitoring</li>
-            <li><strong>Stripe:</strong> For secure payment processing</li>
-            <li><strong>Intercom/Support Tools:</strong> For customer support functionality</li>
+            <li><strong>{t('legalPage.cookies.section4.item1').split(':')[0]}:</strong>{t('legalPage.cookies.section4.item1').split(':').slice(1).join(':')}</li>
+            <li><strong>{t('legalPage.cookies.section4.item2').split(':')[0]}:</strong>{t('legalPage.cookies.section4.item2').split(':').slice(1).join(':')}</li>
+            <li><strong>{t('legalPage.cookies.section4.item3').split(':')[0]}:</strong>{t('legalPage.cookies.section4.item3').split(':').slice(1).join(':')}</li>
           </ul>
         </section>
 
         <section>
-          <h3>5. Managing Cookies</h3>
-          <p>
-            You can control and manage cookies through your browser settings. Most browsers allow you to:
-          </p>
+          <h3>{t('legalPage.cookies.section5.title')}</h3>
+          <p>{t('legalPage.cookies.section5.intro')}</p>
           <ul>
-            <li>View what cookies are stored on your device</li>
-            <li>Delete all or specific cookies</li>
-            <li>Block cookies from specific or all websites</li>
-            <li>Set preferences for certain types of cookies</li>
+            <li>{t('legalPage.cookies.section5.item1')}</li>
+            <li>{t('legalPage.cookies.section5.item2')}</li>
+            <li>{t('legalPage.cookies.section5.item3')}</li>
+            <li>{t('legalPage.cookies.section5.item4')}</li>
           </ul>
-          <p>
-            Please note that disabling certain cookies may affect the functionality of INTERVOS
-            and your ability to use some features.
-          </p>
+          <p>{t('legalPage.cookies.section5.note')}</p>
         </section>
 
         <section>
-          <h3>6. Updates to This Policy</h3>
-          <p>
-            We may update this Cookie Policy from time to time to reflect changes in our practices
-            or for legal reasons. We encourage you to review this page periodically.
-          </p>
+          <h3>{t('legalPage.cookies.section6.title')}</h3>
+          <p>{t('legalPage.cookies.section6.content')}</p>
         </section>
 
         <section>
-          <h3>7. Contact Us</h3>
-          <p>
-            If you have questions about our use of cookies, please contact us at:
-          </p>
+          <h3>{t('legalPage.cookies.section7.title')}</h3>
+          <p>{t('legalPage.cookies.section7.intro')}</p>
           <p className="legal-contact">
-            <strong>Email:</strong> privacy@intervos.com<br />
-            <strong>Phone:</strong> +1 (555) 123-4567
+            <strong>{t('legalPage.cookies.section7.email')}</strong> privacy@intervos.com<br />
+            <strong>{t('legalPage.cookies.section7.phone')}</strong> +1 (555) 123-4567
           </p>
         </section>
       </div>

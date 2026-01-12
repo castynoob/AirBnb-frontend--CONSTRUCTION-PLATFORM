@@ -402,7 +402,7 @@ const translations = {
 
     // Submissions Page
     submissions: {
-      title: 'SUBMISSIONS',
+      title: 'BIDDINGS',
       bids: 'bids',
       myReviews: 'My Reviews',
       filters: 'Filters',
@@ -2166,18 +2166,32 @@ const translations = {
 
       // About Section
       about: {
-        founderQuote: '"You wake up to a flooded basement. A tenant\'s HVAC breaks mid-winter. The roof\'s leaking - again. You\'ve got 12 contractors ghosting you, two crews overcharging, and a spreadsheet that stopped making sense three months ago."',
-        founderAttribution: '- Every property manager, at some point.',
-        realProblemTitle: 'This is the real problem.',
-        realProblemText1: 'Not finding contractors. Managing the chaos between jobs posted, bids received, work tracked, and payments made.',
-        realProblemText2: "I've watched property managers spend 60% of their time on admin. Contractors lose jobs because they couldn't respond fast enough. Residents wait weeks for repairs that should take days.",
-        realProblemText3: "INTERVOS was built by someone who's seen every broken system in this industry - and decided to fix it.",
-        stat1Value: '10K+',
-        stat1Label: 'Jobs Managed',
-        stat2Value: '98%',
-        stat2Label: 'Satisfaction Rate',
-        stat3Value: '40%',
-        stat3Label: 'Faster Resolution',
+        founderQuote: 'After managing 50+ buildings, I realized the system wasn\'t just slow—it was broken.',
+        // Pain points
+        painPoint1: 'Entrepreneurs not showing up',
+        painPoint2: 'Surprise costs eating into budgets',
+        painPoint3: 'Residents calling at 2am about leaks',
+        painPoint4: 'Invoices lost in email chains',
+        // Story text
+        storyText1: 'So we asked ourselves: what if there was one place where everything just... worked?',
+        storyText2: 'That\'s INTERVOS. Property managers post jobs. Entrepreneurs bid. Everyone sees what\'s happening. Money moves when work gets done. Simple.',
+        // Stats
+        stat1Value: '1,000+',
+        stat1Label: 'Active users',
+        stat2Value: '$2.5M+',
+        stat2Label: 'Projects completed',
+        stat3Value: '24hrs',
+        stat3Label: 'Avg. response time',
+        // Dashboard preview
+        recentActivity: 'Recent Activity',
+        live: 'Live',
+        projectCompleted: 'Project Successfully Completed',
+        plumbingRepair: 'Plumbing repair - Building 24A',
+        hoursAgo: '2 hours ago',
+        fastestResponse: 'Fastest Response Time',
+        mins: 'mins',
+        fasterThanAverage: '↑ 40% faster than average',
+        projectVolume: 'Project Volume',
       },
 
       // Features Section
@@ -2257,6 +2271,23 @@ const translations = {
         yourRequests: 'Your Requests',
         fixedYesterday: 'Fixed yesterday',
         scheduledTomorrow: 'Scheduled for tomorrow',
+
+        // Example project names (Property Manager card)
+        exampleProject1: 'Plumbing - Unit 204',
+        exampleProject2: 'HVAC Repair - Building A',
+        exampleProject3: 'Roof Leak - Unit 312',
+
+        // Example job listings (Entrepreneur card)
+        exampleJob1Title: 'Kitchen Renovation',
+        exampleJob1Meta: '$8,500 • Yonge & Eglinton • Posted 2h ago',
+        exampleJob2Title: 'Emergency Electrical Repair',
+        exampleJob2Meta: '$1,200 • Downtown • Posted 4h ago',
+        exampleJob3Title: 'Bathroom Plumbing Fix',
+        exampleJob3Meta: '$650 • North York • Posted 1d ago',
+
+        // Example resident requests (Resident card)
+        exampleRequest1: 'Leaky faucet',
+        exampleRequest2: 'Heating not working',
       },
 
       // How It Works Section
@@ -2312,6 +2343,33 @@ const translations = {
         signUp: 'Sign up',
         orContinueWith: 'Or continue with',
         googleLogin: 'Continue with Google',
+        // Validation errors
+        emailRequired: 'Email is required',
+        emailInvalid: 'Please enter a valid email address',
+        passwordRequired: 'Password is required',
+        passwordMinLength: 'Password must be at least 8 characters',
+        passwordFormatError: 'Password must contain at least one lowercase letter and one number',
+        firstNameRequired: 'First name is required',
+        firstNameInvalid: 'First name must contain only letters (2-50 characters)',
+        lastNameRequired: 'Last name is required',
+        lastNameInvalid: 'Last name must contain only letters (2-50 characters)',
+        confirmPasswordRequired: 'Please confirm your password',
+        passwordsDoNotMatch: 'Passwords do not match',
+        phoneInvalidChars: 'Phone number can only contain digits, spaces, dashes, and parentheses',
+        phoneMinDigits: 'Phone number must be at least 10 digits',
+        // Error messages
+        verifyEmailFirst: 'Please verify your email before logging in.',
+        invalidCredentials: 'Invalid email or password',
+        loginFailed: 'Login failed. Please check your connection and try again.',
+        loginFailedRetry: 'Login failed. Please try again.',
+        googleDataMissing: 'Google registration data missing. Please try again.',
+        passwordRequiredLocal: 'Password is required for local registration',
+        checkInput: 'Please check your input and try again',
+        registrationFailed: 'Registration failed',
+        registrationSuccessLoginFailed: 'Registration successful but login failed. Please try logging in manually.',
+        autoLoginFailed: 'Registration successful but automatic login failed. Please try logging in manually.',
+        registrationServerError: 'Registration failed due to a server error.',
+        loadPropertiesFailed: 'Failed to load properties. Please try again.',
       },
 
       // Register Modal
@@ -2334,6 +2392,48 @@ const translations = {
         roleResidentDesc: 'Report issues, track repairs, communicate with management',
         roleSupplier: 'Supplier',
         roleSupplierDesc: 'Connect with contractors, sell building materials',
+
+        // Role headlines
+        rolePropertyManagerHeadline: 'Take Back Control',
+        roleEntrepreneurHeadline: 'Get Paid Faster, Work Smarter',
+        roleResidentHeadline: 'Finally Know What\'s Happening in Your Building',
+        roleSupplierHeadline: 'Supply the Projects That Matter',
+
+        // Role benefits - Property Manager
+        pmBenefit1: 'Full visibility: Every property, every job, every contractor — in one dashboard',
+        pmBenefit2: 'No more chasing: Automated updates and real-time project tracking',
+        pmBenefit3: 'You decide: Review bids, approve work, and control every decision',
+
+        // Role benefits - Entrepreneur
+        entrBenefit1: 'Steady work pipeline: Verified jobs delivered to your inbox daily',
+        entrBenefit2: 'Faster payments: Milestone-based invoicing with escrow protection',
+        entrBenefit3: 'Win on value: Showcase your expertise, not just your bid price',
+
+        // Role benefits - Resident
+        resBenefit1: 'Real-time updates: Track repairs affecting your unit',
+        resBenefit2: 'Direct communication: Message property managers instantly',
+        resBenefit3: 'Request repairs: Submit maintenance tickets in seconds',
+
+        // Role benefits - Supplier
+        supBenefit1: 'Direct access: Connect with active projects needing materials',
+        supBenefit2: 'Expand your network: Reach property managers and contractors',
+        supBenefit3: 'Streamlined ordering: From quote to delivery in one platform',
+
+        // Step headers
+        createAccountTitle: 'Create Your Account',
+        joinAsPropertyManager: 'Join as a Property Manager',
+        joinAsEntrepreneur: 'Join as an Entrepreneur',
+        joinAsResident: 'Join as a Resident',
+        joinAsSupplier: 'Join as a Supplier',
+        completeProfileTitle: 'Complete Your Profile',
+        profileSubtitlePM: 'Just a few more details to get started',
+        profileSubtitleEntr: 'Tell us about your business',
+        profileSubtitleRes: 'Help us connect you to your building',
+        profileSubtitleSup: 'Share your business information',
+
+        // UI elements
+        continue: 'Continue',
+        orDivider: 'OR',
 
         // Form labels
         firstName: 'First Name',
@@ -2411,15 +2511,29 @@ const translations = {
         orContinueWith: 'Or continue with',
         googleSignUp: 'Sign up with Google',
 
+        // Terms and Privacy
+        agreeToTerms: 'I agree to the',
+        and: 'and',
+
+        // Registration submit button
+        startProject: 'Start Your First Project',
+        settingUp: 'Setting up your account...',
+
         // Success
         successTitle: 'Check Your Email',
+        registrationSuccessTitle: 'Registration Successful!',
+        verifyEmailSubtitle: 'Please verify your email to continue',
+        checkInbox: 'Check your inbox',
         successMessage: 'We\'ve sent a verification link to',
         successInstructions: 'Click the link in the email to verify your account and start using INTERVOS.',
         checkSpam: 'Didn\'t receive the email? Check your spam folder or',
+        didntReceiveEmail: 'Didn\'t receive the email?',
         resendEmail: 'resend verification email',
         resending: 'Resending...',
+        sending: 'Sending...',
         resendSuccess: 'Verification email resent!',
         backToLogin: 'Back to Login',
+        goToLogin: 'Go to Login',
       },
 
       // Verification messages
@@ -2429,6 +2543,232 @@ const translations = {
         missingToken: 'Verification link is invalid (missing token).',
         invalidToken: 'Verification link is invalid or expired.',
         serverError: 'Server error during verification. Please try again.',
+      },
+    },
+
+    // Legal Page
+    legalPage: {
+      // Navigation
+      backToHome: 'Back to Home',
+
+      // Header
+      title: 'Legal Information',
+      subtitle: 'Everything you need to know about using INTERVOS',
+
+      // Tabs
+      tabs: {
+        privacy: 'Privacy Policy',
+        terms: 'Terms of Service',
+        cookies: 'Cookie Policy',
+      },
+
+      // Footer
+      footer: {
+        copyright: '© 2025 INTERVOS. All rights reserved.',
+      },
+
+      // Privacy Policy
+      privacy: {
+        title: 'Privacy Policy',
+        lastUpdated: 'Last updated: January 2025',
+
+        section1: {
+          title: '1. Introduction',
+          content: 'Welcome to INTERVOS. We are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform.',
+        },
+        section2: {
+          title: '2. Information We Collect',
+          intro: 'We collect information that you provide directly to us, including:',
+          item1: 'Account Information: Name, email address, phone number, and password when you register',
+          item2: 'Profile Information: Company name, license numbers, business address, and professional details',
+          item3: 'Property Information: Property addresses, unit details, and related documentation',
+          item4: 'Transaction Data: Bids, job postings, payments, and contract information',
+          item5: 'Communications: Messages exchanged through our platform',
+        },
+        section3: {
+          title: '3. How We Use Your Information',
+          intro: 'We use the information we collect to:',
+          item1: 'Provide, maintain, and improve our services',
+          item2: 'Process transactions and send related information',
+          item3: 'Connect property managers with qualified contractors',
+          item4: 'Send notifications about jobs, bids, and platform updates',
+          item5: 'Respond to your comments, questions, and customer service requests',
+          item6: 'Monitor and analyze usage patterns and trends',
+          item7: 'Detect, investigate, and prevent fraudulent activities',
+        },
+        section4: {
+          title: '4. Information Sharing',
+          intro: 'We may share your information in the following situations:',
+          item1: 'With Other Users: Profile information is visible to facilitate business connections',
+          item2: 'Service Providers: Third-party vendors who assist in operating our platform',
+          item3: 'Legal Requirements: When required by law or to protect our rights',
+          item4: 'Business Transfers: In connection with any merger or acquisition',
+        },
+        section5: {
+          title: '5. Data Security',
+          content: 'We implement appropriate technical and organizational security measures to protect your personal information. However, no method of transmission over the Internet is 100% secure, and we cannot guarantee absolute security.',
+        },
+        section6: {
+          title: '6. Your Rights',
+          intro: 'Depending on your location, you may have the right to:',
+          item1: 'Access the personal information we hold about you',
+          item2: 'Request correction of inaccurate data',
+          item3: 'Request deletion of your personal information',
+          item4: 'Object to or restrict certain processing activities',
+          item5: 'Data portability',
+        },
+        section7: {
+          title: '7. Contact Us',
+          intro: 'If you have questions about this Privacy Policy, please contact us at:',
+          email: 'Email:',
+          phone: 'Phone:',
+        },
+      },
+
+      // Terms of Service
+      terms: {
+        title: 'Terms of Service',
+        lastUpdated: 'Last updated: January 2025',
+
+        section1: {
+          title: '1. Acceptance of Terms',
+          content: 'By accessing or using INTERVOS, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our platform.',
+        },
+        section2: {
+          title: '2. Description of Service',
+          content: 'INTERVOS is a construction management platform that connects property managers with contractors and entrepreneurs. Our services include job posting, bid management, messaging, and payment processing.',
+        },
+        section3: {
+          title: '3. User Accounts',
+          intro: 'To use our services, you must:',
+          item1: 'Be at least 18 years old',
+          item2: 'Provide accurate and complete registration information',
+          item3: 'Maintain the security of your account credentials',
+          item4: 'Notify us immediately of any unauthorized access',
+          item5: 'Be responsible for all activities under your account',
+        },
+        section4: {
+          title: '4. User Responsibilities',
+          intro: 'As a user of INTERVOS, you agree to:',
+          item1: 'Provide truthful information about your business and qualifications',
+          item2: 'Maintain valid licenses and insurance as required by law',
+          item3: 'Communicate professionally with other users',
+          item4: 'Honor commitments made through the platform',
+          item5: 'Comply with all applicable laws and regulations',
+        },
+        section5: {
+          title: '5. Prohibited Activities',
+          intro: 'You may not use INTERVOS to:',
+          item1: 'Violate any laws or regulations',
+          item2: 'Post false, misleading, or fraudulent content',
+          item3: 'Harass, abuse, or harm other users',
+          item4: 'Circumvent our fee structure or payment system',
+          item5: 'Scrape, copy, or misuse platform data',
+          item6: 'Interfere with the proper functioning of the platform',
+        },
+        section6: {
+          title: '6. Payments and Fees',
+          content: 'INTERVOS may charge fees for certain services. All fees are non-refundable unless otherwise stated. You agree to pay all applicable fees and authorize us to charge your payment method on file.',
+        },
+        section7: {
+          title: '7. Intellectual Property',
+          content: 'All content, features, and functionality of INTERVOS are owned by us and protected by copyright, trademark, and other intellectual property laws. You may not reproduce, distribute, or create derivative works without our permission.',
+        },
+        section8: {
+          title: '8. Disclaimer of Warranties',
+          content: 'INTERVOS is provided "as is" without warranties of any kind. We do not guarantee the quality of work performed by contractors or the accuracy of information provided by users.',
+        },
+        section9: {
+          title: '9. Limitation of Liability',
+          content: 'To the maximum extent permitted by law, INTERVOS shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the platform.',
+        },
+        section10: {
+          title: '10. Termination',
+          content: 'We reserve the right to suspend or terminate your account at any time for violations of these terms or for any other reason at our discretion.',
+        },
+        section11: {
+          title: '11. Changes to Terms',
+          content: 'We may update these Terms of Service from time to time. We will notify you of any material changes by posting the new terms on this page and updating the "Last updated" date.',
+        },
+        section12: {
+          title: '12. Contact Us',
+          intro: 'For questions about these Terms of Service, please contact us at:',
+          email: 'Email:',
+          phone: 'Phone:',
+        },
+      },
+
+      // Cookie Policy
+      cookies: {
+        title: 'Cookie Policy',
+        lastUpdated: 'Last updated: January 2025',
+
+        section1: {
+          title: '1. What Are Cookies',
+          content: 'Cookies are small text files that are stored on your device when you visit a website. They help websites remember your preferences and improve your browsing experience.',
+        },
+        section2: {
+          title: '2. How We Use Cookies',
+          intro: 'INTERVOS uses cookies for the following purposes:',
+          item1: 'Essential Cookies: Required for the platform to function properly, including authentication and security',
+          item2: 'Functional Cookies: Remember your preferences and settings',
+          item3: 'Analytics Cookies: Help us understand how visitors interact with our platform',
+          item4: 'Performance Cookies: Monitor and improve platform performance',
+        },
+        section3: {
+          title: '3. Types of Cookies We Use',
+          tableHeaders: {
+            type: 'Cookie Type',
+            purpose: 'Purpose',
+            duration: 'Duration',
+          },
+          sessionCookies: {
+            type: 'Session Cookies',
+            purpose: 'Maintain your login session',
+            duration: 'Until browser closes',
+          },
+          authentication: {
+            type: 'Authentication',
+            purpose: 'Keep you logged in securely',
+            duration: '30 days',
+          },
+          preferences: {
+            type: 'Preferences',
+            purpose: 'Remember your settings',
+            duration: '1 year',
+          },
+          analytics: {
+            type: 'Analytics',
+            purpose: 'Track usage patterns',
+            duration: '2 years',
+          },
+        },
+        section4: {
+          title: '4. Third-Party Cookies',
+          intro: 'We may use third-party services that set their own cookies, including:',
+          item1: 'Google Analytics: For website analytics and performance monitoring',
+          item2: 'Stripe: For secure payment processing',
+          item3: 'Intercom/Support Tools: For customer support functionality',
+        },
+        section5: {
+          title: '5. Managing Cookies',
+          intro: 'You can control and manage cookies through your browser settings. Most browsers allow you to:',
+          item1: 'View what cookies are stored on your device',
+          item2: 'Delete all or specific cookies',
+          item3: 'Block cookies from specific or all websites',
+          item4: 'Set preferences for certain types of cookies',
+          note: 'Please note that disabling certain cookies may affect the functionality of INTERVOS and your ability to use some features.',
+        },
+        section6: {
+          title: '6. Updates to This Policy',
+          content: 'We may update this Cookie Policy from time to time to reflect changes in our practices or for legal reasons. We encourage you to review this page periodically.',
+        },
+        section7: {
+          title: '7. Contact Us',
+          intro: 'If you have questions about our use of cookies, please contact us at:',
+          email: 'Email:',
+          phone: 'Phone:',
+        },
       },
     },
   },
@@ -2833,7 +3173,7 @@ const translations = {
 
     // Submissions Page
     submissions: {
-      title: 'SOUMISSIONS',
+      title: 'BIDDINGS',
       bids: 'offres',
       myReviews: 'Mes Avis',
       filters: 'Filtres',
@@ -4597,18 +4937,32 @@ const translations = {
 
       // About Section
       about: {
-        founderQuote: '"Vous vous réveillez avec un sous-sol inondé. Le système CVAC d\'un locataire tombe en panne en plein hiver. Le toit fuit - encore. Vous avez 12 entrepreneurs qui vous ignorent, deux équipes qui surfacturent, et un tableur qui n\'a plus de sens depuis trois mois."',
-        founderAttribution: '- Chaque gestionnaire immobilier, à un moment donné.',
-        realProblemTitle: 'C\'est le vrai problème.',
-        realProblemText1: 'Pas trouver des entrepreneurs. Gérer le chaos entre les travaux affichés, les offres reçues, le suivi du travail et les paiements effectués.',
-        realProblemText2: 'J\'ai vu des gestionnaires immobiliers passer 60% de leur temps sur l\'administration. Des entrepreneurs perdent des contrats parce qu\'ils n\'ont pas pu répondre assez vite. Les résidents attendent des semaines pour des réparations qui devraient prendre des jours.',
-        realProblemText3: 'INTERVOS a été créé par quelqu\'un qui a vu chaque système défaillant de cette industrie - et qui a décidé de le corriger.',
-        stat1Value: '10K+',
-        stat1Label: 'Travaux gérés',
-        stat2Value: '98%',
-        stat2Label: 'Taux de satisfaction',
-        stat3Value: '40%',
-        stat3Label: 'Résolution plus rapide',
+        founderQuote: 'Après avoir géré plus de 50 immeubles, j\'ai réalisé que le système n\'était pas seulement lent — il était cassé.',
+        // Pain points
+        painPoint1: 'Des entrepreneurs qui ne se présentent pas',
+        painPoint2: 'Des coûts surprises qui rongent les budgets',
+        painPoint3: 'Des résidents qui appellent à 2h du matin pour des fuites',
+        painPoint4: 'Des factures perdues dans les chaînes de courriels',
+        // Story text
+        storyText1: 'Alors nous nous sommes demandé : et s\'il y avait un endroit où tout... fonctionnait simplement?',
+        storyText2: 'C\'est INTERVOS. Les gestionnaires affichent des travaux. Les entrepreneurs soumissionnent. Tout le monde voit ce qui se passe. L\'argent circule quand le travail est fait. Simple.',
+        // Stats
+        stat1Value: '1 000+',
+        stat1Label: 'Utilisateurs actifs',
+        stat2Value: '2,5M$+',
+        stat2Label: 'Projets complétés',
+        stat3Value: '24h',
+        stat3Label: 'Temps de réponse moyen',
+        // Dashboard preview
+        recentActivity: 'Activité récente',
+        live: 'En direct',
+        projectCompleted: 'Projet complété avec succès',
+        plumbingRepair: 'Réparation de plomberie - Bâtiment 24A',
+        hoursAgo: 'Il y a 2 heures',
+        fastestResponse: 'Temps de réponse le plus rapide',
+        mins: 'min',
+        fasterThanAverage: '↑ 40% plus rapide que la moyenne',
+        projectVolume: 'Volume de projets',
       },
 
       // Features Section
@@ -4687,6 +5041,23 @@ const translations = {
         availableJobs: 'Travaux disponibles près de vous',
         yourRequests: 'Vos demandes',
         fixedYesterday: 'Réparé hier',
+
+        // Example project names (Property Manager card)
+        exampleProject1: 'Plomberie - Unité 204',
+        exampleProject2: 'Réparation CVAC - Bâtiment A',
+        exampleProject3: 'Fuite au toit - Unité 312',
+
+        // Example job listings (Entrepreneur card)
+        exampleJob1Title: 'Rénovation de cuisine',
+        exampleJob1Meta: '8 500$ • Yonge & Eglinton • Publié il y a 2h',
+        exampleJob2Title: 'Réparation électrique urgente',
+        exampleJob2Meta: '1 200$ • Centre-ville • Publié il y a 4h',
+        exampleJob3Title: 'Réparation de plomberie de salle de bain',
+        exampleJob3Meta: '650$ • North York • Publié il y a 1j',
+
+        // Example resident requests (Resident card)
+        exampleRequest1: 'Robinet qui fuit',
+        exampleRequest2: 'Chauffage ne fonctionne pas',
         scheduledTomorrow: 'Prévu pour demain',
       },
 
@@ -4743,6 +5114,33 @@ const translations = {
         signUp: 'Inscrivez-vous',
         orContinueWith: 'Ou continuez avec',
         googleLogin: 'Continuer avec Google',
+        // Validation errors
+        emailRequired: 'Le courriel est requis',
+        emailInvalid: 'Veuillez entrer une adresse courriel valide',
+        passwordRequired: 'Le mot de passe est requis',
+        passwordMinLength: 'Le mot de passe doit contenir au moins 8 caractères',
+        passwordFormatError: 'Le mot de passe doit contenir au moins une lettre minuscule et un chiffre',
+        firstNameRequired: 'Le prénom est requis',
+        firstNameInvalid: 'Le prénom doit contenir uniquement des lettres (2-50 caractères)',
+        lastNameRequired: 'Le nom est requis',
+        lastNameInvalid: 'Le nom doit contenir uniquement des lettres (2-50 caractères)',
+        confirmPasswordRequired: 'Veuillez confirmer votre mot de passe',
+        passwordsDoNotMatch: 'Les mots de passe ne correspondent pas',
+        phoneInvalidChars: 'Le numéro de téléphone ne peut contenir que des chiffres, espaces, tirets et parenthèses',
+        phoneMinDigits: 'Le numéro de téléphone doit contenir au moins 10 chiffres',
+        // Error messages
+        verifyEmailFirst: 'Veuillez vérifier votre courriel avant de vous connecter.',
+        invalidCredentials: 'Courriel ou mot de passe invalide',
+        loginFailed: 'Échec de connexion. Veuillez vérifier votre connexion et réessayer.',
+        loginFailedRetry: 'Échec de connexion. Veuillez réessayer.',
+        googleDataMissing: 'Données d\'inscription Google manquantes. Veuillez réessayer.',
+        passwordRequiredLocal: 'Le mot de passe est requis pour l\'inscription locale',
+        checkInput: 'Veuillez vérifier vos informations et réessayer',
+        registrationFailed: 'Échec de l\'inscription',
+        registrationSuccessLoginFailed: 'Inscription réussie mais la connexion a échoué. Veuillez vous connecter manuellement.',
+        autoLoginFailed: 'Inscription réussie mais la connexion automatique a échoué. Veuillez vous connecter manuellement.',
+        registrationServerError: 'Échec de l\'inscription en raison d\'une erreur serveur.',
+        loadPropertiesFailed: 'Échec du chargement des propriétés. Veuillez réessayer.',
       },
 
       // Register Modal
@@ -4765,6 +5163,48 @@ const translations = {
         roleResidentDesc: 'Signaler des problèmes, suivre les réparations, communiquer avec la gestion',
         roleSupplier: 'Fournisseur',
         roleSupplierDesc: 'Connecter avec des entrepreneurs, vendre des matériaux de construction',
+
+        // Role headlines
+        rolePropertyManagerHeadline: 'Reprenez le contrôle',
+        roleEntrepreneurHeadline: 'Soyez payé plus vite, travaillez plus intelligemment',
+        roleResidentHeadline: 'Enfin savoir ce qui se passe dans votre immeuble',
+        roleSupplierHeadline: 'Approvisionnez les projets qui comptent',
+
+        // Role benefits - Property Manager
+        pmBenefit1: 'Visibilité complète : Chaque propriété, chaque travail, chaque entrepreneur — dans un seul tableau de bord',
+        pmBenefit2: 'Fini les suivis : Mises à jour automatisées et suivi de projet en temps réel',
+        pmBenefit3: 'Vous décidez : Révisez les soumissions, approuvez les travaux et contrôlez chaque décision',
+
+        // Role benefits - Entrepreneur
+        entrBenefit1: 'Pipeline de travail stable : Des travaux vérifiés livrés dans votre boîte de réception quotidiennement',
+        entrBenefit2: 'Paiements plus rapides : Facturation par étape avec protection de séquestre',
+        entrBenefit3: 'Gagnez sur la valeur : Mettez en valeur votre expertise, pas seulement votre prix',
+
+        // Role benefits - Resident
+        resBenefit1: 'Mises à jour en temps réel : Suivez les réparations affectant votre unité',
+        resBenefit2: 'Communication directe : Messagez les gestionnaires immobiliers instantanément',
+        resBenefit3: 'Demandez des réparations : Soumettez des billets de maintenance en quelques secondes',
+
+        // Role benefits - Supplier
+        supBenefit1: 'Accès direct : Connectez-vous avec des projets actifs nécessitant des matériaux',
+        supBenefit2: 'Élargissez votre réseau : Rejoignez les gestionnaires immobiliers et entrepreneurs',
+        supBenefit3: 'Commandes simplifiées : Du devis à la livraison sur une seule plateforme',
+
+        // Step headers
+        createAccountTitle: 'Créez votre compte',
+        joinAsPropertyManager: 'Inscrivez-vous en tant que Gestionnaire immobilier',
+        joinAsEntrepreneur: 'Inscrivez-vous en tant qu\'Entrepreneur',
+        joinAsResident: 'Inscrivez-vous en tant que Résident',
+        joinAsSupplier: 'Inscrivez-vous en tant que Fournisseur',
+        completeProfileTitle: 'Complétez votre profil',
+        profileSubtitlePM: 'Quelques détails supplémentaires pour commencer',
+        profileSubtitleEntr: 'Parlez-nous de votre entreprise',
+        profileSubtitleRes: 'Aidez-nous à vous connecter à votre immeuble',
+        profileSubtitleSup: 'Partagez les informations de votre entreprise',
+
+        // UI elements
+        continue: 'Continuer',
+        orDivider: 'OU',
 
         // Form labels
         firstName: 'Prénom',
@@ -4842,15 +5282,29 @@ const translations = {
         orContinueWith: 'Ou continuez avec',
         googleSignUp: 'S\'inscrire avec Google',
 
+        // Terms and Privacy
+        agreeToTerms: 'J\'accepte les',
+        and: 'et la',
+
+        // Registration submit button
+        startProject: 'Démarrez votre premier projet',
+        settingUp: 'Configuration de votre compte...',
+
         // Success
         successTitle: 'Vérifiez votre courriel',
+        registrationSuccessTitle: 'Inscription réussie!',
+        verifyEmailSubtitle: 'Veuillez vérifier votre courriel pour continuer',
+        checkInbox: 'Vérifiez votre boîte de réception',
         successMessage: 'Nous avons envoyé un lien de vérification à',
         successInstructions: 'Cliquez sur le lien dans le courriel pour vérifier votre compte et commencer à utiliser INTERVOS.',
         checkSpam: 'Vous n\'avez pas reçu le courriel? Vérifiez votre dossier spam ou',
+        didntReceiveEmail: 'Vous n\'avez pas reçu le courriel?',
         resendEmail: 'renvoyer le courriel de vérification',
         resending: 'Renvoi en cours...',
+        sending: 'Envoi en cours...',
         resendSuccess: 'Courriel de vérification renvoyé!',
         backToLogin: 'Retour à la connexion',
+        goToLogin: 'Aller à la connexion',
       },
 
       // Verification messages
@@ -4860,6 +5314,232 @@ const translations = {
         missingToken: 'Le lien de vérification est invalide (jeton manquant).',
         invalidToken: 'Le lien de vérification est invalide ou expiré.',
         serverError: 'Erreur du serveur lors de la vérification. Veuillez réessayer.',
+      },
+    },
+
+    // Legal Page
+    legalPage: {
+      // Navigation
+      backToHome: 'Retour à l\'accueil',
+
+      // Header
+      title: 'Informations légales',
+      subtitle: 'Tout ce que vous devez savoir sur l\'utilisation d\'INTERVOS',
+
+      // Tabs
+      tabs: {
+        privacy: 'Politique de confidentialité',
+        terms: 'Conditions d\'utilisation',
+        cookies: 'Politique des cookies',
+      },
+
+      // Footer
+      footer: {
+        copyright: '© 2025 INTERVOS. Tous droits réservés.',
+      },
+
+      // Privacy Policy
+      privacy: {
+        title: 'Politique de confidentialité',
+        lastUpdated: 'Dernière mise à jour : janvier 2025',
+
+        section1: {
+          title: '1. Introduction',
+          content: 'Bienvenue sur INTERVOS. Nous nous engageons à protéger vos informations personnelles et votre droit à la vie privée. Cette politique de confidentialité explique comment nous collectons, utilisons, divulguons et protégeons vos informations lorsque vous utilisez notre plateforme.',
+        },
+        section2: {
+          title: '2. Informations que nous collectons',
+          intro: 'Nous collectons les informations que vous nous fournissez directement, notamment :',
+          item1: 'Informations de compte : Nom, adresse courriel, numéro de téléphone et mot de passe lors de votre inscription',
+          item2: 'Informations de profil : Nom de l\'entreprise, numéros de licence, adresse professionnelle et détails professionnels',
+          item3: 'Informations sur les propriétés : Adresses des propriétés, détails des unités et documentation connexe',
+          item4: 'Données de transaction : Offres, publications d\'emplois, paiements et informations contractuelles',
+          item5: 'Communications : Messages échangés via notre plateforme',
+        },
+        section3: {
+          title: '3. Comment nous utilisons vos informations',
+          intro: 'Nous utilisons les informations que nous collectons pour :',
+          item1: 'Fournir, maintenir et améliorer nos services',
+          item2: 'Traiter les transactions et envoyer les informations connexes',
+          item3: 'Connecter les gestionnaires immobiliers avec des entrepreneurs qualifiés',
+          item4: 'Envoyer des notifications sur les emplois, les offres et les mises à jour de la plateforme',
+          item5: 'Répondre à vos commentaires, questions et demandes de service client',
+          item6: 'Surveiller et analyser les tendances et les modèles d\'utilisation',
+          item7: 'Détecter, enquêter et prévenir les activités frauduleuses',
+        },
+        section4: {
+          title: '4. Partage des informations',
+          intro: 'Nous pouvons partager vos informations dans les situations suivantes :',
+          item1: 'Avec d\'autres utilisateurs : Les informations de profil sont visibles pour faciliter les connexions commerciales',
+          item2: 'Fournisseurs de services : Vendeurs tiers qui aident à exploiter notre plateforme',
+          item3: 'Exigences légales : Lorsque la loi l\'exige ou pour protéger nos droits',
+          item4: 'Transferts d\'entreprise : En lien avec toute fusion ou acquisition',
+        },
+        section5: {
+          title: '5. Sécurité des données',
+          content: 'Nous mettons en œuvre des mesures de sécurité techniques et organisationnelles appropriées pour protéger vos informations personnelles. Cependant, aucune méthode de transmission sur Internet n\'est sécurisée à 100 %, et nous ne pouvons pas garantir une sécurité absolue.',
+        },
+        section6: {
+          title: '6. Vos droits',
+          intro: 'Selon votre emplacement, vous pouvez avoir le droit de :',
+          item1: 'Accéder aux informations personnelles que nous détenons sur vous',
+          item2: 'Demander la correction de données inexactes',
+          item3: 'Demander la suppression de vos informations personnelles',
+          item4: 'Vous opposer à certaines activités de traitement ou les restreindre',
+          item5: 'Portabilité des données',
+        },
+        section7: {
+          title: '7. Nous contacter',
+          intro: 'Si vous avez des questions concernant cette politique de confidentialité, veuillez nous contacter à :',
+          email: 'Courriel :',
+          phone: 'Téléphone :',
+        },
+      },
+
+      // Terms of Service
+      terms: {
+        title: 'Conditions d\'utilisation',
+        lastUpdated: 'Dernière mise à jour : janvier 2025',
+
+        section1: {
+          title: '1. Acceptation des conditions',
+          content: 'En accédant ou en utilisant INTERVOS, vous acceptez d\'être lié par ces conditions d\'utilisation. Si vous n\'acceptez pas ces conditions, veuillez ne pas utiliser notre plateforme.',
+        },
+        section2: {
+          title: '2. Description du service',
+          content: 'INTERVOS est une plateforme de gestion de construction qui met en relation les gestionnaires immobiliers avec des entrepreneurs. Nos services comprennent la publication d\'emplois, la gestion des offres, la messagerie et le traitement des paiements.',
+        },
+        section3: {
+          title: '3. Comptes utilisateurs',
+          intro: 'Pour utiliser nos services, vous devez :',
+          item1: 'Avoir au moins 18 ans',
+          item2: 'Fournir des informations d\'inscription exactes et complètes',
+          item3: 'Maintenir la sécurité de vos identifiants de compte',
+          item4: 'Nous informer immédiatement de tout accès non autorisé',
+          item5: 'Être responsable de toutes les activités sous votre compte',
+        },
+        section4: {
+          title: '4. Responsabilités des utilisateurs',
+          intro: 'En tant qu\'utilisateur d\'INTERVOS, vous acceptez de :',
+          item1: 'Fournir des informations véridiques sur votre entreprise et vos qualifications',
+          item2: 'Maintenir des licences et assurances valides comme l\'exige la loi',
+          item3: 'Communiquer professionnellement avec les autres utilisateurs',
+          item4: 'Honorer les engagements pris via la plateforme',
+          item5: 'Se conformer à toutes les lois et réglementations applicables',
+        },
+        section5: {
+          title: '5. Activités interdites',
+          intro: 'Vous ne pouvez pas utiliser INTERVOS pour :',
+          item1: 'Violer des lois ou réglementations',
+          item2: 'Publier du contenu faux, trompeur ou frauduleux',
+          item3: 'Harceler, abuser ou nuire à d\'autres utilisateurs',
+          item4: 'Contourner notre structure de frais ou système de paiement',
+          item5: 'Extraire, copier ou utiliser abusivement les données de la plateforme',
+          item6: 'Interférer avec le bon fonctionnement de la plateforme',
+        },
+        section6: {
+          title: '6. Paiements et frais',
+          content: 'INTERVOS peut facturer des frais pour certains services. Tous les frais sont non remboursables sauf indication contraire. Vous acceptez de payer tous les frais applicables et nous autorisez à débiter votre mode de paiement enregistré.',
+        },
+        section7: {
+          title: '7. Propriété intellectuelle',
+          content: 'Tout le contenu, les fonctionnalités et les fonctions d\'INTERVOS nous appartiennent et sont protégés par le droit d\'auteur, les marques de commerce et autres lois sur la propriété intellectuelle. Vous ne pouvez pas reproduire, distribuer ou créer des œuvres dérivées sans notre permission.',
+        },
+        section8: {
+          title: '8. Exclusion de garanties',
+          content: 'INTERVOS est fourni « tel quel » sans garantie d\'aucune sorte. Nous ne garantissons pas la qualité du travail effectué par les entrepreneurs ou l\'exactitude des informations fournies par les utilisateurs.',
+        },
+        section9: {
+          title: '9. Limitation de responsabilité',
+          content: 'Dans toute la mesure permise par la loi, INTERVOS ne sera pas responsable des dommages indirects, accessoires, spéciaux ou consécutifs découlant de votre utilisation de la plateforme.',
+        },
+        section10: {
+          title: '10. Résiliation',
+          content: 'Nous nous réservons le droit de suspendre ou de résilier votre compte à tout moment pour violation de ces conditions ou pour toute autre raison à notre discrétion.',
+        },
+        section11: {
+          title: '11. Modifications des conditions',
+          content: 'Nous pouvons mettre à jour ces conditions d\'utilisation de temps à autre. Nous vous informerons de tout changement important en publiant les nouvelles conditions sur cette page et en mettant à jour la date de « Dernière mise à jour ».',
+        },
+        section12: {
+          title: '12. Nous contacter',
+          intro: 'Pour toute question concernant ces conditions d\'utilisation, veuillez nous contacter à :',
+          email: 'Courriel :',
+          phone: 'Téléphone :',
+        },
+      },
+
+      // Cookie Policy
+      cookies: {
+        title: 'Politique des cookies',
+        lastUpdated: 'Dernière mise à jour : janvier 2025',
+
+        section1: {
+          title: '1. Que sont les cookies',
+          content: 'Les cookies sont de petits fichiers texte qui sont stockés sur votre appareil lorsque vous visitez un site web. Ils aident les sites web à mémoriser vos préférences et à améliorer votre expérience de navigation.',
+        },
+        section2: {
+          title: '2. Comment nous utilisons les cookies',
+          intro: 'INTERVOS utilise des cookies aux fins suivantes :',
+          item1: 'Cookies essentiels : Nécessaires au bon fonctionnement de la plateforme, y compris l\'authentification et la sécurité',
+          item2: 'Cookies fonctionnels : Mémorisent vos préférences et paramètres',
+          item3: 'Cookies analytiques : Nous aident à comprendre comment les visiteurs interagissent avec notre plateforme',
+          item4: 'Cookies de performance : Surveillent et améliorent les performances de la plateforme',
+        },
+        section3: {
+          title: '3. Types de cookies que nous utilisons',
+          tableHeaders: {
+            type: 'Type de cookie',
+            purpose: 'Objectif',
+            duration: 'Durée',
+          },
+          sessionCookies: {
+            type: 'Cookies de session',
+            purpose: 'Maintenir votre session de connexion',
+            duration: 'Jusqu\'à la fermeture du navigateur',
+          },
+          authentication: {
+            type: 'Authentification',
+            purpose: 'Vous garder connecté en toute sécurité',
+            duration: '30 jours',
+          },
+          preferences: {
+            type: 'Préférences',
+            purpose: 'Mémoriser vos paramètres',
+            duration: '1 an',
+          },
+          analytics: {
+            type: 'Analytiques',
+            purpose: 'Suivre les modèles d\'utilisation',
+            duration: '2 ans',
+          },
+        },
+        section4: {
+          title: '4. Cookies tiers',
+          intro: 'Nous pouvons utiliser des services tiers qui définissent leurs propres cookies, notamment :',
+          item1: 'Google Analytics : Pour l\'analyse du site web et la surveillance des performances',
+          item2: 'Stripe : Pour le traitement sécurisé des paiements',
+          item3: 'Intercom/Outils de support : Pour la fonctionnalité de support client',
+        },
+        section5: {
+          title: '5. Gestion des cookies',
+          intro: 'Vous pouvez contrôler et gérer les cookies via les paramètres de votre navigateur. La plupart des navigateurs vous permettent de :',
+          item1: 'Voir quels cookies sont stockés sur votre appareil',
+          item2: 'Supprimer tous les cookies ou des cookies spécifiques',
+          item3: 'Bloquer les cookies de sites web spécifiques ou de tous les sites',
+          item4: 'Définir des préférences pour certains types de cookies',
+          note: 'Veuillez noter que la désactivation de certains cookies peut affecter la fonctionnalité d\'INTERVOS et votre capacité à utiliser certaines fonctionnalités.',
+        },
+        section6: {
+          title: '6. Mises à jour de cette politique',
+          content: 'Nous pouvons mettre à jour cette politique des cookies de temps à autre pour refléter les changements dans nos pratiques ou pour des raisons légales. Nous vous encourageons à consulter cette page périodiquement.',
+        },
+        section7: {
+          title: '7. Nous contacter',
+          intro: 'Si vous avez des questions sur notre utilisation des cookies, veuillez nous contacter à :',
+          email: 'Courriel :',
+          phone: 'Téléphone :',
+        },
       },
     },
   },

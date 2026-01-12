@@ -195,7 +195,8 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
   const downloadTemplate = async () => {
     try {
       const userProfile = JSON.parse(localStorage.getItem('userProfile'));
-      const response = await fetch(`${API_BASE_URL}/api/inspections/template`, {
+      // Download French template by default (Plan de maintien format)
+      const response = await fetch(`${API_BASE_URL}/api/inspections/template?lang=fr`, {
         headers: {
           'Authorization': `Bearer ${userProfile.token}`
         }
@@ -207,7 +208,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'inspection-template.xlsx';
+      a.download = 'plan-de-maintien-template.xlsx';
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);

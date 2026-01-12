@@ -306,7 +306,8 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
 
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-      const response = await fetch(`${API_BASE_URL}/api/inspections/template`, {
+      // Download French template by default (Plan de maintien format)
+      const response = await fetch(`${API_BASE_URL}/api/inspections/template?lang=fr`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -322,7 +323,7 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'inspection-template.xlsx';
+      link.download = 'plan-de-maintien-template.xlsx';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

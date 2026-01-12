@@ -325,6 +325,17 @@ function SupplierHomepage() {
     navigate('/messages/supplier');
   };
 
+  // Helper function to translate status
+  const getStatusLabel = (status) => {
+    const statusMap = {
+      'pending': t('supplierHomepage.pending'),
+      'in-progress': t('supplierHomepage.inProgress'),
+      'completed': t('supplierHomepage.completed'),
+      'cancelled': t('supplierHomepage.cancelled')
+    };
+    return statusMap[status] || status;
+  };
+
   const filteredRequests = recentRequests.filter(request => {
     const matchesSearch = request.entrepreneur_company_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           request.request_details?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -477,7 +488,7 @@ function SupplierHomepage() {
                           {request.entrepreneur_company_name}
                         </div>
                         <span className={`supplier-home-request-status ${request.status}`}>
-                          {request.status}
+                          {getStatusLabel(request.status)}
                         </span>
                       </div>
                       <div className="supplier-home-request-details">
@@ -641,7 +652,7 @@ function SupplierHomepage() {
                   <div className="supplier-home-modal-field">
                     <label>{t('supplierHomepage.status')}</label>
                     <span className={`supplier-home-request-status ${selectedRequest.status}`}>
-                      {selectedRequest.status}
+                      {getStatusLabel(selectedRequest.status)}
                     </span>
                   </div>
                   <div className="supplier-home-modal-field">

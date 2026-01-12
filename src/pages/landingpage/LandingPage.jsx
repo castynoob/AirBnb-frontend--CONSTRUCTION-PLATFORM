@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import "../../styles/landinpage.css"
 import logo from '../../assets/logo.png'
+import logoLight from '../../assets/logo-light.png'
 import mockupImage from '../../assets/images/mockup.png'
 import phoneImage from '../../assets/images/phone.png'
 import { useNavigate, useSearchParams } from "react-router-dom"
@@ -204,12 +205,12 @@ export default function LandingPage() {
   const validateLoginForm = () => {
     const newErrors = {}
     if (!loginFormData.email) {
-      newErrors.email = "Email is required"
+      newErrors.email = t('landingPage.login.emailRequired')
     } else if (!/\S+@\S+\.\S+/.test(loginFormData.email)) {
-      newErrors.email = "Email is invalid"
+      newErrors.email = t('landingPage.login.emailInvalid')
     }
     if (!loginFormData.password) {
-      newErrors.password = "Password is required"
+      newErrors.password = t('landingPage.login.passwordRequired')
     }
     setLoginErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -237,14 +238,14 @@ export default function LandingPage() {
       if (!response.ok) {
         if (response.status === 403) {
           setLoginErrors({
-            submit: data.message || "Please verify your email before logging in.",
+            submit: data.message || t('landingPage.login.verifyEmailFirst'),
             isEmailNotVerified: true,
             email: loginFormData.email
           })
           return
         }
         setLoginErrors({
-          submit: data.message || "Invalid email or password",
+          submit: data.message || t('landingPage.login.invalidCredentials'),
           isEmailNotVerified: false
         })
         return
@@ -254,7 +255,7 @@ export default function LandingPage() {
         // Handle email not verified error (403)
         if (response.status === 403) {
           setLoginErrors({
-            submit: data.message || "Please verify your email before logging in.",
+            submit: data.message || t('landingPage.login.verifyEmailFirst'),
             isEmailNotVerified: true, // Flag to show resend link
             email: loginFormData.email // Store email for resend
           })
@@ -263,7 +264,7 @@ export default function LandingPage() {
 
         // Handle other errors (401 - invalid credentials, etc.)
         setLoginErrors({
-          submit: data.message || "Invalid email or password",
+          submit: data.message || t('landingPage.login.invalidCredentials'),
           isEmailNotVerified: false
         })
         return
@@ -332,7 +333,7 @@ export default function LandingPage() {
     } catch (error) {
       console.error("Login error:", error)
       setLoginErrors({
-        submit: "Login failed. Please check your connection and try again.",
+        submit: t('landingPage.login.loginFailed'),
         isEmailNotVerified: false
       })
     } finally {
@@ -409,8 +410,8 @@ export default function LandingPage() {
       navigate(`/homepage/${userProfile.role}`)
     } catch (error) {
       console.error("Google Login error:", error);
-      setLoginErrors({ 
-        submit: error.message || "Login failed. Please try again." 
+      setLoginErrors({
+        submit: error.message || t('landingPage.login.loginFailedRetry')
       });
     } finally {
       setIsLoggingIn(false);
@@ -459,17 +460,17 @@ export default function LandingPage() {
             error = validatePasswordConfirmation(registerFormData.password, value);
             break;
         case "first_name":
-            error = validateName(value, "First name");
+            error = validateName(value, t('landingPage.register.firstName'));
             break;
         case "last_name":
-            error = validateName(value, "Last name");
+            error = validateName(value, t('landingPage.register.lastName'));
             break;
         case "phone":
             // Validate phone number (digits, spaces, dashes, parentheses only)
             if (value && !/^[\d\s\-()]+$/.test(value)) {
-                error = "Phone number can only contain digits, spaces, dashes, and parentheses";
+                error = t('landingPage.login.phoneInvalidChars');
             } else if (value && value.replace(/[\s\-()]/g, '').length < 10) {
-                error = "Phone number must be at least 10 digits";
+                error = t('landingPage.login.phoneMinDigits');
             }
             break;
         default:
@@ -566,7 +567,7 @@ export default function LandingPage() {
             // Ensure provider_id is included
             if (!payload.provider_id) {
                 setRegisterErrors({
-                    submit: "Google registration data missing. Please try again."
+                    submit: t('landingPage.login.googleDataMissing')
                 });
                 setIsRegistering(false);
                 return;
@@ -578,8 +579,8 @@ export default function LandingPage() {
         } else {
             // For local registration, ensure password exists
             if (!payload.password) {
-                setRegisterErrors({ 
-                    submit: "Password is required for local registration" 
+                setRegisterErrors({
+                    submit: t('landingPage.login.passwordRequiredLocal')
                 });
                 setIsRegistering(false);
                 return;
@@ -620,11 +621,11 @@ export default function LandingPage() {
             console.error("Backend response error:", data);
             if (data.errors && typeof data.errors === 'object') {
                 setRegisterErrors({
-                    submit: data.message || "Please check your input and try again",
+                    submit: data.message || t('landingPage.login.checkInput'),
                     ...data.errors
                 });
             } else {
-                setRegisterErrors({ submit: data.message || "Registration failed" });
+                setRegisterErrors({ submit: data.message || t('landingPage.login.registrationFailed') });
             }
             return;
         }
@@ -646,7 +647,7 @@ export default function LandingPage() {
 
                 if (!loginResponse.ok) {
                     console.error("Login after registration failed:", loginData);
-                    setRegisterErrors({ submit: "Registration successful but login failed. Please try logging in manually." });
+                    setRegisterErrors({ submit: t('landingPage.login.registrationSuccessLoginFailed') });
                     return;
                 }
 
@@ -688,7 +689,7 @@ export default function LandingPage() {
                 navigate(`/homepage/${userProfile.role}`);
             } catch (loginError) {
                 console.error("Error logging in after registration:", loginError);
-                setRegisterErrors({ submit: "Registration successful but automatic login failed. Please try logging in manually." });
+                setRegisterErrors({ submit: t('landingPage.login.autoLoginFailed') });
             }
         } else {
             // Local users need email verification
@@ -697,7 +698,7 @@ export default function LandingPage() {
         }
     } catch (error) {
         console.error("Registration error:", error);
-        setRegisterErrors({ submit: error.message || "Registration failed due to a server error." });
+        setRegisterErrors({ submit: error.message || t('landingPage.login.registrationServerError') });
     } finally {
         setIsRegistering(false);
     }
@@ -743,40 +744,40 @@ export default function LandingPage() {
     // Validate first name
     const nameRegex = /^[A-Za-zÀ-ÿ\s'\-]{2,50}$/;
     if (!registerFormData.first_name) {
-      errors.first_name = "First name is required";
+      errors.first_name = t('landingPage.login.firstNameRequired');
     } else if (!nameRegex.test(registerFormData.first_name)) {
-      errors.first_name = "First name must contain only letters (2-50 characters)";
+      errors.first_name = t('landingPage.login.firstNameInvalid');
     }
 
     // Validate last name (only required for local registration, optional for Google)
     if (registerFormData.provider !== 'google' && !registerFormData.last_name) {
-      errors.last_name = "Last name is required";
+      errors.last_name = t('landingPage.login.lastNameRequired');
     } else if (registerFormData.last_name && !nameRegex.test(registerFormData.last_name)) {
-      errors.last_name = "Last name must contain only letters (2-50 characters)";
+      errors.last_name = t('landingPage.login.lastNameInvalid');
     }
 
     // Validate email
     if (!registerFormData.email) {
-      errors.email = "Email is required";
+      errors.email = t('landingPage.login.emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(registerFormData.email)) {
-      errors.email = "Please enter a valid email address";
+      errors.email = t('landingPage.login.emailInvalid');
     }
 
     // Validate password (only for local registration, not needed for Google)
     if (registerFormData.provider !== 'google') {
       if (!registerFormData.password) {
-        errors.password = "Password is required";
+        errors.password = t('landingPage.login.passwordRequired');
       } else if (registerFormData.password.length < 8) {
-        errors.password = "Password must be at least 8 characters";
+        errors.password = t('landingPage.login.passwordMinLength');
       } else if (!/(?=.*[a-z])(?=.*\d)/.test(registerFormData.password)) {
-        errors.password = "Password must contain at least one lowercase letter and one number";
+        errors.password = t('landingPage.login.passwordFormatError');
       }
 
       // Validate confirm password
       if (!registerFormData.confirm_password) {
-        errors.confirm_password = "Please confirm your password";
+        errors.confirm_password = t('landingPage.login.confirmPasswordRequired');
       } else if (registerFormData.password !== registerFormData.confirm_password) {
-        errors.confirm_password = "Passwords do not match";
+        errors.confirm_password = t('landingPage.login.passwordsDoNotMatch');
       }
     }
 
@@ -815,7 +816,7 @@ export default function LandingPage() {
       console.error("Error fetching properties:", error)
       setRegisterErrors(prev => ({
         ...prev,
-        submit: "Failed to load properties. Please try again."
+        submit: t('landingPage.login.loadPropertiesFailed')
       }))
     } finally {
       setIsLoadingProperties(false)
@@ -940,12 +941,12 @@ export default function LandingPage() {
           <polyline points="9 22 9 12 15 12 15 22" />
         </svg>
       ),
-      headline: "Take Back Control",
+      headline: t('landingPage.register.rolePropertyManagerHeadline'),
       description: t('landingPage.register.rolePropertyManagerDesc'),
       benefits: [
-        "Full visibility: Every property, every job, every contractor — in one dashboard",
-        "No more chasing: Automated updates and real-time project tracking",
-        "You decide: Review bids, approve work, and control every decision"
+        t('landingPage.register.pmBenefit1'),
+        t('landingPage.register.pmBenefit2'),
+        t('landingPage.register.pmBenefit3')
       ],
       color: "primary",
       gradient: "linear-gradient(135deg, #0f223d 0%, #1a3a5c 100%)"
@@ -958,12 +959,12 @@ export default function LandingPage() {
           <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
         </svg>
       ),
-      headline: "Get Paid Faster, Work Smarter",
+      headline: t('landingPage.register.roleEntrepreneurHeadline'),
       description: t('landingPage.register.roleEntrepreneurDesc'),
       benefits: [
-        "Steady work pipeline: Verified jobs delivered to your inbox daily",
-        "Faster payments: Milestone-based invoicing with escrow protection",
-        "Win on value: Showcase your expertise, not just your bid price"
+        t('landingPage.register.entrBenefit1'),
+        t('landingPage.register.entrBenefit2'),
+        t('landingPage.register.entrBenefit3')
       ],
       color: "secondary",
       gradient: "linear-gradient(135deg, #00a5a9 0%, #008b8f 100%)"
@@ -977,12 +978,12 @@ export default function LandingPage() {
           <circle cx="12" cy="7" r="4" />
         </svg>
       ),
-      headline: "Finally Know What's Happening in Your Building",
+      headline: t('landingPage.register.roleResidentHeadline'),
       description: t('landingPage.register.roleResidentDesc'),
       benefits: [
-        "Real-time updates: Track repairs affecting your unit",
-        "Direct communication: Message property managers instantly",
-        "Request repairs: Submit maintenance tickets in seconds"
+        t('landingPage.register.resBenefit1'),
+        t('landingPage.register.resBenefit2'),
+        t('landingPage.register.resBenefit3')
       ],
       color: "success",
       gradient: "linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)"
@@ -999,12 +1000,12 @@ export default function LandingPage() {
           <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" />
         </svg>
       ),
-      headline: "Supply the Projects That Matter",
+      headline: t('landingPage.register.roleSupplierHeadline'),
       description: t('landingPage.register.roleSupplierDesc'),
       benefits: [
-        "Direct access: Connect with active projects needing materials",
-        "Expand your network: Reach property managers and contractors",
-        "Streamlined ordering: From quote to delivery in one platform"
+        t('landingPage.register.supBenefit1'),
+        t('landingPage.register.supBenefit2'),
+        t('landingPage.register.supBenefit3')
       ],
       color: "info",
       gradient: "linear-gradient(135deg, #3498db 0%, #2980b9 100%)"
@@ -1280,34 +1281,33 @@ export default function LandingPage() {
             <div className="lp-about-text">
               <div className="lp-founder-note">
                 <div className="lp-quote-mark">"</div>
-                <h2>After managing 50+ buildings, I realized the system wasn't just slow—it was broken.</h2>
+                <h2>{t('landingPage.about.founderQuote')}</h2>
               </div>
 
               <div className="lp-pain-points">
                 <div className="lp-pain-item">
                   <span className="lp-pain-icon">⚠</span>
-                  <span>Entrepreneurs not showing up</span>
+                  <span>{t('landingPage.about.painPoint1')}</span>
                 </div>
                 <div className="lp-pain-item">
                   <span className="lp-pain-icon">⚠</span>
-                  <span>Surprise costs eating into budgets</span>
+                  <span>{t('landingPage.about.painPoint2')}</span>
                 </div>
                 <div className="lp-pain-item">
                   <span className="lp-pain-icon">⚠</span>
-                  <span>Residents calling at 2am about leaks</span>
+                  <span>{t('landingPage.about.painPoint3')}</span>
                 </div>
                 <div className="lp-pain-item">
                   <span className="lp-pain-icon">⚠</span>
-                  <span>Invoices lost in email chains</span>
+                  <span>{t('landingPage.about.painPoint4')}</span>
                 </div>
               </div>
 
               <p className="lp-story-text">
-                So we asked ourselves: what if there was one place where everything just... worked?
+                {t('landingPage.about.storyText1')}
               </p>
               <p className="lp-story-text">
-                That's INTERVOS. Property managers post jobs. Entrepreneurs bid. Everyone sees what's happening.
-                Money moves when work gets done. Simple.
+                {t('landingPage.about.storyText2')}
               </p>
 
               <div className="lp-about-stats">
@@ -1320,8 +1320,8 @@ export default function LandingPage() {
                       <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
                   </div>
-                  <div className="lp-stat-number">1,000+</div>
-                  <div className="lp-stat-label">Active users</div>
+                  <div className="lp-stat-number">{t('landingPage.about.stat1Value')}</div>
+                  <div className="lp-stat-label">{t('landingPage.about.stat1Label')}</div>
                 </div>
                 <div className="lp-stat-item">
                   <div className="lp-stat-icon">
@@ -1329,8 +1329,8 @@ export default function LandingPage() {
                       <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                     </svg>
                   </div>
-                  <div className="lp-stat-number">$2.5M+</div>
-                  <div className="lp-stat-label">Projects completed</div>
+                  <div className="lp-stat-number">{t('landingPage.about.stat2Value')}</div>
+                  <div className="lp-stat-label">{t('landingPage.about.stat2Label')}</div>
                 </div>
                 <div className="lp-stat-item">
                   <div className="lp-stat-icon">
@@ -1339,18 +1339,18 @@ export default function LandingPage() {
                       <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
                   </div>
-                  <div className="lp-stat-number">24hrs</div>
-                  <div className="lp-stat-label">Avg. response time</div>
+                  <div className="lp-stat-number">{t('landingPage.about.stat3Value')}</div>
+                  <div className="lp-stat-label">{t('landingPage.about.stat3Label')}</div>
                 </div>
               </div>
             </div>
             <div className="lp-about-visual">
               <div className="lp-success-dashboard">
                 <div className="lp-dashboard-header">
-                  <div className="lp-dashboard-title">Recent Activity</div>
+                  <div className="lp-dashboard-title">{t('landingPage.about.recentActivity')}</div>
                   <div className="lp-dashboard-status">
                     <span className="lp-status-dot"></span>
-                    Live
+                    {t('landingPage.about.live')}
                   </div>
                 </div>
                 <div className="lp-dashboard-body">
@@ -1361,18 +1361,18 @@ export default function LandingPage() {
                       </svg>
                     </div>
                     <div className="lp-success-content">
-                      <div className="lp-success-title">Project Successfully Completed</div>
-                      <div className="lp-success-detail">Plumbing repair - Building 24A</div>
-                      <div className="lp-success-time">2 hours ago</div>
+                      <div className="lp-success-title">{t('landingPage.about.projectCompleted')}</div>
+                      <div className="lp-success-detail">{t('landingPage.about.plumbingRepair')}</div>
+                      <div className="lp-success-time">{t('landingPage.about.hoursAgo')}</div>
                     </div>
                   </div>
                   <div className="lp-metric-card">
-                    <div className="lp-metric-label">Fastest Response Time</div>
-                    <div className="lp-metric-value">12 mins</div>
-                    <div className="lp-metric-trend">↑ 40% faster than average</div>
+                    <div className="lp-metric-label">{t('landingPage.about.fastestResponse')}</div>
+                    <div className="lp-metric-value">12 {t('landingPage.about.mins')}</div>
+                    <div className="lp-metric-trend">{t('landingPage.about.fasterThanAverage')}</div>
                   </div>
                   <div className="lp-activity-graph">
-                    <div className="lp-graph-label">Project Volume</div>
+                    <div className="lp-graph-label">{t('landingPage.about.projectVolume')}</div>
                     <div className="lp-graph-container">
                       <div className="lp-graph-line">
                         <svg viewBox="0 0 100 70" preserveAspectRatio="none">
@@ -1461,15 +1461,15 @@ export default function LandingPage() {
                 <div className="lp-card-tag">{t('landingPage.roles.activeProjects')}</div>
                 <div className="lp-project-list">
                   <div className="lp-project-item">
-                    <div className="lp-project-name">Plumbing - Unit 204</div>
+                    <div className="lp-project-name">{t('landingPage.roles.exampleProject1')}</div>
                     <div className="lp-project-status in-progress">{t('landingPage.roles.inProgress')}</div>
                   </div>
                   <div className="lp-project-item">
-                    <div className="lp-project-name">HVAC Repair - Building A</div>
+                    <div className="lp-project-name">{t('landingPage.roles.exampleProject2')}</div>
                     <div className="lp-project-status completed">{t('landingPage.roles.completed')}</div>
                   </div>
                   <div className="lp-project-item">
-                    <div className="lp-project-name">Roof Leak - Unit 312</div>
+                    <div className="lp-project-name">{t('landingPage.roles.exampleProject3')}</div>
                     <div className="lp-project-status bidding">{t('landingPage.roles.receivingBids')} (3)</div>
                   </div>
                 </div>
@@ -1486,16 +1486,16 @@ export default function LandingPage() {
                 <div className="lp-card-tag">{t('landingPage.roles.availableJobs')}</div>
                 <div className="lp-job-list">
                   <div className="lp-job-item">
-                    <div className="lp-job-title">Kitchen Renovation</div>
-                    <div className="lp-job-meta">$8,500 • Yonge & Eglinton • Posted 2h ago</div>
+                    <div className="lp-job-title">{t('landingPage.roles.exampleJob1Title')}</div>
+                    <div className="lp-job-meta">{t('landingPage.roles.exampleJob1Meta')}</div>
                   </div>
                   <div className="lp-job-item">
-                    <div className="lp-job-title">Emergency Electrical Repair</div>
-                    <div className="lp-job-meta">$1,200 • Downtown • Posted 4h ago</div>
+                    <div className="lp-job-title">{t('landingPage.roles.exampleJob2Title')}</div>
+                    <div className="lp-job-meta">{t('landingPage.roles.exampleJob2Meta')}</div>
                   </div>
                   <div className="lp-job-item">
-                    <div className="lp-job-title">Bathroom Plumbing Fix</div>
-                    <div className="lp-job-meta">$650 • North York • Posted 1d ago</div>
+                    <div className="lp-job-title">{t('landingPage.roles.exampleJob3Title')}</div>
+                    <div className="lp-job-meta">{t('landingPage.roles.exampleJob3Meta')}</div>
                   </div>
                 </div>
               </div>
@@ -1565,11 +1565,11 @@ export default function LandingPage() {
                 <div className="lp-card-tag">{t('landingPage.roles.yourRequests')}</div>
                 <div className="lp-request-list">
                   <div className="lp-request-item">
-                    <div className="lp-request-title">Leaky faucet</div>
+                    <div className="lp-request-title">{t('landingPage.roles.exampleRequest1')}</div>
                     <div className="lp-request-status fixed">{t('landingPage.roles.fixedYesterday')}</div>
                   </div>
                   <div className="lp-request-item">
-                    <div className="lp-request-title">Heating not working</div>
+                    <div className="lp-request-title">{t('landingPage.roles.exampleRequest2')}</div>
                     <div className="lp-request-status scheduled">{t('landingPage.roles.scheduledTomorrow')}</div>
                   </div>
                 </div>
@@ -1634,7 +1634,7 @@ export default function LandingPage() {
           <div className="lp-footer-section lp-footer-brand">
             <div className="lp-footer-logo">
               <span className="lp-logo-icon">
-                <img src={logo} alt="INTERVOS" />
+                <img src={logoLight} alt="INTERVOS" />
               </span>
               <span className="lp-logo-text">INTERVOS</span>
             </div>
@@ -1869,15 +1869,15 @@ export default function LandingPage() {
                   <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" strokeWidth="2">
                     <path d="M19 12H5M12 19l-7-7 7-7"/>
                   </svg>
-                  Back
+                  {t('landingPage.register.back')}
                 </button>
                 <div className="lp-modal-header">
-                  <h2>Create Your Account</h2>
+                  <h2>{t('landingPage.register.createAccountTitle')}</h2>
                   <p>
-                    {selectedRole === 'property-manager' && 'Join as a Property Manager'}
-                    {selectedRole === 'entrepreneur' && 'Join as an Entrepreneur'}
-                    {selectedRole === 'resident' && 'Join as a Resident'}
-                    {selectedRole === 'supplier' && 'Join as a Supplier'}
+                    {selectedRole === 'property-manager' && t('landingPage.register.joinAsPropertyManager')}
+                    {selectedRole === 'entrepreneur' && t('landingPage.register.joinAsEntrepreneur')}
+                    {selectedRole === 'resident' && t('landingPage.register.joinAsResident')}
+                    {selectedRole === 'supplier' && t('landingPage.register.joinAsSupplier')}
                   </p>
                 </div>
 
@@ -1887,7 +1887,7 @@ export default function LandingPage() {
                   </GoogleOAuthProvider>
                 </div>
 
-                <div className="lp-modal-divider"><span>OR</span></div>
+                <div className="lp-modal-divider"><span>{t('landingPage.register.orDivider')}</span></div>
 
                 <form className="lp-modal-form" onSubmit={handleAuthenticationSubmit}>
                   {registerErrors.submit && (
@@ -2016,31 +2016,31 @@ export default function LandingPage() {
                               <svg viewBox="0 0 16 16" width="14" height="14">
                                 <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                               </svg>
-                              At least 8 characters
+                              {t('landingPage.register.reqLength')}
                             </div>
                             <div className={`lp-password-requirement ${passwordValidation.uppercase ? 'valid' : ''}`}>
                               <svg viewBox="0 0 16 16" width="14" height="14">
                                 <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                               </svg>
-                              One uppercase letter
+                              {t('landingPage.register.reqUppercase')}
                             </div>
                             <div className={`lp-password-requirement ${passwordValidation.lowercase ? 'valid' : ''}`}>
                               <svg viewBox="0 0 16 16" width="14" height="14">
                                 <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                               </svg>
-                              One lowercase letter
+                              {t('landingPage.register.reqLowercase')}
                             </div>
                             <div className={`lp-password-requirement ${passwordValidation.number ? 'valid' : ''}`}>
                               <svg viewBox="0 0 16 16" width="14" height="14">
                                 <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                               </svg>
-                              One number
+                              {t('landingPage.register.reqNumber')}
                             </div>
                             <div className={`lp-password-requirement ${passwordValidation.special ? 'valid' : ''}`}>
                               <svg viewBox="0 0 16 16" width="14" height="14">
                                 <path d="M13.5 4L6 11.5L2.5 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
                               </svg>
-                              One special character
+                              {t('landingPage.register.reqSpecial')}
                             </div>
                           </div>
                         )}
@@ -2092,7 +2092,7 @@ export default function LandingPage() {
                     type="submit"
                     className="lp-btn-primary lp-btn-full"
                   >
-                    Continue
+                    {t('landingPage.register.continue')}
                   </button>
                 </form>
               </>
@@ -2105,15 +2105,15 @@ export default function LandingPage() {
                   <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" fill="none" strokeWidth="2">
                     <path d="M19 12H5M12 19l-7-7 7-7"/>
                   </svg>
-                  Back
+                  {t('landingPage.register.back')}
                 </button>
                 <div className="lp-modal-header">
-                  <h2>Complete Your Profile</h2>
+                  <h2>{t('landingPage.register.completeProfileTitle')}</h2>
                   <p>
-                    {selectedRole === 'property-manager' && 'Just a few more details to get started'}
-                    {selectedRole === 'entrepreneur' && 'Tell us about your business'}
-                    {selectedRole === 'resident' && 'Help us connect you to your building'}
-                    {selectedRole === 'supplier' && 'Share your business information'}
+                    {selectedRole === 'property-manager' && t('landingPage.register.profileSubtitlePM')}
+                    {selectedRole === 'entrepreneur' && t('landingPage.register.profileSubtitleEntr')}
+                    {selectedRole === 'resident' && t('landingPage.register.profileSubtitleRes')}
+                    {selectedRole === 'supplier' && t('landingPage.register.profileSubtitleSup')}
                   </p>
                 </div>
 
@@ -2649,13 +2649,13 @@ export default function LandingPage() {
                     <label className="lp-checkbox">
                       <input type="checkbox" required />
                       <span>
-                        I agree to the{" "}
+                        {t('landingPage.register.agreeToTerms')}{" "}
                         <a href="/legal?tab=terms" target="_blank" rel="noopener noreferrer">
-                          Terms of Service
+                          {t('landingPage.footer.termsOfService')}
                         </a>{" "}
-                        and{" "}
+                        {t('landingPage.register.and')}{" "}
                         <a href="/legal?tab=privacy" target="_blank" rel="noopener noreferrer">
-                          Privacy Policy
+                          {t('landingPage.footer.privacyPolicy')}
                         </a>
                       </span>
                     </label>
@@ -2666,7 +2666,7 @@ export default function LandingPage() {
                     className="lp-btn-primary lp-btn-full"
                     disabled={isRegistering}
                   >
-                    {isRegistering ? "Setting up your account..." : "Start Your First Project"}
+                    {isRegistering ? t('landingPage.register.settingUp') : t('landingPage.register.startProject')}
                   </button>
                 </form>
               </>
@@ -2676,8 +2676,8 @@ export default function LandingPage() {
             {registrationStep === 4 && (
               <>
                 <div className="lp-modal-header">
-                  <h2>Registration Successful!</h2>
-                  <p>Please verify your email to continue</p>
+                  <h2>{t('landingPage.register.registrationSuccessTitle')}</h2>
+                  <p>{t('landingPage.register.verifyEmailSubtitle')}</p>
                 </div>
 
                 <div className="lp-verification-content">
@@ -2688,25 +2688,25 @@ export default function LandingPage() {
                   </div>
 
                   <div className="lp-verification-message">
-                    <p className="lp-verification-title">Check your inbox</p>
+                    <p className="lp-verification-title">{t('landingPage.register.checkInbox')}</p>
                     <p className="lp-verification-text">
-                      We've sent a verification email to:
+                      {t('landingPage.register.successMessage')}:
                     </p>
                     <p className="lp-verification-email">{registeredEmail}</p>
                     <p className="lp-verification-text">
-                      Please click the verification link in the email to activate your account.
+                      {t('landingPage.register.successInstructions')}
                     </p>
                   </div>
 
                   <div className="lp-verification-actions">
-                    <p className="lp-resend-text">Didn't receive the email?</p>
+                    <p className="lp-resend-text">{t('landingPage.register.didntReceiveEmail')}</p>
                     <button
                       type="button"
                       className="lp-btn-link"
                       onClick={() => handleResendVerification()}
                       disabled={isResendingVerification}
                     >
-                      {isResendingVerification ? "Sending..." : "Resend verification email"}
+                      {isResendingVerification ? t('landingPage.register.sending') : t('landingPage.register.resendEmail')}
                     </button>
                   </div>
 
@@ -2718,7 +2718,7 @@ export default function LandingPage() {
                       setShowLoginModal(true);
                     }}
                   >
-                    Go to Login
+                    {t('landingPage.register.goToLogin')}
                   </button>
                 </div>
               </>
