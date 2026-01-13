@@ -213,6 +213,10 @@ const translations = {
       next: 'Next',
       gridView: 'Grid View',
       listView: 'List View',
+      // Urgency levels
+      urgentCurrentYear: 'Urgent (Current Year)',
+      nextYear: 'Next Year',
+      yearAfter: 'Year After',
     },
 
     // Summary Section
@@ -2984,6 +2988,10 @@ const translations = {
       next: 'Suivant',
       gridView: 'Vue Grille',
       listView: 'Vue Liste',
+      // Urgency levels
+      urgentCurrentYear: 'Urgent (Année en cours)',
+      nextYear: 'Année prochaine',
+      yearAfter: 'Année suivante',
     },
 
     // Summary Section

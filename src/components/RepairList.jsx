@@ -5,6 +5,16 @@ import { useLanguage } from '../contexts/LanguageContext';
 function RepairList({ repairs, handleRepairClicked }) {
   const { t } = useLanguage();
   const PLACEHOLDER_IMAGE = "/defaultjob.jpg";
+
+  // Helper function to translate urgency/category
+  const getUrgencyLabel = (urgency) => {
+    const urgencyMap = {
+      'Urgent (Current Year)': t('repairList.urgentCurrentYear'),
+      'Next Year': t('repairList.nextYear'),
+      'Year After': t('repairList.yearAfter')
+    };
+    return urgencyMap[urgency] || urgency;
+  };
   const [imagesLoaded, setImagesLoaded] = useState({});
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
   const [selectedProperty, setSelectedProperty] = useState('all'); // 'all' or property name
@@ -307,7 +317,7 @@ function RepairList({ repairs, handleRepairClicked }) {
                     : "hp-info"
                 }`}
               >
-                {repair.category}
+                {getUrgencyLabel(repair.category)}
               </span>
               {repair.hasApprovedBid && (
                 <span className="hp-approved-badge">

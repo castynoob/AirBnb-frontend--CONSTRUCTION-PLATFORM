@@ -195,6 +195,36 @@ const SkeletonJobCard = () => (
 
 function HomePageEntrepreneur() {
   const { t, language } = useLanguage()
+
+  // Job type image mapping
+  const PLACEHOLDER_IMAGE = "/defaultjob.jpg";
+  const workTypeImages = {
+    'electrical': '/electrical.jpg', 'electric': '/electrical.jpg', 'wiring': '/electrical.jpg', 'électrique': '/electrical.jpg',
+    'plumbing': '/plumbing.png', 'plomb': '/plumbing.png', 'faucet': '/plumbing.png', 'robinet': '/plumbing.png',
+    'pipe': '/plumbing.png', 'tuyau': '/plumbing.png', 'drain': '/plumbing.png', 'leak': '/plumbing.png', 'fuite': '/plumbing.png',
+    'hvac': '/HVAC.png', 'heating': '/HVAC.png', 'chauffage': '/HVAC.png', 'cooling': '/HVAC.png',
+    'climatisation': '/HVAC.png', 'air conditioning': '/HVAC.png', 'ventilation': '/HVAC.png',
+    'roofing': '/roofing.png', 'roof': '/roofing.png', 'toit': '/roofing.png', 'toiture': '/roofing.png',
+    'shingle': '/roofing.png', 'gutter': '/roofing.png', 'gouttière': '/roofing.png',
+    'painting': '/painting.png', 'paint': '/painting.png', 'peinture': '/painting.png',
+    'flooring': '/flooring.png', 'floor': '/flooring.png', 'plancher': '/flooring.png', 'tile': '/flooring.png', 'carrelage': '/flooring.png',
+    'carpentry': '/carpentry.jpg', 'menuiserie': '/carpentry.jpg', 'wood': '/carpentry.jpg', 'bois': '/carpentry.jpg',
+    'cabinet': '/carpentry.jpg', 'armoire': '/carpentry.jpg', 'door': '/carpentry.jpg', 'porte': '/carpentry.jpg',
+    'window': '/carpentry.jpg', 'fenêtre': '/carpentry.jpg',
+    'masonry': '/masonry.png', 'maçonnerie': '/masonry.png', 'brick': '/masonry.png', 'brique': '/masonry.png',
+    'concrete': '/masonry.png', 'béton': '/masonry.png', 'stone': '/masonry.png', 'pierre': '/masonry.png',
+    'fissure': '/masonry.png', 'crack': '/masonry.png', 'injection': '/masonry.png',
+  };
+
+  const getWorkTypeImage = (title) => {
+    if (!title) return PLACEHOLDER_IMAGE;
+    const lowerTitle = title.toLowerCase();
+    for (const [keyword, image] of Object.entries(workTypeImages)) {
+      if (lowerTitle.includes(keyword)) return image;
+    }
+    return PLACEHOLDER_IMAGE;
+  };
+
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedProperty, setSelectedProperty] = useState(null)
   const [bidModalOpen, setBidModalOpen] = useState(false)
@@ -2269,6 +2299,14 @@ function HomePageEntrepreneur() {
             </div>
             {console.log("SELECTED job", selectedJob)}
             <div className="eh-modal-body">
+              <div className="eh-job-image-container">
+                <img
+                  src={getWorkTypeImage(selectedJob.title)}
+                  alt={selectedJob.title}
+                  className="eh-job-image"
+                  onError={(e) => { e.target.src = PLACEHOLDER_IMAGE; }}
+                />
+              </div>
               <div className="eh-job-summary">
                 <h3>{selectedJob.title}</h3>
                 <p className="eh-job-summary-category">{selectedJob.category}</p>
