@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Crown, TrendingUp, Check, X, Zap, Shield, Star, ArrowRight, Building2, FileText, MessageSquare, DollarSign, Calendar, Clock, Activity } from 'lucide-react';
+import { Crown, TrendingUp, Check, X, Zap, Shield, Star, ArrowRight, Building2, FileText, MessageSquare, DollarSign, Calendar, Clock, Activity, AlertTriangle, CreditCard } from 'lucide-react';
 import Nav from '../../components/Nav';
 import logo from "../../assets/logo.png"
 import '../../styles/entrepreneur/subscriptionpage.css';
 import '../../styles/entrepreneur/profilepageentrepreneur.css';
 import SubscriptionModal from '../../components/SubcriptionModal';
+import UpdatePaymentMethodModal from '../../components/UpdatePaymentMethodModal';
 
 function SubscriptionPage() {
   const [userProfile, setUserProfile] = useState({
@@ -31,6 +32,7 @@ function SubscriptionPage() {
   const [subscription, setSubscription] = useState({})
   const [hasSubscription, setHasSubscription] = useState(false)
   const [showPlansModal, setShowPlansModal] = useState(false)
+  const [showUpdatePaymentModal, setShowUpdatePaymentModal] = useState(false)
 
   useEffect(() => {
     const uProfile = localStorage.getItem('userProfile')
@@ -278,6 +280,36 @@ function SubscriptionPage() {
           </div>
         ) : (
           <>
+        {/* Past Due Banner - Show when payment failed */}
+        {subscription.status === 'past_due' && (
+          <div className="status-banner past-due-banner">
+            <div className="banner-content">
+              <div className="banner-icon-wrapper past-due">
+                <AlertTriangle size={28} />
+              </div>
+              <div className="banner-info">
+                <div className="banner-header">
+                  <h3 className="banner-title past-due">Payment Failed</h3>
+                  <div className="past-due-badge">Action Required</div>
+                </div>
+                <p className="banner-text">
+                  Your subscription payment could not be processed. Please update your payment method to restore full access.
+                </p>
+                <p className="banner-subtext past-due">
+                  Your access may be limited until payment is resolved.
+                </p>
+              </div>
+              <button
+                className="update-payment-btn"
+                onClick={() => setShowUpdatePaymentModal(true)}
+              >
+                <CreditCard size={18} />
+                Update Payment Method
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Trial Banner - Only show during trial */}
         {subscription.is_trial && trialInfo && (
           <div className="status-banner trial-banner">
@@ -576,6 +608,15 @@ function SubscriptionPage() {
           refresher={refresher}
           onClose={() => setShowPlansModal(false)}
           showCloseButton={true}
+        />
+      )}
+
+      {/* Update Payment Method Modal */}
+      {showUpdatePaymentModal && userProfile && (
+        <UpdatePaymentMethodModal
+          token={userProfile.token}
+          onClose={() => setShowUpdatePaymentModal(false)}
+          onSuccess={refresher}
         />
       )}
     </div>

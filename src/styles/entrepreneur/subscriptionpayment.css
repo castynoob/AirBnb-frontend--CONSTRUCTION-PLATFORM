@@ -1630,3 +1630,116 @@
     height: 18px;
   }
 }
+
+/* ========================================
+   UPDATE PAYMENT METHOD MODAL - SINGLE COLUMN
+======================================== */
+
+.sp-modal.sp-single-column {
+  max-width: 450px;
+  padding: 0;
+}
+
+.sp-update-header {
+  text-align: center;
+  padding: 2rem 2rem 1.5rem;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.sp-update-icon {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #0F223D 0%, #1a3a5c 100%);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.sp-update-icon svg {
+  width: 28px;
+  height: 28px;
+  color: #fff;
+}
+
+.sp-single-column .sp-right-title {
+  margin: 0 0 0.25rem 0;
+}
+
+.sp-single-column .sp-right-subtitle {
+  margin: 0;
+}
+
+.sp-single-column .sp-form {
+  padding: 1.5rem 2rem;
+}
+
+.sp-single-column .sp-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.sp-single-column .sp-card-element-wrapper {
+  margin-bottom: 1rem;
+}
+
+.sp-single-column .sp-security-footer {
+  margin-top: 0;
+}
+
+.sp-single-column .sp-close-btn {
+  background: #F7F8FA;
+  border: 1px solid #D9E1E7;
+}
+
+.sp-single-column .sp-close-btn svg {
+  color: #7F8C8D;
+}
+
+.sp-single-column .sp-close-btn:hover {
+  background: #0F223D;
+  border-color: #0F223D;
+}
+
+.sp-single-column .sp-close-btn:hover svg {
+  color: #fff;
+}
+
+/* Update Success Modal Variant */
+.sp-success-modal.sp-update-success .sp-success-left {
+  min-height: 350px;
+}
+
+.sp-success-modal.sp-update-success .sp-success-subtitle {
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 520px) {
+  .sp-modal.sp-single-column {
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .sp-update-header {
+    padding: 1.5rem 1.25rem 1.25rem;
+  }
+
+  .sp-update-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+  }
+
+  .sp-update-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .sp-single-column .sp-form {
+    padding: 1.25rem;
+  }
+}
