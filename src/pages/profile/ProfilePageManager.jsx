@@ -761,8 +761,8 @@ function ProfilePageManager() {
                     >
                       <span className="mp-language-flag">{lang.flag}</span>
                       <div className="mp-language-details">
-                        <span className="mp-language-name">{lang.name}</span>
-                        <span className="mp-language-native">{lang.nativeName}</span>
+                        <span className="mp-language-name">{lang.nativeName}</span>
+                        <span className="mp-language-native">{t(`profileManager.language${lang.code === 'en' ? 'English' : 'French'}`)}</span>
                       </div>
                       {language === lang.code && (
                         <Check size={18} className="mp-language-check" />

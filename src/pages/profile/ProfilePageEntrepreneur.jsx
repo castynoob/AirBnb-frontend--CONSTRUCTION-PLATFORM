@@ -1785,8 +1785,8 @@ function ProfilePageEntrepreneur() {
                         >
                           <span className="ep-language-flag">{lang.flag}</span>
                           <div className="ep-language-details">
-                            <span className="ep-language-name">{lang.name}</span>
-                            <span className="ep-language-native">{lang.nativeName}</span>
+                            <span className="ep-language-name">{lang.nativeName}</span>
+                            <span className="ep-language-native">{t(`profileEntrepreneur.language${lang.code === 'en' ? 'English' : 'French'}`)}</span>
                           </div>
                           {language === lang.code && (
                             <Check size={18} className="ep-language-check" />

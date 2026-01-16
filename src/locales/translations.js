@@ -406,7 +406,7 @@ const translations = {
 
     // Submissions Page
     submissions: {
-      title: 'BIDDINGS',
+      title: 'OFFRES',
       bids: 'bids',
       myReviews: 'My Reviews',
       filters: 'Filters',
@@ -554,6 +554,8 @@ const translations = {
       settingsDesc: 'Manage your preferences and security',
       language: 'Language',
       languageDesc: 'Choose your preferred language for the app',
+      languageEnglish: 'English',
+      languageFrench: 'French',
       changePassword: 'Change Password',
       changePasswordDesc: 'Update your account password',
       currentPassword: 'Current Password',
@@ -1370,6 +1372,8 @@ const translations = {
       changingPassword: 'Changing...',
       languagePreferences: 'Language Preferences',
       selectLanguage: 'Select your preferred language',
+      languageEnglish: 'English',
+      languageFrench: 'French',
       // Password strength labels
       veryWeak: 'Very Weak',
       weak: 'Weak',
@@ -2050,6 +2054,8 @@ const translations = {
       // Language settings
       language: 'Language',
       selectPreferredLanguage: 'Select your preferred language',
+      languageEnglish: 'English',
+      languageFrench: 'French',
 
       // Password settings
       changePassword: 'Change Password',
@@ -2314,6 +2320,30 @@ const translations = {
         subtitle: 'Every day you wait is another day of chasing contractors, dealing with cost overruns, and frustrated residents. INTERVOS eliminates all of it.',
         button: 'Start Your First Project - Free',
         disclaimer: 'No credit card required. Cancel anytime. Full control from day one.',
+      },
+
+      // Pricing Section
+      pricing: {
+        title: 'Simple, Transparent Pricing',
+        subtitle: 'Choose the plan that fits your business needs',
+        forEntrepreneurs: 'For Entrepreneurs',
+        perMonth: '/month',
+        popular: 'Most Popular',
+        getStarted: 'Get Started',
+        basicPlan: 'Basic',
+        basicDesc: 'Perfect for getting started',
+        premiumPlan: 'Premium',
+        premiumDesc: 'Best for professionals',
+        feature1: 'Browse construction jobs',
+        feature2: 'View job details & specs',
+        feature3: 'Submit bids',
+        feature4: 'Unlock project budgets',
+        feature5: 'Message on approved projects',
+        feature6: 'Priority support',
+        feature7: 'Advanced analytics',
+        feature8: 'Custom branding',
+        bidsLimit: '30 per month',
+        unlimited: 'Unlimited',
       },
 
       // Footer
@@ -3181,7 +3211,7 @@ const translations = {
 
     // Submissions Page
     submissions: {
-      title: 'BIDDINGS',
+      title: 'OFFRES',
       bids: 'offres',
       myReviews: 'Mes Avis',
       filters: 'Filtres',
@@ -3329,6 +3359,8 @@ const translations = {
       settingsDesc: 'Gérez vos préférences et votre sécurité',
       language: 'Langue',
       languageDesc: 'Choisissez votre langue préférée pour l\'application',
+      languageEnglish: 'Anglais',
+      languageFrench: 'Français',
       changePassword: 'Changer le Mot de Passe',
       changePasswordDesc: 'Mettez à jour le mot de passe de votre compte',
       currentPassword: 'Mot de Passe Actuel',
@@ -4145,6 +4177,8 @@ const translations = {
       changingPassword: 'Modification...',
       languagePreferences: 'Préférences de Langue',
       selectLanguage: 'Sélectionnez votre langue préférée',
+      languageEnglish: 'Anglais',
+      languageFrench: 'Français',
       // Password strength labels
       veryWeak: 'Très Faible',
       weak: 'Faible',
@@ -4825,6 +4859,8 @@ const translations = {
       // Language settings
       language: 'Langue',
       selectPreferredLanguage: 'Sélectionnez votre langue préférée',
+      languageEnglish: 'Anglais',
+      languageFrench: 'Français',
 
       // Password settings
       changePassword: 'Changer le mot de passe',
@@ -5089,6 +5125,30 @@ const translations = {
         subtitle: 'Chaque jour que vous attendez est un autre jour à courir après les entrepreneurs, à gérer les dépassements de coûts et les résidents frustrés. INTERVOS élimine tout cela.',
         button: 'Commencez votre premier projet - Gratuit',
         disclaimer: 'Aucune carte de crédit requise. Annulez à tout moment. Contrôle total dès le premier jour.',
+      },
+
+      // Pricing Section
+      pricing: {
+        title: 'Tarification simple et transparente',
+        subtitle: 'Choisissez le forfait qui correspond à vos besoins',
+        forEntrepreneurs: 'Pour les Entrepreneurs',
+        perMonth: '/mois',
+        popular: 'Le plus populaire',
+        getStarted: 'Commencer',
+        basicPlan: 'Basic',
+        basicDesc: 'Parfait pour débuter',
+        premiumPlan: 'Premium',
+        premiumDesc: 'Idéal pour les professionnels',
+        feature1: 'Parcourir les travaux de construction',
+        feature2: 'Voir les détails et spécifications',
+        feature3: 'Soumettre des offres',
+        feature4: 'Débloquer les budgets de projets',
+        feature5: 'Messagerie sur projets approuvés',
+        feature6: 'Support prioritaire',
+        feature7: 'Analyses avancées',
+        feature8: 'Image de marque personnalisée',
+        bidsLimit: '30 par mois',
+        unlimited: 'Illimité',
       },
 
       // Footer

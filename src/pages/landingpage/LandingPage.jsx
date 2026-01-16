@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { Check, X, Crown } from "lucide-react"
 import "../../styles/landinpage.css"
 import logo from '../../assets/logo.png'
 import logoLight from '../../assets/logo-light.png'
@@ -1625,6 +1626,72 @@ export default function LandingPage() {
           <p style={{ marginTop: '1rem', fontSize: '0.9rem', opacity: 0.8 }}>
             {t('landingPage.cta.disclaimer')}
           </p>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section className="lp-pricing-section" id="pricing">
+        <div className="lp-pricing-header">
+          <span className="lp-pricing-badge">{t('landingPage.pricing.forEntrepreneurs')}</span>
+          <h2>{t('landingPage.pricing.title')}</h2>
+          <p>{t('landingPage.pricing.subtitle')}</p>
+        </div>
+        <div className="lp-pricing-cards">
+          {/* Basic Plan */}
+          <div className="lp-pricing-card">
+            <div className="lp-pricing-card-header">
+              <h3>{t('landingPage.pricing.basicPlan')}</h3>
+              <p className="lp-pricing-desc">{t('landingPage.pricing.basicDesc')}</p>
+            </div>
+            <div className="lp-pricing-price">
+              <span className="lp-price-currency">$</span>
+              <span className="lp-price-amount">250</span>
+              <span className="lp-price-period">{t('landingPage.pricing.perMonth')}</span>
+            </div>
+            <ul className="lp-pricing-features">
+              <li><Check size={18} className="lp-feature-check" /> {t('landingPage.pricing.feature1')}</li>
+              <li><Check size={18} className="lp-feature-check" /> {t('landingPage.pricing.feature2')}</li>
+              <li><Check size={18} className="lp-feature-check" /> {t('landingPage.pricing.feature3')} <span className="lp-feature-limit">({t('landingPage.pricing.bidsLimit')})</span></li>
+              <li><Check size={18} className="lp-feature-check" /> {t('landingPage.pricing.feature4')}</li>
+              <li><Check size={18} className="lp-feature-check" /> {t('landingPage.pricing.feature5')}</li>
+              <li className="lp-feature-disabled"><X size={18} className="lp-feature-x" /> {t('landingPage.pricing.feature6')}</li>
+              <li className="lp-feature-disabled"><X size={18} className="lp-feature-x" /> {t('landingPage.pricing.feature7')}</li>
+              <li className="lp-feature-disabled"><X size={18} className="lp-feature-x" /> {t('landingPage.pricing.feature8')}</li>
+            </ul>
+            <button className="lp-pricing-btn" onClick={() => setShowRegisterModal(true)}>
+              {t('landingPage.pricing.getStarted')}
+            </button>
+          </div>
+
+          {/* Premium Plan */}
+          <div className="lp-pricing-card lp-pricing-popular">
+            <div className="lp-popular-badge">
+              <Crown size={14} />
+              {t('landingPage.pricing.popular')}
+            </div>
+            <div className="lp-pricing-card-header">
+              <h3>{t('landingPage.pricing.premiumPlan')}</h3>
+              <p className="lp-pricing-desc">{t('landingPage.pricing.premiumDesc')}</p>
+            </div>
+            <div className="lp-pricing-price">
+              <span className="lp-price-currency">$</span>
+              <span className="lp-price-amount">429</span>
+              <span className="lp-price-period">{t('landingPage.pricing.perMonth')}</span>
+            </div>
+            <ul className="lp-pricing-features">
+              <li><Check size={18} className="lp-feature-check" /> {t('landingPage.pricing.feature1')}</li>
+              <li><Check size={18} className="lp-feature-check" /> {t('landingPage.pricing.feature2')}</li>
+              <li><Check size={18} className="lp-feature-check" /> {t('landingPage.pricing.feature3')} <span className="lp-feature-unlimited">({t('landingPage.pricing.unlimited')})</span></li>
+              <li><Check size={18} className="lp-feature-check" /> {t('landingPage.pricing.feature4')}</li>
+              <li><Check size={18} className="lp-feature-check" /> {t('landingPage.pricing.feature5')}</li>
+              <li><Check size={18} className="lp-feature-check" /> {t('landingPage.pricing.feature6')}</li>
+              <li><Check size={18} className="lp-feature-check" /> {t('landingPage.pricing.feature7')}</li>
+              <li><Check size={18} className="lp-feature-check" /> {t('landingPage.pricing.feature8')}</li>
+            </ul>
+            <button className="lp-pricing-btn lp-pricing-btn-premium" onClick={() => setShowRegisterModal(true)}>
+              {t('landingPage.pricing.getStarted')}
+            </button>
+          </div>
         </div>
       </section>
 

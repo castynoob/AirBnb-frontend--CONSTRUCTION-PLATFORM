@@ -761,8 +761,8 @@ const ProfilePageResident = () => {
                         >
                           <span className="rp-language-flag">{lang.flag}</span>
                           <div className="rp-language-info">
-                            <span className="rp-language-name">{lang.name}</span>
-                            <span className="rp-language-native">{lang.nativeName}</span>
+                            <span className="rp-language-name">{lang.nativeName}</span>
+                            <span className="rp-language-native">{t(`profilePageResident.language${lang.code === 'en' ? 'English' : 'French'}`)}</span>
                           </div>
                           {language === lang.code && (
                             <Check size={18} className="rp-language-check" />
