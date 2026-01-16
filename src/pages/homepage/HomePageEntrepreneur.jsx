@@ -284,8 +284,8 @@ function HomePageEntrepreneur() {
 
   // Filter states - appliedFilters is what's actually used for filtering
   const initialFilters = {
-    countries: [],
-    otherCountry: "",
+    provinces: [],
+    otherProvince: "",
     cities: [],
     neighborhoods: [],
     workTypes: [],
@@ -574,13 +574,13 @@ function HomePageEntrepreneur() {
         property.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         property.address.toLowerCase().includes(searchTerm.toLowerCase())
 
-      // Country filter - combine checkbox selections and text field input
-      const selectedCountries = [...appliedFilters.countries]
-      if (appliedFilters.otherCountry && appliedFilters.otherCountry.trim()) {
-        selectedCountries.push(appliedFilters.otherCountry.trim())
+      // Province/State filter - combine checkbox selections and text field input
+      const selectedProvinces = [...appliedFilters.provinces]
+      if (appliedFilters.otherProvince && appliedFilters.otherProvince.trim()) {
+        selectedProvinces.push(appliedFilters.otherProvince.trim())
       }
-      const matchesCountry = selectedCountries.length === 0 || selectedCountries.some(country =>
-        property.region?.toLowerCase().includes(country.toLowerCase())
+      const matchesProvince = selectedProvinces.length === 0 || selectedProvinces.some(province =>
+        property.region?.toLowerCase().includes(province.toLowerCase())
       )
       const matchesCity = appliedFilters.cities.length === 0 || appliedFilters.cities.includes(property.city)
 
@@ -636,7 +636,7 @@ function HomePageEntrepreneur() {
 
       return (
         matchesSearch &&
-        matchesCountry &&
+        matchesProvince &&
         matchesCity &&
         matchesPropertyType &&
         matchesRadius &&
@@ -669,8 +669,8 @@ function HomePageEntrepreneur() {
   // Check if any filters are active (in the modal - pending)
   const hasActiveFilters = useMemo(() => {
     return (
-      filters.countries.length > 0 ||
-      filters.otherCountry !== "" ||
+      filters.provinces.length > 0 ||
+      filters.otherProvince !== "" ||
       filters.cities.length > 0 ||
       filters.neighborhoods.length > 0 ||
       filters.workTypes.length > 0 ||
@@ -691,7 +691,7 @@ function HomePageEntrepreneur() {
   // Count applied filters (shown in badge)
   const activeFiltersCount = useMemo(() => {
     let count = 0
-    if (appliedFilters.countries.length > 0 || appliedFilters.otherCountry !== "") count++
+    if (appliedFilters.provinces.length > 0 || appliedFilters.otherProvince !== "") count++
     if (appliedFilters.cities.length > 0) count++
     if (appliedFilters.neighborhoods.length > 0) count++
     if (appliedFilters.workTypes.length > 0 || appliedFilters.otherWorkType !== "") count++
@@ -1855,33 +1855,33 @@ function HomePageEntrepreneur() {
 
             <div className="eh-modal-body">
               <div className="eh-filters-grid">
-                {/* Location Filters - Country based */}
+                {/* Location Filters - Province/State based */}
                 <div className="eh-filter-group">
                   <div className="eh-filter-group-header">
                     <MapPin size={18} />
                     <h3>{t('entrepreneurHome.location')}</h3>
                   </div>
                   <div className="eh-filter-section">
-                    <div className="eh-filter-subsection-title">Country</div>
+                    <div className="eh-filter-subsection-title">Province / State</div>
                     <div className="eh-checkbox-group">
-                      {["US", "Canada"].map((country) => (
-                        <label key={country} className="eh-checkbox-label">
+                      {["California", "Ontario", "Pangasinan"].map((province) => (
+                        <label key={province} className="eh-checkbox-label">
                           <input
                             type="checkbox"
-                            checked={filters.countries.includes(country)}
-                            onChange={() => handleFilterChange("countries", country)}
+                            checked={filters.provinces.includes(province)}
+                            onChange={() => handleFilterChange("provinces", province)}
                           />
-                          <span className="eh-checkbox-text">{country}</span>
+                          <span className="eh-checkbox-text">{province}</span>
                         </label>
                       ))}
                     </div>
                     <div className="eh-input-group eh-other-input">
-                      <label>Other Country</label>
+                      <label>Other Province / State</label>
                       <input
                         type="text"
-                        value={filters.otherCountry}
-                        onChange={(e) => handleFilterChange("otherCountry", e.target.value)}
-                        placeholder="Type country name..."
+                        value={filters.otherProvince}
+                        onChange={(e) => handleFilterChange("otherProvince", e.target.value)}
+                        placeholder="Type province or state name..."
                       />
                     </div>
                   </div>
