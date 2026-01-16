@@ -207,6 +207,58 @@
   opacity: 0.9;
 }
 
+/* Past Due Banner */
+.past-due-banner {
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+}
+
+.banner-icon-wrapper.past-due {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.banner-title.past-due {
+  color: #fff;
+}
+
+.past-due-badge {
+  padding: 0.25rem 0.75rem;
+  background: #fef2f2;
+  color: #dc2626;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-lg);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.banner-subtext.past-due {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.update-payment-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  background: #fff;
+  color: #dc2626;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: var(--font-weight-lg);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.update-payment-btn:hover {
+  background: #fef2f2;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
 /* Current Plan Section */
 .current-plan-section {
   margin-bottom: 2.5rem;
