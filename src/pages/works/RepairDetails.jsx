@@ -282,13 +282,19 @@ function RepairDetails({ isOpen, onClose, repair }) {
       });
 
       // Step 3: Check if contract exists or create one
-      let contract;
+      let contract = null;
       try {
         const existingContract = await getContractByJob(repair.data.jobId);
-        contract = existingContract.contract;
-        console.log("Existing contract found:", contract);
+        if (existingContract.has_contract && existingContract.contract) {
+          console.log("Existing contract found:", existingContract.contract.id);
+          contract = existingContract.contract;
+        }
       } catch (err) {
-        // No existing contract, create one
+        console.log("No existing contract found, will create new one");
+      }
+
+      // Create new contract if none exists
+      if (!contract) {
         console.log("Creating new contract for bid:", selectedBidder.id);
         const contractResult = await createContract(selectedBidder.id);
         contract = contractResult.contract;
