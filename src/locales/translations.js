@@ -406,7 +406,7 @@ const translations = {
 
     // Submissions Page
     submissions: {
-      title: 'OFFRES',
+      title: 'BIDS',
       bids: 'bids',
       myReviews: 'My Reviews',
       filters: 'Filters',
@@ -1045,6 +1045,19 @@ const translations = {
       fullView: 'Full View',
       close: 'Close',
       chatWithManager: 'Chat with Manager',
+      // Job Categories
+      categoryRoofing: 'Roofing',
+      categoryCarpentry: 'Carpentry',
+      categoryMasonry: 'Masonry',
+      categoryPlumbing: 'Plumbing',
+      categoryElectrical: 'Electrical',
+      categoryPainting: 'Painting',
+      categoryFlooring: 'Flooring',
+      categoryLandscaping: 'Landscaping',
+      categoryHVAC: 'HVAC',
+      categoryWindowsDoors: 'Windows/Doors',
+      categoryGeneralRepair: 'General Repair',
+      categoryOther: 'Other',
     },
 
     // Customer Service Page
@@ -3850,6 +3863,19 @@ const translations = {
       fullView: 'Plein Écran',
       close: 'Fermer',
       chatWithManager: 'Discuter avec le Gestionnaire',
+      // Job Categories
+      categoryRoofing: 'Toiture',
+      categoryCarpentry: 'Menuiserie',
+      categoryMasonry: 'Maçonnerie',
+      categoryPlumbing: 'Plomberie',
+      categoryElectrical: 'Électricité',
+      categoryPainting: 'Peinture',
+      categoryFlooring: 'Revêtement de Sol',
+      categoryLandscaping: 'Aménagement Paysager',
+      categoryHVAC: 'CVC',
+      categoryWindowsDoors: 'Fenêtres/Portes',
+      categoryGeneralRepair: 'Réparation Générale',
+      categoryOther: 'Autre',
     },
 
     // Customer Service Page

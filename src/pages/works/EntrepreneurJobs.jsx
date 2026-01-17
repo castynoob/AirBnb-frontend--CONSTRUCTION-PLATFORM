@@ -506,6 +506,25 @@ function EntrepreneurJobs() {
     }).format(amount)
   }
 
+  // Helper function to translate job categories
+  const getCategoryLabel = (category) => {
+    const categoryMap = {
+      'Roofing': t('entrepreneurJobs.categoryRoofing'),
+      'Carpentry': t('entrepreneurJobs.categoryCarpentry'),
+      'Masonry': t('entrepreneurJobs.categoryMasonry'),
+      'Plumbing': t('entrepreneurJobs.categoryPlumbing'),
+      'Electrical': t('entrepreneurJobs.categoryElectrical'),
+      'Painting': t('entrepreneurJobs.categoryPainting'),
+      'Flooring': t('entrepreneurJobs.categoryFlooring'),
+      'Landscaping': t('entrepreneurJobs.categoryLandscaping'),
+      'HVAC': t('entrepreneurJobs.categoryHVAC'),
+      'Windows/Doors': t('entrepreneurJobs.categoryWindowsDoors'),
+      'General Repair': t('entrepreneurJobs.categoryGeneralRepair'),
+      'Other': t('entrepreneurJobs.categoryOther'),
+    }
+    return categoryMap[category] || category
+  }
+
   // Get payment/contract status info for display
   const getPaymentStatusInfo = (contract) => {
     if (!contract) {
@@ -703,7 +722,7 @@ function EntrepreneurJobs() {
                     {/* Title & Category */}
                     <div className="ej-title-section">
                       <h3 className="ej-project-title">{job.title}</h3>
-                      <span className="ej-category-tag">{job.category}</span>
+                      <span className="ej-category-tag">{getCategoryLabel(job.category)}</span>
                     </div>
 
                     {/* Payment Status - Show for all job statuses */}
@@ -992,7 +1011,7 @@ function EntrepreneurJobs() {
                 <div className="bid-info-grid">
                   <div className="bid-info-item">
                     <label>{t('entrepreneurJobs.category')}</label>
-                    <p>{selectedJob.category}</p>
+                    <p>{getCategoryLabel(selectedJob.category)}</p>
                   </div>
                   <div className="bid-info-item">
                     <label><Calendar size={14} /> {t('entrepreneurJobs.dueDate')}</label>
@@ -1100,7 +1119,7 @@ function EntrepreneurJobs() {
                   </div>
                   <div className="bid-info-item">
                     <label>{t('entrepreneurJobs.category')}</label>
-                    <p>{detailsJob.category}</p>
+                    <p>{getCategoryLabel(detailsJob.category)}</p>
                   </div>
                   <div className="bid-info-item">
                     <label>{t('entrepreneurJobs.status')}</label>

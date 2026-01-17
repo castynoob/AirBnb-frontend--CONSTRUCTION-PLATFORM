@@ -3523,14 +3523,14 @@
 .details-content {
   position: relative;
   background: #ffffff;
-  border-radius: 0;
+  border-radius: 16px;
   width: 100%;
   max-width: 600px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-  border: none;
+  border: 1px solid #e5e7eb;
   overflow: hidden;
 }
 
@@ -3605,6 +3605,7 @@
   padding: 1rem;
   background: #f8fafc;
   border: 1px solid #e5e7eb;
+  border-radius: 12px;
 }
 
 .details-top-left {
@@ -3622,6 +3623,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.02em;
+  border-radius: 6px;
 }
 
 .details-status-badge.status-open {
@@ -3661,6 +3663,8 @@
 .details-card {
   border: 1px solid #e5e7eb;
   background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .details-card-header {
@@ -3811,7 +3815,7 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
-  border-radius: 0;
+  border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
