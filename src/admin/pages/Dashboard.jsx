@@ -37,7 +37,7 @@ import StatsCard from "../components/StatsCard";
 import DateFilterModal from "../components/DateFilterModal";
 import "../styles/admin-dashboard.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 

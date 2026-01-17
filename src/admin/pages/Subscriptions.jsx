@@ -55,7 +55,7 @@ import {
 import { useAdminAuth } from "../context/AdminAuthContext";
 import "../styles/admin-subscriptions.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 // Status badge colors
 const getStatusBadgeClass = (status) => {
