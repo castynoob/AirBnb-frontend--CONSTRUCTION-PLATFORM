@@ -250,7 +250,7 @@ function AddPropertyPage() {
         alert(t('addPropertyPage.propertyAdded'))
       }
       
-      // Simulate API calls
+      // Simulate API callss
     //   await new Promise(resolve => setTimeout(resolve, 1500));
       
       console.log("Property submitted:", formData);
