@@ -938,8 +938,8 @@ function SupplierProfile() {
                         >
                           <span className="sp-language-flag">{lang.flag}</span>
                           <div className="sp-language-details">
-                            <span className="sp-language-name">{lang.name}</span>
-                            <span className="sp-language-native">{lang.nativeName}</span>
+                            <span className="sp-language-name">{lang.nativeName}</span>
+                            <span className="sp-language-native">{t(`supplierProfile.language${lang.code === 'en' ? 'English' : 'French'}`)}</span>
                           </div>
                           {language === lang.code && (
                             <Check size={18} className="sp-language-check" />

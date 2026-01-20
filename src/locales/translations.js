@@ -42,7 +42,7 @@ const translations = {
 
     // HomePage
     homePage: {
-      title: 'TRAVAUX',
+      title: 'WORKS',
       activeJobs: 'active jobs',
       searchPlaceholder: 'Search jobs...',
       urgent: 'Urgent',
@@ -138,7 +138,7 @@ const translations = {
 
     // Messages Page
     messages: {
-      title: 'Messages',
+      title: 'MESSAGES',
       directMessages: 'Direct Messages',
       groupChats: 'Group Chats',
       searchConversations: 'Search conversations...',
@@ -1698,7 +1698,7 @@ const translations = {
     // Messages Supplier Page
     messagesSupplier: {
       // Sidebar
-      title: 'Messages',
+      title: 'MESSAGES',
       subtitle: 'Chat with construction companies',
       searchPlaceholder: 'Search entrepreneurs...',
 
@@ -1820,6 +1820,8 @@ const translations = {
       managePreferences: 'Manage your preferences and security',
       language: 'Language',
       chooseLanguage: 'Choose your preferred language for the app',
+      languageEnglish: 'English',
+      languageFrench: 'French',
       changePassword: 'Change Password',
       updatePassword: 'Update your account password',
       currentPassword: 'Current Password',
@@ -1915,7 +1917,7 @@ const translations = {
     // MessagesResident
     messagesResident: {
       // Sidebar header
-      title: 'Messages',
+      title: 'MESSAGES',
       groupChats: 'Group Chats',
       directMessages: 'Direct Messages',
       createGroup: '+ Create Group',
@@ -2956,7 +2958,7 @@ const translations = {
 
     // Messages Page
     messages: {
-      title: 'Messages',
+      title: 'MESSAGES',
       directMessages: 'Messages Directs',
       groupChats: 'Discussions de Groupe',
       searchConversations: 'Rechercher des conversations...',
@@ -3326,6 +3328,7 @@ const translations = {
       // Account Tab
       accountInfo: 'Informations du Compte',
       accountInfoDesc: 'Gérez vos informations personnelles et les paramètres de profil',
+      propertyManager: 'Gestionnaire Immobilier',
       editPhoto: 'Modifier la Photo',
       personalDetails: 'Détails Personnels',
       firstName: 'Prénom',
@@ -3338,7 +3341,6 @@ const translations = {
       accountId: 'ID du Compte',
       memberSince: 'Membre Depuis',
       updateProfileNote: 'Pour mettre à jour vos informations de profil, veuillez contacter le support.',
-      propertyManager: 'Gestionnaire Immobilier',
       // Overview Tab
       overview: 'Aperçu',
       overviewDesc: 'Résumé rapide de vos statistiques de gestion immobilière',
@@ -4516,7 +4518,7 @@ const translations = {
     // Messages Supplier Page
     messagesSupplier: {
       // Sidebar
-      title: 'Messages',
+      title: 'MESSAGES',
       subtitle: 'Discuter avec les entreprises de construction',
       searchPlaceholder: 'Rechercher des entrepreneurs...',
 
@@ -4638,6 +4640,8 @@ const translations = {
       managePreferences: 'Gérez vos préférences et votre sécurité',
       language: 'Langue',
       chooseLanguage: 'Choisissez votre langue préférée pour l\'application',
+      languageEnglish: 'Anglais',
+      languageFrench: 'Français',
       changePassword: 'Changer le mot de passe',
       updatePassword: 'Mettre à jour le mot de passe de votre compte',
       currentPassword: 'Mot de passe actuel',
@@ -4733,7 +4737,7 @@ const translations = {
     // MessagesResident
     messagesResident: {
       // Sidebar header
-      title: 'Messages',
+      title: 'MESSAGES',
       groupChats: 'Discussions de groupe',
       directMessages: 'Messages directs',
       createGroup: '+ Créer un groupe',

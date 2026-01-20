@@ -314,7 +314,7 @@ function ProfilePageManager() {
                   </h3>
                   <span className="mp-role-tag-modern">
                     <Shield size={12} />
-                    {user?.role || t('profileManager.propertyManager')}
+                    {t('profileManager.propertyManager')}
                   </span>
                 </div>
               </div>
