@@ -474,6 +474,17 @@ export default function LandingPage() {
                 error = t('landingPage.login.phoneMinDigits');
             }
             break;
+        case "license_number":
+            // Validate SIRET (14 digits) or SIREN (9 digits) format
+            if (value) {
+                const cleanedValue = value.replace(/[\s\-]/g, '');
+                if (!/^\d+$/.test(cleanedValue)) {
+                    error = t('landingPage.register.licenseInvalidChars');
+                } else if (cleanedValue.length !== 9 && cleanedValue.length !== 14) {
+                    error = t('landingPage.register.licenseInvalidFormat');
+                }
+            }
+            break;
         default:
             break;
     }
@@ -526,6 +537,28 @@ export default function LandingPage() {
     setAddressSuggestions([]);
   };
 
+  // Check for duplicate license number or phone number
+  const checkDuplicates = async (licenseNumber, phone) => {
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+      const response = await fetch(`${API_BASE_URL}/api/register/check-duplicates`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          license_number: licenseNumber,
+          phone: phone
+        })
+      });
+      const data = await response.json();
+      return data.duplicates;
+    } catch (error) {
+      console.error('Error checking duplicates:', error);
+      return { license_number: false, phone: false };
+    }
+  };
+
   const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     setIsRegistering(true);
@@ -548,6 +581,34 @@ export default function LandingPage() {
             default: {
                 setIsRegistering(false);
                 throw new Error(`Invalid role selected: ${selectedRole}`);
+            }
+        }
+
+        // Check for duplicate license number or phone for entrepreneurs
+        if (selectedRole === "entrepreneur") {
+            const duplicates = await checkDuplicates(
+                registerFormData.license_number,
+                registerFormData.phone
+            );
+
+            if (duplicates.license_number) {
+                setRegisterErrors({
+                    ...registerErrors,
+                    license_number: t('landingPage.register.licenseDuplicate'),
+                    submit: t('landingPage.register.licenseDuplicate')
+                });
+                setIsRegistering(false);
+                return;
+            }
+
+            if (duplicates.phone) {
+                setRegisterErrors({
+                    ...registerErrors,
+                    phone: t('landingPage.register.phoneDuplicate'),
+                    submit: t('landingPage.register.phoneDuplicate')
+                });
+                setIsRegistering(false);
+                return;
             }
         }
 

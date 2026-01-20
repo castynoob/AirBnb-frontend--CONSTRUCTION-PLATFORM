@@ -2804,6 +2804,16 @@ body {
   padding: 10px 14px;
 }
 
+/* Override default PhoneInput library styles */
+.lp-phone-input-wrapper .PhoneInput {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 .lp-phone-input-wrapper:hover {
   border-color: #cbd5e1;
 }
@@ -2874,15 +2884,22 @@ body {
 }
 
 .lp-phone-input-wrapper .PhoneInputInput {
-  border: none;
+  border: none !important;
   background: transparent;
   font-size: 14px;
   font-family: var(--font-primary);
   color: var(--color-text-dark);
   flex: 1;
-  outline: none;
+  outline: none !important;
+  box-shadow: none !important;
   padding: 0;
   width: 100%;
+}
+
+.lp-phone-input-wrapper .PhoneInputInput:focus {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .lp-phone-input-wrapper .PhoneInputInput::placeholder {

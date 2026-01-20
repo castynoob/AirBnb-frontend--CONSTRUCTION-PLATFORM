@@ -2596,6 +2596,12 @@ const translations = {
         resendSuccess: 'Verification email resent!',
         backToLogin: 'Back to Login',
         goToLogin: 'Go to Login',
+
+        // Validation errors
+        phoneDuplicate: 'This phone number is already registered',
+        licenseInvalidChars: 'License number must contain only digits',
+        licenseInvalidFormat: 'License number must be 9 digits (SIREN) or 14 digits (SIRET)',
+        licenseDuplicate: 'This license number is already registered',
       },
 
       // Verification messages
@@ -5429,6 +5435,12 @@ const translations = {
         resendSuccess: 'Courriel de vérification renvoyé!',
         backToLogin: 'Retour à la connexion',
         goToLogin: 'Aller à la connexion',
+
+        // Validation errors
+        phoneDuplicate: 'Ce numéro de téléphone est déjà enregistré',
+        licenseInvalidChars: 'Le numéro de licence doit contenir uniquement des chiffres',
+        licenseInvalidFormat: 'Le numéro de licence doit être de 9 chiffres (SIREN) ou 14 chiffres (SIRET)',
+        licenseDuplicate: 'Ce numéro de licence est déjà enregistré',
       },
 
       // Verification messages
