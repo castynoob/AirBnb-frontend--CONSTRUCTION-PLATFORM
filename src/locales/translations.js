@@ -941,6 +941,19 @@ const translations = {
       // Modal Actions
       messageManager: 'Message Manager',
       close: 'Close',
+      // Job Categories
+      categoryRoofing: 'Roofing',
+      categoryCarpentry: 'Carpentry',
+      categoryMasonry: 'Masonry',
+      categoryPlumbing: 'Plumbing',
+      categoryElectrical: 'Electrical',
+      categoryPainting: 'Painting',
+      categoryFlooring: 'Flooring',
+      categoryLandscaping: 'Landscaping',
+      categoryHVAC: 'HVAC',
+      categoryWindowsDoors: 'Windows/Doors',
+      categoryGeneralRepair: 'General Repair',
+      categoryOther: 'Other',
     },
 
     // Entrepreneur Jobs Page
@@ -3761,6 +3774,19 @@ const translations = {
       // Modal Actions
       messageManager: 'Contacter le Gestionnaire',
       close: 'Fermer',
+      // Job Categories
+      categoryRoofing: 'Toiture',
+      categoryCarpentry: 'Menuiserie',
+      categoryMasonry: 'Maçonnerie',
+      categoryPlumbing: 'Plomberie',
+      categoryElectrical: 'Électricité',
+      categoryPainting: 'Peinture',
+      categoryFlooring: 'Revêtement de Sol',
+      categoryLandscaping: 'Aménagement Paysager',
+      categoryHVAC: 'CVC',
+      categoryWindowsDoors: 'Fenêtres/Portes',
+      categoryGeneralRepair: 'Réparation Générale',
+      categoryOther: 'Autre',
     },
 
     // Entrepreneur Jobs Page

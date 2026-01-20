@@ -170,6 +170,25 @@ const SubmittedBids = () => {
     return `${Math.floor(diffInDays / 30)} ${t('submittedBids.monthsAgo')}`;
   };
 
+  // Helper function to translate job categories
+  const getCategoryLabel = (category) => {
+    const categoryMap = {
+      'Roofing': t('submittedBids.categoryRoofing'),
+      'Carpentry': t('submittedBids.categoryCarpentry'),
+      'Masonry': t('submittedBids.categoryMasonry'),
+      'Plumbing': t('submittedBids.categoryPlumbing'),
+      'Electrical': t('submittedBids.categoryElectrical'),
+      'Painting': t('submittedBids.categoryPainting'),
+      'Flooring': t('submittedBids.categoryFlooring'),
+      'Landscaping': t('submittedBids.categoryLandscaping'),
+      'HVAC': t('submittedBids.categoryHVAC'),
+      'Windows/Doors': t('submittedBids.categoryWindowsDoors'),
+      'General Repair': t('submittedBids.categoryGeneralRepair'),
+      'Other': t('submittedBids.categoryOther'),
+    };
+    return categoryMap[category] || category;
+  };
+
   const getCurrentBids = () => {
     return bids[activeTab] || [];
   };
@@ -496,7 +515,7 @@ const SubmittedBids = () => {
                   <div className="subs-card-info">
                     <div className="subs-info-item">
                       <FileText size={12} />
-                      <span>{bid.category}</span>
+                      <span>{getCategoryLabel(bid.category)}</span>
                     </div>
                     {(bid.property_address || bid.city) && (
                       <div className="subs-info-item">
@@ -557,7 +576,7 @@ const SubmittedBids = () => {
                     </div>
                     <div className="bid-info-item">
                       <label>{t('submittedBids.category')}</label>
-                      <p>{selectedBid.category}</p>
+                      <p>{getCategoryLabel(selectedBid.category)}</p>
                     </div>
                     <div className="bid-info-item">
                       <label>
