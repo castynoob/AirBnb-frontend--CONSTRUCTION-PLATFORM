@@ -163,6 +163,26 @@
   color: #64748b;
 }
 
+.admin-sidebar-logout {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.admin-sidebar-logout:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
 /* ============================================
    MAIN CONTENT
    ============================================ */

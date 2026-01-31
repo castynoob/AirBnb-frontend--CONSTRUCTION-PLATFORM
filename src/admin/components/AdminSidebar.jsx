@@ -10,11 +10,13 @@ import {
   ClipboardList,
   MessageSquare,
   Flag,
+  Megaphone,
+  LogOut,
 } from "lucide-react";
 import { useAdminAuth } from "../context/AdminAuthContext";
 
 function AdminSidebar({ isOpen, onClose }) {
-  const { admin, canManageUsers } = useAdminAuth();
+  const { admin, canManageUsers, logout } = useAdminAuth();
 
   const navSections = [
     {
@@ -65,6 +67,11 @@ function AdminSidebar({ isOpen, onClose }) {
           to: "/admin/subscriptions",
           icon: ClipboardList,
           label: "Subscriptions",
+        },
+        {
+          to: "/admin/promoters",
+          icon: Megaphone,
+          label: "Promoters",
         },
       ],
     },
@@ -156,6 +163,13 @@ function AdminSidebar({ isOpen, onClose }) {
                 {admin?.role?.replace("_", " ").toUpperCase()}
               </div>
             </div>
+            <button
+              className="admin-sidebar-logout"
+              onClick={logout}
+              title="Logout"
+            >
+              <LogOut size={18} />
+            </button>
           </div>
         </div>
       </aside>

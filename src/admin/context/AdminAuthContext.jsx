@@ -134,8 +134,12 @@ export function AdminAuthProvider({ children }) {
   const isAdminOrHigher = useCallback(() => hasRole("admin"), [hasRole]);
   const isModeratorOrHigher = useCallback(() => hasRole("moderator"), [hasRole]);
 
+  // Get the current token value for direct access
+  const token = getToken();
+
   const value = {
     admin,
+    token, // Expose token directly for easy access in components
     loading,
     error,
     isAuthenticated: !!admin,

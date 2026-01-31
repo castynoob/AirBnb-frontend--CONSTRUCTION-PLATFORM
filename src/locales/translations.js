@@ -2527,6 +2527,19 @@ const translations = {
         supplierDetails: 'Supplier Details',
         selectYourBuilding: 'Select your building',
 
+        // Address fields
+        country: 'Country',
+        state: 'State',
+        province: 'Province',
+        city: 'City',
+        zipCode: 'ZIP Code',
+        postalCode: 'Postal Code',
+        selectState: 'Select State',
+        selectProvince: 'Select Province',
+        cityPlaceholder: 'Enter city name',
+        zipCodePlaceholder: 'e.g., 10001',
+        postalCodePlaceholder: 'e.g., A1A 1A1',
+
         // Placeholders
         firstNamePlaceholder: 'Enter your first name',
         lastNamePlaceholder: 'Enter your last name',
@@ -5365,6 +5378,19 @@ const translations = {
         residentDetails: 'Détails du résident',
         supplierDetails: 'Détails du fournisseur',
         selectYourBuilding: 'Sélectionnez votre immeuble',
+
+        // Address fields
+        country: 'Pays',
+        state: 'État',
+        province: 'Province',
+        city: 'Ville',
+        zipCode: 'Code ZIP',
+        postalCode: 'Code postal',
+        selectState: 'Sélectionnez l\'état',
+        selectProvince: 'Sélectionnez la province',
+        cityPlaceholder: 'Entrez le nom de la ville',
+        zipCodePlaceholder: 'ex. 10001',
+        postalCodePlaceholder: 'ex. A1A 1A1',
 
         // Placeholders
         firstNamePlaceholder: 'Entrez votre prénom',

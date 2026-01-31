@@ -1743,3 +1743,197 @@
     padding: 1.25rem;
   }
 }
+
+/* ========================================
+   PROMO CODE SECTION
+======================================== */
+
+.sp-promo-section {
+  margin-bottom: 1rem;
+}
+
+.sp-promo-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  color: #00A5A9;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  transition: all 0.2s ease;
+}
+
+.sp-promo-toggle:hover {
+  color: #008b8f;
+}
+
+.sp-promo-toggle svg {
+  color: inherit;
+}
+
+.sp-promo-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sp-promo-input-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.sp-promo-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 2px solid #D9E1E7;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.2s ease;
+}
+
+.sp-promo-input:focus {
+  outline: none;
+  border-color: #00A5A9;
+  box-shadow: 0 0 0 3px rgba(0, 165, 169, 0.1);
+}
+
+.sp-promo-input:disabled {
+  background: #F7F8FA;
+  color: #0F223D;
+}
+
+.sp-promo-apply-btn {
+  padding: 0.75rem 1.25rem;
+  background: #0F223D;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.sp-promo-apply-btn:hover:not(:disabled) {
+  background: #1a3a5c;
+}
+
+.sp-promo-apply-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sp-promo-clear-btn {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #F7F8FA;
+  border: 2px solid #D9E1E7;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.sp-promo-clear-btn:hover {
+  background: #E74C3C;
+  border-color: #E74C3C;
+}
+
+.sp-promo-clear-btn:hover svg {
+  color: #fff;
+}
+
+.sp-promo-clear-btn svg {
+  color: #7F8C8D;
+}
+
+.sp-promo-success {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  background: rgba(46, 204, 113, 0.08);
+  border: 1px solid rgba(46, 204, 113, 0.25);
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  color: #27ae60;
+}
+
+.sp-promo-success svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.sp-promo-success div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.sp-promo-success strong {
+  font-size: 0.9rem;
+  color: #27ae60;
+}
+
+.sp-promo-success p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #2ECC71;
+  opacity: 0.9;
+}
+
+.sp-promo-activation {
+  background: linear-gradient(135deg, rgba(208, 245, 46, 0.15) 0%, rgba(0, 165, 169, 0.1) 100%);
+  border: 1px solid rgba(208, 245, 46, 0.4);
+}
+
+.sp-promo-activation strong {
+  color: #0F223D;
+}
+
+.sp-promo-activation p {
+  color: #00A5A9;
+  font-weight: 500;
+}
+
+.sp-promo-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(231, 76, 60, 0.08);
+  border: 1px solid rgba(231, 76, 60, 0.2);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  color: #E74C3C;
+}
+
+.sp-promo-error svg {
+  flex-shrink: 0;
+}
+
+/* Promo Code Responsive */
+@media (max-width: 520px) {
+  .sp-promo-input-row {
+    flex-direction: column;
+  }
+
+  .sp-promo-apply-btn {
+    width: 100%;
+  }
+
+  .sp-promo-clear-btn {
+    width: 100%;
+    height: auto;
+    padding: 0.75rem;
+  }
+}

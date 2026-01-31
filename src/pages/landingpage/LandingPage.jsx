@@ -55,7 +55,10 @@ export default function LandingPage() {
     password: "",
     confirm_password: "",
     company_name: "",
-    address: "",
+    country: "",
+    state: "",
+    city: "",
+    zip_code: "",
     license_number: "",
     years_in_business: "",
     num_employees: "",
@@ -69,6 +72,86 @@ export default function LandingPage() {
     provider: 'local',
     num_properties: ""
   })
+
+  // Country and State/Province options
+  const countryOptions = [
+    { value: "", label: "Select Country" },
+    { value: "CA", label: "Canada" },
+    { value: "US", label: "United States" }
+  ];
+
+  const stateProvinceOptions = {
+    CA: [
+      { value: "", label: "Select Province" },
+      { value: "AB", label: "Alberta" },
+      { value: "BC", label: "British Columbia" },
+      { value: "MB", label: "Manitoba" },
+      { value: "NB", label: "New Brunswick" },
+      { value: "NL", label: "Newfoundland and Labrador" },
+      { value: "NS", label: "Nova Scotia" },
+      { value: "NT", label: "Northwest Territories" },
+      { value: "NU", label: "Nunavut" },
+      { value: "ON", label: "Ontario" },
+      { value: "PE", label: "Prince Edward Island" },
+      { value: "QC", label: "Quebec" },
+      { value: "SK", label: "Saskatchewan" },
+      { value: "YT", label: "Yukon" }
+    ],
+    US: [
+      { value: "", label: "Select State" },
+      { value: "AL", label: "Alabama" },
+      { value: "AK", label: "Alaska" },
+      { value: "AZ", label: "Arizona" },
+      { value: "AR", label: "Arkansas" },
+      { value: "CA", label: "California" },
+      { value: "CO", label: "Colorado" },
+      { value: "CT", label: "Connecticut" },
+      { value: "DE", label: "Delaware" },
+      { value: "FL", label: "Florida" },
+      { value: "GA", label: "Georgia" },
+      { value: "HI", label: "Hawaii" },
+      { value: "ID", label: "Idaho" },
+      { value: "IL", label: "Illinois" },
+      { value: "IN", label: "Indiana" },
+      { value: "IA", label: "Iowa" },
+      { value: "KS", label: "Kansas" },
+      { value: "KY", label: "Kentucky" },
+      { value: "LA", label: "Louisiana" },
+      { value: "ME", label: "Maine" },
+      { value: "MD", label: "Maryland" },
+      { value: "MA", label: "Massachusetts" },
+      { value: "MI", label: "Michigan" },
+      { value: "MN", label: "Minnesota" },
+      { value: "MS", label: "Mississippi" },
+      { value: "MO", label: "Missouri" },
+      { value: "MT", label: "Montana" },
+      { value: "NE", label: "Nebraska" },
+      { value: "NV", label: "Nevada" },
+      { value: "NH", label: "New Hampshire" },
+      { value: "NJ", label: "New Jersey" },
+      { value: "NM", label: "New Mexico" },
+      { value: "NY", label: "New York" },
+      { value: "NC", label: "North Carolina" },
+      { value: "ND", label: "North Dakota" },
+      { value: "OH", label: "Ohio" },
+      { value: "OK", label: "Oklahoma" },
+      { value: "OR", label: "Oregon" },
+      { value: "PA", label: "Pennsylvania" },
+      { value: "RI", label: "Rhode Island" },
+      { value: "SC", label: "South Carolina" },
+      { value: "SD", label: "South Dakota" },
+      { value: "TN", label: "Tennessee" },
+      { value: "TX", label: "Texas" },
+      { value: "UT", label: "Utah" },
+      { value: "VT", label: "Vermont" },
+      { value: "VA", label: "Virginia" },
+      { value: "WA", label: "Washington" },
+      { value: "WV", label: "West Virginia" },
+      { value: "WI", label: "Wisconsin" },
+      { value: "WY", label: "Wyoming" },
+      { value: "DC", label: "Washington D.C." }
+    ]
+  };
   const [registerErrors, setRegisterErrors] = useState({ submit: '' })
   const [isRegistering, setIsRegistering] = useState(false)
   const [isResendingVerification, setIsResendingVerification] = useState(false)
@@ -1841,16 +1924,22 @@ export default function LandingPage() {
 
               <div className="lp-form-group">
                 <label htmlFor="login-email">{t('landingPage.login.emailLabel')}</label>
-                <input
-                  id="login-email"
-                  type="email"
-                  name="email"
-                  placeholder={t('landingPage.login.emailPlaceholder')}
-                  value={loginFormData.email}
-                  onChange={handleLoginChange}
-                  className={loginErrors.email ? "lp-input-error" : ""}
-                  required
-                />
+                <div className="lp-input-wrapper">
+                  <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                  </svg>
+                  <input
+                    id="login-email"
+                    type="email"
+                    name="email"
+                    placeholder={t('landingPage.login.emailPlaceholder')}
+                    value={loginFormData.email}
+                    onChange={handleLoginChange}
+                    className={loginErrors.email ? "lp-input-error" : ""}
+                    required
+                  />
+                </div>
                 {loginErrors.email && (
                   <span className="lp-error-message">{loginErrors.email}</span>
                 )}
@@ -1858,7 +1947,11 @@ export default function LandingPage() {
 
               <div className="lp-form-group">
                 <label htmlFor="login-password">{t('landingPage.login.passwordLabel')}</label>
-                <div className="lp-password-input-wrapper">
+                <div className="lp-input-wrapper">
+                  <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
                   <input
                     id="login-password"
                     type={showPassword ? "text" : "password"}
@@ -1875,7 +1968,19 @@ export default function LandingPage() {
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    {showPassword ? "👁️" : "👁️‍🗨️"}
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                      {showPassword ? (
+                        <>
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                          <line x1="1" y1="1" x2="23" y2="23"/>
+                        </>
+                      ) : (
+                        <>
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                          <circle cx="12" cy="12" r="3"/>
+                        </>
+                      )}
+                    </svg>
                   </button>
                 </div>
                 {loginErrors.password && (
@@ -2294,50 +2399,91 @@ export default function LandingPage() {
                           <span className="lp-field-error">{registerErrors.phone}</span>
                         )}
                       </div>
-                      <div className="lp-form-group">
-                        <label>{t('landingPage.register.businessAddress')}</label>
-                        <div className="lp-address-autocomplete-wrapper">
-                          <div className="lp-input-wrapper">
+                      {/* Address Section */}
+                      <div className="lp-form-divider">{t('landingPage.register.addressDetails') || 'Business Address'}</div>
+                      <div className="lp-form-row">
+                        <div className="lp-form-group">
+                          <label>{t('landingPage.register.country') || 'Country'}</label>
+                          <div className="lp-input-wrapper lp-select-wrapper">
+                            <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10"/>
+                              <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                            </svg>
+                            <select
+                              name="country"
+                              value={registerFormData.country}
+                              onChange={(e) => {
+                                setRegisterFormData({
+                                  ...registerFormData,
+                                  country: e.target.value,
+                                  state: "" // Reset state when country changes
+                                });
+                              }}
+                              required
+                            >
+                              {countryOptions.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        <div className="lp-form-group">
+                          <label>{registerFormData.country === 'CA' ? (t('landingPage.register.province') || 'Province') : (t('landingPage.register.state') || 'State')}</label>
+                          <div className="lp-input-wrapper lp-select-wrapper">
                             <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                               <circle cx="12" cy="10" r="3"/>
                             </svg>
-                            <input
-                              type="text"
-                              name="address"
-                              placeholder={t('landingPage.register.addressPlaceholder')}
-                              value={registerFormData.address}
-                              onChange={handleAddressChange}
-                              onFocus={() => registerFormData.address.length > 2 && setShowAddressSuggestions(true)}
-                              onBlur={() => setTimeout(() => setShowAddressSuggestions(false), 200)}
+                            <select
+                              name="state"
+                              value={registerFormData.state}
+                              onChange={handleRegisterChange}
                               required
-                              autoComplete="off"
-                            />
-                          </div>
-                          {showAddressSuggestions && addressSuggestions.length > 0 && (
-                            <div className="lp-address-suggestions">
-                              {isLoadingAddresses && (
-                                <div className="lp-address-suggestion-item loading">
-                                  {t('common.loading')}
-                                </div>
-                              )}
-                              {!isLoadingAddresses && addressSuggestions.map((suggestion, index) => (
-                                <div
-                                  key={index}
-                                  className="lp-address-suggestion-item"
-                                  onClick={() => selectAddress(suggestion)}
-                                >
-                                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                                    <circle cx="12" cy="10" r="3"/>
-                                  </svg>
-                                  <span>{suggestion.display_name}</span>
-                                </div>
+                              disabled={!registerFormData.country}
+                            >
+                              {(stateProvinceOptions[registerFormData.country] || [{ value: "", label: "Select Country First" }]).map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
                               ))}
-                            </div>
-                          )}
+                            </select>
+                          </div>
                         </div>
                       </div>
+                      <div className="lp-form-row">
+                        <div className="lp-form-group">
+                          <label>{t('landingPage.register.city') || 'City'}</label>
+                          <div className="lp-input-wrapper">
+                            <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M3 21h18M9 8h1m-1 4h1m-1 4h1M14 8h1m-1 4h1m-1 4h1M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                            </svg>
+                            <input
+                              type="text"
+                              name="city"
+                              placeholder={t('landingPage.register.cityPlaceholder') || 'Enter city'}
+                              value={registerFormData.city}
+                              onChange={handleRegisterChange}
+                              required
+                            />
+                          </div>
+                        </div>
+                        <div className="lp-form-group">
+                          <label>{registerFormData.country === 'CA' ? (t('landingPage.register.postalCode') || 'Postal Code') : (t('landingPage.register.zipCode') || 'ZIP Code')}</label>
+                          <div className="lp-input-wrapper">
+                            <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <rect x="2" y="4" width="20" height="16" rx="2"/>
+                              <path d="M7 9h10M7 13h6"/>
+                            </svg>
+                            <input
+                              type="text"
+                              name="zip_code"
+                              placeholder={registerFormData.country === 'CA' ? 'A1A 1A1' : '12345'}
+                              value={registerFormData.zip_code}
+                              onChange={handleRegisterChange}
+                              required
+                            />
+                          </div>
+                        </div>
+                      </div>
+
                       <div className="lp-form-group">
                         <label>{t('landingPage.register.numProperties')}</label>
                         <div className="lp-input-wrapper">
@@ -2397,50 +2543,91 @@ export default function LandingPage() {
                           <span className="lp-field-error">{registerErrors.phone}</span>
                         )}
                       </div>
-                      <div className="lp-form-group">
-                        <label>{t('landingPage.register.businessAddress')}</label>
-                        <div className="lp-address-autocomplete-wrapper">
-                          <div className="lp-input-wrapper">
+                      {/* Address Section */}
+                      <div className="lp-form-divider">{t('landingPage.register.addressDetails') || 'Business Address'}</div>
+                      <div className="lp-form-row">
+                        <div className="lp-form-group">
+                          <label>{t('landingPage.register.country') || 'Country'}</label>
+                          <div className="lp-input-wrapper lp-select-wrapper">
+                            <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10"/>
+                              <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                            </svg>
+                            <select
+                              name="country"
+                              value={registerFormData.country}
+                              onChange={(e) => {
+                                setRegisterFormData({
+                                  ...registerFormData,
+                                  country: e.target.value,
+                                  state: ""
+                                });
+                              }}
+                              required
+                            >
+                              {countryOptions.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        <div className="lp-form-group">
+                          <label>{registerFormData.country === 'CA' ? (t('landingPage.register.province') || 'Province') : (t('landingPage.register.state') || 'State')}</label>
+                          <div className="lp-input-wrapper lp-select-wrapper">
                             <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                               <circle cx="12" cy="10" r="3"/>
                             </svg>
-                            <input
-                              type="text"
-                              name="address"
-                              placeholder={t('landingPage.register.addressPlaceholder')}
-                              value={registerFormData.address}
-                              onChange={handleAddressChange}
-                              onFocus={() => registerFormData.address.length > 2 && setShowAddressSuggestions(true)}
-                              onBlur={() => setTimeout(() => setShowAddressSuggestions(false), 200)}
+                            <select
+                              name="state"
+                              value={registerFormData.state}
+                              onChange={handleRegisterChange}
                               required
-                              autoComplete="off"
-                            />
-                          </div>
-                          {showAddressSuggestions && addressSuggestions.length > 0 && (
-                            <div className="lp-address-suggestions">
-                              {isLoadingAddresses && (
-                                <div className="lp-address-suggestion-item loading">
-                                  {t('common.loading')}
-                                </div>
-                              )}
-                              {!isLoadingAddresses && addressSuggestions.map((suggestion, index) => (
-                                <div
-                                  key={index}
-                                  className="lp-address-suggestion-item"
-                                  onClick={() => selectAddress(suggestion)}
-                                >
-                                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                                    <circle cx="12" cy="10" r="3"/>
-                                  </svg>
-                                  <span>{suggestion.display_name}</span>
-                                </div>
+                              disabled={!registerFormData.country}
+                            >
+                              {(stateProvinceOptions[registerFormData.country] || [{ value: "", label: "Select Country First" }]).map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
                               ))}
-                            </div>
-                          )}
+                            </select>
+                          </div>
                         </div>
                       </div>
+                      <div className="lp-form-row">
+                        <div className="lp-form-group">
+                          <label>{t('landingPage.register.city') || 'City'}</label>
+                          <div className="lp-input-wrapper">
+                            <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M3 21h18M9 8h1m-1 4h1m-1 4h1M14 8h1m-1 4h1m-1 4h1M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/>
+                            </svg>
+                            <input
+                              type="text"
+                              name="city"
+                              placeholder={t('landingPage.register.cityPlaceholder') || 'Enter city'}
+                              value={registerFormData.city}
+                              onChange={handleRegisterChange}
+                              required
+                            />
+                          </div>
+                        </div>
+                        <div className="lp-form-group">
+                          <label>{registerFormData.country === 'CA' ? (t('landingPage.register.postalCode') || 'Postal Code') : (t('landingPage.register.zipCode') || 'ZIP Code')}</label>
+                          <div className="lp-input-wrapper">
+                            <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <rect x="2" y="4" width="20" height="16" rx="2"/>
+                              <path d="M7 9h10M7 13h6"/>
+                            </svg>
+                            <input
+                              type="text"
+                              name="zip_code"
+                              placeholder={registerFormData.country === 'CA' ? 'A1A 1A1' : '12345'}
+                              value={registerFormData.zip_code}
+                              onChange={handleRegisterChange}
+                              required
+                            />
+                          </div>
+                        </div>
+                      </div>
+
                       <div className="lp-form-group">
                         <label>{t('landingPage.register.licenseNumber')}</label>
                         <div className="lp-input-wrapper">
@@ -2672,48 +2859,96 @@ export default function LandingPage() {
                           <span className="lp-field-error">{registerErrors.phone}</span>
                         )}
                       </div>
-                      <div className="lp-form-group">
-                        <label>{t('landingPage.register.businessAddress')}</label>
-                        <div className="lp-address-autocomplete-wrapper">
-                          <div className="lp-input-wrapper">
+                      <div className="lp-form-divider">{t('landingPage.register.businessAddress')}</div>
+                      <div className="lp-form-row">
+                        <div className="lp-form-group lp-form-half">
+                          <label>{t('landingPage.register.country')}</label>
+                          <div className="lp-select-wrapper">
+                            <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="12" cy="12" r="10"/>
+                              <line x1="2" y1="12" x2="22" y2="12"/>
+                              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                            </svg>
+                            <select
+                              name="country"
+                              value={registerFormData.country}
+                              onChange={(e) => {
+                                setRegisterFormData({
+                                  ...registerFormData,
+                                  country: e.target.value,
+                                  state: ""
+                                });
+                              }}
+                              required
+                            >
+                              {countryOptions.map(option => (
+                                <option key={option.value} value={option.value}>{option.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        <div className="lp-form-group lp-form-half">
+                          <label>{registerFormData.country === "CA" ? t('landingPage.register.province') : t('landingPage.register.state')}</label>
+                          <div className="lp-select-wrapper">
                             <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                               <circle cx="12" cy="10" r="3"/>
                             </svg>
+                            <select
+                              name="state"
+                              value={registerFormData.state}
+                              onChange={handleRegisterChange}
+                              required
+                              disabled={!registerFormData.country}
+                            >
+                              <option value="">{registerFormData.country === "CA" ? t('landingPage.register.selectProvince') : t('landingPage.register.selectState')}</option>
+                              {registerFormData.country && stateProvinceOptions[registerFormData.country]?.map(option => (
+                                <option key={option.value} value={option.value}>{option.label}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="lp-form-row">
+                        <div className="lp-form-group lp-form-half">
+                          <label>{t('landingPage.register.city')}</label>
+                          <div className="lp-input-wrapper">
+                            <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M3 21h18"/>
+                              <path d="M5 21V7l8-4v18"/>
+                              <path d="M19 21V11l-6-4"/>
+                              <path d="M9 9v.01"/>
+                              <path d="M9 12v.01"/>
+                              <path d="M9 15v.01"/>
+                              <path d="M9 18v.01"/>
+                            </svg>
                             <input
                               type="text"
-                              name="address"
-                              placeholder={t('landingPage.register.addressPlaceholder')}
-                              value={registerFormData.address}
-                              onChange={handleAddressChange}
-                              onFocus={() => registerFormData.address.length > 2 && setShowAddressSuggestions(true)}
-                              onBlur={() => setTimeout(() => setShowAddressSuggestions(false), 200)}
+                              name="city"
+                              placeholder={t('landingPage.register.cityPlaceholder')}
+                              value={registerFormData.city}
+                              onChange={handleRegisterChange}
                               required
-                              autoComplete="off"
                             />
                           </div>
-                          {showAddressSuggestions && addressSuggestions.length > 0 && (
-                            <div className="lp-address-suggestions">
-                              {isLoadingAddresses && (
-                                <div className="lp-address-suggestion-item loading">
-                                  {t('common.loading')}
-                                </div>
-                              )}
-                              {!isLoadingAddresses && addressSuggestions.map((suggestion, index) => (
-                                <div
-                                  key={index}
-                                  className="lp-address-suggestion-item"
-                                  onClick={() => selectAddress(suggestion)}
-                                >
-                                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-                                    <circle cx="12" cy="10" r="3"/>
-                                  </svg>
-                                  <span>{suggestion.display_name}</span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                        </div>
+                        <div className="lp-form-group lp-form-half">
+                          <label>{registerFormData.country === "CA" ? t('landingPage.register.postalCode') : t('landingPage.register.zipCode')}</label>
+                          <div className="lp-input-wrapper">
+                            <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M21 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v3"/>
+                              <path d="M21 16v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3"/>
+                              <path d="M4 12h16"/>
+                            </svg>
+                            <input
+                              type="text"
+                              name="zip_code"
+                              placeholder={registerFormData.country === "CA" ? t('landingPage.register.postalCodePlaceholder') : t('landingPage.register.zipCodePlaceholder')}
+                              value={registerFormData.zip_code}
+                              onChange={handleRegisterChange}
+                              required
+                            />
+                          </div>
                         </div>
                       </div>
                       <div className="lp-form-group">

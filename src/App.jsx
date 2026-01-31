@@ -40,6 +40,8 @@ import Bids from "./admin/pages/Bids";
 import Properties from "./admin/pages/Properties";
 import Payments from "./admin/pages/Payments";
 import Subscriptions from "./admin/pages/Subscriptions";
+import Promoters from "./admin/pages/Promoters";
+import PromoterDetail from "./admin/pages/PromoterDetail";
 import Reports from "./admin/pages/Reports";
 import Disputes from "./admin/pages/Disputes";
 
@@ -115,6 +117,8 @@ function AdminRoutes() {
         <Route path="/properties" element={<Properties />} />
         <Route path="/payments" element={<Payments />} />
         <Route path="/subscriptions" element={<Subscriptions />} />
+        <Route path="/promoters" element={<Promoters />} />
+        <Route path="/promoters/:id" element={<PromoterDetail />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/disputes" element={<Disputes />} />
         {/* <Route path="/audit-logs" element={<AuditLogs />} /> */}

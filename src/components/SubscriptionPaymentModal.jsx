@@ -159,6 +159,12 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
   const [showThankYou, setShowThankYou] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
+  // Promo code state
+  const [promoCode, setPromoCode] = useState("");
+  const [promoStatus, setPromoStatus] = useState(null); // null | 'checking' | 'valid' | 'invalid'
+  const [promoData, setPromoData] = useState(null);
+  const [showPromoInput, setShowPromoInput] = useState(false);
+
   // Handle closing after successful payment
   const handleSuccessClose = () => {
     setIsClosing(true);
@@ -166,6 +172,48 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
     setTimeout(() => {
       handleCloseModal(true);
     }, 1200);
+  };
+
+  // Validate promo code
+  const validatePromoCode = async () => {
+    if (!promoCode.trim()) return;
+
+    setPromoStatus("checking");
+    setMessage("");
+
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+      const res = await fetch(`${API_BASE_URL}/api/payments/validate-promo-code`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ code: promoCode.toUpperCase() }),
+      });
+
+      const data = await res.json();
+
+      if (data.valid) {
+        setPromoStatus("valid");
+        setPromoData(data);
+      } else {
+        setPromoStatus("invalid");
+        setPromoData(null);
+        setMessage(data.error || "Invalid promo code");
+      }
+    } catch (err) {
+      setPromoStatus("invalid");
+      setPromoData(null);
+      setMessage("Failed to validate promo code");
+    }
+  };
+
+  // Clear promo code
+  const clearPromoCode = () => {
+    setPromoCode("");
+    setPromoStatus(null);
+    setPromoData(null);
+    setMessage("");
   };
 
   const planDetails = {
@@ -197,10 +245,44 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!stripe || !elements) return;
 
     setLoading(true);
     setMessage("");
+
+    // If activation code (promoter), skip payment
+    if (promoData?.type === "activation") {
+      try {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+        const res = await fetch(`${API_BASE_URL}/api/payments/create-subscription`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            plan_type: planType,
+            promo_code: promoCode,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          setIsSuccess(true);
+          setShowThankYou(true);
+        } else {
+          setMessage(data.error || data.message || "Activation failed. Please try again.");
+        }
+      } catch (err) {
+        setMessage("Activation failed. Please try again later.");
+      }
+
+      setLoading(false);
+      return;
+    }
+
+    // Regular subscription flow
+    if (!stripe || !elements) return;
 
     const { error, paymentMethod } = await stripe.createPaymentMethod({
       type: "card",
@@ -224,6 +306,7 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
         body: JSON.stringify({
           plan_type: planType,
           payment_method_id: paymentMethod.id,
+          promo_code: promoStatus === "valid" ? promoCode : undefined,
         }),
       });
 
@@ -345,9 +428,97 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
 
             {/* Payment Form */}
             <form onSubmit={handleSubmit} className="sp-form">
-              <label className="sp-label">Card Details</label>
-              <div className="sp-card-element-wrapper">
-                <CardElement
+              {/* Promo Code Section */}
+              <div className="sp-promo-section">
+                {!showPromoInput ? (
+                  <button
+                    type="button"
+                    className="sp-promo-toggle"
+                    onClick={() => setShowPromoInput(true)}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16">
+                      <path d="M20.59 13.41L13.42 20.58C13.2343 20.766 13.0137 20.9135 12.7709 21.0141C12.5281 21.1148 12.2678 21.1666 12.005 21.1666C11.7422 21.1666 11.4819 21.1148 11.2391 21.0141C10.9963 20.9135 10.7757 20.766 10.59 20.58L2 12V2H12L20.59 10.59C20.9625 10.9647 21.1716 11.4716 21.1716 12C21.1716 12.5284 20.9625 13.0353 20.59 13.41Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M7 7H7.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Have a promo code?
+                  </button>
+                ) : (
+                  <div className="sp-promo-input-wrapper">
+                    <div className="sp-promo-input-row">
+                      <input
+                        type="text"
+                        className="sp-promo-input"
+                        placeholder="Enter promo code"
+                        value={promoCode}
+                        onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                        maxLength={10}
+                        disabled={promoStatus === "valid"}
+                      />
+                      {promoStatus !== "valid" ? (
+                        <button
+                          type="button"
+                          className="sp-promo-apply-btn"
+                          onClick={validatePromoCode}
+                          disabled={promoStatus === "checking" || !promoCode.trim()}
+                        >
+                          {promoStatus === "checking" ? "..." : "Apply"}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="sp-promo-clear-btn"
+                          onClick={clearPromoCode}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16">
+                            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+
+                    {promoStatus === "valid" && promoData?.type === "activation" && (
+                      <div className="sp-promo-success sp-promo-activation">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="18" height="18">
+                          <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        <div>
+                          <strong>Promoter Code Activated!</strong>
+                          <p>You will receive FREE platform access. No payment required.</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {promoStatus === "valid" && promoData?.type === "referral" && (
+                      <div className="sp-promo-success">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="18" height="18">
+                          <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        <div>
+                          <strong>{promoData.discount_percent}% off for {promoData.discount_duration} month!</strong>
+                          <p>Code from: {promoData.promoter_name}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {promoStatus === "invalid" && (
+                      <div className="sp-promo-error">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="16" height="16">
+                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                          <path d="M12 8V12M12 16H12.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                        Invalid or expired promo code
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Hide card details for activation codes */}
+              {promoData?.type !== "activation" && (
+                <>
+                  <label className="sp-label">Card Details</label>
+                  <div className="sp-card-element-wrapper">
+                    <CardElement
                   options={{
                     style: {
                       base: {
@@ -367,6 +538,8 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
                   }}
                 />
               </div>
+                </>
+              )}
 
               {message && (
                 <div className="sp-error-message">
@@ -381,12 +554,19 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
               <button
                 type="submit"
                 className="sp-submit-btn"
-                disabled={!stripe || loading}
+                disabled={promoData?.type === "activation" ? loading : (!stripe || loading)}
               >
                 {loading ? (
                   <>
                     <span className="sp-spinner"></span>
-                    Processing...
+                    {promoData?.type === "activation" ? "Activating..." : "Processing..."}
+                  </>
+                ) : promoData?.type === "activation" ? (
+                  <>
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Activate Free Access
                   </>
                 ) : (
                   <>
@@ -399,9 +579,11 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
                 )}
               </button>
 
-              <p className="sp-card-note">
-                Your card will be charged {currentPlan.price} after the trial ends. Cancel anytime.
-              </p>
+              {promoData?.type !== "activation" && (
+                <p className="sp-card-note">
+                  Your card will be charged {currentPlan.price} after the trial ends. Cancel anytime.
+                </p>
+              )}
             </form>
           </div>
         </div>

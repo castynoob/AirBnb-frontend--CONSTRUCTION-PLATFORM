@@ -2375,7 +2375,7 @@ body {
   background: white;
   border: 1px solid var(--color-border-divider);
   border-radius: 20px;
-  max-width: 500px;
+  max-width: 520px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
@@ -2385,8 +2385,8 @@ body {
 }
 
 .lp-modal-login {
-  padding: 48px 40px;
-  max-width: 480px;
+  padding: 48px 48px;
+  max-width: 520px;
   position: relative;
   overflow: hidden;
 }
@@ -2442,8 +2442,8 @@ body {
 }
 
 .lp-modal-register {
-  padding: 48px 50px;
-  max-width: 560px;
+  padding: 48px 56px;
+  max-width: 720px;
   max-height: 90vh;
   position: relative;
   overflow-y: auto;
@@ -2643,6 +2643,10 @@ body {
   gap: 12px;
 }
 
+.lp-form-half {
+  min-width: 0;
+}
+
 .lp-form-group {
   display: flex;
   flex-direction: column;
@@ -2689,10 +2693,39 @@ body {
   color: var(--color-secondary);
 }
 
+/* Select Wrapper with Icon */
+.lp-select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.lp-select-wrapper select {
+  padding-left: 44px !important;
+  padding-right: 14px !important;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  cursor: pointer;
+}
+
+.lp-select-wrapper:focus-within .lp-input-icon {
+  color: var(--color-secondary);
+}
+
+.lp-select-wrapper select:disabled {
+  background-color: #f1f5f9;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 /* Password Toggle Button */
 .lp-password-toggle {
   position: absolute;
   right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   background: none;
   border: none;
   cursor: pointer;
@@ -2702,7 +2735,7 @@ body {
   justify-content: center;
   color: #94a3b8;
   transition: color 0.2s ease;
-  z-index: 1;
+  z-index: 2;
 }
 
 .lp-password-toggle:hover {
@@ -2711,6 +2744,17 @@ body {
 
 .lp-password-toggle:focus {
   outline: none;
+}
+
+.lp-password-toggle svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Input wrapper with password toggle needs extra right padding */
+.lp-input-wrapper input[type="password"],
+.lp-input-wrapper input[type="text"]:has(~ .lp-password-toggle) {
+  padding-right: 44px !important;
 }
 
 .lp-form-group input,
