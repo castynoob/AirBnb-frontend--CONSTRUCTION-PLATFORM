@@ -57,6 +57,7 @@ export default function LandingPage() {
     company_name: "",
     country: "",
     state: "",
+    street_address: "",
     city: "",
     zip_code: "",
     license_number: "",
@@ -748,6 +749,23 @@ export default function LandingPage() {
                 .split(",")
                 .map((area) => area.trim())
                 .filter(Boolean);
+        }
+
+        // 5. Combine address fields into a single address string and prepare fields for users table
+        if (payload.street_address || payload.city || payload.state || payload.country || payload.zip_code) {
+            const addressParts = [
+                payload.street_address,
+                payload.city,
+                payload.state,
+                payload.country === 'CA' ? 'Canada' : payload.country === 'US' ? 'USA' : payload.country,
+                payload.zip_code
+            ].filter(Boolean);
+            payload.address = addressParts.join(', ');
+            // Map state to province and zip_code to postal_code for backend users table
+            payload.province = payload.state;
+            payload.postal_code = payload.zip_code;
+            // Clean up street_address from payload (address is now the combined string)
+            delete payload.street_address;
         }
 
         console.log("Payload being sent:", payload);
@@ -2401,6 +2419,23 @@ export default function LandingPage() {
                       </div>
                       {/* Address Section */}
                       <div className="lp-form-divider">{t('landingPage.register.addressDetails') || 'Business Address'}</div>
+                      <div className="lp-form-group">
+                        <label>{t('landingPage.register.streetAddress') || 'Street Address'}</label>
+                        <div className="lp-input-wrapper">
+                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                          </svg>
+                          <input
+                            type="text"
+                            name="street_address"
+                            placeholder={t('landingPage.register.streetAddressPlaceholder') || 'e.g., 123 Main Street, Unit 5'}
+                            value={registerFormData.street_address}
+                            onChange={handleRegisterChange}
+                            required
+                          />
+                        </div>
+                      </div>
                       <div className="lp-form-row">
                         <div className="lp-form-group">
                           <label>{t('landingPage.register.country') || 'Country'}</label>
@@ -2545,6 +2580,23 @@ export default function LandingPage() {
                       </div>
                       {/* Address Section */}
                       <div className="lp-form-divider">{t('landingPage.register.addressDetails') || 'Business Address'}</div>
+                      <div className="lp-form-group">
+                        <label>{t('landingPage.register.streetAddress') || 'Street Address'}</label>
+                        <div className="lp-input-wrapper">
+                          <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                          </svg>
+                          <input
+                            type="text"
+                            name="street_address"
+                            placeholder={t('landingPage.register.streetAddressPlaceholder') || 'e.g., 123 Main Street, Unit 5'}
+                            value={registerFormData.street_address}
+                            onChange={handleRegisterChange}
+                            required
+                          />
+                        </div>
+                      </div>
                       <div className="lp-form-row">
                         <div className="lp-form-group">
                           <label>{t('landingPage.register.country') || 'Country'}</label>

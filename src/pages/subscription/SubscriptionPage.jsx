@@ -83,7 +83,9 @@ function SubscriptionPage() {
   }
 
   const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "N/A";
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return date.toLocaleDateString('en-US', options);
   };
@@ -387,7 +389,7 @@ function SubscriptionPage() {
                   <div className="timeline-dates">
                     <div className="date-item">
                       <span className="date-label">Started</span>
-                      <span className="date-value">{formatDate(subscription.start_date)}</span>
+                      <span className="date-value">{formatDate(subscription.current_period_start || subscription.start_date || subscription.created_at)}</span>
                     </div>
                     <div className="date-item">
                       <span className="date-label">Next Billing</span>

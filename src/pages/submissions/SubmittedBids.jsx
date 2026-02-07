@@ -23,8 +23,6 @@ import {
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import PropertyManagerProfileModal from '../../components/modal/PropertyManagerProfileModal';
-import StripeConnectModal from '../../components/StripeConnectModal';
-import { getConnectStatus } from '../../utils/stripeConnectApi';
 
 const SubmittedBids = () => {
   const { t, language } = useLanguage();
@@ -43,9 +41,6 @@ const SubmittedBids = () => {
   const [selectedManagerProfile, setSelectedManagerProfile] = useState(null);
   const [isLoadingManagerProfile, setIsLoadingManagerProfile] = useState(false);
 
-  // Stripe Connect Modal state
-  const [showStripeConnectModal, setShowStripeConnectModal] = useState(false);
-  const [stripeStatus, setStripeStatus] = useState(null);
 
   const navigate = useNavigate()
 
@@ -96,34 +91,11 @@ const SubmittedBids = () => {
           declined: data.summary?.declined || declinedBids.length
         };
 
-        // Calculate accepted count for Stripe check
-        const acceptedCount = mappedSummary.accepted;
-
         console.log(mappedBids)
         setBids(mappedBids);
         console.log("Mapped bids: ", mappedBids)
         setSummary(mappedSummary);
         setLoading(false);
-
-        // Check if there are approved bids and user hasn't completed Stripe onboarding
-        if (acceptedCount > 0) {
-          try {
-            const status = await getConnectStatus();
-            setStripeStatus(status);
-
-            // Show prompt if not onboarded and hasn't been shown recently for approved bids
-            const lastPromptTime = localStorage.getItem('stripe_approved_bid_prompt_shown');
-            const shouldShowPrompt = !lastPromptTime ||
-              (new Date() - new Date(lastPromptTime)) > 24 * 60 * 60 * 1000; // 24 hours
-
-            if (!status.onboarding_complete && shouldShowPrompt) {
-              localStorage.setItem('stripe_approved_bid_prompt_shown', new Date().toISOString());
-              setShowStripeConnectModal(true);
-            }
-          } catch (stripeErr) {
-            console.log('Stripe status check skipped:', stripeErr.message);
-          }
-        }
       } catch (err) {
         console.error('Fetch error:', err);
         setError(err.message);
@@ -208,68 +180,41 @@ const SubmittedBids = () => {
     setShowDetailsModal(true);
   };
 
-  const handleMessageClicked = async (bid) => {
-    const userProfile = localStorage.getItem('userProfile')
+  const handleMessageClicked = (bid) => {
+    const userProfileData = localStorage.getItem('userProfile')
 
-    if (!userProfile) {
-      toast.error('Please log in to send messages');
+    if (!userProfileData) {
+      toast.error(t('submittedBids.pleaseLogin') || 'Please log in to send messages');
       return;
     }
 
     try {
-      const user = JSON.parse(userProfile)
+      const user = JSON.parse(userProfileData)
 
       // Use manager info directly from bid data (already fetched from backend)
       const managerId = bid.manager_user_id;
-      const managerName = `${bid.manager_first_name || ''} ${bid.manager_last_name || ''}`.trim() || 'Manager';
+      const managerName = `${bid.manager_first_name || ''} ${bid.manager_last_name || ''}`.trim() || t('submittedBids.manager') || 'Manager';
 
-      if (!managerId || managerId === user.id) {
-        toast.error('Cannot find property manager for this job');
+      if (!managerId) {
+        toast.error(t('submittedBids.cannotFindManager') || 'Cannot find property manager for this job');
         return;
       }
 
-      // Check for existing conversation with this manager
-      const conversationsResponse = await fetch(`${API_BASE_URL}/api/messages/conversations`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${user.token}`
-        }
-      });
-
-      if (conversationsResponse.ok) {
-        const conversationsData = await conversationsResponse.json();
-        const conversations = conversationsData.conversations || [];
-
-        // Find existing conversation with this manager (optionally matching job_id)
-        const existingConversation = conversations.find(conv =>
-          String(conv.other_user_id) === String(managerId) &&
-          (!conv.job_id || String(conv.job_id) === String(bid.job_id))
-        );
-
-        if (existingConversation) {
-          // Existing conversation found - navigate to it
-          console.log("💬 Found existing conversation:", existingConversation.id);
-          localStorage.setItem("targetReceiverId", managerId);
-          localStorage.setItem("targetReceiverName", managerName);
-          localStorage.setItem("targetConversationId", existingConversation.id);
-          if (bid.job_id) localStorage.setItem("targetJobId", bid.job_id);
-          toast.success('Opening existing conversation...');
-          navigate('/messages/entrepreneur');
-          return;
-        }
+      if (managerId === user.id) {
+        toast.error(t('submittedBids.cannotMessageSelf') || 'Cannot message yourself');
+        return;
       }
 
-      // No existing conversation - create new chat
-      console.log("🆕 Creating new conversation with manager:", managerId);
+      // Set target info and navigate - messages page will handle finding existing conversations
       localStorage.setItem("targetReceiverId", managerId);
       localStorage.setItem("targetReceiverName", managerName);
-      localStorage.removeItem("targetConversationId"); // Clear any previous conversation ID
+      localStorage.removeItem("targetConversationId");
       if (bid.job_id) localStorage.setItem("targetJobId", bid.job_id);
       navigate('/messages/entrepreneur');
 
     } catch (error) {
       console.error('Error handling message click:', error);
-      toast.error('Failed to open messages. Please try again.');
+      toast.error(t('submittedBids.failedOpenMessages') || 'Failed to open messages. Please try again.');
     }
   }
 
@@ -710,19 +655,6 @@ const SubmittedBids = () => {
           onClose={() => setShowManagerModal(false)}
           profile={selectedManagerProfile}
         />
-
-        {/* Stripe Connect Onboarding Modal - shown when approved bids exist but not onboarded */}
-        {showStripeConnectModal && (
-          <StripeConnectModal
-            onClose={() => setShowStripeConnectModal(false)}
-            showSkipButton={true}
-            isApprovedBid={true}
-            onComplete={() => {
-              setShowStripeConnectModal(false);
-              toast.success('Payment setup complete! You can now receive payments for your jobs.');
-            }}
-          />
-        )}
       </div>
     </div>
   );

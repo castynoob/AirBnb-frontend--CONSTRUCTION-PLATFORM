@@ -23,10 +23,7 @@ import {
   Minimize2,
   ChevronRight,
   User,
-  CreditCard,
-  Wallet,
   AlertCircle,
-  Banknote,
 } from "lucide-react"
 import toast from "react-hot-toast"
 import PropertyManagerProfileModal from "../../components/modal/PropertyManagerProfileModal"
@@ -410,37 +407,38 @@ function EntrepreneurJobs() {
     setShowReviewModal(true)
   }
 
-  const handleChatManager = async (job) => {
+  const handleChatManager = (job) => {
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-
-      // Fetch job details to get manager info
-      const jobResponse = await fetch(`${API_BASE_URL}/api/jobs/${job.id}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${userProfile.token}`
-        }
+      // Debug: Log job data to check if manager info is available
+      console.log("🔍 handleChatManager - Job data:", {
+        id: job.id,
+        title: job.title,
+        manager_id: job.manager_id,
+        manager_user_id: job.manager_user_id,
+        manager_name: job.manager_name
       })
 
-      if (!jobResponse.ok) {
-        throw new Error('Error fetching job details')
+      // Use manager_user_id from the job data (already fetched from getJobsByEntrepreneurId)
+      const managerId = job.manager_user_id
+
+      if (!managerId) {
+        console.error("❌ No manager_user_id found in job data. Full job:", job)
+        toast.error(t('entrepreneurJobs.cannotFindManager') || "Cannot find property manager for this job")
+        return
       }
 
-      const data = await jobResponse.json()
-      const managerId = data.manager_user_id || data.manager_id
-
-      if (!managerId || managerId === userProfile.id) {
-        toast.error("Cannot find property manager for this job")
+      if (managerId === userProfile.id) {
+        toast.error(t('entrepreneurJobs.cannotMessageSelf') || "Cannot message yourself")
         return
       }
 
       localStorage.setItem("targetReceiverId", managerId)
-      localStorage.setItem("targetReceiverName", data.manager_name || "Property Manager")
-      if (data.id) localStorage.setItem("targetJobId", data.id)
+      localStorage.setItem("targetReceiverName", job.manager_name || t('entrepreneurJobs.propertyManager') || "Property Manager")
+      if (job.id) localStorage.setItem("targetJobId", job.id)
       navigate('/messages/entrepreneur')
     } catch (err) {
       console.error('Error navigating to messages:', err)
-      toast.error('Failed to open messages. Please try again.')
+      toast.error(t('entrepreneurJobs.failedOpenMessages') || 'Failed to open messages. Please try again.')
     }
   }
 
@@ -525,28 +523,22 @@ function EntrepreneurJobs() {
     return categoryMap[category] || category
   }
 
-  // Get payment/contract status info for display
-  const getPaymentStatusInfo = (contract) => {
+  // Get contract status info for display (payments handled externally)
+  const getContractStatusInfo = (contract) => {
     if (!contract) {
-      return { class: "payment-pending", icon: Clock, label: t('entrepreneurJobs.awaitingPayment'), description: t('entrepreneurJobs.managerNotPaid') }
+      return { class: "status-pending", icon: Clock, label: t('entrepreneurJobs.contractPending') || 'Contract Pending', description: t('entrepreneurJobs.awaitingContract') || 'Awaiting contract creation' }
     }
 
     const status = contract.status
     switch (status) {
-      case "pending_payment":
-        return { class: "payment-pending", icon: Clock, label: t('entrepreneurJobs.awaitingPayment'), description: t('entrepreneurJobs.managerNotCompletedPayment') }
-      case "paid":
-        return { class: "payment-escrow", icon: Wallet, label: t('entrepreneurJobs.paymentInEscrow'), description: t('entrepreneurJobs.paymentHeldSecurely') }
+      case "active":
+        return { class: "status-active", icon: CheckCircle, label: t('entrepreneurJobs.contractActive') || 'Contract Active', description: t('entrepreneurJobs.readyToStart') || 'Ready to start work' }
       case "work_completed":
-        return { class: "payment-review", icon: AlertCircle, label: t('entrepreneurJobs.awaitingApproval'), description: t('entrepreneurJobs.workMarkedComplete') }
+        return { class: "status-review", icon: AlertCircle, label: t('entrepreneurJobs.awaitingApproval') || 'Awaiting Approval', description: t('entrepreneurJobs.workMarkedComplete') || 'Work marked complete, awaiting manager approval' }
       case "completed":
-        return { class: "payment-released", icon: Banknote, label: t('entrepreneurJobs.fundsReleased'), description: t('entrepreneurJobs.paymentReleased') }
-      case "refunded":
-        return { class: "payment-refunded", icon: AlertCircle, label: t('entrepreneurJobs.refunded'), description: t('entrepreneurJobs.paymentRefunded') }
-      case "disputed":
-        return { class: "payment-disputed", icon: AlertCircle, label: t('entrepreneurJobs.disputed'), description: t('entrepreneurJobs.disputeRegarding') }
+        return { class: "status-completed", icon: CheckCircle, label: t('entrepreneurJobs.contractCompleted') || 'Completed', description: t('entrepreneurJobs.workApproved') || 'Work approved by manager' }
       default:
-        return { class: "payment-unknown", icon: CreditCard, label: t('entrepreneurJobs.unknown'), description: t('entrepreneurJobs.paymentStatusUnknown') }
+        return { class: "status-unknown", icon: Clock, label: t('entrepreneurJobs.unknown') || 'Unknown', description: t('entrepreneurJobs.contractStatusUnknown') || 'Contract status unknown' }
     }
   }
 
@@ -597,7 +589,7 @@ function EntrepreneurJobs() {
                   <div className="skeleton" style={{ width: '80px', height: '22px', borderRadius: '4px' }}></div>
                 </div>
 
-                {/* Payment Card Skeleton */}
+                {/* Contract Status Skeleton */}
                 <div className="skeleton" style={{ width: '100%', height: '60px', borderRadius: '8px' }}></div>
 
                 {/* Meta Row */}
@@ -698,8 +690,8 @@ function EntrepreneurJobs() {
               }
               const statusInfo = getStatusInfo(job.status)
               const StatusIcon = statusInfo.icon
-              const paymentInfo = getPaymentStatusInfo(job.contract)
-              const PaymentIcon = paymentInfo.icon
+              const contractInfo = getContractStatusInfo(job.contract)
+              const ContractIcon = contractInfo.icon
 
               return (
                 <div className="ej-project-card" key={job.id} onClick={() => handleViewDetails(job)}>
@@ -725,15 +717,15 @@ function EntrepreneurJobs() {
                       <span className="ej-category-tag">{getCategoryLabel(job.category)}</span>
                     </div>
 
-                    {/* Payment Status - Show for all job statuses */}
-                    <div className={`ej-payment-card ${paymentInfo.class}`}>
-                      <div className="ej-payment-icon">
-                        <PaymentIcon size={18} />
+                    {/* Contract Status */}
+                    <div className={`ej-contract-card ${contractInfo.class}`}>
+                      <div className="ej-contract-icon">
+                        <ContractIcon size={18} />
                       </div>
-                      <div className="ej-payment-info">
-                        <span className="ej-payment-label">{paymentInfo.label}</span>
+                      <div className="ej-contract-info">
+                        <span className="ej-contract-label">{contractInfo.label}</span>
                         {job.contract && (
-                          <span className="ej-payment-value">{formatCurrency(job.contract.contract_amount || job.bid_amount || 0)}</span>
+                          <span className="ej-contract-value">{formatCurrency(job.contract.contract_amount || job.bid_amount || 0)}</span>
                         )}
                       </div>
                     </div>
@@ -775,10 +767,10 @@ function EntrepreneurJobs() {
                     <div className="ej-primary-action">
                       {job.status === "accepted" && (
                         <button
-                          className={`ej-btn ej-btn-start ${(!job.contract || job.contract.status !== 'paid') ? 'ej-btn-disabled' : ''}`}
-                          onClick={(e) => { e.stopPropagation(); if (job.contract?.status === 'paid') openModal(job, "start"); }}
-                          disabled={!job.contract || job.contract.status !== 'paid'}
-                          title={(!job.contract || job.contract.status !== 'paid') ? t('entrepreneurJobs.awaitingPaymentToStart') : t('entrepreneurJobs.startProject')}
+                          className={`ej-btn ej-btn-start ${(!job.contract || job.contract.status !== 'active') ? 'ej-btn-disabled' : ''}`}
+                          onClick={(e) => { e.stopPropagation(); if (job.contract?.status === 'active') openModal(job, "start"); }}
+                          disabled={!job.contract || job.contract.status !== 'active'}
+                          title={(!job.contract || job.contract.status !== 'active') ? t('entrepreneurJobs.awaitingContract') : t('entrepreneurJobs.startProject')}
                         >
                           <PlayCircle size={16} />
                           {t('entrepreneurJobs.startProject')}
@@ -1205,74 +1197,62 @@ function EntrepreneurJobs() {
                 </section>
               )}
 
-              {/* Payment & Contract Status Section */}
-              <section className="bid-modal-section ej-payment-section">
+              {/* Contract Status Section */}
+              <section className="bid-modal-section ej-contract-section">
                 <h3 className="bid-section-title">
-                  <CreditCard size={20} />
-                  {t('entrepreneurJobs.paymentStatus')}
+                  <FileText size={20} />
+                  {t('entrepreneurJobs.contractStatus') || 'Contract Status'}
                 </h3>
                 {(() => {
-                  const paymentInfo = getPaymentStatusInfo(detailsJob.contract)
-                  const PaymentIcon = paymentInfo.icon
+                  const contractInfo = getContractStatusInfo(detailsJob.contract)
+                  const ContractIcon = contractInfo.icon
                   return (
                     <>
-                      <div className={`ej-payment-status-card ${paymentInfo.class}`}>
-                        <div className="ej-payment-status-header">
-                          <PaymentIcon size={24} />
-                          <div className="ej-payment-status-text">
-                            <span className="ej-payment-status-label">{paymentInfo.label}</span>
-                            <span className="ej-payment-status-desc">{paymentInfo.description}</span>
+                      <div className={`ej-contract-status-card ${contractInfo.class}`}>
+                        <div className="ej-contract-status-header">
+                          <ContractIcon size={24} />
+                          <div className="ej-contract-status-text">
+                            <span className="ej-contract-status-label">{contractInfo.label}</span>
+                            <span className="ej-contract-status-desc">{contractInfo.description}</span>
                           </div>
                         </div>
                         {detailsJob.contract && (
-                          <div className="ej-payment-details">
-                            <div className="ej-payment-detail-row">
+                          <div className="ej-contract-details">
+                            <div className="ej-contract-detail-row">
                               <span>{t('entrepreneurJobs.contractAmount')}</span>
-                              <span className="ej-payment-detail-value">{formatCurrency(detailsJob.contract.contract_amount || detailsJob.bid_amount || 0)}</span>
+                              <span className="ej-contract-detail-value">{formatCurrency(detailsJob.contract.contract_amount || detailsJob.bid_amount || 0)}</span>
                             </div>
-                            {detailsJob.contract.status === 'completed' && detailsJob.contract.payout_amount && (
-                              <div className="ej-payment-detail-row">
-                                <span>{t('entrepreneurJobs.yourPayout')}</span>
-                                <span className="ej-payment-detail-value ej-payout-amount">{formatCurrency(detailsJob.contract.payout_amount)}</span>
-                              </div>
-                            )}
-                            {detailsJob.contract.paid_at && (
-                              <div className="ej-payment-detail-row">
-                                <span>{t('entrepreneurJobs.paymentReceived')}</span>
-                                <span className="ej-payment-detail-value">{formatDate(detailsJob.contract.paid_at)}</span>
-                              </div>
-                            )}
-                            {detailsJob.contract.completed_at && (
-                              <div className="ej-payment-detail-row">
-                                <span>{t('entrepreneurJobs.fundsReleasedDate')}</span>
-                                <span className="ej-payment-detail-value">{formatDate(detailsJob.contract.completed_at)}</span>
+                            {detailsJob.contract.approved_at && (
+                              <div className="ej-contract-detail-row">
+                                <span>{t('entrepreneurJobs.approvedOn') || 'Approved On'}</span>
+                                <span className="ej-contract-detail-value">{formatDate(detailsJob.contract.approved_at)}</span>
                               </div>
                             )}
                           </div>
                         )}
                       </div>
                       {!detailsJob.contract && (
-                        <p className="ej-payment-note">
+                        <p className="ej-contract-note">
                           <AlertCircle size={14} />
-                          {t('entrepreneurJobs.noPaymentNote')}
+                          {t('entrepreneurJobs.awaitingContract') || 'Awaiting contract creation from manager'}
                         </p>
                       )}
-                      {detailsJob.contract?.status === 'paid' && (
-                        <p className="ej-payment-note ej-payment-note-escrow">
-                          <Wallet size={14} />
-                          {t('entrepreneurJobs.escrowNote')}
+                      {detailsJob.contract?.status === 'active' && (
+                        <p className="ej-contract-note ej-contract-note-active">
+                          <CheckCircle size={14} />
+                          {t('entrepreneurJobs.contractActiveNote') || 'Contract is active. You can start working on this project.'}
                         </p>
                       )}
                       {detailsJob.contract?.status === 'work_completed' && (
-                        <p className="ej-payment-note ej-payment-note-pending">
+                        <p className="ej-contract-note ej-contract-note-pending">
                           <Clock size={14} />
-                          {t('entrepreneurJobs.awaitingApprovalNote')}
+                          {t('entrepreneurJobs.awaitingApprovalNote') || 'Work marked complete. Awaiting manager approval.'}
                         </p>
                       )}
                       {detailsJob.contract?.status === 'completed' && (
-                        <p className="ej-payment-note ej-payment-note-success">
+                        <p className="ej-contract-note ej-contract-note-success">
                           <CheckCircle size={14} />
-                          {t('entrepreneurJobs.fundsReleasedNote')}
+                          {t('entrepreneurJobs.contractCompletedNote') || 'Work approved! Please arrange payment with the manager directly.'}
                         </p>
                       )}
                     </>
@@ -1408,15 +1388,15 @@ function EntrepreneurJobs() {
                 {/* Primary action based on status */}
                 {detailsJob.status === "accepted" && (
                   <button
-                    className={`ej-modal-action-btn ej-modal-start ${(!detailsJob.contract || detailsJob.contract.status !== 'paid') ? 'ej-btn-disabled' : ''}`}
+                    className={`ej-modal-action-btn ej-modal-start ${(!detailsJob.contract || detailsJob.contract.status !== 'active') ? 'ej-btn-disabled' : ''}`}
                     onClick={() => {
-                      if (detailsJob.contract?.status === 'paid') {
+                      if (detailsJob.contract?.status === 'active') {
                         setShowDetailsModal(false)
                         openModal(detailsJob, "start")
                       }
                     }}
-                    disabled={!detailsJob.contract || detailsJob.contract.status !== 'paid'}
-                    title={(!detailsJob.contract || detailsJob.contract.status !== 'paid') ? t('entrepreneurJobs.awaitingPaymentToStart') : t('entrepreneurJobs.startProject')}
+                    disabled={!detailsJob.contract || detailsJob.contract.status !== 'active'}
+                    title={(!detailsJob.contract || detailsJob.contract.status !== 'active') ? t('entrepreneurJobs.awaitingContract') : t('entrepreneurJobs.startProject')}
                   >
                     <PlayCircle size={16} />
                     {t('entrepreneurJobs.startProject')}

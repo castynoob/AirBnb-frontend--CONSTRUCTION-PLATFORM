@@ -327,8 +327,8 @@
   width: fit-content;
 }
 
-/* Payment Status Card - Cleaner Style */
-.ej-payment-card {
+/* Contract Status Card - Cleaner Style */
+.ej-contract-card {
   display: flex;
   align-items: center;
   gap: 0.65rem;
@@ -338,7 +338,7 @@
   border: 1px solid #e2e8f0;
 }
 
-.ej-payment-icon {
+.ej-contract-icon {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -348,75 +348,73 @@
   background: white;
 }
 
-.ej-payment-info {
+.ej-contract-info {
   display: flex;
   flex-direction: column;
   gap: 0.1rem;
 }
 
-.ej-payment-label {
+.ej-contract-label {
   font-size: 0.75rem;
   font-weight: 500;
   color: #64748b;
 }
 
-.ej-payment-value {
+.ej-contract-value {
   font-size: 0.9rem;
   font-weight: 700;
   color: #1e293b;
 }
 
-/* Payment Status Variants */
-.ej-payment-card.payment-pending {
+/* Contract Status Variants */
+.ej-contract-card.status-pending {
   background: #fffbeb;
   border-color: #fde68a;
 }
 
-.ej-payment-card.payment-pending .ej-payment-icon {
+.ej-contract-card.status-pending .ej-contract-icon {
   background: #fef3c7;
   color: #d97706;
 }
 
-.ej-payment-card.payment-escrow {
-  background: #eff6ff;
-  border-color: #bfdbfe;
-}
-
-.ej-payment-card.payment-escrow .ej-payment-icon {
-  background: #dbeafe;
-  color: #2563eb;
-}
-
-.ej-payment-card.payment-review {
-  background: #fefce8;
-  border-color: #fef08a;
-}
-
-.ej-payment-card.payment-review .ej-payment-icon {
-  background: #fef9c3;
-  color: #ca8a04;
-}
-
-.ej-payment-card.payment-released {
+.ej-contract-card.status-active {
   background: #f0fdf4;
   border-color: #bbf7d0;
 }
 
-.ej-payment-card.payment-released .ej-payment-icon {
+.ej-contract-card.status-active .ej-contract-icon {
   background: #dcfce7;
   color: #16a34a;
 }
 
-.ej-payment-card.payment-refunded,
-.ej-payment-card.payment-disputed {
-  background: #fef2f2;
-  border-color: #fecaca;
+.ej-contract-card.status-review {
+  background: #fefce8;
+  border-color: #fef08a;
 }
 
-.ej-payment-card.payment-refunded .ej-payment-icon,
-.ej-payment-card.payment-disputed .ej-payment-icon {
-  background: #fee2e2;
-  color: #dc2626;
+.ej-contract-card.status-review .ej-contract-icon {
+  background: #fef9c3;
+  color: #ca8a04;
+}
+
+.ej-contract-card.status-completed {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.ej-contract-card.status-completed .ej-contract-icon {
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.ej-contract-card.status-unknown {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.ej-contract-card.status-unknown .ej-contract-icon {
+  background: #f1f5f9;
+  color: #64748b;
 }
 
 /* Meta Row */

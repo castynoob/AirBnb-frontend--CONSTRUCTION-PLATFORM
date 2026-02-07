@@ -3,8 +3,7 @@ import {
   Star, CheckCircle, Award, Briefcase, MapPin, Calendar, Mail, Phone, LogOut,
   MessageSquare, User, Upload, Camera, X, Crown, Check, Zap, Shield, Activity,
   DollarSign, FileText, ArrowUpCircle, AlertCircle, Lock, Eye, EyeOff, Key,
-  BarChart3, Menu, Edit, CreditCard, ExternalLink, Wallet, TrendingUp, ArrowDownCircle,
-  Percent, ChevronDown, ChevronUp, Clock, Building, Receipt, Unlock, Settings, Globe
+  BarChart3, Menu, Edit, ChevronDown, ChevronUp, Clock, Building, Receipt, Unlock, Settings, Globe
 } from 'lucide-react';
 import Nav from "../../components/Nav";
 import '../../styles/entrepreneur/profilepageentrepreneur-modern.css';
@@ -14,7 +13,6 @@ import toast from 'react-hot-toast';
 import EntrepreneurProfileSkeleton from '../../components/loading/EntrepreneurProfileSkeleton'
 import SubscriptionPaymentForm from '../../components/SubscriptionPaymentModal'
 import '../../styles/entrepreneur/subscriptionmodal.css'
-import { getConnectStatus, startOnboarding, getDashboardLink, getPayoutsSummary } from '../../utils/stripeConnectApi'
 import { logout } from '../../utils/api'
 import { useLanguage, LANGUAGES } from '../../contexts/LanguageContext'
 
@@ -37,6 +35,8 @@ function ProfilePageEntrepreneur() {
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [selectedPlanType, setSelectedPlanType] = useState('')
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+  const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false)
+  const [isCancellingSubscription, setIsCancellingSubscription] = useState(false)
   const navigate = useNavigate();
 
   // Password change states
@@ -54,16 +54,6 @@ function ProfilePageEntrepreneur() {
   const [passwordSuccess, setPasswordSuccess] = useState('')
   const [isChangingPassword, setIsChangingPassword] = useState(false)
 
-  // Stripe Connect states
-  const [stripeStatus, setStripeStatus] = useState(null)
-  const [isLoadingStripe, setIsLoadingStripe] = useState(true)
-  const [isConnectingStripe, setIsConnectingStripe] = useState(false)
-
-  // Payouts states
-  const [payoutsSummary, setPayoutsSummary] = useState(null)
-  const [isLoadingPayouts, setIsLoadingPayouts] = useState(false)
-  const [chartPeriod, setChartPeriod] = useState('monthly') // 'monthly' or 'weekly'
-  const [expandedTransaction, setExpandedTransaction] = useState(null)
 
   // Billing history states
   const [billingHistory, setBillingHistory] = useState([])
@@ -85,7 +75,6 @@ function ProfilePageEntrepreneur() {
   const tabLabels = {
     account: t('profileEntrepreneur.account'),
     subscription: t('profileEntrepreneur.subscription'),
-    payouts: t('profileEntrepreneur.payouts'),
     billing: t('profileEntrepreneur.billingHistory'),
     performance: t('profileEntrepreneur.performanceReviews'),
     settings: t('profileEntrepreneur.settings')
@@ -93,7 +82,6 @@ function ProfilePageEntrepreneur() {
 
   useEffect(() => {
     fetchEntreprenuerProfile()
-    fetchStripeStatus()
 
     const uProfile = localStorage.getItem('userProfile')
     if (uProfile) {
@@ -105,73 +93,11 @@ function ProfilePageEntrepreneur() {
     }
   }, [])
 
-  // Fetch Stripe Connect status
-  const fetchStripeStatus = async () => {
-    try {
-      setIsLoadingStripe(true)
-      const status = await getConnectStatus()
-      setStripeStatus(status)
-    } catch (err) {
-      console.log('Could not fetch Stripe status:', err.message)
-      setStripeStatus(null)
-    } finally {
-      setIsLoadingStripe(false)
-    }
-  }
-
-  // Fetch payouts summary
-  const fetchPayoutsSummary = async () => {
-    try {
-      setIsLoadingPayouts(true)
-      const data = await getPayoutsSummary()
-      setPayoutsSummary(data)
-    } catch (err) {
-      console.log('Could not fetch payouts summary:', err.message)
-      setPayoutsSummary(null)
-    } finally {
-      setIsLoadingPayouts(false)
-    }
-  }
-
-  // Handle Stripe Connect onboarding
-  const handleStripeConnect = async () => {
-    try {
-      setIsConnectingStripe(true)
-      const result = await startOnboarding()
-
-      if (result.already_complete) {
-        toast.success(t('profileEntrepreneur.paymentAccountSetUp'))
-        fetchStripeStatus()
-        return
-      }
-
-      if (result.url) {
-        window.location.href = result.url
-      }
-    } catch (err) {
-      console.error('Stripe connect error:', err)
-      toast.error(err.message || t('profileEntrepreneur.failedPaymentSetup'))
-    } finally {
-      setIsConnectingStripe(false)
-    }
-  }
-
-  // Handle Stripe Dashboard access
-  const handleStripeDashboard = async () => {
-    try {
-      const result = await getDashboardLink()
-      if (result.url) {
-        window.open(result.url, '_blank')
-      }
-    } catch (err) {
-      console.error('Dashboard error:', err)
-      toast.error(t('profileEntrepreneur.failedOpenDashboard'))
-    }
-  }
-
   // Subscription helper functions
   const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "N/A";
     const options = { year: 'numeric', month: 'long', day: 'numeric' };
     return date.toLocaleDateString('en-US', options);
   };
@@ -535,6 +461,63 @@ function ProfilePageEntrepreneur() {
     }
   };
 
+  const handleCancelSubscription = async () => {
+    setIsCancellingSubscription(true)
+    try {
+      const uProf = localStorage.getItem('userProfile')
+      if (!uProf) {
+        throw new Error('Please login again')
+      }
+
+      const user = JSON.parse(uProf)
+      const response = await fetch(`${API_BASE_URL}/api/payments/cancel-subscription`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`
+        }
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to cancel subscription')
+      }
+
+      // Refresh subscription data
+      const subResponse = await fetch(`${API_BASE_URL}/api/payments/subscription`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      })
+
+      if (subResponse.ok) {
+        const subscriptionData = await subResponse.json()
+        setSubscription(subscriptionData.subscription || {})
+
+        const updatedProfile = {
+          ...user,
+          entrepProfile: {
+            ...user.entrepProfile,
+            subscription: subscriptionData,
+          },
+        }
+        localStorage.setItem('userProfile', JSON.stringify(updatedProfile))
+        setUserProfile(updatedProfile)
+      }
+
+      setShowCancelConfirmModal(false)
+      setShowPlansModal(false)
+      toast.success(t('profileEntrepreneur.subscriptionCancelled') || 'Subscription cancelled successfully')
+    } catch (error) {
+      console.error('Error cancelling subscription:', error)
+      toast.error(error.message || t('profileEntrepreneur.failedCancelSubscription') || 'Failed to cancel subscription')
+    } finally {
+      setIsCancellingSubscription(false)
+    }
+  }
+
   // Password change handlers
   const handlePasswordInputChange = (e) => {
     const { name, value } = e.target
@@ -651,11 +634,6 @@ function ProfilePageEntrepreneur() {
   const handleTabChange = (tab) => {
     setActiveTab(tab)
     setIsMobileSidebarOpen(false)
-
-    // Fetch payouts when switching to payouts tab
-    if (tab === 'payouts' && !payoutsSummary && stripeStatus?.onboarding_complete) {
-      fetchPayoutsSummary()
-    }
   }
 
   if(isLoading) {
@@ -750,13 +728,6 @@ function ProfilePageEntrepreneur() {
               <span>{t('profileEntrepreneur.subscription')}</span>
             </button>
             <button
-              className={`ep-nav-item ${activeTab === 'payouts' ? 'ep-nav-active' : ''}`}
-              onClick={() => handleTabChange('payouts')}
-            >
-              <Wallet size={18} />
-              <span>{t('profileEntrepreneur.payouts')}</span>
-            </button>
-            <button
               className={`ep-nav-item ${activeTab === 'billing' ? 'ep-nav-active' : ''}`}
               onClick={() => handleTabChange('billing')}
             >
@@ -834,48 +805,6 @@ function ProfilePageEntrepreneur() {
                     </div>
                   </div>
 
-                  {/* Stripe Connect Status */}
-                  <div className="ep-stripe-status-section">
-                    {isLoadingStripe ? (
-                      <div className="ep-stripe-status-loading">
-                        <div className="ep-stripe-spinner"></div>
-                      </div>
-                    ) : stripeStatus?.onboarding_complete ? (
-                      <div className="ep-stripe-status-card connected">
-                        <div className="ep-stripe-status-icon success">
-                          <CreditCard size={20} />
-                        </div>
-                        <div className="ep-stripe-status-info">
-                          <span className="ep-stripe-status-label">{t('profileEntrepreneur.paymentAccount')}</span>
-                          <span className="ep-stripe-status-value success">{t('profileEntrepreneur.connected')}</span>
-                        </div>
-                        <button
-                          className="ep-stripe-dashboard-btn"
-                          onClick={handleStripeDashboard}
-                          title={t('stripeConnectModal.viewStripeDashboard')}
-                        >
-                          <ExternalLink size={16} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="ep-stripe-status-card pending">
-                        <div className="ep-stripe-status-icon pending">
-                          <CreditCard size={20} />
-                        </div>
-                        <div className="ep-stripe-status-info">
-                          <span className="ep-stripe-status-label">{t('profileEntrepreneur.paymentAccount')}</span>
-                          <span className="ep-stripe-status-value pending">{t('profileEntrepreneur.notConnected')}</span>
-                        </div>
-                        <button
-                          className="ep-stripe-connect-btn"
-                          onClick={handleStripeConnect}
-                          disabled={isConnectingStripe}
-                        >
-                          {isConnectingStripe ? t('profileEntrepreneur.connecting') : t('profileEntrepreneur.setUp')}
-                        </button>
-                      </div>
-                    )}
-                  </div>
                 </div>
 
                 {/* Company Information */}
@@ -1004,23 +933,35 @@ function ProfilePageEntrepreneur() {
                   <>
                     {/* Trial Banner */}
                     {subscription.is_trial && getTrialInfo() && (
-                      <div className="status-banner trial-banner">
+                      <div className={`status-banner trial-banner ${subscription.cancel_at_period_end ? 'trial-cancelled' : ''}`}>
                         <div className="banner-content">
                           <div className="banner-icon-wrapper">
-                            <Zap size={28} />
+                            {subscription.cancel_at_period_end ? <X size={28} /> : <Zap size={28} />}
                           </div>
                           <div className="banner-info">
                             <div className="banner-header">
-                              <h3 className="banner-title">{t('profileEntrepreneur.premiumTrialActive')}</h3>
-                              <div className="trial-badge">{t('profileEntrepreneur.trialPeriod')}</div>
+                              <h3 className="banner-title">
+                                {subscription.cancel_at_period_end
+                                  ? t('profileEntrepreneur.trialCancelled') || 'Trial Cancelled'
+                                  : t('profileEntrepreneur.premiumTrialActive')}
+                              </h3>
+                              <div className={`trial-badge ${subscription.cancel_at_period_end ? 'cancelled' : ''}`}>
+                                {subscription.cancel_at_period_end
+                                  ? t('profileEntrepreneur.cancelled') || 'Cancelled'
+                                  : t('profileEntrepreneur.trialPeriod')}
+                              </div>
                             </div>
                             <p className="banner-text">
-                              {getTrialInfo().daysRemaining} {getTrialInfo().daysRemaining === 1 ? t('profileEntrepreneur.day') : t('profileEntrepreneur.days')} {t('profileEntrepreneur.remaining')}
+                              {subscription.cancel_at_period_end
+                                ? (t('profileEntrepreneur.trialEndsIn') || 'Trial ends in') + ' ' + getTrialInfo().daysRemaining + ' ' + (getTrialInfo().daysRemaining === 1 ? t('profileEntrepreneur.day') : t('profileEntrepreneur.days'))
+                                : getTrialInfo().daysRemaining + ' ' + (getTrialInfo().daysRemaining === 1 ? t('profileEntrepreneur.day') : t('profileEntrepreneur.days')) + ' ' + t('profileEntrepreneur.remaining')}
                             </p>
                             <p className="banner-subtext">
-                              {t('profileEntrepreneur.trialEndsOn')} {formatDate(subscription.trial_end)}
+                              {subscription.cancel_at_period_end
+                                ? (t('profileEntrepreneur.noChargeConfirm') || 'You will not be charged')
+                                : t('profileEntrepreneur.trialEndsOn') + ' ' + formatDate(subscription.trial_end)}
                             </p>
-                            <div className="trial-progress-bar">
+                            <div className={`trial-progress-bar ${subscription.cancel_at_period_end ? 'cancelled' : ''}`}>
                               <div
                                 className="trial-progress-fill"
                                 style={{ width: `${getTrialInfo().percentage}%` }}
@@ -1029,7 +970,11 @@ function ProfilePageEntrepreneur() {
                           </div>
                           <div className="trial-countdown">
                             <div className="countdown-number">{getTrialInfo().daysRemaining}</div>
-                            <div className="countdown-label">{t('profileEntrepreneur.daysLeft')}</div>
+                            <div className="countdown-label">
+                              {subscription.cancel_at_period_end
+                                ? t('profileEntrepreneur.daysLeft') || 'Days Left'
+                                : t('profileEntrepreneur.daysLeft')}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1044,20 +989,27 @@ function ProfilePageEntrepreneur() {
                               <div className="card-icon">
                                 <Shield size={24} />
                               </div>
-                              <div className="status-indicator active">
+                              <div className={`status-indicator ${subscription.cancel_at_period_end ? 'cancelling' : 'active'}`}>
                                 <span className="status-dot"></span>
-                                {t('profileEntrepreneur.active')}
+                                {subscription.cancel_at_period_end
+                                  ? t('profileEntrepreneur.cancelling') || 'Cancelling'
+                                  : t('profileEntrepreneur.active')}
                               </div>
                             </div>
                             <h2 className="plan-name">{subscription.plan_type === 'premium' ? t('profileEntrepreneur.premiumPlan') : t('profileEntrepreneur.basicPlan')}</h2>
                             <p className="plan-desc">
-                              {subscription.plan_type === 'premium' ? t('profileEntrepreneur.bestForProfessionals') : t('profileEntrepreneur.perfectForGettingStarted')}
+                              {subscription.cancel_at_period_end
+                                ? t('profileEntrepreneur.subscriptionEndsOn') || 'Your subscription will end on'
+                                : subscription.plan_type === 'premium' ? t('profileEntrepreneur.bestForProfessionals') : t('profileEntrepreneur.perfectForGettingStarted')}
+                              {subscription.cancel_at_period_end && ` ${formatDate(subscription.current_period_end)}`}
                             </p>
-                            <div className="plan-price">
-                              <span className="price-symbol">$</span>
-                              <span className="price-value">{subscription.plan_type === 'premium' ? 429 : 250}</span>
-                              <span className="price-period">{t('profileEntrepreneur.month')}</span>
-                            </div>
+                            {!subscription.cancel_at_period_end && (
+                              <div className="plan-price">
+                                <span className="price-symbol">$</span>
+                                <span className="price-value">{subscription.plan_type === 'premium' ? 429 : 250}</span>
+                                <span className="price-period">{t('profileEntrepreneur.month')}</span>
+                              </div>
+                            )}
                           </div>
 
                           <div className="billing-timeline-card">
@@ -1065,16 +1017,16 @@ function ProfilePageEntrepreneur() {
                               <div className="card-icon">
                                 <Calendar size={24} />
                               </div>
-                              <h3 className="card-title">{t('profileEntrepreneur.billingCycle')}</h3>
+                              <h3 className="card-title">{subscription.cancel_at_period_end ? t('profileEntrepreneur.subscriptionEndDate') || 'Subscription End' : t('profileEntrepreneur.billingCycle')}</h3>
                             </div>
                             <div className="timeline-content">
                               <div className="timeline-dates">
                                 <div className="date-item">
                                   <span className="date-label">{t('profileEntrepreneur.started')}</span>
-                                  <span className="date-value">{formatDate(subscription.start_date || subscription.start)}</span>
+                                  <span className="date-value">{formatDate(subscription.current_period_start || subscription.start_date || subscription.start || subscription.created_at)}</span>
                                 </div>
                                 <div className="date-item">
-                                  <span className="date-label">{t('profileEntrepreneur.nextBilling')}</span>
+                                  <span className="date-label">{subscription.cancel_at_period_end ? t('profileEntrepreneur.endsOn') || 'Ends On' : t('profileEntrepreneur.nextBilling')}</span>
                                   <span className="date-value">{formatDate(subscription.current_period_end)}</span>
                                 </div>
                               </div>
@@ -1082,12 +1034,16 @@ function ProfilePageEntrepreneur() {
                                 <div className="timeline-progress">
                                   <div className="progress-bar-container">
                                     <div
-                                      className="progress-bar-fill"
+                                      className={`progress-bar-fill ${subscription.cancel_at_period_end ? 'cancelling' : ''}`}
                                       style={{ width: `${getSubscriptionDuration().percentage}%` }}
                                     ></div>
                                   </div>
                                   <div className="progress-info">
-                                    <span className="progress-text">{getSubscriptionDuration().daysRemaining} {t('profileEntrepreneur.daysUntilRenewal')}</span>
+                                    <span className="progress-text">
+                                      {getSubscriptionDuration().daysRemaining} {subscription.cancel_at_period_end
+                                        ? t('profileEntrepreneur.daysUntilEnd') || 'days until subscription ends'
+                                        : t('profileEntrepreneur.daysUntilRenewal')}
+                                    </span>
                                   </div>
                                 </div>
                               )}
@@ -1452,305 +1408,6 @@ function ProfilePageEntrepreneur() {
                     </div>
                   )}
                 </div>
-              </>
-            )}
-
-            {/* Payouts Tab */}
-            {activeTab === 'payouts' && (
-              <>
-                <div className="ep-content-header">
-                  <div className="ep-content-header-left">
-                    <h2>{t('profileEntrepreneur.payoutsEarnings')}</h2>
-                    <p>{t('profileEntrepreneur.managePayouts')}</p>
-                  </div>
-                  {stripeStatus?.onboarding_complete && (
-                    <button
-                      className="ep-btn ep-btn-secondary"
-                      onClick={async () => {
-                        try {
-                          const result = await getDashboardLink()
-                          window.open(result.url, '_blank')
-                        } catch (err) {
-                          toast.error(t('profileEntrepreneur.failedOpenDashboard'))
-                        }
-                      }}
-                    >
-                      <ExternalLink size={16} />
-                      {t('stripeConnectModal.viewStripeDashboard')}
-                    </button>
-                  )}
-                </div>
-
-                {/* Stripe Connect Status */}
-                {!stripeStatus?.onboarding_complete ? (
-                  <div className="ep-payouts-setup">
-                    <div className="ep-payouts-setup-icon">
-                      <Wallet size={48} />
-                    </div>
-                    <h3>{t('profileEntrepreneur.setUpPayouts')}</h3>
-                    <p>{t('profileEntrepreneur.connectStripeDesc')}</p>
-                    <button
-                      className="ep-btn ep-btn-primary"
-                      onClick={handleStripeConnect}
-                      disabled={isConnectingStripe}
-                    >
-                      {isConnectingStripe ? (
-                        <>
-                          <span className="ep-spinner"></span>
-                          {t('profileEntrepreneur.connecting')}
-                        </>
-                      ) : (
-                        <>
-                          <CreditCard size={16} />
-                          {t('profileEntrepreneur.connectStripeAccount')}
-                        </>
-                      )}
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    {/* Earnings Summary Cards */}
-                    {isLoadingPayouts ? (
-                      <div className="ep-payouts-loading">
-                        <span className="ep-spinner-lg"></span>
-                        <p>{t('profileEntrepreneur.loadingEarningsData')}</p>
-                      </div>
-                    ) : payoutsSummary ? (
-                      <>
-                        {/* Summary Cards Row */}
-                        <div className="ep-payouts-summary">
-                          <div className="ep-payout-card ep-payout-total">
-                            <div className="ep-payout-card-icon">
-                              <DollarSign size={24} />
-                            </div>
-                            <div className="ep-payout-card-content">
-                              <span className="ep-payout-label">{t('profileEntrepreneur.netEarnings')}</span>
-                              <span className="ep-payout-amount">${payoutsSummary.total_earnings?.toLocaleString(language === 'fr' ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
-                            </div>
-                          </div>
-                          <div className="ep-payout-card ep-payout-pending">
-                            <div className="ep-payout-card-icon">
-                              <Clock size={24} />
-                            </div>
-                            <div className="ep-payout-card-content">
-                              <span className="ep-payout-label">{t('profileEntrepreneur.pendingPayouts')}</span>
-                              <span className="ep-payout-amount">${payoutsSummary.pending_amount?.toLocaleString(language === 'fr' ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
-                            </div>
-                          </div>
-                          <div className="ep-payout-card ep-payout-received">
-                            <div className="ep-payout-card-icon">
-                              <ArrowDownCircle size={24} />
-                            </div>
-                            <div className="ep-payout-card-content">
-                              <span className="ep-payout-label">{t('profileEntrepreneur.totalReceived')}</span>
-                              <span className="ep-payout-amount">${payoutsSummary.total_paid?.toLocaleString(language === 'fr' ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
-                            </div>
-                          </div>
-                          <div className="ep-payout-card ep-payout-contracts">
-                            <div className="ep-payout-card-icon">
-                              <FileText size={24} />
-                            </div>
-                            <div className="ep-payout-card-content">
-                              <span className="ep-payout-label">{t('profileEntrepreneur.contracts')}</span>
-                              <span className="ep-payout-amount">{payoutsSummary.completed_contracts || 0} / {payoutsSummary.total_contracts || 0}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Platform Fee Breakdown */}
-                        <div className="ep-fee-breakdown">
-                          <div className="ep-fee-breakdown-header">
-                            <div className="ep-fee-icon">
-                              <Percent size={20} />
-                            </div>
-                            <div>
-                              <h3>{t('profileEntrepreneur.platformFeeBreakdown')}</h3>
-                              <p>{t('profileEntrepreneur.platformFeeOverviewDesc')}</p>
-                            </div>
-                          </div>
-                          <div className="ep-fee-breakdown-content">
-                            <div className="ep-fee-row">
-                              <span className="ep-fee-label">{t('profileEntrepreneur.grossContractValue')}</span>
-                              <span className="ep-fee-value">${payoutsSummary.gross_earnings?.toLocaleString(language === 'fr' ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
-                            </div>
-                            <div className="ep-fee-row ep-fee-deduction">
-                              <span className="ep-fee-label">{t('profileEntrepreneur.platformFee')} ({payoutsSummary.platform_fee_percentage || 7.6}%)</span>
-                              <span className="ep-fee-value">-${payoutsSummary.total_platform_fees?.toLocaleString(language === 'fr' ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
-                            </div>
-                            <div className="ep-fee-row ep-fee-total">
-                              <span className="ep-fee-label">{t('profileEntrepreneur.yourNetEarnings')}</span>
-                              <span className="ep-fee-value">${payoutsSummary.total_earnings?.toLocaleString(language === 'fr' ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 2 }) || '0.00'}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Revenue Chart */}
-                        <div className="ep-revenue-chart">
-                          <div className="ep-chart-header">
-                            <h3>{t('profileEntrepreneur.revenueOverview')}</h3>
-                            <div className="ep-chart-toggle">
-                              <button
-                                className={`ep-toggle-btn ${chartPeriod === 'weekly' ? 'ep-toggle-active' : ''}`}
-                                onClick={() => setChartPeriod('weekly')}
-                              >
-                                {t('profileEntrepreneur.weekly')}
-                              </button>
-                              <button
-                                className={`ep-toggle-btn ${chartPeriod === 'monthly' ? 'ep-toggle-active' : ''}`}
-                                onClick={() => setChartPeriod('monthly')}
-                              >
-                                {t('profileEntrepreneur.monthly')}
-                              </button>
-                            </div>
-                          </div>
-                          <div className="ep-chart-container">
-                            {(chartPeriod === 'monthly' ? payoutsSummary.monthly_chart : payoutsSummary.weekly_chart)?.length > 0 ? (
-                              <div className="ep-bar-chart">
-                                {(chartPeriod === 'monthly' ? payoutsSummary.monthly_chart : payoutsSummary.weekly_chart).map((item, index) => {
-                                  const maxEarnings = Math.max(...(chartPeriod === 'monthly' ? payoutsSummary.monthly_chart : payoutsSummary.weekly_chart).map(i => i.earnings));
-                                  const heightPercent = maxEarnings > 0 ? (item.earnings / maxEarnings) * 100 : 0;
-                                  return (
-                                    <div key={index} className="ep-bar-item">
-                                      <div className="ep-bar-value">${item.earnings.toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
-                                      <div className="ep-bar-wrapper">
-                                        <div
-                                          className="ep-bar"
-                                          style={{ height: `${Math.max(heightPercent, 5)}%` }}
-                                        />
-                                      </div>
-                                      <div className="ep-bar-label">{item.label}</div>
-                                      <div className="ep-bar-contracts">{item.contracts} {item.contracts !== 1 ? t('profileEntrepreneur.jobs') : t('profileEntrepreneur.job')}</div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            ) : (
-                              <div className="ep-chart-empty">
-                                <BarChart3 size={48} />
-                                <p>{t('profileEntrepreneur.noDataForPeriod')}</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Transaction History Table */}
-                        <div className="ep-payouts-transactions">
-                          <div className="ep-transactions-header">
-                            <h3>{t('profileEntrepreneur.transactionHistory')}</h3>
-                            <span className="ep-transactions-count">{payoutsSummary.transactions?.length || 0} {t('profileEntrepreneur.transactions')}</span>
-                          </div>
-                          {payoutsSummary.transactions && payoutsSummary.transactions.length > 0 ? (
-                            <div className="ep-transactions-table">
-                              <div className="ep-table-header">
-                                <span className="ep-th-job">{t('profileEntrepreneur.tableHeaderJob')}</span>
-                                <span className="ep-th-client">{t('profileEntrepreneur.tableHeaderClient')}</span>
-                                <span className="ep-th-amount">{t('profileEntrepreneur.tableHeaderContract')}</span>
-                                <span className="ep-th-fee">{t('profileEntrepreneur.tableHeaderFee')}</span>
-                                <span className="ep-th-net">{t('profileEntrepreneur.tableHeaderNet')}</span>
-                                <span className="ep-th-status">{t('profileEntrepreneur.tableHeaderStatus')}</span>
-                                <span className="ep-th-date">{t('profileEntrepreneur.tableHeaderDate')}</span>
-                              </div>
-                              <div className="ep-transactions-list">
-                                {payoutsSummary.transactions.map((tx) => (
-                                  <div key={tx.id} className="ep-transaction-row-wrapper">
-                                    <div
-                                      className={`ep-transaction-row ${expandedTransaction === tx.id ? 'ep-row-expanded' : ''}`}
-                                      onClick={() => setExpandedTransaction(expandedTransaction === tx.id ? null : tx.id)}
-                                    >
-                                      <span className="ep-td-job" title={tx.job_title}>
-                                        {tx.job_title?.length > 25 ? tx.job_title.substring(0, 25) + '...' : tx.job_title}
-                                      </span>
-                                      <span className="ep-td-client">{tx.manager_name}</span>
-                                      <span className="ep-td-amount">${tx.contract_amount?.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</span>
-                                      <span className="ep-td-fee">-${tx.platform_fee?.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</span>
-                                      <span className="ep-td-net ep-amount-green">+${tx.amount?.toLocaleString('en-CA', { minimumFractionDigits: 2 })}</span>
-                                      <span className={`ep-td-status ${tx.status === 'completed' ? 'ep-status-completed' : 'ep-status-pending'}`}>
-                                        {tx.status === 'completed' ? t('profileEntrepreneur.paid') : t('profileEntrepreneur.pending')}
-                                      </span>
-                                      <span className="ep-td-date">
-                                        {new Date(tx.date).toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                      </span>
-                                      <span className="ep-td-expand">
-                                        {expandedTransaction === tx.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                                      </span>
-                                    </div>
-                                    {expandedTransaction === tx.id && (
-                                      <div className="ep-transaction-details">
-                                        <div className="ep-detail-row">
-                                          <span className="ep-detail-label">{t('profileEntrepreneur.contractAmountLabel')}</span>
-                                          <span className="ep-detail-value">${tx.contract_amount?.toLocaleString(language === 'fr' ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 2 })}</span>
-                                        </div>
-                                        <div className="ep-detail-row">
-                                          <span className="ep-detail-label">{t('profileEntrepreneur.platformFeeLabel')} ({tx.platform_fee_percentage}%):</span>
-                                          <span className="ep-detail-value ep-amount-red">-${tx.platform_fee?.toLocaleString(language === 'fr' ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 2 })}</span>
-                                        </div>
-                                        <div className="ep-detail-row ep-detail-total">
-                                          <span className="ep-detail-label">{t('profileEntrepreneur.yourPayout')}</span>
-                                          <span className="ep-detail-value ep-amount-green">${tx.amount?.toLocaleString(language === 'fr' ? 'fr-CA' : 'en-CA', { minimumFractionDigits: 2 })}</span>
-                                        </div>
-                                        {tx.paid_at && (
-                                          <div className="ep-detail-row">
-                                            <span className="ep-detail-label">{t('profileEntrepreneur.paymentReceivedLabel')}</span>
-                                            <span className="ep-detail-value">{new Date(tx.paid_at).toLocaleDateString(language === 'fr' ? 'fr-CA' : 'en-CA', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                                          </div>
-                                        )}
-                                        {tx.payout_completed_at && (
-                                          <div className="ep-detail-row">
-                                            <span className="ep-detail-label">{t('profileEntrepreneur.payoutCompletedLabel')}</span>
-                                            <span className="ep-detail-value">{new Date(tx.payout_completed_at).toLocaleDateString(language === 'fr' ? 'fr-CA' : 'en-CA', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="ep-no-transactions">
-                              <FileText size={48} />
-                              <p>{t('profileEntrepreneur.noTransactions')}</p>
-                              <span>{t('profileEntrepreneur.completeContractsForHistory')}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Payout Schedule Info */}
-                        <div className="ep-payout-schedule">
-                          <div className="ep-schedule-header">
-                            <Calendar size={20} />
-                            <h3>{t('profileEntrepreneur.payoutSchedule')}</h3>
-                          </div>
-                          <div className="ep-schedule-content">
-                            <div className="ep-schedule-item">
-                              <span className="ep-schedule-label">{t('profileEntrepreneur.payoutFrequency')}</span>
-                              <span className="ep-schedule-value">{t('profileEntrepreneur.afterWorkApproval')}</span>
-                            </div>
-                            <div className="ep-schedule-item">
-                              <span className="ep-schedule-label">{t('profileEntrepreneur.processingTime')}</span>
-                              <span className="ep-schedule-value">{t('profileEntrepreneur.processingTimeValue')}</span>
-                            </div>
-                            <div className="ep-schedule-item">
-                              <span className="ep-schedule-label">{t('profileEntrepreneur.minimumPayout')}</span>
-                              <span className="ep-schedule-value">{t('profileEntrepreneur.noMinimum')}</span>
-                            </div>
-                            <p className="ep-schedule-note">
-                              {t('profileEntrepreneur.payoutScheduleNote')}
-                            </p>
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="ep-payouts-error">
-                        <AlertCircle size={48} />
-                        <p>{t('profileEntrepreneur.couldNotLoadEarnings')}</p>
-                        <button className="ep-btn ep-btn-secondary" onClick={fetchPayoutsSummary}>
-                          {t('profileEntrepreneur.tryAgain')}
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
               </>
             )}
 
@@ -2283,9 +1940,9 @@ function ProfilePageEntrepreneur() {
                 <button
                   className="cta-btn btn-basic"
                   onClick={() => handleSelectPlan('basic')}
-                  disabled={subscription.plan_type === 'basic'}
+                  disabled={subscription.plan_type === 'basic' || subscription.plan_type === 'premium'}
                 >
-                  {subscription.plan_type === 'basic' ? 'Current Plan' : 'Select Basic'}
+                  {subscription.plan_type === 'basic' ? 'Current Plan' : subscription.plan_type === 'premium' ? 'Unavailable' : 'Select Basic'}
                 </button>
               </div>
 
@@ -2355,6 +2012,91 @@ function ProfilePageEntrepreneur() {
                   {subscription.plan_type === 'premium' ? 'Current Plan' : 'Upgrade to Premium'}
                 </button>
               </div>
+            </div>
+
+            {/* Cancel Subscription Button */}
+            {(subscription.plan_type === 'basic' || subscription.plan_type === 'premium') && !subscription.cancel_at_period_end && (
+              <div className="cancel-subscription-section">
+                <button
+                  className="cancel-subscription-btn"
+                  onClick={() => setShowCancelConfirmModal(true)}
+                >
+                  <X size={16} />
+                  {t('profileEntrepreneur.cancelSubscription') || 'Cancel Subscription'}
+                </button>
+              </div>
+            )}
+
+            {/* Subscription/Trial Cancelled Notice */}
+            {subscription.cancel_at_period_end && (
+              <div className="cancel-subscription-section">
+                <div className={`subscription-cancelled-notice ${subscription.is_trial ? 'trial' : ''}`}>
+                  {subscription.is_trial ? <Check size={16} /> : <AlertCircle size={16} />}
+                  <span>
+                    {subscription.is_trial
+                      ? (t('profileEntrepreneur.trialCancelledNotice') || 'Your trial will end on') + ' ' + formatDate(subscription.trial_end || subscription.current_period_end) + '. ' + (t('profileEntrepreneur.noChargeConfirm') || 'You will not be charged.')
+                      : (t('profileEntrepreneur.subscriptionCancelledNotice') || 'Your subscription is scheduled to end on') + ' ' + formatDate(subscription.current_period_end)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Subscription Confirmation Modal */}
+      {showCancelConfirmModal && (
+        <div className="subscription-modal">
+          <div className="modal-overlay" onClick={() => !isCancellingSubscription && setShowCancelConfirmModal(false)} />
+          <div className="modal-content cancel-confirm-modal">
+            <div className="cancel-confirm-header">
+              <div className={`cancel-confirm-icon ${subscription.is_trial ? 'trial' : ''}`}>
+                <AlertCircle size={48} />
+              </div>
+              <h2>
+                {subscription.is_trial
+                  ? t('profileEntrepreneur.cancelTrialTitle') || 'Cancel Trial?'
+                  : t('profileEntrepreneur.cancelSubscriptionTitle') || 'Cancel Subscription?'}
+              </h2>
+              <p>
+                {subscription.is_trial
+                  ? t('profileEntrepreneur.cancelTrialDesc') || 'If you cancel now, you can still use premium features until your trial ends. You will NOT be charged.'
+                  : t('profileEntrepreneur.cancelSubscriptionDesc') || 'Are you sure you want to cancel your subscription? You will lose access to all premium features at the end of your current billing period.'}
+              </p>
+              {subscription.is_trial && (
+                <div className="cancel-trial-note">
+                  <Check size={16} />
+                  <span>{t('profileEntrepreneur.noChargeNote') || 'No payment will be taken'}</span>
+                </div>
+              )}
+            </div>
+            <div className="cancel-confirm-actions">
+              <button
+                className="cancel-confirm-btn cancel-confirm-no"
+                onClick={() => setShowCancelConfirmModal(false)}
+                disabled={isCancellingSubscription}
+              >
+                {subscription.is_trial
+                  ? t('profileEntrepreneur.keepTrial') || 'Keep Trial'
+                  : t('profileEntrepreneur.keepSubscription') || 'Keep Subscription'}
+              </button>
+              <button
+                className="cancel-confirm-btn cancel-confirm-yes"
+                onClick={handleCancelSubscription}
+                disabled={isCancellingSubscription}
+              >
+                {isCancellingSubscription ? (
+                  <>
+                    <span className="ep-spinner"></span>
+                    {t('profileEntrepreneur.cancelling') || 'Cancelling...'}
+                  </>
+                ) : (
+                  <>
+                    <X size={16} />
+                    {t('profileEntrepreneur.yesCancel') || 'Yes, Cancel'}
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

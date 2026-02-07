@@ -30,8 +30,7 @@ import { useNavigate } from "react-router-dom"
 import { useLanguage } from "../../contexts/LanguageContext"
 import toast from "react-hot-toast"
 import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal"
-import PaymentModal from "../../components/PaymentModal"
-import { checkEntrepreneurStripeStatus, createContract, createPaymentIntent, getContractByJob, approveWorkAndReleaseFunds, confirmPayment } from "../../utils/contractApi"
+import { createContract, getContractByJob, approveWork } from "../../utils/contractApi"
 
 function SubmissionsPage() {
   const { t } = useLanguage()
@@ -81,16 +80,14 @@ function SubmissionsPage() {
   // Job filter state
   const [selectedJob, setSelectedJob] = useState("all")
 
-  // Payment modal state
-  const [showPaymentModal, setShowPaymentModal] = useState(false)
-  const [paymentClientSecret, setPaymentClientSecret] = useState(null)
-  const [paymentBidData, setPaymentBidData] = useState(null)
-  const [paymentContractData, setPaymentContractData] = useState(null)
-  const [pendingApprovalBid, setPendingApprovalBid] = useState(null)
 
   // Track which bid/job is currently being processed (for slider state persistence)
   const [processingBidId, setProcessingBidId] = useState(null)
   const [processingJobId, setProcessingJobId] = useState(null)
+
+  // Release funds confirmation modal
+  const [showReleaseConfirm, setShowReleaseConfirm] = useState(false)
+  const [releaseJobId, setReleaseJobId] = useState(null)
 
   // Track which jobs have had funds released (for hiding the slider after release)
   // Initialize from localStorage to persist across page refreshes
@@ -446,48 +443,16 @@ function SubmissionsPage() {
     setIsProcessing(true)
     setProcessingBidId(bidId)
 
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
     try {
-      // Step 1: Check if entrepreneur has completed Stripe onboarding
-      let stripeStatus = null
-      try {
-        stripeStatus = await checkEntrepreneurStripeStatus(entrepreneurId)
-        console.log("Stripe status check:", stripeStatus)
-      } catch (stripeErr) {
-        console.error("Error checking Stripe status:", stripeErr)
-        showNotification(
-          "Could not verify contractor's payment setup. Please try again.",
-          "error"
-        )
-        setIsProcessing(false)
-        return
-      }
-
-      // If entrepreneur can't receive payments, block approval
-      if (!stripeStatus || !stripeStatus.can_receive_payments) {
-        showNotification(
-          "The contractor hasn't completed their payment setup yet. They need to complete Stripe onboarding before you can approve this bid.",
-          "error"
-        )
-        setIsProcessing(false)
-        return
-      }
-
-      // Step 2: Get submission data for payment modal
+      // Get submission data
       const submission = submissions.find(s => s.bid.id === bidId)
       if (!submission) {
         throw new Error("Submission not found")
       }
 
-      // Store the pending approval data (bid NOT approved yet - will be approved after payment)
-      setPendingApprovalBid({
-        bidId,
-        jobId,
-        entrepreneurId,
-        entrepreneurUserId: submission.entrepreneur_profile.user_id,
-        submission
-      })
-
-      // Step 3: Check if contract already exists, otherwise create one
+      // Step 1: Check if contract already exists, otherwise create one
       let contract = null
       console.log("Checking for existing contract for job:", jobId)
 
@@ -509,65 +474,8 @@ function SubmissionsPage() {
         contract = contractResult.contract
       }
 
-      // Step 4: Create payment intent
-      console.log("Creating payment intent for contract:", contract.id)
-      const paymentResult = await createPaymentIntent(contract.id)
-      console.log("Payment intent created:", paymentResult)
-
-      // Step 5: Set up payment modal data
-      setPaymentBidData({
-        bid_id: bidId,
-        job_id: jobId,
-        job_title: submission.job.title,
-        company_name: submission.entrepreneur_profile.company_name,
-        contractor_name: `${submission.user.first_name} ${submission.user.last_name}`,
-        amount: submission.bid.amount
-      })
-      setPaymentContractData(contract)
-      setPaymentClientSecret(paymentResult.client_secret)
-
-      // Step 6: Show payment modal (bid will be approved ONLY after successful payment)
-      setShowPaymentModal(true)
-      setShowDetailsModal(false)
-
-    } catch (error) {
-      console.error("Error processing bid approval:", error)
-      showNotification(
-        error.message || "Failed to process bid approval. Please try again.",
-        "error"
-      )
-    } finally {
-      setIsProcessing(false)
-      setProcessingBidId(null)
-    }
-  }
-
-  // Handle successful payment - NOW approve the bid and update job status
-  const handlePaymentSuccess = async (paymentIntent) => {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-
-    try {
-      if (!pendingApprovalBid) {
-        console.error("No pending approval bid found")
-        return
-      }
-
-      const { bidId, jobId, entrepreneurUserId } = pendingApprovalBid
-
-      // Step 0: Confirm payment with backend (backup for webhook)
-      // This ensures contract status is updated to 'paid' even if webhook fails
-      if (paymentContractData?.id) {
-        try {
-          console.log("Confirming payment with backend for contract:", paymentContractData.id)
-          await confirmPayment(paymentContractData.id, paymentIntent?.id)
-          console.log("Payment confirmed with backend successfully")
-        } catch (confirmErr) {
-          console.warn("Could not confirm payment with backend (webhook may handle it):", confirmErr)
-        }
-      }
-
-      // Step 1: NOW approve the bid (after payment succeeded)
-      console.log("Payment successful, now approving bid:", bidId)
+      // Step 2: Approve the bid
+      console.log("Approving bid:", bidId)
       const approveResponse = await fetch(
         `${API_BASE_URL}/api/bids/${bidId}/approve`,
         {
@@ -580,19 +488,14 @@ function SubmissionsPage() {
 
       if (!approveResponse.ok) {
         const data = await approveResponse.json()
-        console.error("Failed to approve bid after payment:", data)
-        // Payment succeeded but bid approval failed - still show success since money is captured
-        showNotification(
-          "Payment successful! Bid approval pending - please contact support if not updated.",
-          "info"
-        )
-        return
+        throw new Error(data.message || "Failed to approve bid")
       }
 
-      console.log("Bid approved successfully after payment")
+      console.log("Bid approved successfully")
 
-      // Step 2: Update job status to 'accepted' (use user_id, not entrepreneur_profile id)
-      const jobResponse = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`, {
+      // Step 3: Update job status to 'accepted'
+      const entrepreneurUserId = submission.entrepreneur_profile.user_id
+      await fetch(`${API_BASE_URL}/api/jobs/${jobId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${uProfile.token}`,
@@ -601,11 +504,7 @@ function SubmissionsPage() {
         body: JSON.stringify({ status: 'accepted', entrepreneur_id: `${entrepreneurUserId}` })
       })
 
-      if (!jobResponse.ok) {
-        console.warn("Failed to update job status, but payment and bid approval succeeded")
-      }
-
-      // Step 3: Update local state
+      // Step 4: Update local state
       setSubmissions((prev) =>
         prev.map((sub) =>
           sub.bid.id === bidId
@@ -630,50 +529,37 @@ function SubmissionsPage() {
         )
       )
 
+      setShowDetailsModal(false)
       showNotification(
-        "Payment successful! Bid approved and contractor notified.",
+        "Bid approved! Please arrange payment with the contractor directly.",
         "success"
       )
 
     } catch (error) {
-      console.error("Error finalizing approval after payment:", error)
-      // Payment succeeded but something else failed
+      console.error("Error processing bid approval:", error)
       showNotification(
-        "Payment successful! There was an issue updating the bid status. Please refresh the page.",
-        "info"
+        error.message || "Failed to process bid approval. Please try again.",
+        "error"
       )
+    } finally {
+      approvingBidsRef.current.delete(bidId)
+      setIsProcessing(false)
+      setProcessingBidId(null)
     }
   }
 
-  // Handle payment error
-  const handlePaymentError = (error) => {
-    console.error("Payment error:", error)
-    showNotification(
-      `Payment failed: ${error}. Please try again.`,
-      "error"
-    )
-  }
-
-  // Close payment modal and clean up
-  const handleClosePaymentModal = () => {
-    setShowPaymentModal(false)
-    setPaymentClientSecret(null)
-    setPaymentBidData(null)
-    setPaymentContractData(null)
-    setPendingApprovalBid(null)
-  }
-
   // Handle releasing funds for completed jobs
-  const handleReleaseFunds = async (jobId) => {
+  // Handle approving completed work (payment is handled externally)
+  const handleApproveWork = async (jobId) => {
     // Prevent double execution using ref (immediate, synchronous check)
     if (releasingFundsRef.current.has(jobId)) {
-      console.log("Release funds already in progress for job (ref check):", jobId)
+      console.log("Approval already in progress for job (ref check):", jobId)
       return
     }
 
     // Also check state
     if (isProcessing || releasedJobIds.has(jobId)) {
-      console.log("Release funds already in progress or completed for job:", jobId)
+      console.log("Approval already in progress or completed for job:", jobId)
       return
     }
 
@@ -697,10 +583,9 @@ function SubmissionsPage() {
 
       const contract = contractData.contract
 
-      // Check if work can be released
-      if (contract.payout_status === 'completed') {
-        showNotification("Funds have already been released for this job.", "info")
-        // Mark as released locally too
+      // Check if work is already approved
+      if (contract.status === 'completed') {
+        showNotification("Work has already been approved for this job.", "info")
         setReleasedJobIds(prev => new Set([...prev, jobId]))
         releasingFundsRef.current.delete(jobId)
         setIsProcessing(false)
@@ -708,22 +593,14 @@ function SubmissionsPage() {
         return
       }
 
-      if (contract.payment_status !== 'succeeded') {
-        showNotification("Payment must be completed before releasing funds.", "error")
-        releasingFundsRef.current.delete(jobId)
-        setIsProcessing(false)
-        setProcessingJobId(null)
-        return
-      }
+      // Approve work (payment handled externally)
+      await approveWork(contract.id)
 
-      // Release funds
-      const result = await approveWorkAndReleaseFunds(contract.id)
-
-      // Only mark as released AFTER successful API call
+      // Mark as completed locally
       setReleasedJobIds(prev => new Set([...prev, jobId]))
 
       showNotification(
-        `Funds released successfully! $${result.payout?.amount?.toLocaleString() || ''} sent to contractor.`,
+        "Work approved! Please arrange payment with the contractor directly.",
         "success"
       )
 
@@ -732,9 +609,9 @@ function SubmissionsPage() {
       setShowDetailsModal(false)
 
     } catch (error) {
-      console.error("Error releasing funds:", error)
+      console.error("Error approving work:", error)
       showNotification(
-        error.message || "Failed to release funds. Please try again.",
+        error.message || "Failed to approve work. Please try again.",
         "error"
       )
       // Remove from ref so user can try again
@@ -1801,16 +1678,26 @@ function SubmissionsPage() {
                 )}
                 {selectedSubmission.bid.status === "approved" && normalizeStatus(selectedSubmission.job.status) === "completed" && !releasedJobIds.has(selectedSubmission.job.id) && !releasingFundsRef.current.has(selectedSubmission.job.id) && (
                   <div className="details-slider-wrapper details-slider-full">
-                    <SlideToConfirm
-                      key={`release-${selectedSubmission.job.id}`}
-                      onConfirm={() => handleReleaseFunds(selectedSubmission.job.id)}
-                      label={t('submissions.slideToRelease')}
-                      confirmLabel={t('submissions.fundsReleased')}
+                    <button
+                      className="release-funds-btn"
+                      onClick={() => {
+                        setReleaseJobId(selectedSubmission.job.id)
+                        setShowReleaseConfirm(true)
+                      }}
                       disabled={isProcessing}
-                      isProcessing={isProcessing && processingJobId === selectedSubmission.job.id}
-                      isCompleted={processingJobId === selectedSubmission.job.id && isProcessing}
-                      variant="success"
-                    />
+                    >
+                      {isProcessing && processingJobId === selectedSubmission.job.id ? (
+                        <>
+                          <span className="btn-spinner"></span>
+                          {t('submissions.releasing') || 'Completing...'}
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle size={18} />
+                          {t('submissions.releaseFunds') || 'Mark as Complete'}
+                        </>
+                      )}
+                    </button>
                   </div>
                 )}
                 {selectedSubmission.bid.status === "approved" && normalizeStatus(selectedSubmission.job.status) === "completed" && releasedJobIds.has(selectedSubmission.job.id) && (
@@ -1954,22 +1841,59 @@ function SubmissionsPage() {
         )}
       </div>
 
+      {/* Release Funds Confirmation Modal */}
+      {showReleaseConfirm && (
+        <div className="release-confirm-overlay" onClick={() => setShowReleaseConfirm(false)}>
+          <div className="release-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="release-confirm-icon">
+              <CheckCircle size={32} />
+            </div>
+            <h3>{t('submissions.confirmRelease') || 'Confirm Work & Payment Completion'}</h3>
+            <p>{t('submissions.confirmReleaseMessage') || 'Are you sure you want to mark this job as complete? This confirms that the contractor has finished the work satisfactorily and that the payment has been made.'}</p>
+            <div className="release-confirm-actions">
+              <button
+                className="release-confirm-cancel"
+                onClick={() => {
+                  setShowReleaseConfirm(false)
+                  setReleaseJobId(null)
+                }}
+                disabled={isProcessing}
+              >
+                {t('common.cancel') || 'Cancel'}
+              </button>
+              <button
+                className="release-confirm-submit"
+                onClick={async () => {
+                  if (releaseJobId) {
+                    await handleApproveWork(releaseJobId)
+                    setShowReleaseConfirm(false)
+                    setReleaseJobId(null)
+                  }
+                }}
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <>
+                    <span className="btn-spinner"></span>
+                    {t('submissions.releasing') || 'Confirming...'}
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle size={18} />
+                    {t('submissions.confirmReleaseBtn') || 'Yes, Confirm Completion'}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Entrepreneur Profile Modal */}
       <EntrepreneurProfileModal
         isOpen={showProfileModal}
         onClose={() => setShowProfileModal(false)}
         profile={selectedProfile}
-      />
-
-      {/* Payment Modal */}
-      <PaymentModal
-        isOpen={showPaymentModal}
-        onClose={handleClosePaymentModal}
-        bidData={paymentBidData}
-        contractData={paymentContractData}
-        clientSecret={paymentClientSecret}
-        onPaymentSuccess={handlePaymentSuccess}
-        onPaymentError={handlePaymentError}
       />
     </div>
   )

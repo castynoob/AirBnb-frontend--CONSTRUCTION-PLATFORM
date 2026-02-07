@@ -740,3 +740,199 @@
         .cta-btn:disabled:hover {
           transform: none;
         }
+
+        /* Cancel Subscription Section */
+        .cancel-subscription-section {
+          margin-top: 24px;
+          padding-top: 20px;
+          border-top: 1px solid #E0E4E8;
+          display: flex;
+          justify-content: center;
+        }
+
+        .cancel-subscription-btn {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: transparent;
+          border: 1px solid #dc3545;
+          color: #dc3545;
+          padding: 10px 20px;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .cancel-subscription-btn:hover {
+          background: #dc3545;
+          color: white;
+        }
+
+        .subscription-cancelled-notice {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: #fff3cd;
+          border: 1px solid #ffc107;
+          color: #856404;
+          padding: 12px 20px;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 500;
+        }
+
+        /* Cancel Confirmation Modal */
+        .cancel-confirm-modal {
+          max-width: 420px;
+          padding: 32px;
+          text-align: center;
+        }
+
+        .cancel-confirm-header {
+          margin-bottom: 24px;
+        }
+
+        .cancel-confirm-icon {
+          width: 80px;
+          height: 80px;
+          background: #fff3cd;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0 auto 20px;
+          color: #856404;
+        }
+
+        .cancel-confirm-icon.trial {
+          background: #d4edda;
+          color: #155724;
+        }
+
+        .cancel-trial-note {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          background: #d4edda;
+          color: #155724;
+          padding: 10px 16px;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 600;
+          margin-top: 16px;
+        }
+
+        .subscription-cancelled-notice.trial {
+          background: #d4edda;
+          border-color: #28a745;
+          color: #155724;
+        }
+
+        .cancel-confirm-header h2 {
+          font-size: 22px;
+          font-weight: 700;
+          color: #0F223D;
+          margin-bottom: 12px;
+        }
+
+        .cancel-confirm-header p {
+          font-size: 14px;
+          color: #7F8C8D;
+          line-height: 1.6;
+          margin: 0;
+        }
+
+        .cancel-confirm-actions {
+          display: flex;
+          gap: 12px;
+          justify-content: center;
+        }
+
+        .cancel-confirm-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 12px 24px;
+          border-radius: 8px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          border: none;
+          min-width: 140px;
+        }
+
+        .cancel-confirm-no {
+          background: #00A5A9;
+          color: white;
+        }
+
+        .cancel-confirm-no:hover {
+          background: #00b8bd;
+          transform: translateY(-1px);
+        }
+
+        .cancel-confirm-yes {
+          background: transparent;
+          border: 1px solid #dc3545;
+          color: #dc3545;
+        }
+
+        .cancel-confirm-yes:hover {
+          background: #dc3545;
+          color: white;
+        }
+
+        .cancel-confirm-yes:disabled,
+        .cancel-confirm-no:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+          transform: none !important;
+        }
+
+        @media (max-width: 550px) {
+          .cancel-subscription-section {
+            margin-top: 20px;
+            padding-top: 16px;
+          }
+
+          .cancel-subscription-btn {
+            font-size: 12px;
+            padding: 8px 16px;
+          }
+
+          .cancel-confirm-modal {
+            padding: 24px 20px;
+          }
+
+          .cancel-confirm-icon {
+            width: 64px;
+            height: 64px;
+          }
+
+          .cancel-confirm-icon svg {
+            width: 32px;
+            height: 32px;
+          }
+
+          .cancel-confirm-header h2 {
+            font-size: 18px;
+          }
+
+          .cancel-confirm-header p {
+            font-size: 13px;
+          }
+
+          .cancel-confirm-actions {
+            flex-direction: column;
+          }
+
+          .cancel-confirm-btn {
+            width: 100%;
+            min-width: unset;
+          }
+        }

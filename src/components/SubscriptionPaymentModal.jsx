@@ -268,6 +268,19 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
         const data = await res.json();
 
         if (res.ok) {
+          // Update user profile with new subscription data
+          const userProfile = JSON.parse(localStorage.getItem("userProfile") || "{}");
+          if (userProfile.entrepProfile && data.subscription) {
+            userProfile.entrepProfile.subscription = {
+              ...userProfile.entrepProfile.subscription,
+              subscription: {
+                ...data.subscription,
+                current_period_start: data.subscription.current_period_start,
+                current_period_end: data.subscription.current_period_end,
+              }
+            };
+            localStorage.setItem("userProfile", JSON.stringify(userProfile));
+          }
           setIsSuccess(true);
           setShowThankYou(true);
         } else {
@@ -314,6 +327,19 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
       console.log("SUBSCRIPTION DATA", data);
 
       if (res.ok) {
+        // Update user profile with new subscription data
+        const userProfile = JSON.parse(localStorage.getItem("userProfile") || "{}");
+        if (userProfile.entrepProfile && data.subscription) {
+          userProfile.entrepProfile.subscription = {
+            ...userProfile.entrepProfile.subscription,
+            subscription: {
+              ...data.subscription,
+              current_period_start: data.subscription.current_period_start,
+              current_period_end: data.subscription.current_period_end,
+            }
+          };
+          localStorage.setItem("userProfile", JSON.stringify(userProfile));
+        }
         setIsSuccess(true);
         setShowThankYou(true);
       } else {

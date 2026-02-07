@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Building2,
@@ -10,9 +10,6 @@ import {
   Calendar,
   Users,
   MapPin,
-  CheckCircle,
-  XCircle,
-  AlertCircle,
   Clock,
   ChevronRight,
   FileText,
@@ -24,8 +21,7 @@ import "leaflet/dist/leaflet.css";
 import "../../styles/manager/repairdetails.css";
 import toast from "react-hot-toast";
 import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal";
-import PaymentModal from "../../components/PaymentModal";
-import { checkEntrepreneurStripeStatus, createContract, createPaymentIntent, getContractByJob, confirmPayment } from "../../utils/contractApi";
+import { createContract, getContractByJob } from "../../utils/contractApi";
 import { useLanguage } from "../../contexts/LanguageContext";
 
 // Custom marker icon for the map
@@ -58,12 +54,6 @@ function RepairDetails({ isOpen, onClose, repair }) {
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [showFullscreenMap, setShowFullscreenMap] = useState(false);
 
-  // Payment modal state
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentClientSecret, setPaymentClientSecret] = useState(null);
-  const [paymentBidData, setPaymentBidData] = useState(null);
-  const [paymentContractData, setPaymentContractData] = useState(null);
-  const [pendingApprovalBid, setPendingApprovalBid] = useState(null);
 
   const showNotification = (message, type = "success") => {
     if (type === "success") {
@@ -247,41 +237,12 @@ function RepairDetails({ isOpen, onClose, repair }) {
     if (!selectedBidder) return;
     setIsProcessing(true);
 
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    const userProfile = localStorage.getItem("userProfile");
+    const user = JSON.parse(userProfile);
+
     try {
-      // Step 1: Check if entrepreneur has completed Stripe onboarding
-      let stripeStatus;
-      try {
-        stripeStatus = await checkEntrepreneurStripeStatus(selectedBidder.entrepreneur_id);
-        console.log("Entrepreneur Stripe status:", stripeStatus);
-      } catch (stripeErr) {
-        console.error("Error checking Stripe status:", stripeErr);
-        showNotification(
-          t('repairDetails.couldNotVerifyPaymentSetup'),
-          "error"
-        );
-        setIsProcessing(false);
-        return;
-      }
-
-      // If entrepreneur can't receive payments, block approval
-      if (!stripeStatus || !stripeStatus.can_receive_payments) {
-        showNotification(
-          t('repairDetails.contractorNotCompletedStripe'),
-          "error"
-        );
-        setIsProcessing(false);
-        return;
-      }
-
-      // Step 2: Store the pending approval data
-      setPendingApprovalBid({
-        bidId: selectedBidder.id,
-        jobId: repair.data.jobId,
-        entrepreneurId: selectedBidder.entrepreneur_id,
-        entrepreneurUserId: selectedBidder.user_id
-      });
-
-      // Step 3: Check if contract exists or create one
+      // Step 1: Check if contract exists or create one
       let contract = null;
       try {
         const existingContract = await getContractByJob(repair.data.jobId);
@@ -301,63 +262,10 @@ function RepairDetails({ isOpen, onClose, repair }) {
         console.log("New contract created:", contract);
       }
 
-      // Step 4: Create payment intent
-      console.log("Creating payment intent for contract:", contract.id);
-      const paymentResult = await createPaymentIntent(contract.id);
-      console.log("Payment intent created:", paymentResult);
-
-      // Step 5: Set up payment modal data
-      setPaymentBidData({
-        bid_id: selectedBidder.id,
-        job_id: repair.data.jobId,
-        entrepreneur_id: selectedBidder.entrepreneur_id,
-        company_name: selectedBidder.company_name,
-        amount: selectedBidder.amount
-      });
-      setPaymentContractData(contract);
-      setPaymentClientSecret(paymentResult.client_secret);
-
-      // Step 6: Show payment modal
-      setShowPaymentModal(true);
-      setShowBidModal(false);
-
-    } catch (error) {
-      console.error("Error initiating payment:", error);
-      showNotification(error.message || t('repairDetails.failedToInitiatePayment'), "error");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // Handle successful payment - NOW approve the bid and update job status
-  const handlePaymentSuccess = async (paymentIntent) => {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-    try {
-      if (!pendingApprovalBid) {
-        throw new Error("No pending approval data found");
-      }
-
-      const userProfile = localStorage.getItem("userProfile");
-      const user = JSON.parse(userProfile);
-      const { bidId, jobId, entrepreneurUserId } = pendingApprovalBid;
-
-      // Step 0: Confirm payment with backend (backup for webhook)
-      // This ensures contract status is updated to 'paid' even if webhook fails
-      if (paymentContractData?.id) {
-        try {
-          console.log("Confirming payment with backend for contract:", paymentContractData.id);
-          await confirmPayment(paymentContractData.id, paymentIntent?.id);
-          console.log("Payment confirmed with backend successfully");
-        } catch (confirmErr) {
-          console.warn("Could not confirm payment with backend (webhook may handle it):", confirmErr);
-        }
-      }
-
-      // Step 1: NOW approve the bid (after payment succeeded)
-      console.log("Payment successful, now approving bid:", bidId);
+      // Step 2: Approve the bid
+      console.log("Approving bid:", selectedBidder.id);
       const approveResponse = await fetch(
-        `${API_BASE_URL}/api/bids/${bidId}/approve`,
+        `${API_BASE_URL}/api/bids/${selectedBidder.id}/approve`,
         {
           method: "PATCH",
           headers: {
@@ -368,30 +276,25 @@ function RepairDetails({ isOpen, onClose, repair }) {
 
       if (!approveResponse.ok) {
         const data = await approveResponse.json();
-        console.error("Failed to approve bid after payment:", data);
-        showNotification(
-          t('repairDetails.paymentSuccessApprovalPending'),
-          "success"
-        );
-        return;
+        throw new Error(data.message || "Failed to approve bid");
       }
 
-      console.log("Bid approved successfully after payment");
+      console.log("Bid approved successfully");
 
-      // Step 2: Update job status to 'accepted' (use user_id, not entrepreneur_profile id)
-      await fetch(`${API_BASE_URL}/api/jobs/${jobId}`, {
+      // Step 3: Update job status to 'accepted'
+      await fetch(`${API_BASE_URL}/api/jobs/${repair.data.jobId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${user.token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ status: 'accepted', entrepreneur_id: `${entrepreneurUserId}` })
+        body: JSON.stringify({ status: 'accepted', entrepreneur_id: `${selectedBidder.user_id}` })
       });
 
-      // Step 3: Update local state
+      // Step 4: Update local state
       setBidders((prevBidders) =>
         prevBidders.map((bidder) =>
-          bidder.id === bidId
+          bidder.id === selectedBidder.id
             ? { ...bidder, bid_status: "approved" }
             : bidder.bid_status === "pending"
             ? { ...bidder, bid_status: "declined" }
@@ -399,40 +302,20 @@ function RepairDetails({ isOpen, onClose, repair }) {
         )
       );
 
-      if (selectedBidder && selectedBidder.id === bidId) {
-        setSelectedBidder((prev) => ({ ...prev, bid_status: "approved" }));
-      }
+      setSelectedBidder((prev) => ({ ...prev, bid_status: "approved" }));
+      setShowBidModal(false);
 
       showNotification(
-        t('repairDetails.paymentSuccessBidApproved'),
+        t('repairDetails.bidApprovedPaymentExternal') || "Bid approved! Please arrange payment with the contractor directly.",
         "success"
       );
 
     } catch (error) {
-      console.error("Error finalizing approval after payment:", error);
-      showNotification(
-        t('repairDetails.paymentSuccessUpdateIssue'),
-        "success"
-      );
+      console.error("Error accepting bid:", error);
+      showNotification(error.message || t('repairDetails.failedToAcceptBid') || "Failed to accept bid", "error");
+    } finally {
+      setIsProcessing(false);
     }
-  };
-
-  // Handle payment error
-  const handlePaymentError = (error) => {
-    console.error("Payment error:", error);
-    showNotification(
-      t('repairDetails.paymentFailed') + ": " + error,
-      "error"
-    );
-  };
-
-  // Close payment modal and clean up
-  const handleClosePaymentModal = () => {
-    setShowPaymentModal(false);
-    setPaymentClientSecret(null);
-    setPaymentBidData(null);
-    setPaymentContractData(null);
-    setPendingApprovalBid(null);
   };
 
   const handleDeclineBid = async () => {
@@ -802,17 +685,6 @@ function RepairDetails({ isOpen, onClose, repair }) {
         isOpen={showProfileModal}
         onClose={() => setShowProfileModal(false)}
         profile={selectedProfile}
-      />
-
-      {/* Payment Modal */}
-      <PaymentModal
-        isOpen={showPaymentModal}
-        onClose={handleClosePaymentModal}
-        bidData={paymentBidData}
-        contractData={paymentContractData}
-        clientSecret={paymentClientSecret}
-        onPaymentSuccess={handlePaymentSuccess}
-        onPaymentError={handlePaymentError}
       />
 
       {/* Fullscreen Map Modal */}

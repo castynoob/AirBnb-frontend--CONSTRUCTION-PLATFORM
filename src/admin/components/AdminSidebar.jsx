@@ -69,9 +69,9 @@ function AdminSidebar({ isOpen, onClose }) {
           label: "Subscriptions",
         },
         {
-          to: "/admin/promoters",
+          to: "/admin/promo-codes",
           icon: Megaphone,
-          label: "Promoters",
+          label: "Promo Codes",
         },
       ],
     },

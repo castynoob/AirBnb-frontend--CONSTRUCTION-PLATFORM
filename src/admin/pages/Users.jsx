@@ -328,7 +328,9 @@ function Users() {
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("en-US", {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "N/A";
+    return date.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -337,7 +339,9 @@ function Users() {
 
   const formatDateTime = (dateString) => {
     if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleString("en-US", {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "N/A";
+    return date.toLocaleString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -347,7 +351,13 @@ function Users() {
   };
 
   const formatTimeAgo = (dateString) => {
+    if (!dateString) return "N/A";
+
     const date = new Date(dateString);
+
+    // Check if date is valid
+    if (isNaN(date.getTime())) return "N/A";
+
     const now = new Date();
     const diffInSeconds = Math.floor((now - date) / 1000);
 

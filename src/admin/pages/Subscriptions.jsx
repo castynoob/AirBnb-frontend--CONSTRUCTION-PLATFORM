@@ -106,7 +106,9 @@ const formatCurrencyShort = (amount) => {
 // Format date
 const formatDate = (date) => {
   if (!date) return "N/A";
-  return new Date(date).toLocaleDateString("en-US", {
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "N/A";
+  return d.toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -116,7 +118,9 @@ const formatDate = (date) => {
 // Format date and time
 const formatDateTime = (date) => {
   if (!date) return "N/A";
-  return new Date(date).toLocaleString("en-US", {
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "N/A";
+  return d.toLocaleString("en-US", {
     year: "numeric",
     month: "short",
     day: "numeric",

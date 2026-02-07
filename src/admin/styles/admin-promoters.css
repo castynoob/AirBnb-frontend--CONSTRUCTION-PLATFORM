@@ -1061,3 +1061,350 @@
 .admin-char-counter.at-limit {
   color: var(--admin-danger);
 }
+
+/* ============================================
+   PROMO CODE SPECIFIC STYLES
+   ============================================ */
+
+/* Large code display in table */
+.promo-code-large {
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  color: #ffffff !important;
+  padding: 0.5rem 0.75rem !important;
+  border-radius: 6px !important;
+  letter-spacing: 1.5px !important;
+}
+
+/* Usage cell styles */
+.admin-usage-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.admin-usage-count {
+  font-weight: 600;
+  color: var(--admin-text);
+}
+
+.admin-btn-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.75rem;
+  color: var(--admin-primary);
+  cursor: pointer;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.admin-btn-link:hover {
+  color: #2563eb;
+}
+
+/* Admin description text */
+.admin-description {
+  color: var(--admin-text-secondary);
+  font-size: 0.875rem;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Admin date text */
+.admin-date {
+  color: var(--admin-text-muted);
+  font-size: 0.8125rem;
+}
+
+/* Promo modal styles */
+.promo-modal {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: promoModalSlideIn 0.25s ease-out;
+}
+
+.promo-modal.promo-modal-lg {
+  max-width: 600px;
+}
+
+.promo-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+}
+
+.promo-modal-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.promo-modal-header h2 svg {
+  color: #3b82f6;
+}
+
+.promo-modal-header h2 code {
+  font-family: 'SF Mono', 'Monaco', monospace;
+  font-size: 1rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  letter-spacing: 1px;
+}
+
+.promo-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.promo-modal-close:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.promo-modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+  background: #ffffff;
+}
+
+.promo-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.promo-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Promo form group styling */
+.promo-form-group {
+  margin-bottom: 1.25rem;
+}
+
+.promo-form-group:last-child {
+  margin-bottom: 0;
+}
+
+.promo-form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+
+/* Promo type selector */
+.promo-type-selector {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.promo-type-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.promo-type-btn:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.promo-type-btn.active {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.05) 100%);
+  color: #3b82f6;
+}
+
+.promo-type-btn svg {
+  flex-shrink: 0;
+}
+
+/* Uses list styles */
+.promo-uses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.promo-use-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.promo-use-item:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.promo-use-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.promo-use-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.promo-use-name {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 0.9375rem;
+  margin-bottom: 0.25rem;
+}
+
+.promo-use-email {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.promo-use-email svg {
+  color: #94a3b8;
+}
+
+.promo-use-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.375rem;
+}
+
+.promo-use-date {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.promo-use-date svg {
+  color: #94a3b8;
+}
+
+/* Small spinner for buttons */
+.admin-spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #ffffff;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive adjustments for promo modal */
+@media (max-width: 640px) {
+  .promo-modal {
+    max-width: 100%;
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+
+  .promo-modal-header {
+    padding: 1rem;
+  }
+
+  .promo-modal-header h2 {
+    font-size: 1.125rem;
+  }
+
+  .promo-modal-body {
+    padding: 1rem;
+  }
+
+  .promo-modal-footer,
+  .promo-modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .promo-modal-footer .admin-btn,
+  .promo-modal-actions .admin-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .promo-use-item {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .promo-use-meta {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}

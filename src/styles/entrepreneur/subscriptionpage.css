@@ -179,6 +179,48 @@
   font-weight: var(--font-weight-md);
 }
 
+/* Trial Cancelled States */
+.status-banner.trial-cancelled {
+  background: linear-gradient(135deg, #1a3a5c 0%, #0F223D 100%);
+  border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+.status-banner.trial-cancelled .banner-icon-wrapper {
+  background: rgba(220, 53, 69, 0.15);
+  color: #ff6b6b;
+}
+
+.status-banner.trial-cancelled .banner-title {
+  color: #fff;
+}
+
+.status-banner.trial-cancelled .banner-text {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.status-banner.trial-cancelled .banner-subtext {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.status-banner.trial-cancelled .countdown-number {
+  color: #ff6b6b;
+}
+
+.trial-badge.cancelled {
+  background: rgba(220, 53, 69, 0.2);
+  color: #ff6b6b;
+  border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+.trial-progress-bar.cancelled {
+  background: rgba(220, 53, 69, 0.2);
+}
+
+.trial-progress-bar.cancelled .trial-progress-fill {
+  background: linear-gradient(90deg, #dc3545, #ff6b6b);
+  box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+}
+
 .trial-countdown {
   text-align: center;
   flex-shrink: 0;
@@ -312,6 +354,11 @@
   color: var(--color-status-success);
 }
 
+.status-indicator.cancelling {
+  background: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+}
+
 .status-dot {
   width: 6px;
   height: 6px;
@@ -414,6 +461,10 @@
   background: linear-gradient(90deg, var(--color-secondary), #00d4d9);
   border-radius: 10px;
   transition: width 0.3s ease;
+}
+
+.progress-bar-fill.cancelling {
+  background: linear-gradient(90deg, #dc3545, #ff6b6b);
 }
 
 .progress-info {
