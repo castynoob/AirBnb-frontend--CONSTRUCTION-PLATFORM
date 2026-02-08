@@ -1205,6 +1205,38 @@ function HomePageEntrepreneur() {
     fetchSubscription()
   }
 
+  // Auto-show subscription plans modal for unsubscribed users on each login
+  useEffect(() => {
+    // Wait for loading to complete
+    if (isLoading) return
+
+    const profileString = localStorage.getItem('userProfile')
+    if (!profileString) return
+
+    const user = JSON.parse(profileString)
+    const userId = user.id
+
+    // Use sessionStorage to show modal once per login session
+    // This ensures modal shows each time user logs in, but not repeatedly during same session
+    const modalShownKey = `subscription_modal_shown_session_${userId}`
+    const wasModalShownThisSession = sessionStorage.getItem(modalShownKey)
+
+    if (wasModalShownThisSession) return
+
+    // Check if user has NO subscription (not even trial)
+    const hasSubscription = user.entrepProfile?.subscription?.hasSubscription
+    const subscriptionData = user.entrepProfile?.subscription?.subscription
+
+    // If no subscription at all, show the plans modal
+    if (!hasSubscription && (!subscriptionData || !subscriptionData.status)) {
+      // Small delay to let the page render first
+      setTimeout(() => {
+        setShowSubscriptionModal(true)
+        // Mark that we've shown the modal this session
+        sessionStorage.setItem(modalShownKey, 'true')
+      }, 800)
+    }
+  }, [isLoading])
 
   const fetchBudgetStatus = async (job, user, API_BASE_URL) => {
     const budgetUnlockResponse = await fetch(`${API_BASE_URL}/api/payments/budget-status/${job.id}`, {

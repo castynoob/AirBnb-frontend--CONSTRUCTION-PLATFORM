@@ -39,6 +39,18 @@ function ProfilePageEntrepreneur() {
   const [isCancellingSubscription, setIsCancellingSubscription] = useState(false)
   const navigate = useNavigate();
 
+  // Promo code states
+  const [promoCode, setPromoCode] = useState('')
+  const [isApplyingPromo, setIsApplyingPromo] = useState(false)
+  const [promoError, setPromoError] = useState('')
+
+  // Trial promo decision modal states
+  const [showTrialPromoModal, setShowTrialPromoModal] = useState(false)
+  const [trialPromoData, setTrialPromoData] = useState(null)
+  const [isQueueingPromo, setIsQueueingPromo] = useState(false)
+  const [isApplyingPromoNow, setIsApplyingPromoNow] = useState(false)
+  const [queuedPromo, setQueuedPromo] = useState(null)
+
   // Password change states
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -82,6 +94,7 @@ function ProfilePageEntrepreneur() {
 
   useEffect(() => {
     fetchEntreprenuerProfile()
+    fetchQueuedPromo()
 
     const uProfile = localStorage.getItem('userProfile')
     if (uProfile) {
@@ -518,6 +531,211 @@ function ProfilePageEntrepreneur() {
     }
   }
 
+  // Promo code handler
+  const handleApplyPromoCode = async () => {
+    if (!promoCode.trim()) {
+      setPromoError(t('profileEntrepreneur.enterPromoCode') || 'Please enter a promo code')
+      return
+    }
+
+    setIsApplyingPromo(true)
+    setPromoError('')
+
+    try {
+      const uProf = localStorage.getItem('userProfile')
+      if (!uProf) {
+        throw new Error('Please login again')
+      }
+
+      const user = JSON.parse(uProf)
+      const response = await fetch(`${API_BASE_URL}/api/payments/create-subscription`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`
+        },
+        body: JSON.stringify({
+          promo_code: promoCode.toUpperCase().trim()
+        })
+      })
+
+      const data = await response.json()
+
+      // Handle trial decision required
+      if (data.requires_trial_decision) {
+        setTrialPromoData(data)
+        setShowTrialPromoModal(true)
+        setIsApplyingPromo(false)
+        return
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || data.message || 'Invalid promo code')
+      }
+
+      // Update subscription state
+      if (data.subscription) {
+        setSubscription(data.subscription)
+
+        const updatedProfile = {
+          ...user,
+          entrepProfile: {
+            ...user.entrepProfile,
+            subscription: {
+              hasSubscription: true,
+              subscription: data.subscription,
+            },
+          },
+        }
+        localStorage.setItem('userProfile', JSON.stringify(updatedProfile))
+        setUserProfile(updatedProfile)
+      }
+
+      setPromoCode('')
+      toast.success(t('profileEntrepreneur.promoCodeApplied') || 'Promo code applied successfully!')
+
+      // Reload the page to refresh all subscription data
+      window.location.reload()
+    } catch (error) {
+      console.error('Error applying promo code:', error)
+      setPromoError(error.message || t('profileEntrepreneur.invalidPromoCode') || 'Invalid promo code')
+    } finally {
+      setIsApplyingPromo(false)
+    }
+  }
+
+  // Queue promo code for after trial
+  const handleQueuePromoCode = async () => {
+    if (!trialPromoData) return
+
+    setIsQueueingPromo(true)
+
+    try {
+      const uProf = localStorage.getItem('userProfile')
+      if (!uProf) throw new Error('Please login again')
+
+      const user = JSON.parse(uProf)
+      const response = await fetch(`${API_BASE_URL}/api/payments/queue-promo-code`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`
+        },
+        body: JSON.stringify({
+          promo_code: trialPromoData.promo_code,
+          promo_code_id: trialPromoData.promo_code_id
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || data.message || 'Failed to queue promo code')
+      }
+
+      setQueuedPromo({
+        code: trialPromoData.promo_code,
+        will_apply_on: trialPromoData.trial_info.trial_end
+      })
+
+      setShowTrialPromoModal(false)
+      setTrialPromoData(null)
+      setPromoCode('')
+      toast.success(data.message || t('profileEntrepreneur.promoQueued') || 'Promo code queued for after your trial!')
+
+    } catch (error) {
+      console.error('Error queuing promo code:', error)
+      toast.error(error.message || 'Failed to queue promo code')
+    } finally {
+      setIsQueueingPromo(false)
+    }
+  }
+
+  // Apply promo code now (cancel trial)
+  const handleApplyPromoNow = async () => {
+    if (!trialPromoData) return
+
+    setIsApplyingPromoNow(true)
+
+    try {
+      const uProf = localStorage.getItem('userProfile')
+      if (!uProf) throw new Error('Please login again')
+
+      const user = JSON.parse(uProf)
+      const response = await fetch(`${API_BASE_URL}/api/payments/apply-promo-now`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user.token}`
+        },
+        body: JSON.stringify({
+          promo_code: trialPromoData.promo_code
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || data.message || 'Failed to apply promo code')
+      }
+
+      // Update subscription state
+      if (data.subscription) {
+        setSubscription(data.subscription)
+
+        const updatedProfile = {
+          ...user,
+          entrepProfile: {
+            ...user.entrepProfile,
+            subscription: {
+              hasSubscription: true,
+              subscription: data.subscription,
+            },
+          },
+        }
+        localStorage.setItem('userProfile', JSON.stringify(updatedProfile))
+        setUserProfile(updatedProfile)
+      }
+
+      setShowTrialPromoModal(false)
+      setTrialPromoData(null)
+      setPromoCode('')
+      toast.success(data.message || t('profileEntrepreneur.promoAppliedNow') || 'Promo code applied! You now have free premium access.')
+
+      // Reload the page to refresh all subscription data
+      window.location.reload()
+
+    } catch (error) {
+      console.error('Error applying promo code now:', error)
+      toast.error(error.message || 'Failed to apply promo code')
+    } finally {
+      setIsApplyingPromoNow(false)
+    }
+  }
+
+  // Fetch queued promo on mount
+  const fetchQueuedPromo = async () => {
+    try {
+      const uProf = localStorage.getItem('userProfile')
+      if (!uProf) return
+
+      const user = JSON.parse(uProf)
+      const response = await fetch(`${API_BASE_URL}/api/payments/queued-promo`, {
+        headers: {
+          'Authorization': `Bearer ${user.token}`
+        }
+      })
+
+      const data = await response.json()
+
+      if (data.has_queued_promo) {
+        setQueuedPromo(data.queued_promo)
+      }
+    } catch (error) {
+      console.error('Error fetching queued promo:', error)
+    }
+  }
+
   // Password change handlers
   const handlePasswordInputChange = (e) => {
     const { name, value } = e.target
@@ -927,6 +1145,44 @@ function ProfilePageEntrepreneur() {
                         <Crown size={18} />
                         {t('profileEntrepreneur.viewSubscriptionPlans')}
                       </button>
+
+                      {/* Promo Code Section */}
+                      <div className="no-sub-promo-section">
+                        <div className="promo-divider">
+                          <span>{t('profileEntrepreneur.orUsePromoCode') || 'or use a promo code'}</span>
+                        </div>
+                        <div className="no-sub-promo-input-wrapper">
+                          <input
+                            type="text"
+                            className={`no-sub-promo-input ${promoError ? 'error' : ''}`}
+                            placeholder={t('profileEntrepreneur.enterCodePlaceholder') || 'Enter promo code...'}
+                            value={promoCode}
+                            onChange={(e) => {
+                              setPromoCode(e.target.value.toUpperCase())
+                              setPromoError('')
+                            }}
+                            onKeyPress={(e) => e.key === 'Enter' && handleApplyPromoCode()}
+                            disabled={isApplyingPromo}
+                          />
+                          <button
+                            className="no-sub-apply-btn"
+                            onClick={handleApplyPromoCode}
+                            disabled={isApplyingPromo || !promoCode.trim()}
+                          >
+                            {isApplyingPromo ? (
+                              <span className="spinner-small"></span>
+                            ) : (
+                              t('profileEntrepreneur.apply') || 'Apply'
+                            )}
+                          </button>
+                        </div>
+                        {promoError && (
+                          <div className="no-sub-promo-error">
+                            <AlertCircle size={14} />
+                            {promoError}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -977,6 +1233,25 @@ function ProfilePageEntrepreneur() {
                             </div>
                           </div>
                         </div>
+                        {/* Queued Promo Code Display */}
+                        {queuedPromo && (
+                          <div className="queued-promo-banner">
+                            <div className="queued-promo-content">
+                              <div className="queued-promo-icon">
+                                <CheckCircle size={18} />
+                              </div>
+                              <div className="queued-promo-info">
+                                <span className="queued-promo-label">
+                                  {t('profileEntrepreneur.promoQueued') || 'Promo Code Queued:'}
+                                </span>
+                                <code className="queued-promo-code">{queuedPromo.code}</code>
+                                <span className="queued-promo-note">
+                                  {t('profileEntrepreneur.willApplyAfterTrial') || 'Will apply automatically after your trial ends'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -1004,11 +1279,25 @@ function ProfilePageEntrepreneur() {
                               {subscription.cancel_at_period_end && ` ${formatDate(subscription.current_period_end)}`}
                             </p>
                             {!subscription.cancel_at_period_end && (
-                              <div className="plan-price">
-                                <span className="price-symbol">$</span>
-                                <span className="price-value">{subscription.plan_type === 'premium' ? 429 : 250}</span>
-                                <span className="price-period">{t('profileEntrepreneur.month')}</span>
-                              </div>
+                              subscription.is_free_access ? (
+                                <div className="promo-activated-section">
+                                  <div className="promo-activated-badge">
+                                    <span>{t('profileEntrepreneur.promoCodeActivated') || 'Promoters Code Activated'}</span>
+                                  </div>
+                                  <p className="promo-using-features">
+                                    {t('profileEntrepreneur.usingPremiumFeatures') || "You're currently using Premium features"}
+                                  </p>
+                                  <p className="promo-original-price">
+                                    {t('profileEntrepreneur.originalPrice') || 'Original price:'} ${subscription.plan_type === 'premium' ? '429' : '250'}/{t('profileEntrepreneur.month') || 'month'}
+                                  </p>
+                                </div>
+                              ) : (
+                                <div className="plan-price">
+                                  <span className="price-symbol">$</span>
+                                  <span className="price-value">{subscription.plan_type === 'premium' ? 429 : 250}</span>
+                                  <span className="price-period">{t('profileEntrepreneur.month')}</span>
+                                </div>
+                              )
                             )}
                           </div>
 
@@ -1080,6 +1369,57 @@ function ProfilePageEntrepreneur() {
                         </button>
                       </div>
                     </div>
+
+                    {/* Promo Code Section - Show only if no active paid subscription */}
+                    {(!subscription.plan_type || subscription.is_trial) && (
+                      <div className="promo-code-section">
+                        <div className="promo-code-card">
+                          <div className="promo-code-header">
+                            <div className="promo-icon">
+                              <Zap size={24} />
+                            </div>
+                            <div className="promo-text">
+                              <h3>{t('profileEntrepreneur.havePromoCode') || 'Have a Promo Code?'}</h3>
+                              <p>{t('profileEntrepreneur.enterPromoCodeDesc') || 'Enter your code to activate free access or get a discount'}</p>
+                            </div>
+                          </div>
+                          <div className="promo-code-input-wrapper">
+                            <input
+                              type="text"
+                              className={`promo-code-input ${promoError ? 'error' : ''}`}
+                              placeholder={t('profileEntrepreneur.enterCodePlaceholder') || 'Enter promo code...'}
+                              value={promoCode}
+                              onChange={(e) => {
+                                setPromoCode(e.target.value.toUpperCase())
+                                setPromoError('')
+                              }}
+                              onKeyPress={(e) => e.key === 'Enter' && handleApplyPromoCode()}
+                              disabled={isApplyingPromo}
+                            />
+                            <button
+                              className="apply-promo-btn"
+                              onClick={handleApplyPromoCode}
+                              disabled={isApplyingPromo || !promoCode.trim()}
+                            >
+                              {isApplyingPromo ? (
+                                <span className="spinner-small"></span>
+                              ) : (
+                                <>
+                                  <CheckCircle size={18} />
+                                  {t('profileEntrepreneur.apply') || 'Apply'}
+                                </>
+                              )}
+                            </button>
+                          </div>
+                          {promoError && (
+                            <div className="promo-error">
+                              <AlertCircle size={14} />
+                              {promoError}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Usage Stats */}
                     <div className="dashboard-section">
@@ -2014,6 +2354,52 @@ function ProfilePageEntrepreneur() {
               </div>
             </div>
 
+            {/* Promo Code Section in View Plans Modal */}
+            {!subscription.plan_type && (
+              <div className="modal-promo-section">
+                <div className="modal-promo-divider">
+                  <span className="divider-text">{t('profileEntrepreneur.orUsePromoCode') || 'or use a promo code'}</span>
+                </div>
+                <div className="modal-promo-card">
+                  <div className="modal-promo-header">
+                    <Zap size={20} className="modal-promo-icon" />
+                    <span className="modal-promo-title">{t('profileEntrepreneur.havePromoCode') || 'Have a Promo Code?'}</span>
+                  </div>
+                  <div className="modal-promo-input-wrapper">
+                    <input
+                      type="text"
+                      className={`modal-promo-input ${promoError ? 'error' : ''}`}
+                      placeholder={t('profileEntrepreneur.enterCodePlaceholder') || 'Enter promo code...'}
+                      value={promoCode}
+                      onChange={(e) => {
+                        setPromoCode(e.target.value.toUpperCase())
+                        setPromoError('')
+                      }}
+                      onKeyPress={(e) => e.key === 'Enter' && handleApplyPromoCode()}
+                      disabled={isApplyingPromo}
+                    />
+                    <button
+                      className="modal-promo-apply-btn"
+                      onClick={handleApplyPromoCode}
+                      disabled={isApplyingPromo || !promoCode.trim()}
+                    >
+                      {isApplyingPromo ? (
+                        <span className="spinner-small"></span>
+                      ) : (
+                        t('profileEntrepreneur.apply') || 'Apply'
+                      )}
+                    </button>
+                  </div>
+                  {promoError && (
+                    <div className="modal-promo-error">
+                      <AlertCircle size={14} />
+                      {promoError}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Cancel Subscription Button */}
             {(subscription.plan_type === 'basic' || subscription.plan_type === 'premium') && !subscription.cancel_at_period_end && (
               <div className="cancel-subscription-section">
@@ -2097,6 +2483,116 @@ function ProfilePageEntrepreneur() {
                   </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Trial Promo Decision Modal */}
+      {showTrialPromoModal && trialPromoData && (
+        <div className="subscription-modal">
+          <div className="modal-overlay" onClick={() => !isQueueingPromo && !isApplyingPromoNow && setShowTrialPromoModal(false)} />
+          <div className="modal-content trial-promo-modal">
+            <button
+              className="modal-close-btn"
+              onClick={() => setShowTrialPromoModal(false)}
+              disabled={isQueueingPromo || isApplyingPromoNow}
+            >
+              <X size={24} />
+            </button>
+
+            <div className="trial-promo-header">
+              <div className="trial-promo-icon">
+                <Zap size={48} />
+              </div>
+              <h2>{t('profileEntrepreneur.promoCodeDetected') || 'Promo Code Detected!'}</h2>
+              <p className="trial-promo-subtitle">
+                {t('profileEntrepreneur.youreOnTrial') || "You're currently on a trial."}
+              </p>
+              <div className="trial-promo-code-display">
+                <code>{trialPromoData.promo_code}</code>
+              </div>
+            </div>
+
+            <div className="trial-promo-body">
+              <p className="trial-promo-question">
+                {t('profileEntrepreneur.howToApplyPromo') || 'How would you like to apply this promo code?'}
+              </p>
+
+              {/* Option 1: Queue for after trial */}
+              <div className="trial-promo-option">
+                <div className="option-header">
+                  <div className="option-icon queue">
+                    <Clock size={24} />
+                  </div>
+                  <div className="option-info">
+                    <h3>{trialPromoData.options.queue.label}</h3>
+                    <p>{trialPromoData.options.queue.description}</p>
+                  </div>
+                </div>
+                <button
+                  className="trial-promo-btn queue-btn"
+                  onClick={handleQueuePromoCode}
+                  disabled={isQueueingPromo || isApplyingPromoNow}
+                >
+                  {isQueueingPromo ? (
+                    <>
+                      <span className="ep-spinner"></span>
+                      {t('profileEntrepreneur.queueing') || 'Queueing...'}
+                    </>
+                  ) : (
+                    <>
+                      <Clock size={18} />
+                      {t('profileEntrepreneur.applyAfterTrial') || 'Apply After Trial'}
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="trial-promo-divider">
+                <span>{t('common.or') || 'OR'}</span>
+              </div>
+
+              {/* Option 2: Apply now (cancel trial) */}
+              <div className="trial-promo-option apply-now">
+                <div className="option-header">
+                  <div className="option-icon apply-now">
+                    <Zap size={24} />
+                  </div>
+                  <div className="option-info">
+                    <h3>{trialPromoData.options.apply_now.label}</h3>
+                    <p>{trialPromoData.options.apply_now.description}</p>
+                  </div>
+                </div>
+                <div className="apply-now-warning">
+                  <AlertCircle size={16} />
+                  <span>{trialPromoData.options.apply_now.warning}</span>
+                </div>
+                <button
+                  className="trial-promo-btn apply-now-btn"
+                  onClick={handleApplyPromoNow}
+                  disabled={isQueueingPromo || isApplyingPromoNow}
+                >
+                  {isApplyingPromoNow ? (
+                    <>
+                      <span className="ep-spinner"></span>
+                      {t('profileEntrepreneur.applying') || 'Applying...'}
+                    </>
+                  ) : (
+                    <>
+                      <Zap size={18} />
+                      {t('profileEntrepreneur.cancelTrialApplyNow') || 'Cancel Trial & Apply Now'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="trial-promo-footer">
+              <p className="trial-promo-note">
+                <Shield size={14} />
+                {t('profileEntrepreneur.noSilentBilling') || 'No silent billing changes. You are in control.'}
+              </p>
             </div>
           </div>
         </div>
