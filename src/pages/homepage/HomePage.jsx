@@ -342,6 +342,7 @@ function HomePage() {
   const [selectedRepair, setSelectedRepair] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [searchExpanded, setSearchExpanded] = useState(false)
+  const [statusFilter, setStatusFilter] = useState("all")
   const searchInputRef = useRef(null)
 
   // urgent modal
@@ -644,13 +645,21 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
     }
   }, [searchExpanded])
 
-  const filteredRepairs = properties.filter(
-    (repair) =>
+  const filteredRepairs = properties.filter((repair) => {
+    // Search filter
+    const matchesSearch =
       repair?.property?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       repair?.apartment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       repair?.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      repair?.category?.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+      repair?.category?.toLowerCase().includes(searchTerm.toLowerCase())
+
+    // Status filter
+    const matchesStatus =
+      statusFilter === "all" ||
+      repair?.status?.toLowerCase() === statusFilter.toLowerCase()
+
+    return matchesSearch && matchesStatus
+  })
 
 
   if (isLoading) {
@@ -809,6 +818,47 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
           totalBidsApproved={totalBidsApproved}
           totalJobs={totalJobs}
         />
+
+        {/* Status Filter */}
+        <div className="pm-status-filter-section">
+          <div className="pm-status-filter-label">{t('homePage.filterByStatus') || 'Filter by Status'}:</div>
+          <div className="pm-status-filter-buttons">
+            <button
+              className={`pm-status-filter-btn ${statusFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('all')}
+            >
+              {t('homePage.filterAll') || 'All'}
+              <span className="pm-filter-count">{properties.length}</span>
+            </button>
+            <button
+              className={`pm-status-filter-btn ${statusFilter === 'open' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('open')}
+            >
+              {t('homePage.filterOpen') || 'Open'}
+              <span className="pm-filter-count">
+                {properties.filter(p => p?.status?.toLowerCase() === 'open').length}
+              </span>
+            </button>
+            <button
+              className={`pm-status-filter-btn ${statusFilter === 'in_progress' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('in_progress')}
+            >
+              {t('homePage.filterInProgress') || 'In Progress'}
+              <span className="pm-filter-count">
+                {properties.filter(p => p?.status?.toLowerCase() === 'in_progress').length}
+              </span>
+            </button>
+            <button
+              className={`pm-status-filter-btn ${statusFilter === 'completed' ? 'active' : ''}`}
+              onClick={() => setStatusFilter('completed')}
+            >
+              {t('homePage.filterCompleted') || 'Completed'}
+              <span className="pm-filter-count">
+                {properties.filter(p => p?.status?.toLowerCase() === 'completed').length}
+              </span>
+            </button>
+          </div>
+        </div>
 
         <RepairList repairs={filteredRepairs} handleRepairClicked={handleRepairClicked} />
 

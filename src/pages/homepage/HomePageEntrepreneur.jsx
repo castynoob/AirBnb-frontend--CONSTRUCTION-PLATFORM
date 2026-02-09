@@ -522,12 +522,12 @@ function HomePageEntrepreneur() {
 
   // Get open jobs count for each property
   const getPropertyOpenJobsCount = (propertyId) => {
-    return jobs.filter((job) => job.property_id === propertyId && job.status?.toLowerCase() === "open").length
+    return jobs.filter((job) => job.property_id === propertyId && job.status?.toLowerCase() === 'open').length
   }
 
   // Get open jobs for a property
   const getPropertyOpenJobs = (propertyId) => {
-    return jobs.filter((job) => job.property_id === propertyId && job.status?.toLowerCase() === "open")
+    return jobs.filter((job) => job.property_id === propertyId && job.status?.toLowerCase() === 'open')
   }
 
   // Filter properties and jobs based on all filters including radius
@@ -559,7 +559,8 @@ function HomePageEntrepreneur() {
           property.longitude
         ) <= radiusFilter.radius
 
-      const propertyJobs = jobs.filter((job) => job.property_id === property.id && job.status?.toLowerCase() === "open")
+      // Filter for open jobs
+      const propertyJobs = jobs.filter((job) => job.property_id === property.id && job.status?.toLowerCase() === 'open')
 
       // Work type filter - combine checkbox selections and text field input
       const selectedWorkTypes = [...appliedFilters.workTypes]
@@ -612,7 +613,14 @@ function HomePageEntrepreneur() {
       )
     })
 
-    return filtered
+    // Sort properties by open job count (most jobs first)
+    const sorted = filtered.sort((a, b) => {
+      const aJobCount = jobs.filter((job) => job.property_id === a.id && job.status?.toLowerCase() === 'open').length
+      const bJobCount = jobs.filter((job) => job.property_id === b.id && job.status?.toLowerCase() === 'open').length
+      return bJobCount - aJobCount
+    })
+
+    return sorted
   }, [properties, jobs, searchTerm, appliedFilters, radiusFilter, calculateDistance])
 
   // Get search results for dropdown (only based on search term, not other filters)
@@ -1772,13 +1780,14 @@ function HomePageEntrepreneur() {
                   <h3>{t('entrepreneurHome.allProperties')}</h3>
                   <span className="eh-property-count-badge">{filteredProperties.length} {t('entrepreneurHome.properties')}</span>
                 </div>
+
                 <div className="eh-properties-grid">
                   {filteredProperties.map((property) => {
                     const jobCount = getPropertyOpenJobsCount(property.id)
                     return (
                       <div
                         key={property.id}
-                        className="eh-property-list-card"
+                        className={`eh-property-list-card ${jobCount === 0 ? 'eh-property-no-jobs' : ''}`}
                         onClick={() => handlePropertyClick(property)}
                       >
                         <div className="eh-property-card-header">

@@ -53,6 +53,12 @@ const translations = {
       allRepairWork: 'All Repair Work',
       loadingRepairs: 'Loading repairs...',
       noRepairsFound: 'No repairs found matching your search.',
+      // Status filters
+      filterByStatus: 'Filter by Status',
+      filterAll: 'All',
+      filterOpen: 'Open',
+      filterInProgress: 'In Progress',
+      filterCompleted: 'Completed',
     },
 
     // Urgent Modal
@@ -799,6 +805,16 @@ const translations = {
       viewLocation: 'View Location',
       viewJobs: 'View Jobs',
       noPropertiesFound: 'No properties found',
+
+      // Status filters
+      filterByStatus: 'Filter by Status',
+      filterAll: 'All',
+      filterOpen: 'Open',
+      filterInProgress: 'In Progress',
+      filterCompleted: 'Completed',
+      jobs: 'jobs',
+      inProgressJobs: 'in progress',
+      completedJobs: 'completed',
 
       // Subscription/Premium
       jobsAvailable: 'Jobs Available',
@@ -2974,6 +2990,12 @@ const translations = {
       allRepairWork: 'Tous les Travaux de Réparation',
       loadingRepairs: 'Chargement des réparations...',
       noRepairsFound: 'Aucune réparation correspondant à votre recherche.',
+      // Status filters
+      filterByStatus: 'Filtrer par Statut',
+      filterAll: 'Tous',
+      filterOpen: 'Ouvert',
+      filterInProgress: 'En Cours',
+      filterCompleted: 'Terminé',
     },
 
     // Urgent Modal
@@ -3720,6 +3742,16 @@ const translations = {
       viewLocation: 'Voir l\'Emplacement',
       viewJobs: 'Voir les Travaux',
       noPropertiesFound: 'Aucune propriété trouvée',
+
+      // Status filters
+      filterByStatus: 'Filtrer par Statut',
+      filterAll: 'Tous',
+      filterOpen: 'Ouvert',
+      filterInProgress: 'En Cours',
+      filterCompleted: 'Terminé',
+      jobs: 'travaux',
+      inProgressJobs: 'en cours',
+      completedJobs: 'terminés',
 
       // Subscription/Premium
       jobsAvailable: 'Travaux Disponibles',
