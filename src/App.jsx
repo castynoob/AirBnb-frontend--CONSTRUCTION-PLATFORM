@@ -17,14 +17,16 @@ import ProfilePageEntrepreneur from "./pages/profile/ProfilePageEntrepreneur";
 import EntrepreneurJobs from "./pages/works/EntrepreneurJobs";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
-import SupplierList from './pages/supplier/SupplierList'
-import SupplierProfile from './pages/supplier/SupplierProfile'
-import SupplierHomepage from './pages/supplier/SupplierHomepage'
+// SUPPLIER TEMPORARILY DISABLED — uncomment to re-enable
+// import SupplierList from './pages/supplier/SupplierList'
+// import SupplierProfile from './pages/supplier/SupplierProfile'
+// import SupplierHomepage from './pages/supplier/SupplierHomepage'
 import HomePageResident from "./pages/homepage/HomePageResident";
 import MessagesResident from "./pages/messages/MessagesResident";
 import MembersResident from "./pages/members/MembersResident";
 import ProfilePageResident from "./pages/profile/ProfilePageResident";
-import MessagesSupplier from "./pages/messages/MessagesSupplier";
+// SUPPLIER TEMPORARILY DISABLED — uncomment to re-enable
+// import MessagesSupplier from "./pages/messages/MessagesSupplier";
 import CustomerService from "./pages/customerservice/CustomerService";
 import LegalPage from "./pages/legal/LegalPage";
 
@@ -183,13 +185,14 @@ function ProtectedRoutes() {
         path="/jobs/entrepreneur"
         element={<ProtectedRoute element={<EntrepreneurJobs />} />}
       />
-      <Route
+      {/* SUPPLIER TEMPORARILY DISABLED — uncomment to re-enable */}
+      {/* <Route
         path="/supplier"
         element={<ProtectedRoute element={<SupplierList />} />}
-      />
+      /> */}
 
-      {/* Supplier protected routes */}
-      <Route
+      {/* Supplier protected routes — TEMPORARILY DISABLED */}
+      {/* <Route
         path="/homepage/supplier"
         element={<ProtectedRoute element={<SupplierHomepage />} />}
       />
@@ -200,7 +203,7 @@ function ProtectedRoutes() {
       <Route
         path="/profile/supplier"
         element={<ProtectedRoute element={<SupplierProfile />} />}
-      />
+      /> */}
             {/* Resident protected routes */}
       <Route
         path="/homepage/resident"

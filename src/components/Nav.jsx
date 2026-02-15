@@ -150,7 +150,8 @@ function Nav() {
 
   const getRoleDisplay = () => {
     if (role === 'property_manager') return t('nav.propertyManager');
-    if (role === 'supplier') return t('nav.supplierRole');
+    // SUPPLIER TEMPORARILY DISABLED — uncomment to re-enable
+    // if (role === 'supplier') return t('nav.supplierRole');
     if (role === 'entrepreneur') return t('nav.entrepreneur');
     if (role === 'resident') return t('nav.resident');
     return role[0].toUpperCase() + role.substring(1);
@@ -170,7 +171,7 @@ function Nav() {
         isLoading?
         <div className="sidebar"></div>:
         <nav className="sidebar">
-          <div className="brand nav">
+          <div className="brand nav" onClick={() => navigate('/homepage/' + role)} style={{ cursor: 'pointer' }}>
             <div className="logo-container nav">
               <img src={logo} alt="Logo" className="logo-light" />
             </div>
@@ -213,7 +214,7 @@ function Nav() {
               </li>
 
               {
-                role !== 'supplier' && role != 'resident' &&
+                role != 'resident' && /* SUPPLIER TEMPORARILY DISABLED — was: role !== 'supplier' && role != 'resident' */
                 <li>
                   <NavLink
                     to={'/submissions/'+role}
@@ -272,7 +273,8 @@ function Nav() {
                     <span className="nav-text">{t('nav.jobs')}</span>
                   </NavLink>
                 </li>
-                <li>
+                {/* SUPPLIER TEMPORARILY DISABLED — uncomment to re-enable */}
+                {/* <li>
                   <NavLink
                     to={'/supplier'}
                     className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
@@ -282,7 +284,7 @@ function Nav() {
                     </div>
                     <span className="nav-text">{t('nav.supplier')}</span>
                   </NavLink>
-                </li>
+                </li> */}
                 </>
               }
 

@@ -2213,6 +2213,15 @@ const translations = {
       subtitle: 'Select the plan that fits your business needs and start bidding on projects today',
       closeModal: 'Close modal',
 
+      // Plan cards - Starter
+      starterPlan: 'Starter Plan',
+      starterPrice: '89',
+      starterPeriod: '/month',
+      starterDescription: 'For small businesses',
+      starterRestriction: 'Projects under $2,500 only',
+      submitUpTo15Bids: 'Submit up to 15 bids',
+      startStarterTrial: 'Start Starter Trial',
+
       // Plan cards - Basic
       basicPlan: 'Basic Plan',
       basicPrice: '250',
@@ -2242,8 +2251,10 @@ const translations = {
       comparisonTitle: 'Detailed Feature Comparison',
       feature: 'Feature',
       noSub: 'No Sub',
+      trialStarter: 'Trial Starter',
       trialBasic: 'Trial Basic',
       trialPremium: 'Trial Premium',
+      activeStarter: 'Active Starter',
       activeBasic: 'Active Basic',
       activePremium: 'Active Premium',
 
@@ -2277,6 +2288,7 @@ const translations = {
       // Hero Section
       hero: {
         badge: 'Trusted by 1,000+ Property Managers & Contractors',
+        badgeDynamic: 'Trusted by {{count}}+ Property Managers & Contractors',
         title: 'Property Maintenance, Managed',
         titleHighlight: 'Smarter',
         subtitle: 'INTERVOS automates your entire construction workflow - from emergency repairs to major renovations. One platform. Zero stress. Full control from day one.',
@@ -2335,7 +2347,7 @@ const translations = {
       // Roles Section
       roles: {
         title: 'Who uses INTERVOS?',
-        subtitle: 'Everyone involved in getting work done on buildings.',
+        subtitle: 'Construction contractors. Condo associations. One platform to coordinate your work.',
 
         // Property Managers
         propertyManagers: {
@@ -2440,6 +2452,11 @@ const translations = {
         perMonth: '/month',
         popular: 'Most Popular',
         getStarted: 'Get Started',
+        starterPlan: 'Starter',
+        starterDesc: 'For small businesses',
+        starterPrice: '89',
+        starterRestriction: 'Projects under $2,500 only',
+        starterBidsLimit: '15 per month',
         basicPlan: 'Basic',
         basicDesc: 'Perfect for getting started',
         premiumPlan: 'Premium',
@@ -2454,6 +2471,7 @@ const translations = {
         feature8: 'Custom branding',
         bidsLimit: '30 per month',
         unlimited: 'Unlimited',
+        freeNotice: 'Free for all condo associations. No subscription required.',
       },
 
       // Footer
@@ -5149,6 +5167,15 @@ const translations = {
       subtitle: 'Sélectionnez le forfait adapté à vos besoins et commencez à soumettre des offres dès aujourd\'hui',
       closeModal: 'Fermer la fenêtre',
 
+      // Plan cards - Starter
+      starterPlan: 'Forfait Débutant',
+      starterPrice: '89',
+      starterPeriod: '/mois',
+      starterDescription: 'Pour les petites entreprises',
+      starterRestriction: 'Projets de moins de 2 500$ seulement',
+      submitUpTo15Bids: 'Soumettre jusqu\'à 15 offres',
+      startStarterTrial: 'Démarrer l\'essai Débutant',
+
       // Plan cards - Basic
       basicPlan: 'Forfait de Base',
       basicPrice: '250',
@@ -5178,8 +5205,10 @@ const translations = {
       comparisonTitle: 'Comparaison détaillée des fonctionnalités',
       feature: 'Fonctionnalité',
       noSub: 'Sans abonnement',
+      trialStarter: 'Essai Débutant',
       trialBasic: 'Essai de base',
       trialPremium: 'Essai Premium',
+      activeStarter: 'Débutant actif',
       activeBasic: 'Base actif',
       activePremium: 'Premium actif',
 
@@ -5213,6 +5242,7 @@ const translations = {
       // Hero Section
       hero: {
         badge: 'Approuvé par plus de 1 000 gestionnaires immobiliers et entrepreneurs',
+        badgeDynamic: 'Approuvé par plus de {{count}} gestionnaires immobiliers et entrepreneurs',
         title: 'Maintenance immobilière, gérée',
         titleHighlight: 'intelligemment',
         subtitle: 'INTERVOS automatise l\'ensemble de votre flux de travail de construction - des réparations d\'urgence aux rénovations majeures. Une seule plateforme. Zéro stress. Contrôle total dès le premier jour.',
@@ -5271,7 +5301,7 @@ const translations = {
       // Roles Section
       roles: {
         title: 'Qui utilise INTERVOS?',
-        subtitle: 'Tous ceux qui participent aux travaux sur les immeubles.',
+        subtitle: 'Entrepreneurs en construction. Associations de condos. Une plateforme pour coordonner vos travaux.',
 
         // Property Managers
         propertyManagers: {
@@ -5376,6 +5406,11 @@ const translations = {
         perMonth: '/mois',
         popular: 'Le plus populaire',
         getStarted: 'Commencer',
+        starterPlan: 'Débutant',
+        starterDesc: 'Pour les petites entreprises',
+        starterPrice: '89',
+        starterRestriction: 'Projets de moins de 2 500$ seulement',
+        starterBidsLimit: '15 par mois',
         basicPlan: 'Basic',
         basicDesc: 'Parfait pour débuter',
         premiumPlan: 'Premium',
@@ -5390,6 +5425,7 @@ const translations = {
         feature8: 'Image de marque personnalisée',
         bidsLimit: '30 par mois',
         unlimited: 'Illimité',
+        freeNotice: 'Gratuit pour toutes les associations de condos. Aucun abonnement requis.',
       },
 
       // Footer

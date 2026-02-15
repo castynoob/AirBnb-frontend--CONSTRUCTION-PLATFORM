@@ -19,6 +19,8 @@ import {
 } from "../../utils/validation";
 import { useSocket } from "../../contexts/SocketContext";
 import { useLanguage } from "../../contexts/LanguageContext";
+// STATS TEMPORARILY REMOVED — uncomment when data is ready
+// import { getPlatformStats } from "../../utils/api";
 
 export default function LandingPage() {
   const { t, language, changeLanguage, languages } = useLanguage();
@@ -34,6 +36,9 @@ export default function LandingPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { reinitializeSocket } = useSocket()
+
+  // STATS TEMPORARILY REMOVED — uncomment when data is ready
+  // const [platformStats, setPlatformStats] = useState(null)
 
   // Login state
   const [loginFormData, setLoginFormData] = useState({
@@ -179,6 +184,27 @@ export default function LandingPage() {
   const [addressSuggestions, setAddressSuggestions] = useState([])
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false)
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false)
+
+  // STATS TEMPORARILY REMOVED — uncomment when data is ready
+  // useEffect(() => {
+  //   const fetchStats = async () => {
+  //     try {
+  //       const data = await getPlatformStats();
+  //       if (data.success) {
+  //         setPlatformStats(data.stats);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching platform stats:", error);
+  //     }
+  //   };
+  //   fetchStats();
+  // }, []);
+
+  // const formatStatNumber = (num) => {
+  //   if (num >= 1000000) return `$${(num / 1000000).toFixed(1)}M+`;
+  //   if (num >= 1000) return `${(Math.floor(num / 100) * 100).toLocaleString()}+`;
+  //   return `${num}+`;
+  // };
 
   // ===== EMAIL VERIFICATION CHECK =====
   useEffect(() => {
@@ -405,6 +431,13 @@ export default function LandingPage() {
         // residentProfile: data.user.role = 'resident' ? {  }
       }
 
+      // SUPPLIER TEMPORARILY DISABLED — block supplier login
+      if (userProfile.role === 'supplier') {
+        setLoginErrors({ submit: 'Supplier accounts are temporarily unavailable. Please try again later.' });
+        setIsLoggingIn(false);
+        return;
+      }
+
       localStorage.setItem("token", userProfile.token);
       localStorage.setItem("refreshToken", data.refreshToken);
       localStorage.setItem("userId", userProfile.id);
@@ -483,6 +516,13 @@ export default function LandingPage() {
         role: data.user.role,
         token: data.accessToken || null,
         entrepProfile: data.user.role === 'entrepreneur' ? {entrepProfile, subscription} : null
+      }
+
+      // SUPPLIER TEMPORARILY DISABLED — block supplier login
+      if (userProfile.role === 'supplier') {
+        setLoginErrors({ submit: 'Supplier accounts are temporarily unavailable. Please try again later.' });
+        setIsLoggingIn(false);
+        return;
       }
 
       localStorage.setItem("userId", userProfile.id);
@@ -659,9 +699,10 @@ export default function LandingPage() {
             case "resident":
                 endpoint = "/api/register/resident";
                 break;
-            case "supplier":
-                endpoint = "/api/register/supplier";
-                break;
+            // SUPPLIER TEMPORARILY DISABLED — uncomment to re-enable
+            // case "supplier":
+            //     endpoint = "/api/register/supplier";
+            //     break;
             default: {
                 setIsRegistering(false);
                 throw new Error(`Invalid role selected: ${selectedRole}`);
@@ -743,13 +784,14 @@ export default function LandingPage() {
             payload.specializations = [];
         }
 
+        // SUPPLIER TEMPORARILY DISABLED — uncomment to re-enable
         // 4. Convert delivery_areas for supplier
-        if (selectedRole === "supplier" && payload.delivery_areas && typeof payload.delivery_areas === "string") {
-            payload.delivery_areas = payload.delivery_areas
-                .split(",")
-                .map((area) => area.trim())
-                .filter(Boolean);
-        }
+        // if (selectedRole === "supplier" && payload.delivery_areas && typeof payload.delivery_areas === "string") {
+        //     payload.delivery_areas = payload.delivery_areas
+        //         .split(",")
+        //         .map((area) => area.trim())
+        //         .filter(Boolean);
+        // }
 
         // 5. Combine address fields into a single address string and prepare fields for users table
         if (payload.street_address || payload.city || payload.state || payload.country || payload.zip_code) {
@@ -1151,6 +1193,7 @@ export default function LandingPage() {
       color: "success",
       gradient: "linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)"
     },
+    /* SUPPLIER TEMPORARILY DISABLED — uncomment to re-enable
     {
       id: "supplier",
       title: t('landingPage.register.roleSupplier'),
@@ -1173,6 +1216,7 @@ export default function LandingPage() {
       color: "info",
       gradient: "linear-gradient(135deg, #3498db 0%, #2980b9 100%)"
     },
+    */
   ]
 
   const features = [
@@ -1267,7 +1311,7 @@ export default function LandingPage() {
       {/* Navigation Bar */}
       <nav className={`lp-navbar ${scrolled ? "lp-scrolled" : ""}`}>
         <div className="lp-navbar-container">
-          <div className="lp-navbar-logo">
+          <div className="lp-navbar-logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ cursor: 'pointer' }}>
             <span className="lp-logo-icon">
               <img src={logo} alt="INTERVOS" />
             </span>
@@ -1319,7 +1363,7 @@ export default function LandingPage() {
         <div className="lp-mobile-menu-overlay" onClick={() => setShowMobileMenu(false)}>
           <div className="lp-mobile-menu" onClick={(e) => e.stopPropagation()}>
             <div className="lp-mobile-menu-header">
-              <div className="lp-navbar-logo">
+              <div className="lp-navbar-logo" onClick={() => { setShowMobileMenu(false); window.scrollTo({ top: 0, behavior: 'smooth' }); }} style={{ cursor: 'pointer' }}>
                 <span className="lp-logo-icon">
                   <img src={logo} alt="INTERVOS" />
                 </span>
@@ -1368,9 +1412,13 @@ export default function LandingPage() {
           <div className="lp-hero-gradient"></div>
         </div>
         <div className="lp-hero-content">
+          {/* STATS TEMPORARILY REMOVED — not yet accurate. Uncomment when data is ready.
           <div className="lp-hero-badge">
-            {t('landingPage.hero.badge')}
+            {platformStats
+              ? t('landingPage.hero.badgeDynamic', { count: platformStats.trustedBy.toLocaleString() })
+              : t('landingPage.hero.badge')}
           </div>
+          */}
           <h1 className="lp-hero-title">
             {t('landingPage.hero.title')} <span className="lp-highlight-teal">{t('landingPage.hero.titleHighlight')}</span>
           </h1>
@@ -1473,6 +1521,7 @@ export default function LandingPage() {
                 {t('landingPage.about.storyText2')}
               </p>
 
+              {/* STATS TEMPORARILY REMOVED — not yet accurate. Uncomment when data is ready.
               <div className="lp-about-stats">
                 <div className="lp-stat-item">
                   <div className="lp-stat-icon">
@@ -1483,7 +1532,7 @@ export default function LandingPage() {
                       <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                     </svg>
                   </div>
-                  <div className="lp-stat-number">{t('landingPage.about.stat1Value')}</div>
+                  <div className="lp-stat-number">{platformStats ? formatStatNumber(platformStats.activeUsers) : t('landingPage.about.stat1Value')}</div>
                   <div className="lp-stat-label">{t('landingPage.about.stat1Label')}</div>
                 </div>
                 <div className="lp-stat-item">
@@ -1492,7 +1541,7 @@ export default function LandingPage() {
                       <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
                     </svg>
                   </div>
-                  <div className="lp-stat-number">{t('landingPage.about.stat2Value')}</div>
+                  <div className="lp-stat-number">{platformStats ? formatStatNumber(platformStats.completedProjectsValue) : t('landingPage.about.stat2Value')}</div>
                   <div className="lp-stat-label">{t('landingPage.about.stat2Label')}</div>
                 </div>
                 <div className="lp-stat-item">
@@ -1502,10 +1551,11 @@ export default function LandingPage() {
                       <polyline points="12 6 12 12 16 14"></polyline>
                     </svg>
                   </div>
-                  <div className="lp-stat-number">{t('landingPage.about.stat3Value')}</div>
+                  <div className="lp-stat-number">{platformStats ? `${Math.round(platformStats.avgResponseHours)}${language === 'fr' ? 'h' : 'hrs'}` : t('landingPage.about.stat3Value')}</div>
                   <div className="lp-stat-label">{t('landingPage.about.stat3Label')}</div>
                 </div>
               </div>
+              */}
             </div>
             <div className="lp-about-visual">
               <div className="lp-success-dashboard">
@@ -1799,6 +1849,33 @@ export default function LandingPage() {
           <p>{t('landingPage.pricing.subtitle')}</p>
         </div>
         <div className="lp-pricing-cards">
+          {/* Starter Plan */}
+          <div className="lp-pricing-card">
+            <div className="lp-pricing-card-header">
+              <h3>{t('landingPage.pricing.starterPlan')}</h3>
+              <p className="lp-pricing-desc">{t('landingPage.pricing.starterDesc')}</p>
+            </div>
+            <div className="lp-pricing-price">
+              <span className="lp-price-currency">$</span>
+              <span className="lp-price-amount">{t('landingPage.pricing.starterPrice')}</span>
+              <span className="lp-price-period">{t('landingPage.pricing.perMonth')}</span>
+            </div>
+            <ul className="lp-pricing-features">
+              <li><Check size={18} className="lp-feature-check" /> {t('landingPage.pricing.feature1')}</li>
+              <li><Check size={18} className="lp-feature-check" /> {t('landingPage.pricing.feature2')}</li>
+              <li><Check size={18} className="lp-feature-check" /> {t('landingPage.pricing.feature3')} <span className="lp-feature-limit">({t('landingPage.pricing.starterBidsLimit')})</span></li>
+              <li><Check size={18} className="lp-feature-check" /> {t('landingPage.pricing.feature4')}</li>
+              <li><Check size={18} className="lp-feature-check" /> {t('landingPage.pricing.feature5')}</li>
+              <li className="lp-feature-disabled"><X size={18} className="lp-feature-x" /> {t('landingPage.pricing.feature6')}</li>
+              <li className="lp-feature-disabled"><X size={18} className="lp-feature-x" /> {t('landingPage.pricing.feature7')}</li>
+              <li className="lp-feature-disabled"><X size={18} className="lp-feature-x" /> {t('landingPage.pricing.feature8')}</li>
+            </ul>
+            <p className="lp-pricing-restriction">{t('landingPage.pricing.starterRestriction')}</p>
+            <button className="lp-pricing-btn" onClick={() => setShowRegisterModal(true)}>
+              {t('landingPage.pricing.getStarted')}
+            </button>
+          </div>
+
           {/* Basic Plan */}
           <div className="lp-pricing-card">
             <div className="lp-pricing-card-header">
@@ -1854,6 +1931,9 @@ export default function LandingPage() {
               {t('landingPage.pricing.getStarted')}
             </button>
           </div>
+        </div>
+        <div className="lp-pricing-free-notice">
+          <p>{t('landingPage.pricing.freeNotice')}</p>
         </div>
       </section>
 
@@ -2128,7 +2208,8 @@ export default function LandingPage() {
                     {selectedRole === 'property-manager' && t('landingPage.register.joinAsPropertyManager')}
                     {selectedRole === 'entrepreneur' && t('landingPage.register.joinAsEntrepreneur')}
                     {selectedRole === 'resident' && t('landingPage.register.joinAsResident')}
-                    {selectedRole === 'supplier' && t('landingPage.register.joinAsSupplier')}
+                    {/* SUPPLIER TEMPORARILY DISABLED */}
+                    {/* {selectedRole === 'supplier' && t('landingPage.register.joinAsSupplier')} */}
                   </p>
                 </div>
 
@@ -2364,7 +2445,8 @@ export default function LandingPage() {
                     {selectedRole === 'property-manager' && t('landingPage.register.profileSubtitlePM')}
                     {selectedRole === 'entrepreneur' && t('landingPage.register.profileSubtitleEntr')}
                     {selectedRole === 'resident' && t('landingPage.register.profileSubtitleRes')}
-                    {selectedRole === 'supplier' && t('landingPage.register.profileSubtitleSup')}
+                    {/* SUPPLIER TEMPORARILY DISABLED */}
+                    {/* {selectedRole === 'supplier' && t('landingPage.register.profileSubtitleSup')} */}
                   </p>
                 </div>
 
@@ -2868,7 +2950,7 @@ export default function LandingPage() {
                     </>
                   )}
 
-                  {/* Supplier Fields */}
+                  {/* SUPPLIER TEMPORARILY DISABLED — supplier role card removed from roles array so this never renders */}
                   {selectedRole === "supplier" && (
                     <>
                       <div className="lp-form-divider">{t('landingPage.register.supplierDetails')}</div>

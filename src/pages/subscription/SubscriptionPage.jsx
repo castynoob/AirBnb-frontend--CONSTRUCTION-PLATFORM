@@ -131,6 +131,24 @@ function SubscriptionPage() {
 
   const plans = [
     {
+      name: 'Starter',
+      price: 89,
+      period: 'month',
+      description: 'For small businesses',
+      restriction: 'Projects under $2,500 only',
+      features: [
+        { text: 'Browse construction jobs', included: true },
+        { text: 'View job details & specs', included: true },
+        { text: 'Submit bids', included: true, limit: '15 per month' },
+        { text: 'Unlock project budgets', included: true },
+        { text: 'Message on approved projects', included: true },
+        { text: 'Priority support', included: false },
+        { text: 'Advanced analytics', included: false },
+        { text: 'Custom branding', included: false }
+      ],
+      popular: false
+    },
+    {
       name: 'Basic',
       price: 250,
       period: 'month',
@@ -228,6 +246,7 @@ function SubscriptionPage() {
                     <tr>
                       <th className="feature-col">Feature</th>
                       <th className="tier-col">No Subscription</th>
+                      <th className="tier-col">Starter Plan</th>
                       <th className="tier-col">Basic Plan</th>
                       <th className="tier-col premium-col">Premium Plan</th>
                     </tr>
@@ -237,10 +256,12 @@ function SubscriptionPage() {
                       <td className="feature-name">Browse construction jobs</td>
                       <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                       <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                      <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                       <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                     </tr>
                     <tr>
                       <td className="feature-name">View job details & specs</td>
+                      <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                       <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                       <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                       <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
@@ -248,6 +269,10 @@ function SubscriptionPage() {
                     <tr>
                       <td className="feature-name">Submit bids</td>
                       <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                      <td className="tier-cell">
+                        <Check className="icon-yes" size={20} />
+                        <span className="feature-note">(15 max)</span>
+                      </td>
                       <td className="tier-cell">
                         <Check className="icon-yes" size={20} />
                         <span className="feature-note">(30 max)</span>
@@ -258,8 +283,19 @@ function SubscriptionPage() {
                       </td>
                     </tr>
                     <tr>
+                      <td className="feature-name">Project budget limit</td>
+                      <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                      <td className="tier-cell">
+                        <Check className="icon-yes" size={20} />
+                        <span className="feature-note">(under $2,500)</span>
+                      </td>
+                      <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                      <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                    </tr>
+                    <tr>
                       <td className="feature-name">Unlock project budgets</td>
                       <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                      <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                       <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                       <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                     </tr>
@@ -267,10 +303,12 @@ function SubscriptionPage() {
                       <td className="feature-name">Message on approved projects</td>
                       <td className="tier-cell"><X className="icon-no" size={20} /></td>
                       <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                      <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                       <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                     </tr>
                     <tr>
                       <td className="feature-name">Priority support</td>
+                      <td className="tier-cell"><X className="icon-no" size={20} /></td>
                       <td className="tier-cell"><X className="icon-no" size={20} /></td>
                       <td className="tier-cell"><X className="icon-no" size={20} /></td>
                       <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
@@ -520,8 +558,10 @@ function SubscriptionPage() {
                 <tr>
                   <th className="feature-col">Feature</th>
                   <th className="tier-col">No Subscription</th>
+                  <th className="tier-col">Trial (Starter)</th>
                   <th className="tier-col">Trial (Basic)</th>
                   <th className="tier-col premium-col">Trial (Premium)</th>
+                  <th className="tier-col">Active Starter</th>
                   <th className="tier-col">Active Basic</th>
                   <th className="tier-col premium-col">Active Premium</th>
                 </tr>
@@ -531,7 +571,9 @@ function SubscriptionPage() {
                   <td className="feature-name">Browse construction jobs</td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                  <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                  <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                 </tr>
@@ -539,7 +581,9 @@ function SubscriptionPage() {
                   <td className="feature-name">View job details & specs</td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                  <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                  <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                 </tr>
@@ -548,11 +592,19 @@ function SubscriptionPage() {
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell">
                     <Check className="icon-yes" size={20} />
+                    <span className="feature-note">(15 max)</span>
+                  </td>
+                  <td className="tier-cell">
+                    <Check className="icon-yes" size={20} />
                     <span className="feature-note">(30 max)</span>
                   </td>
                   <td className="tier-cell premium-cell">
                     <Check className="icon-yes" size={20} />
                     <span className="feature-note">(unlimited)</span>
+                  </td>
+                  <td className="tier-cell">
+                    <Check className="icon-yes" size={20} />
+                    <span className="feature-note">(15 max)</span>
                   </td>
                   <td className="tier-cell">
                     <Check className="icon-yes" size={20} />
@@ -564,10 +616,28 @@ function SubscriptionPage() {
                   </td>
                 </tr>
                 <tr>
+                  <td className="feature-name">Project budget limit</td>
+                  <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                  <td className="tier-cell">
+                    <Check className="icon-yes" size={20} />
+                    <span className="feature-note">(under $2,500)</span>
+                  </td>
+                  <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                  <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                  <td className="tier-cell">
+                    <Check className="icon-yes" size={20} />
+                    <span className="feature-note">(under $2,500)</span>
+                  </td>
+                  <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                  <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                </tr>
+                <tr>
                   <td className="feature-name">Unlock project budgets</td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                  <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                  <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                 </tr>
@@ -575,7 +645,9 @@ function SubscriptionPage() {
                   <td className="feature-name">Message on approved projects</td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
+                  <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                  <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                 </tr>
@@ -583,7 +655,9 @@ function SubscriptionPage() {
                   <td className="feature-name">Priority support</td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                  <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                  <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                 </tr>
@@ -591,7 +665,9 @@ function SubscriptionPage() {
                   <td className="feature-name">Advanced analytics</td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
+                  <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
+                  <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                 </tr>

@@ -30,7 +30,8 @@ import {
 } from "../../utils/api";
 import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal";
 import PropertyManagerProfileModal from "../../components/modal/PropertyManagerProfileModal";
-import SupplierProfileModal from "../../components/modal/SupplierProfileModal";
+// SUPPLIER TEMPORARILY DISABLED — uncomment to re-enable
+// import SupplierProfileModal from "../../components/modal/SupplierProfileModal";
 
 function MessagesEntrepreneurNew() {
   const { t, language } = useLanguage();
@@ -58,10 +59,10 @@ function MessagesEntrepreneurNew() {
   const [selectedManagerProfile, setSelectedManagerProfile] = useState(null);
   const [isLoadingManagerProfile, setIsLoadingManagerProfile] = useState(false);
 
-  // Supplier Profile Modal states
-  const [showSupplierModal, setShowSupplierModal] = useState(false);
-  const [selectedSupplierProfile, setSelectedSupplierProfile] = useState(null);
-  const [isLoadingSupplierProfile, setIsLoadingSupplierProfile] = useState(false);
+  // SUPPLIER TEMPORARILY DISABLED — uncomment to re-enable
+  // const [showSupplierModal, setShowSupplierModal] = useState(false);
+  // const [selectedSupplierProfile, setSelectedSupplierProfile] = useState(null);
+  // const [isLoadingSupplierProfile, setIsLoadingSupplierProfile] = useState(false);
 
   const currentUserId = localStorage.getItem("userId");
   const messagesEndRef = useRef(null);
@@ -540,6 +541,8 @@ function MessagesEntrepreneurNew() {
 
   // Filter conversations by search term and user type
   const filteredConversations = conversations.filter((conv) => {
+    // SUPPLIER TEMPORARILY DISABLED — remove this line to re-enable
+    if (conv.other_user_role === 'supplier') return false;
     const matchesSearch = conv.other_user_name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = userFilter === "all" || conv.other_user_role === userFilter;
     return matchesSearch && matchesFilter;
@@ -566,7 +569,8 @@ function MessagesEntrepreneurNew() {
       'entrepreneur': t('nav.entrepreneur'),
       'property_manager': t('nav.propertyManager'),
       'resident': t('nav.resident'),
-      'supplier': t('nav.supplierRole')
+      // SUPPLIER TEMPORARILY DISABLED
+      // 'supplier': t('nav.supplierRole')
     };
 
     return roleMap[role] || role.charAt(0).toUpperCase() + role.slice(1);
@@ -655,43 +659,30 @@ function MessagesEntrepreneurNew() {
     }
   };
 
-  // Handle viewing supplier profile
-  const handleViewSupplierProfile = async (userId, userName) => {
-    if (!userId || isLoadingSupplierProfile) return;
-
-    setIsLoadingSupplierProfile(true);
-    try {
-      const userProfile = localStorage.getItem("userProfile");
-      if (!userProfile) return;
-
-      const token = JSON.parse(userProfile)?.token;
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
-
-      const response = await fetch(
-        `${API_BASE_URL}/api/users/supplier/user/${userId}`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch supplier profile");
-      }
-
-      const data = await response.json();
-      // Use the profile data directly - it now includes all user fields from the backend
-      setSelectedSupplierProfile(data.profile);
-      setShowSupplierModal(true);
-    } catch (error) {
-      console.error("Error fetching supplier profile:", error);
-      toast.error(t('messages.failedLoadSupplierProfile'));
-    } finally {
-      setIsLoadingSupplierProfile(false);
-    }
-  };
+  // SUPPLIER TEMPORARILY DISABLED — uncomment to re-enable
+  // const handleViewSupplierProfile = async (userId, userName) => {
+  //   if (!userId || isLoadingSupplierProfile) return;
+  //   setIsLoadingSupplierProfile(true);
+  //   try {
+  //     const userProfile = localStorage.getItem("userProfile");
+  //     if (!userProfile) return;
+  //     const token = JSON.parse(userProfile)?.token;
+  //     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+  //     const response = await fetch(
+  //       `${API_BASE_URL}/api/users/supplier/user/${userId}`,
+  //       { method: "GET", headers: { Authorization: `Bearer ${token}` } }
+  //     );
+  //     if (!response.ok) throw new Error("Failed to fetch supplier profile");
+  //     const data = await response.json();
+  //     setSelectedSupplierProfile(data.profile);
+  //     setShowSupplierModal(true);
+  //   } catch (error) {
+  //     console.error("Error fetching supplier profile:", error);
+  //     toast.error(t('messages.failedLoadSupplierProfile'));
+  //   } finally {
+  //     setIsLoadingSupplierProfile(false);
+  //   }
+  // };
 
   return (
     <div className="messages-page-fullscreen">
@@ -725,12 +716,13 @@ function MessagesEntrepreneurNew() {
               >
                 {t('nav.propertyManager')}
               </button>
-              <button
+              {/* SUPPLIER TEMPORARILY DISABLED — uncomment to re-enable */}
+              {/* <button
                 className={`filter-bubble-btn ${userFilter === "supplier" ? "active" : ""}`}
                 onClick={() => setUserFilter("supplier")}
               >
                 {t('nav.supplierRole')}
-              </button>
+              </button> */}
               {/* <button
                 className={`filter-bubble-btn ${userFilter === "entrepreneur" ? "active" : ""}`}
                 onClick={() => setUserFilter("entrepreneur")}
@@ -802,23 +794,24 @@ function MessagesEntrepreneurNew() {
                   <ArrowLeft size={24} />
                 </button>
                 <div
-                  className={`chat-header-avatar ${['entrepreneur', 'property_manager', 'supplier'].includes(selectedChat.other_user_role) ? 'clickable' : ''}`}
+                  className={`chat-header-avatar ${['entrepreneur', 'property_manager'].includes(selectedChat.other_user_role) /* SUPPLIER TEMPORARILY DISABLED — was: includes 'supplier' */ ? 'clickable' : ''}`}
                   onClick={() => {
                     if (selectedChat.other_user_role === 'entrepreneur') {
                       handleViewEntrepreneurProfile(selectedChat.other_user_id);
                     } else if (selectedChat.other_user_role === 'property_manager') {
                       handleViewManagerProfile(selectedChat.other_user_id);
-                    } else if (selectedChat.other_user_role === 'supplier') {
-                      handleViewSupplierProfile(selectedChat.other_user_id, selectedChat.other_user_name);
+                    // SUPPLIER TEMPORARILY DISABLED
+                    // } else if (selectedChat.other_user_role === 'supplier') {
+                    //   handleViewSupplierProfile(selectedChat.other_user_id, selectedChat.other_user_name);
                     }
                   }}
-                  title={['entrepreneur', 'property_manager', 'supplier'].includes(selectedChat.other_user_role) ? t('messages.viewProfile') : ''}
+                  title={['entrepreneur', 'property_manager'].includes(selectedChat.other_user_role) /* SUPPLIER TEMPORARILY DISABLED — was: includes 'supplier' */ ? t('messages.viewProfile') : ''}
                 >
                   {getInitials(selectedChat.other_user_name)}
                 </div>
                 <div className="chat-header-info">
                   <h3
-                    className={`chat-header-name ${['entrepreneur', 'property_manager', 'supplier'].includes(selectedChat.other_user_role) ? 'clickable' : ''}`}
+                    className={`chat-header-name ${['entrepreneur', 'property_manager'].includes(selectedChat.other_user_role) /* SUPPLIER TEMPORARILY DISABLED — was: includes 'supplier' */ ? 'clickable' : ''}`}
                     onClick={() => {
                       if (selectedChat.other_user_role === 'entrepreneur') {
                         handleViewEntrepreneurProfile(selectedChat.other_user_id);
@@ -828,7 +821,7 @@ function MessagesEntrepreneurNew() {
                         handleViewSupplierProfile(selectedChat.other_user_id, selectedChat.other_user_name);
                       }
                     }}
-                    title={['entrepreneur', 'property_manager', 'supplier'].includes(selectedChat.other_user_role) ? t('messages.viewProfile') : ''}
+                    title={['entrepreneur', 'property_manager'].includes(selectedChat.other_user_role) /* SUPPLIER TEMPORARILY DISABLED — was: includes 'supplier' */ ? t('messages.viewProfile') : ''}
                   >
                     {selectedChat.other_user_name}
                   </h3>
@@ -1114,15 +1107,15 @@ function MessagesEntrepreneurNew() {
         profile={selectedManagerProfile}
       />
 
-      {/* Supplier Profile Modal */}
-      <SupplierProfileModal
+      {/* SUPPLIER TEMPORARILY DISABLED — uncomment to re-enable */}
+      {/* <SupplierProfileModal
         isOpen={showSupplierModal}
         onClose={() => {
           setShowSupplierModal(false);
           setSelectedSupplierProfile(null);
         }}
         profile={selectedSupplierProfile}
-      />
+      /> */}
     </div>
   );
 }

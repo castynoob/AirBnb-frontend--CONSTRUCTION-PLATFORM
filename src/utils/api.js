@@ -450,6 +450,15 @@ export async function getTicketMessages(ticketId) {
 }
 
 // ============================================
+// PUBLIC ENDPOINTS (no auth required)
+// ============================================
+
+export async function getPlatformStats() {
+  const response = await fetch(`${API_BASE_URL}/api/stats/public`);
+  return response.json();
+}
+
+// ============================================
 // USAGE EXAMPLES
 // ============================================
 
