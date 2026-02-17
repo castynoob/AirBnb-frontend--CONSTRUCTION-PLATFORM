@@ -19,11 +19,13 @@ export default function SubscriptionModal({token, refresher, onClose, showCloseB
   };
 
   const features = [
-    { name: t('subscriptionModal.browseJobs'), noSub: false, trialStarter: true, trialBasic: true, trialPremium: true, activeStarter: true, activeBasic: true, activePremium: true },
-    { name: t('subscriptionModal.viewJobDetails'), noSub: false, trialStarter: true, trialBasic: true, trialPremium: true, activeStarter: true, activeBasic: true, activePremium: true },
-    { name: t('subscriptionModal.submitBids'), noSub: false, trialStarter: '15 max', trialBasic: t('subscriptionModal.max30'), trialPremium: t('subscriptionModal.unlimited'), activeStarter: '15 max', activeBasic: t('subscriptionModal.max30'), activePremium: t('subscriptionModal.unlimited') },
-    { name: t('subscriptionModal.unlockBudget'), noSub: false, trialStarter: true, trialBasic: true, trialPremium: true, activeStarter: true, activeBasic: true, activePremium: true },
-    { name: t('subscriptionModal.messageApproved'), noSub: false, trialStarter: true, trialBasic: true, trialPremium: true, activeStarter: true, activeBasic: true, activePremium: true },
+    { name: t('subscriptionModal.browseJobs'), noSub: false, starter: true, basic: true, premium: true },
+    { name: t('subscriptionModal.viewJobDetails'), noSub: false, starter: true, basic: true, premium: true },
+    { name: t('subscriptionModal.submitBids'), noSub: false, starter: '15 max', basic: t('subscriptionModal.max30'), premium: t('subscriptionModal.unlimited') },
+    { name: t('subscriptionModal.unlockBudget'), noSub: false, starter: true, basic: true, premium: true },
+    { name: t('subscriptionModal.messageApproved'), noSub: false, starter: true, basic: true, premium: true },
+    { name: t('subscriptionModal.projectBudgetLimit'), noSub: false, starter: '$2,500 max', basic: t('subscriptionModal.unlimited'), premium: t('subscriptionModal.unlimited') },
+    { name: t('subscriptionModal.prioritySupportFeature'), noSub: false, starter: false, basic: false, premium: true },
   ];
 
   const handleSubsciption = (type) => {
@@ -242,12 +244,9 @@ export default function SubscriptionModal({token, refresher, onClose, showCloseB
                   <tr>
                     <th>{t('subscriptionModal.feature')}</th>
                     <th>{t('subscriptionModal.noSub')}</th>
-                    <th>{t('subscriptionModal.trialStarter')}</th>
-                    <th>{t('subscriptionModal.trialBasic')}</th>
-                    <th>{t('subscriptionModal.trialPremium')}</th>
-                    <th>{t('subscriptionModal.activeStarter')}</th>
-                    <th>{t('subscriptionModal.activeBasic')}</th>
-                    <th>{t('subscriptionModal.activePremium')}</th>
+                    <th>{t('subscriptionModal.starterPlan')}</th>
+                    <th>{t('subscriptionModal.basicPlan')}</th>
+                    <th>{t('subscriptionModal.premiumPlan')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -270,20 +269,20 @@ export default function SubscriptionModal({token, refresher, onClose, showCloseB
                         )}
                       </td>
                       <td>
-                        {feature.trialStarter === true ? (
+                        {feature.starter === true ? (
                           <svg width="24" height="24" viewBox="0 0 24 24" className="status-icon">
                             <circle cx="12" cy="12" r="11" fill="#2ECC71" opacity="0.15"/>
                             <circle cx="12" cy="12" r="9" fill="#2ECC71"/>
                             <path d="M7 12l4 4 6-7" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
-                        ) : feature.trialStarter ? (
+                        ) : feature.starter ? (
                           <div>
                             <svg width="24" height="24" viewBox="0 0 24 24" className="status-icon">
                               <circle cx="12" cy="12" r="11" fill="#2ECC71" opacity="0.15"/>
                               <circle cx="12" cy="12" r="9" fill="#2ECC71"/>
                               <path d="M7 12l4 4 6-7" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
-                            <div className="limit-text">({feature.trialStarter})</div>
+                            <div className="limit-text">({feature.starter})</div>
                           </div>
                         ) : (
                           <svg width="24" height="24" viewBox="0 0 24 24" className="status-icon">
@@ -294,20 +293,20 @@ export default function SubscriptionModal({token, refresher, onClose, showCloseB
                         )}
                       </td>
                       <td>
-                        {feature.trialBasic === true ? (
+                        {feature.basic === true ? (
                           <svg width="24" height="24" viewBox="0 0 24 24" className="status-icon">
                             <circle cx="12" cy="12" r="11" fill="#2ECC71" opacity="0.15"/>
                             <circle cx="12" cy="12" r="9" fill="#2ECC71"/>
                             <path d="M7 12l4 4 6-7" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
-                        ) : feature.trialBasic ? (
+                        ) : feature.basic ? (
                           <div>
                             <svg width="24" height="24" viewBox="0 0 24 24" className="status-icon">
                               <circle cx="12" cy="12" r="11" fill="#2ECC71" opacity="0.15"/>
                               <circle cx="12" cy="12" r="9" fill="#2ECC71"/>
                               <path d="M7 12l4 4 6-7" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
-                            <div className="limit-text">({feature.trialBasic})</div>
+                            <div className="limit-text">({feature.basic})</div>
                           </div>
                         ) : (
                           <svg width="24" height="24" viewBox="0 0 24 24" className="status-icon">
@@ -318,92 +317,20 @@ export default function SubscriptionModal({token, refresher, onClose, showCloseB
                         )}
                       </td>
                       <td>
-                        {feature.trialPremium === true ? (
-                          <svg width="24" height="24" viewBox="0 0 24 24" className="status-icon">
-                            <circle cx="12" cy="12" r="11" fill="#2ECC71" opacity="0.15"/>
-                            <circle cx="12" cy="12" r="9" fill="#2ECC71"/>
-                            <path d="M7 12l4 4 6-7" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        ) : feature.trialPremium ? (
-                          <div>
-                            <svg width="24" height="24" viewBox="0 0 24 24" className="status-icon">
-                              <circle cx="12" cy="12" r="11" fill="#2ECC71" opacity="0.15"/>
-                              <circle cx="12" cy="12" r="9" fill="#2ECC71"/>
-                              <path d="M7 12l4 4 6-7" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                            <div className="limit-text">({feature.trialPremium})</div>
-                          </div>
-                        ) : (
-                          <svg width="24" height="24" viewBox="0 0 24 24" className="status-icon">
-                            <circle cx="12" cy="12" r="11" fill="#E74C3C" opacity="0.15"/>
-                            <circle cx="12" cy="12" r="9" fill="#E74C3C"/>
-                            <path d="M8 8l8 8M16 8l-8 8" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-                          </svg>
-                        )}
-                      </td>
-                      <td>
-                        {feature.activeStarter === true ? (
-                          <svg width="24" height="24" viewBox="0 0 24 24" className="status-icon">
-                            <circle cx="12" cy="12" r="11" fill="#2ECC71" opacity="0.15"/>
-                            <circle cx="12" cy="12" r="9" fill="#2ECC71"/>
-                            <path d="M7 12l4 4 6-7" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        ) : feature.activeStarter ? (
-                          <div>
-                            <svg width="24" height="24" viewBox="0 0 24 24" className="status-icon">
-                              <circle cx="12" cy="12" r="11" fill="#2ECC71" opacity="0.15"/>
-                              <circle cx="12" cy="12" r="9" fill="#2ECC71"/>
-                              <path d="M7 12l4 4 6-7" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                            <div className="limit-text">({feature.activeStarter})</div>
-                          </div>
-                        ) : (
-                          <svg width="24" height="24" viewBox="0 0 24 24" className="status-icon">
-                            <circle cx="12" cy="12" r="11" fill="#E74C3C" opacity="0.15"/>
-                            <circle cx="12" cy="12" r="9" fill="#E74C3C"/>
-                            <path d="M8 8l8 8M16 8l-8 8" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-                          </svg>
-                        )}
-                      </td>
-                      <td>
-                        {feature.activeBasic === true ? (
-                          <svg width="24" height="24" viewBox="0 0 24 24" className="status-icon">
-                            <circle cx="12" cy="12" r="11" fill="#2ECC71" opacity="0.15"/>
-                            <circle cx="12" cy="12" r="9" fill="#2ECC71"/>
-                            <path d="M7 12l4 4 6-7" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        ) : feature.activeBasic ? (
-                          <div>
-                            <svg width="24" height="24" viewBox="0 0 24 24" className="status-icon">
-                              <circle cx="12" cy="12" r="11" fill="#2ECC71" opacity="0.15"/>
-                              <circle cx="12" cy="12" r="9" fill="#2ECC71"/>
-                              <path d="M7 12l4 4 6-7" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                            <div className="limit-text">({feature.activeBasic})</div>
-                          </div>
-                        ) : (
-                          <svg width="24" height="24" viewBox="0 0 24 24" className="status-icon">
-                            <circle cx="12" cy="12" r="11" fill="#E74C3C" opacity="0.15"/>
-                            <circle cx="12" cy="12" r="9" fill="#E74C3C"/>
-                            <path d="M8 8l8 8M16 8l-8 8" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
-                          </svg>
-                        )}
-                      </td>
-                      <td>
-                        {feature.activePremium === true ? (
+                        {feature.premium === true ? (
                           <svg width="24" height="24" viewBox="0 0 24 24" className="status-icon">
                             <circle cx="12" cy="12" r="11" fill="#00A5A9" opacity="0.2"/>
                             <circle cx="12" cy="12" r="9" fill="#00A5A9"/>
                             <path d="M7 12l4 4 6-7" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                           </svg>
-                        ) : feature.activePremium ? (
+                        ) : feature.premium ? (
                           <div>
                             <svg width="24" height="24" viewBox="0 0 24 24" className="status-icon">
                               <circle cx="12" cy="12" r="11" fill="#00A5A9" opacity="0.2"/>
                               <circle cx="12" cy="12" r="9" fill="#00A5A9"/>
                               <path d="M7 12l4 4 6-7" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                             </svg>
-                            <div className="premium-limit-text">({feature.activePremium})</div>
+                            <div className="premium-limit-text">({feature.premium})</div>
                           </div>
                         ) : (
                           <svg width="24" height="24" viewBox="0 0 24 24" className="status-icon">

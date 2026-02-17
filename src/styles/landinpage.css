@@ -2854,6 +2854,42 @@ body {
   font-weight: var(--font-weight-medium);
 }
 
+.lp-email-checking-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e2e8f0;
+  border-top-color: var(--color-secondary);
+  border-radius: 50%;
+  animation: lp-spin 0.6s linear infinite;
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+
+@keyframes lp-spin {
+  to { transform: rotate(360deg); }
+}
+
+.lp-email-checking-text {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.lp-existing-account-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px 14px;
+  background: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #2e7d32;
+  line-height: 1.4;
+}
+
 /* React Phone Input Styling */
 .lp-phone-input-wrapper {
   width: 100%;
@@ -3247,6 +3283,92 @@ body {
   font-weight: 600;
   color: var(--color-text-dark);
   text-align: left;
+}
+
+/* Role Picker (multi-account login) */
+.lp-role-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.lp-role-picker-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.lp-role-picker-card:hover:not(:disabled) {
+  border-color: var(--role-color, var(--color-secondary));
+  background: rgba(0, 0, 0, 0.01);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.lp-role-picker-card:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.lp-role-picker-icon {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--role-color, var(--color-secondary));
+  border-radius: 10px;
+}
+
+.lp-role-picker-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke: white;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.lp-role-picker-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.lp-role-picker-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-dark);
+}
+
+.lp-role-picker-name {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.lp-role-picker-arrow {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: #94a3b8;
+  transition: transform 0.2s ease;
+}
+
+.lp-role-picker-card:hover:not(:disabled) .lp-role-picker-arrow {
+  transform: translateX(3px);
+  color: var(--role-color, var(--color-secondary));
 }
 
 .lp-modal-footer {

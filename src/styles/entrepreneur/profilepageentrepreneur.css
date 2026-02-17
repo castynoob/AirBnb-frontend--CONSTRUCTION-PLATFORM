@@ -1701,6 +1701,27 @@
   flex-shrink: 0;
 }
 
+/* Other Specialization Input */
+.edit-other-specialization {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px dashed #D9E1E7;
+}
+
+.edit-other-specialization .edit-form-label {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #5A6C7D;
+  margin-bottom: 0.5rem;
+}
+
+.edit-other-specialization .edit-form-input {
+  font-size: 0.8125rem;
+}
+
 /* Enhanced Buttons */
 .edit-cancel-btn,
 .edit-submit-btn {

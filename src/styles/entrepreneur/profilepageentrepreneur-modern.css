@@ -2290,6 +2290,85 @@
 
 /* ==================== BILLING HISTORY TAB ==================== */
 
+/* Billing Actions Row */
+.ep-billing-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.ep-invoice-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ep-invoice-year-select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  color: #2C3E50;
+  background: #fff;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.ep-invoice-year-select:focus {
+  outline: none;
+  border-color: #00A5A9;
+}
+
+.ep-btn-invoice {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(135deg, #00A5A9, #008C8F);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.ep-btn-invoice:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 165, 169, 0.3);
+}
+
+.ep-btn-invoice:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+@media (max-width: 640px) {
+  .ep-billing-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ep-invoice-group {
+    flex: 1;
+  }
+
+  .ep-invoice-year-select {
+    flex: 0 0 auto;
+  }
+
+  .ep-btn-invoice {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
 /* Billing Summary Cards */
 .ep-billing-summary {
   display: grid;

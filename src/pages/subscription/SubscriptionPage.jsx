@@ -350,8 +350,38 @@ function SubscriptionPage() {
           </div>
         )}
 
-        {/* Trial Banner - Only show during trial */}
-        {subscription.is_trial && trialInfo && (
+        {/* Trial Expired Banner - Show when trial has ended */}
+        {subscription.is_trial && trialInfo && trialInfo.daysRemaining <= 0 && (
+          <div className="status-banner past-due-banner">
+            <div className="banner-content">
+              <div className="banner-icon-wrapper past-due">
+                <AlertTriangle size={28} />
+              </div>
+              <div className="banner-info">
+                <div className="banner-header">
+                  <h3 className="banner-title past-due">Free Trial Has Ended</h3>
+                  <div className="past-due-badge">Action Required</div>
+                </div>
+                <p className="banner-text">
+                  Your 14-day free trial ended on {formatDate(subscription.trial_end)}. Your card on file will be charged automatically to continue your subscription.
+                </p>
+                <p className="banner-subtext past-due">
+                  If your payment method cannot be charged, please update it below to avoid losing access.
+                </p>
+              </div>
+              <button
+                className="update-payment-btn"
+                onClick={() => setShowUpdatePaymentModal(true)}
+              >
+                <CreditCard size={18} />
+                Update Payment Method
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Trial Banner - Only show during active trial (days remaining > 0) */}
+        {subscription.is_trial && trialInfo && trialInfo.daysRemaining > 0 && (
           <div className="status-banner trial-banner">
             <div className="banner-content">
               <div className="banner-icon-wrapper">
@@ -366,10 +396,10 @@ function SubscriptionPage() {
                   {trialInfo.daysRemaining} {trialInfo.daysRemaining === 1 ? 'day' : 'days'}, {trialInfo.hoursRemaining} {trialInfo.hoursRemaining === 1 ? 'hour' : 'hours'}, {trialInfo.minutesRemaining} {trialInfo.minutesRemaining === 1 ? 'minute' : 'minutes'} remaining
                 </p>
                 <p className="banner-subtext">
-                  Trial ends on {formatDate(subscription.trial_end)}
+                  Trial ends on {formatDate(subscription.trial_end)}. Your card will be charged automatically after the trial ends.
                 </p>
                 <div className="trial-progress-bar">
-                  <div 
+                  <div
                     className="trial-progress-fill"
                     style={{ width: `${trialInfo.percentage}%` }}
                   ></div>

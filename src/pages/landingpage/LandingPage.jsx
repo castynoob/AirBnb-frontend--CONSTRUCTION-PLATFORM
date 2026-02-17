@@ -50,6 +50,16 @@ export default function LandingPage() {
   const [rememberMe, setRememberMe] = useState(false)
   const [isLoggingIn, setIsLoggingIn] = useState(false)
 
+  // Multi-role login state
+  const [showRolePicker, setShowRolePicker] = useState(false)
+  const [availableAccounts, setAvailableAccounts] = useState([])
+  const [pendingLoginCredentials, setPendingLoginCredentials] = useState(null)
+
+  // Existing email detection (multi-role registration)
+  const [emailHasAccount, setEmailHasAccount] = useState(false)
+  const [existingRoles, setExistingRoles] = useState([])
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false)
+
   // Registration state
   const [registerFormData, setRegisterFormData] = useState({
     first_name: "",
@@ -327,6 +337,57 @@ export default function LandingPage() {
     return Object.keys(newErrors).length === 0
   }
 
+  // Helper: complete login after receiving token data
+  const completeLogin = async (data) => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+
+    let entrepProfile = {}
+    let subscription = null
+    if (data.user.role === 'entrepreneur') {
+      const getEntreProfile = await fetch(`${API_BASE_URL}/api/users/entrepreneur/user/${data.user.id}`, {
+        method: "GET",
+        headers: { 'Authorization': `Bearer ${data.accessToken}` }
+      })
+      const getSubsscription = await fetch(`${API_BASE_URL}/api/payments/subscription`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${data.accessToken}` }
+      })
+      if (!getEntreProfile.ok || !getSubsscription.ok) {
+        throw new Error('Error getting profile/subscription data')
+      }
+      const subs = await getSubsscription.json()
+      const entrep = await getEntreProfile.json()
+      entrepProfile = entrep.profile
+      subscription = subs
+    }
+
+    const userProfile = {
+      id: data.user.id || 101,
+      first_name: data.user.first_name || "",
+      last_name: data.user.last_name || "",
+      name: data.user.name || `${data.user.first_name || ""} ${data.user.last_name || ""}`.trim(),
+      email: data.user.email,
+      role: data.user.role,
+      token: data.accessToken || null,
+      entrepProfile: data.user.role === 'entrepreneur' ? { entrepProfile, subscription } : null
+    }
+
+    // SUPPLIER TEMPORARILY DISABLED
+    if (userProfile.role === 'supplier') {
+      setLoginErrors({ submit: 'Supplier accounts are temporarily unavailable. Please try again later.' });
+      return;
+    }
+
+    localStorage.setItem("token", userProfile.token);
+    localStorage.setItem("refreshToken", data.refreshToken);
+    localStorage.setItem("userId", userProfile.id);
+    localStorage.setItem("userProfile", JSON.stringify(userProfile))
+
+    reinitializeSocket()
+    setShowLoginModal(false)
+    navigate(`/homepage/${userProfile.role}`)
+  }
+
   const handleLoginSubmit = async (e) => {
     e.preventDefault()
     if (!validateLoginForm()) {
@@ -337,9 +398,7 @@ export default function LandingPage() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: loginFormData.email,
           password: loginFormData.password,
@@ -362,18 +421,45 @@ export default function LandingPage() {
         return
       }
 
-      if (!response.ok) {
-        // Handle email not verified error (403)
-        if (response.status === 403) {
-          setLoginErrors({
-            submit: data.message || t('landingPage.login.verifyEmailFirst'),
-            isEmailNotVerified: true, // Flag to show resend link
-            email: loginFormData.email // Store email for resend
-          })
-          return
-        }
+      // Multi-role: backend says user has multiple accounts
+      if (data.requiresRoleSelection) {
+        setAvailableAccounts(data.accounts)
+        setPendingLoginCredentials({ email: loginFormData.email, password: loginFormData.password })
+        setShowRolePicker(true)
+        return
+      }
 
-        // Handle other errors (401 - invalid credentials, etc.)
+      await completeLogin(data)
+    } catch (error) {
+      console.error("Login error:", error)
+      setLoginErrors({
+        submit: t('landingPage.login.loginFailed'),
+        isEmailNotVerified: false
+      })
+    } finally {
+      setIsLoggingIn(false)
+    }
+  }
+
+  // Handle role selection for multi-account login
+  const handleRoleSelect = async (role) => {
+    setIsLoggingIn(true)
+    setLoginErrors({})
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+    try {
+      const credentials = pendingLoginCredentials
+      const endpoint = credentials.isGoogle ? '/api/auth/google-login' : '/api/auth/login'
+      const body = credentials.isGoogle
+        ? { email: credentials.email, provider_id: credentials.provider_id, role }
+        : { email: credentials.email, password: credentials.password, role }
+
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+      const data = await response.json()
+      if (!response.ok) {
         setLoginErrors({
           submit: data.message || t('landingPage.login.invalidCredentials'),
           isEmailNotVerified: false
@@ -381,75 +467,9 @@ export default function LandingPage() {
         return
       }
 
-      let entrepProfile = {}
-      let subscription = null
-      if(data.user.role == 'entrepreneur') {
-        const getEntreProfile = await fetch(`${API_BASE_URL}/api/users/entrepreneur/user/${data.user.id}`, {
-          method: "GET",
-          headers: {
-            'Authorization': `Bearer ${data.accessToken}`
-          }
-        })
-        const getSubsscription = await fetch(`${API_BASE_URL}/api/payments/subscription`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${data.accessToken}`
-          }
-        })
-        if(!getEntreProfile.ok || !getSubsscription.ok) {
-          throw new Error(`Error getting profile ${getEntreProfile}`)
-        }
-        const subs = await getSubsscription.json()
-        const entrep = await getEntreProfile.json()
-        entrepProfile = entrep.profile
-        subscription = subs
-      }
-
-      // let resProfile = {}
-      // if(data.user.role == 'resident') {
-      //   const getResProfile = await fetch(`${API_BASE_URL}/api/residents/profile`, {
-      //     method: "GET",
-      //     headers: {
-      //       'Authorization': `Bearer ${data.accessToken}`
-      //     }
-      //   })
-
-      //   const resProfile = await getResProfile.json()
-
-      //   console.log('RESIDENT', resProfile)
-      // }
-
-      const userProfile = {
-        id: data.user.id || 101,
-        first_name: data.user.first_name || "",
-        last_name: data.user.last_name || "",
-        name: data.user.name || `${data.user.first_name || ""} ${data.user.last_name || ""}`.trim(),
-        email: data.user.email || loginFormData.email,
-        role: data.user.role,
-        token: data.accessToken || null,
-        entrepProfile: data.user.role == 'entrepreneur' ? {entrepProfile, subscription} : null
-        // residentProfile: data.user.role = 'resident' ? {  }
-      }
-
-      // SUPPLIER TEMPORARILY DISABLED — block supplier login
-      if (userProfile.role === 'supplier') {
-        setLoginErrors({ submit: 'Supplier accounts are temporarily unavailable. Please try again later.' });
-        setIsLoggingIn(false);
-        return;
-      }
-
-      localStorage.setItem("token", userProfile.token);
-      localStorage.setItem("refreshToken", data.refreshToken);
-      localStorage.setItem("userId", userProfile.id);
-      localStorage.setItem("userProfile", JSON.stringify(userProfile))
-
-      // Reinitialize socket connection after login
-      reinitializeSocket()
-
-      setShowLoginModal(false)
-      navigate(`/homepage/${userProfile.role}`)
+      await completeLogin(data)
     } catch (error) {
-      console.error("Login error:", error)
+      console.error("Role select login error:", error)
       setLoginErrors({
         submit: t('landingPage.login.loginFailed'),
         isEmailNotVerified: false
@@ -462,15 +482,13 @@ export default function LandingPage() {
   const handleLoginSuccess = async (credentialResponse) => {
     const token = credentialResponse.credential;
     const userData = jwtDecode(token);
-    
+
     setIsLoggingIn(true);
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/google-login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: userData.email,
           provider_id: userData.sub,
@@ -481,58 +499,15 @@ export default function LandingPage() {
         throw new Error(data.message || "Google login failed.");
       }
 
-      let entrepProfile = {}
-      let subscription = null
-      if(data.user.role === 'entrepreneur') {
-        const getEntreProfile = await fetch(`${API_BASE_URL}/api/users/entrepreneur/user/${data.user.id}`, {
-          method: "GET",
-          headers: {
-            'Authorization': `Bearer ${data.accessToken}`
-          }
-        })
-        const getSubsscription = await fetch(`${API_BASE_URL}/api/payments/subscription`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${data.accessToken}`
-          }
-        })
-        if(!getEntreProfile.ok || !getSubsscription.ok) {
-          const entrepError = await getEntreProfile.json()
-          const subscriptionError = await getSubsscription.json()
-          throw new Error(entrepError.message || subscriptionError.message || `Error getting profile/subscription data`)
-        }
-        const subs = await getSubsscription.json()
-        const entrep = await getEntreProfile.json()
-        entrepProfile = entrep.profile
-        subscription = subs
+      // Multi-role: backend says user has multiple accounts
+      if (data.requiresRoleSelection) {
+        setAvailableAccounts(data.accounts)
+        setPendingLoginCredentials({ email: userData.email, provider_id: userData.sub, isGoogle: true })
+        setShowRolePicker(true)
+        return
       }
 
-      const userProfile = {
-        id: data.user.id,
-        first_name: data.user.first_name || "",
-        last_name: data.user.last_name || "",
-        name: `${data.user.first_name || ""} ${data.user.last_name || ""}`.trim(),
-        email: data.user.email,
-        role: data.user.role,
-        token: data.accessToken || null,
-        entrepProfile: data.user.role === 'entrepreneur' ? {entrepProfile, subscription} : null
-      }
-
-      // SUPPLIER TEMPORARILY DISABLED — block supplier login
-      if (userProfile.role === 'supplier') {
-        setLoginErrors({ submit: 'Supplier accounts are temporarily unavailable. Please try again later.' });
-        setIsLoggingIn(false);
-        return;
-      }
-
-      localStorage.setItem("userId", userProfile.id);
-      localStorage.setItem("userProfile", JSON.stringify(userProfile))
-
-      // Reinitialize socket connection after login
-      reinitializeSocket()
-
-      setShowLoginModal(false)
-      navigate(`/homepage/${userProfile.role}`)
+      await completeLogin(data)
     } catch (error) {
       console.error("Google Login error:", error);
       setLoginErrors({
@@ -618,6 +593,33 @@ export default function LandingPage() {
         ...registerErrors,
         [name]: error
     });
+  }
+
+  // Check if email already has an account (for multi-role registration)
+  const checkEmailForExistingAccount = async (email) => {
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+      setEmailHasAccount(false)
+      setExistingRoles([])
+      return
+    }
+    setIsCheckingEmail(true)
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+      const response = await fetch(`${API_BASE_URL}/api/register/check-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
+      const data = await response.json()
+      setEmailHasAccount(data.exists)
+      setExistingRoles(data.roles || [])
+    } catch (error) {
+      console.error("Error checking email:", error)
+      setEmailHasAccount(false)
+      setExistingRoles([])
+    } finally {
+      setIsCheckingEmail(false)
+    }
   }
 
   // Address autocomplete handler
@@ -896,6 +898,28 @@ export default function LandingPage() {
                 console.error("Error logging in after registration:", loginError);
                 setRegisterErrors({ submit: t('landingPage.login.autoLoginFailed') });
             }
+        } else if (data.autoVerified) {
+            // Auto-verified (already has a verified account with another role) - auto-login
+            try {
+                const loginResponse = await fetch(`${API_BASE_URL}/api/auth/login`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        email: registerFormData.email,
+                        password: registerFormData.password,
+                        role: data.user.role,
+                    }),
+                });
+                const loginData = await loginResponse.json();
+                if (!loginResponse.ok) {
+                    setRegisterErrors({ submit: t('landingPage.login.registrationSuccessLoginFailed') });
+                    return;
+                }
+                await completeLogin(loginData);
+            } catch (loginError) {
+                console.error("Error logging in after auto-verified registration:", loginError);
+                setRegisterErrors({ submit: t('landingPage.login.autoLoginFailed') });
+            }
         } else {
             // Local users need email verification
             setRegisteredEmail(registerFormData.email);
@@ -968,8 +992,8 @@ export default function LandingPage() {
       errors.email = t('landingPage.login.emailInvalid');
     }
 
-    // Validate password (only for local registration, not needed for Google)
-    if (registerFormData.provider !== 'google') {
+    // Validate password (only for local registration, not needed for Google or existing accounts)
+    if (registerFormData.provider !== 'google' && !emailHasAccount) {
       if (!registerFormData.password) {
         errors.password = t('landingPage.login.passwordRequired');
       } else if (registerFormData.password.length < 8) {
@@ -1127,6 +1151,12 @@ export default function LandingPage() {
     setLoginErrors({})
     setShowPassword(false)
     setRememberMe(false)
+    setShowRolePicker(false)
+    setAvailableAccounts([])
+    setPendingLoginCredentials(null)
+    setEmailHasAccount(false)
+    setExistingRoles([])
+    setIsCheckingEmail(false)
   }
 
   const openRegisterModal = (role) => {
@@ -1871,7 +1901,7 @@ export default function LandingPage() {
               <li className="lp-feature-disabled"><X size={18} className="lp-feature-x" /> {t('landingPage.pricing.feature8')}</li>
             </ul>
             <p className="lp-pricing-restriction">{t('landingPage.pricing.starterRestriction')}</p>
-            <button className="lp-pricing-btn" onClick={() => setShowRegisterModal(true)}>
+            <button className="lp-pricing-btn" onClick={() => { setSelectedRole('entrepreneur'); setRegistrationStep(2); setShowRegisterModal(true); }}>
               {t('landingPage.pricing.getStarted')}
             </button>
           </div>
@@ -1897,7 +1927,7 @@ export default function LandingPage() {
               <li className="lp-feature-disabled"><X size={18} className="lp-feature-x" /> {t('landingPage.pricing.feature7')}</li>
               <li className="lp-feature-disabled"><X size={18} className="lp-feature-x" /> {t('landingPage.pricing.feature8')}</li>
             </ul>
-            <button className="lp-pricing-btn" onClick={() => setShowRegisterModal(true)}>
+            <button className="lp-pricing-btn" onClick={() => { setSelectedRole('entrepreneur'); setRegistrationStep(2); setShowRegisterModal(true); }}>
               {t('landingPage.pricing.getStarted')}
             </button>
           </div>
@@ -1927,7 +1957,7 @@ export default function LandingPage() {
               <li><Check size={18} className="lp-feature-check" /> {t('landingPage.pricing.feature7')}</li>
               <li><Check size={18} className="lp-feature-check" /> {t('landingPage.pricing.feature8')}</li>
             </ul>
-            <button className="lp-pricing-btn lp-pricing-btn-premium" onClick={() => setShowRegisterModal(true)}>
+            <button className="lp-pricing-btn lp-pricing-btn-premium" onClick={() => { setSelectedRole('entrepreneur'); setRegistrationStep(2); setShowRegisterModal(true); }}>
               {t('landingPage.pricing.getStarted')}
             </button>
           </div>
@@ -1996,152 +2026,250 @@ export default function LandingPage() {
           <div className="lp-modal lp-modal-login" onClick={(e) => e.stopPropagation()}>
             <button className="lp-modal-close" onClick={closeModals}>×</button>
 
-            <div className="lp-modal-header">
-              <h2>{t('landingPage.login.title')}</h2>
-              <p>{t('landingPage.login.subtitle')}</p>
-            </div>
+            {showRolePicker ? (
+              <>
+                <div className="lp-modal-header">
+                  <h2>{t('landingPage.login.selectAccount')}</h2>
+                  <p>{t('landingPage.login.selectAccountSubtitle')}</p>
+                </div>
 
-            <form className="lp-modal-form" onSubmit={handleLoginSubmit}>
-              {loginErrors.submit && (
-                <div className="lp-form-error-banner">
-                  {loginErrors.submit}
-                  {loginErrors.isEmailNotVerified && (
-                    <div className="lp-resend-verification-link">
+                {loginErrors.submit && (
+                  <div className="lp-form-error-banner">{loginErrors.submit}</div>
+                )}
+
+                <div className="lp-role-picker">
+                  {availableAccounts.map((account) => {
+                    const roleLabels = {
+                      entrepreneur: t('landingPage.login.roleContractor'),
+                      property_manager: t('landingPage.login.roleManager'),
+                      resident: t('landingPage.login.roleResident'),
+                      supplier: t('landingPage.login.roleSupplier'),
+                    }
+                    const roleIcons = {
+                      entrepreneur: (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                        </svg>
+                      ),
+                      property_manager: (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                          <polyline points="9 22 9 12 15 12 15 22" />
+                        </svg>
+                      ),
+                      resident: (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                          <circle cx="12" cy="7" r="4" />
+                        </svg>
+                      ),
+                      supplier: (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="1" y="3" width="15" height="13" />
+                          <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+                          <circle cx="5.5" cy="18.5" r="2.5" />
+                          <circle cx="18.5" cy="18.5" r="2.5" />
+                        </svg>
+                      ),
+                    }
+                    const roleColors = {
+                      entrepreneur: '#00a5a9',
+                      property_manager: '#0f223d',
+                      resident: '#2ecc71',
+                      supplier: '#e67e22',
+                    }
+                    return (
                       <button
-                        type="button"
-                        className="lp-btn-link"
-                        onClick={() => handleResendVerification(loginErrors.email)}
-                        disabled={isResendingVerification}
+                        key={account.role}
+                        className="lp-role-picker-card"
+                        onClick={() => handleRoleSelect(account.role)}
+                        disabled={isLoggingIn}
+                        style={{ '--role-color': roleColors[account.role] || '#0f223d' }}
                       >
-                        {isResendingVerification ? t('landingPage.register.resending') : t('landingPage.register.resendEmail')}
+                        <span className="lp-role-picker-icon">
+                          {roleIcons[account.role]}
+                        </span>
+                        <div className="lp-role-picker-info">
+                          <span className="lp-role-picker-label">{roleLabels[account.role] || account.role}</span>
+                          <span className="lp-role-picker-name">{account.first_name} {account.last_name}</span>
+                        </div>
+                        <svg className="lp-role-picker-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="9 18 15 12 9 6" />
+                        </svg>
                       </button>
+                    )
+                  })}
+                </div>
+
+                {isLoggingIn && (
+                  <div style={{ textAlign: 'center', padding: '12px 0', color: '#666' }}>
+                    {t('landingPage.login.loggingIn')}
+                  </div>
+                )}
+
+                <button
+                  className="lp-btn-secondary lp-btn-full"
+                  onClick={() => {
+                    setShowRolePicker(false)
+                    setAvailableAccounts([])
+                    setPendingLoginCredentials(null)
+                    setLoginErrors({})
+                  }}
+                  style={{ marginTop: '12px' }}
+                >
+                  {t('landingPage.login.backToLogin')}
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="lp-modal-header">
+                  <h2>{t('landingPage.login.title')}</h2>
+                  <p>{t('landingPage.login.subtitle')}</p>
+                </div>
+
+                <form className="lp-modal-form" onSubmit={handleLoginSubmit}>
+                  {loginErrors.submit && (
+                    <div className="lp-form-error-banner">
+                      {loginErrors.submit}
+                      {loginErrors.isEmailNotVerified && (
+                        <div className="lp-resend-verification-link">
+                          <button
+                            type="button"
+                            className="lp-btn-link"
+                            onClick={() => handleResendVerification(loginErrors.email)}
+                            disabled={isResendingVerification}
+                          >
+                            {isResendingVerification ? t('landingPage.register.resending') : t('landingPage.register.resendEmail')}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
-              )}
 
-              <div className="lp-form-group">
-                <label htmlFor="login-email">{t('landingPage.login.emailLabel')}</label>
-                <div className="lp-input-wrapper">
-                  <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                    <polyline points="22,6 12,13 2,6"/>
-                  </svg>
-                  <input
-                    id="login-email"
-                    type="email"
-                    name="email"
-                    placeholder={t('landingPage.login.emailPlaceholder')}
-                    value={loginFormData.email}
-                    onChange={handleLoginChange}
-                    className={loginErrors.email ? "lp-input-error" : ""}
-                    required
-                  />
-                </div>
-                {loginErrors.email && (
-                  <span className="lp-error-message">{loginErrors.email}</span>
-                )}
-              </div>
+                  <div className="lp-form-group">
+                    <label htmlFor="login-email">{t('landingPage.login.emailLabel')}</label>
+                    <div className="lp-input-wrapper">
+                      <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                        <polyline points="22,6 12,13 2,6"/>
+                      </svg>
+                      <input
+                        id="login-email"
+                        type="email"
+                        name="email"
+                        placeholder={t('landingPage.login.emailPlaceholder')}
+                        value={loginFormData.email}
+                        onChange={handleLoginChange}
+                        className={loginErrors.email ? "lp-input-error" : ""}
+                        required
+                      />
+                    </div>
+                    {loginErrors.email && (
+                      <span className="lp-error-message">{loginErrors.email}</span>
+                    )}
+                  </div>
 
-              <div className="lp-form-group">
-                <label htmlFor="login-password">{t('landingPage.login.passwordLabel')}</label>
-                <div className="lp-input-wrapper">
-                  <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                  </svg>
-                  <input
-                    id="login-password"
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    placeholder={t('landingPage.login.passwordPlaceholder')}
-                    value={loginFormData.password}
-                    onChange={handleLoginChange}
-                    className={loginErrors.password ? "lp-input-error" : ""}
-                    required
-                  />
+                  <div className="lp-form-group">
+                    <label htmlFor="login-password">{t('landingPage.login.passwordLabel')}</label>
+                    <div className="lp-input-wrapper">
+                      <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                      </svg>
+                      <input
+                        id="login-password"
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        placeholder={t('landingPage.login.passwordPlaceholder')}
+                        value={loginFormData.password}
+                        onChange={handleLoginChange}
+                        className={loginErrors.password ? "lp-input-error" : ""}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="lp-password-toggle"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+                          {showPassword ? (
+                            <>
+                              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                              <line x1="1" y1="1" x2="23" y2="23"/>
+                            </>
+                          ) : (
+                            <>
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                              <circle cx="12" cy="12" r="3"/>
+                            </>
+                          )}
+                        </svg>
+                      </button>
+                    </div>
+                    {loginErrors.password && (
+                      <span className="lp-error-message">{loginErrors.password}</span>
+                    )}
+                  </div>
+
+                  <div className="lp-form-options">
+                    <label className="lp-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                      />
+                      <span>{t('landingPage.login.rememberMe')}</span>
+                    </label>
+                    <button
+                      type="button"
+                      className="lp-link"
+                      onClick={() => {
+                        setShowLoginModal(false);
+                        navigate('/forgot-password');
+                      }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                    >
+                      {t('landingPage.login.forgotPassword')}
+                    </button>
+                  </div>
+
                   <button
-                    type="button"
-                    className="lp-password-toggle"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    type="submit"
+                    className="lp-btn-primary lp-btn-full"
+                    disabled={isLoggingIn}
                   >
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-                      {showPassword ? (
-                        <>
-                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                          <line x1="1" y1="1" x2="23" y2="23"/>
-                        </>
-                      ) : (
-                        <>
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                          <circle cx="12" cy="12" r="3"/>
-                        </>
-                      )}
-                    </svg>
+                    {isLoggingIn ? t('landingPage.login.loggingIn') : t('landingPage.login.loginButton')}
+                  </button>
+                </form>
+
+                <div className="lp-modal-divider"><span>{t('landingPage.login.orContinueWith')}</span></div>
+
+                <div className="lp-google-login-container">
+                  <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+                    <GoogleLogin
+                      onSuccess={handleLoginSuccess}
+                      onError={handleError}
+                      text="signin_with"
+                      width="100%"
+                    />
+                  </GoogleOAuthProvider>
+                </div>
+
+                <div className="lp-modal-footer">
+                  {t('landingPage.login.noAccount')}{" "}
+                  <button
+                    className="lp-link-btn"
+                    onClick={() => {
+                      setShowLoginModal(false)
+                      setShowRegisterModal(true)
+                    }}
+                  >
+                    {t('landingPage.login.signUp')}
                   </button>
                 </div>
-                {loginErrors.password && (
-                  <span className="lp-error-message">{loginErrors.password}</span>
-                )}
-              </div>
-
-              <div className="lp-form-options">
-                <label className="lp-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                  />
-                  <span>{t('landingPage.login.rememberMe')}</span>
-                </label>
-                <button
-                  type="button"
-                  className="lp-link"
-                  onClick={() => {
-                    setShowLoginModal(false);
-                    navigate('/forgot-password');
-                  }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                >
-                  {t('landingPage.login.forgotPassword')}
-                </button>
-              </div>
-
-              <button
-                type="submit"
-                className="lp-btn-primary lp-btn-full"
-                disabled={isLoggingIn}
-              >
-                {isLoggingIn ? t('landingPage.login.loggingIn') : t('landingPage.login.loginButton')}
-              </button>
-            </form>
-
-            <div className="lp-modal-divider"><span>{t('landingPage.login.orContinueWith')}</span></div>
-
-            <div className="lp-google-login-container">
-              <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-                <GoogleLogin
-                  onSuccess={handleLoginSuccess}
-                  onError={handleError}
-                  text="signin_with"
-                  width="100%"
-                />
-              </GoogleOAuthProvider>
-            </div>
-
-            <div className="lp-modal-footer">
-              {t('landingPage.login.noAccount')}{" "}
-              <button
-                className="lp-link-btn"
-                onClick={() => {
-                  setShowLoginModal(false)
-                  setShowRegisterModal(true)
-                }}
-              >
-                {t('landingPage.login.signUp')}
-              </button>
-            </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -2288,18 +2416,34 @@ export default function LandingPage() {
                         placeholder={t('landingPage.register.emailPlaceholder')}
                         value={registerFormData.email}
                         onChange={handleRegisterChange}
+                        onBlur={(e) => checkEmailForExistingAccount(e.target.value)}
                         required
                         className={registerErrors.email ? 'error' : ''}
                         disabled={registerFormData.provider === 'google' && registerFormData.email}
                       />
+                      {isCheckingEmail && (
+                        <span className="lp-email-checking-spinner" />
+                      )}
                     </div>
                     {registerErrors.email && (
                       <span className="lp-field-error">{registerErrors.email}</span>
                     )}
+                    {isCheckingEmail && (
+                      <span className="lp-email-checking-text">{t('landingPage.register.checkingEmail')}</span>
+                    )}
+                    {!isCheckingEmail && emailHasAccount && (
+                      <div className="lp-existing-account-notice">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                          <circle cx="12" cy="12" r="10"/>
+                          <path d="M12 16v-4M12 8h.01"/>
+                        </svg>
+                        {t('landingPage.register.existingAccountNotice')}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Password fields - only show for local registration */}
-                  {registerFormData.provider !== 'google' && (
+                  {/* Password fields - only show for local registration without existing account */}
+                  {registerFormData.provider !== 'google' && !emailHasAccount && !isCheckingEmail && (
                     <>
                       <div className="lp-form-group">
                         <label>{t('landingPage.register.password')}</label>
@@ -2423,8 +2567,9 @@ export default function LandingPage() {
                   <button
                     type="submit"
                     className="lp-btn-primary lp-btn-full"
+                    disabled={isCheckingEmail}
                   >
-                    {t('landingPage.register.continue')}
+                    {isCheckingEmail ? t('landingPage.register.checkingEmail') : t('landingPage.register.continue')}
                   </button>
                 </form>
               </>

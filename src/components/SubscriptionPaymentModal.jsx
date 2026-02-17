@@ -64,7 +64,7 @@ const ThankYouModal = ({ planType, onClose }) => {
           {/* Welcome Message */}
           <h2 className="sp-success-title">Welcome to Premium!</h2>
           <p className="sp-success-subtitle">
-            Your {planType === "premium" ? "Premium" : "Basic"} subscription is now active.
+            Your {planType === "premium" ? "Premium" : planType === "starter" ? "Starter" : "Basic"} subscription is now active.
           </p>
 
           {/* Email notice */}
@@ -222,10 +222,10 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
       price: "$429",
       period: "month",
       features: [
-        "Unlimited budget unlocks",
+        "Unlimited bids per month",
+        "No project budget limit",
         "Advanced analytics dashboard",
-        "Priority listing visibility",
-        "Dedicated support channel"
+        "Priority listing visibility"
       ]
     },
     basic: {
@@ -233,9 +233,20 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
       price: "$250",
       period: "month",
       features: [
-        "10 budget unlocks/month",
+        "30 bids per month",
+        "No project budget limit",
         "Basic analytics",
-        "Standard visibility",
+        "Standard visibility"
+      ]
+    },
+    starter: {
+      name: "Starter Plan",
+      price: "$89",
+      period: "month",
+      features: [
+        "15 bids per month",
+        "Projects up to $2,500",
+        "Basic analytics",
         "Email support"
       ]
     }
@@ -394,7 +405,7 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" fill="currentColor"/>
               </svg>
-              {planType === 'premium' ? 'PREMIUM' : 'BASIC'}
+              {planType === 'premium' ? 'PREMIUM' : planType === 'starter' ? 'STARTER' : 'BASIC'}
             </div>
 
             {/* Plan Info */}

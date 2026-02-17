@@ -71,6 +71,7 @@ function ProfilePageEntrepreneur() {
   const [billingHistory, setBillingHistory] = useState([])
   const [billingSummary, setBillingSummary] = useState(null)
   const [billingLoading, setBillingLoading] = useState(false)
+  const [invoiceYear, setInvoiceYear] = useState(new Date().getFullYear())
 
   const [formData, setFormData] = useState({
     company_name: '',
@@ -255,20 +256,118 @@ function ProfilePageEntrepreneur() {
     }
   }, [activeTab])
 
-  useEffect(() => {
-    if (isEditModalOpen) {
-      setFormData({
-        company_name: profile.companyName,
-        license_number: profile.licenseNumber,
-        years_in_business: profile.yearsInBusiness,
-        num_employees: profile.numEmployees,
-        address: profile.address,
-        phone: profile.phone,
-        email: profile.email,
-        specializations: profile.specializations
-      });
+  const generateAnnualInvoice = (year) => {
+    const yearPayments = billingHistory.filter(p => {
+      const paymentYear = new Date(p.date).getFullYear();
+      return paymentYear === year && (p.status === 'active' || p.status === 'succeeded' || p.status === 'trialing');
+    });
+
+    if (yearPayments.length === 0) {
+      toast.error(t('profileEntrepreneur.noPaymentsForYear'));
+      return;
     }
-  }, [isEditModalOpen, profile]);
+
+    const totalAmount = yearPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+    const companyName = profile.companyName || '';
+    const companyAddress = profile.address || '';
+    const licenseNum = profile.licenseNumber || '';
+    const invoiceDate = new Date().toLocaleDateString(language === 'fr' ? 'fr-CA' : 'en-CA');
+    const invoiceNumber = `INV-${year}-${Date.now().toString(36).toUpperCase()}`;
+
+    const rows = yearPayments.map(p => {
+      const date = new Date(p.date).toLocaleDateString(language === 'fr' ? 'fr-CA' : 'en-CA');
+      const desc = p.type === 'subscription'
+        ? `${p.description}`
+        : `${p.description}`;
+      return `<tr>
+        <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;">${date}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;">${desc}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;">${p.type === 'subscription' ? t('profileEntrepreneur.subscriptionPayments') : t('profileEntrepreneur.budgetUnlocks')}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600;">$${p.amount?.toFixed(2)}</td>
+      </tr>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>${t('profileEntrepreneur.annualInvoice')} ${year}</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;margin:0;padding:40px;color:#1a1a2e;font-size:14px;}
+  .invoice-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:40px;padding-bottom:20px;border-bottom:3px solid #00A5A9;}
+  .company-name{font-size:24px;font-weight:700;color:#00A5A9;margin:0 0 4px 0;}
+  .invoice-title{font-size:28px;font-weight:700;color:#1a1a2e;text-align:right;}
+  .invoice-meta{text-align:right;color:#5a6c7d;font-size:13px;line-height:1.6;}
+  .section-title{font-size:16px;font-weight:600;color:#1a1a2e;margin:30px 0 12px;padding-bottom:8px;border-bottom:1px solid #e5e7eb;}
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:30px;}
+  .info-block{background:#f8fafc;padding:16px;border-radius:8px;}
+  .info-label{font-size:11px;text-transform:uppercase;letter-spacing:0.5px;color:#7f8c8d;margin-bottom:4px;}
+  .info-value{font-size:14px;font-weight:500;color:#1a1a2e;}
+  table{width:100%;border-collapse:collapse;margin:16px 0;}
+  th{background:#f1f5f9;padding:10px 12px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:#5a6c7d;border-bottom:2px solid #e5e7eb;}
+  th:last-child{text-align:right;}
+  .total-row{background:#f0fdfa;}
+  .total-row td{padding:14px 12px;font-weight:700;font-size:16px;border-top:2px solid #00A5A9;}
+  .footer{margin-top:40px;padding-top:20px;border-top:1px solid #e5e7eb;text-align:center;color:#7f8c8d;font-size:12px;}
+  @media print{body{padding:20px;} .no-print{display:none;}}
+</style>
+</head><body>
+<div class="no-print" style="text-align:center;margin-bottom:20px;">
+  <button onclick="window.print()" style="background:#00A5A9;color:#fff;border:none;padding:12px 32px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
+    ${t('profileEntrepreneur.printSaveAsPDF')}
+  </button>
+</div>
+<div class="invoice-header">
+  <div>
+    <h1 class="company-name">${companyName}</h1>
+    <div style="color:#5a6c7d;font-size:13px;line-height:1.6;">
+      ${companyAddress ? companyAddress + '<br>' : ''}
+      ${licenseNum ? t('profileEntrepreneur.licenseNumber') + ': ' + licenseNum : ''}
+    </div>
+  </div>
+  <div>
+    <div class="invoice-title">${t('profileEntrepreneur.annualInvoice').toUpperCase()}</div>
+    <div class="invoice-meta">
+      ${t('profileEntrepreneur.invoiceNumber')}: ${invoiceNumber}<br>
+      ${t('profileEntrepreneur.invoiceDate')}: ${invoiceDate}<br>
+      ${t('profileEntrepreneur.fiscalYear')}: ${year}
+    </div>
+  </div>
+</div>
+<div class="info-grid">
+  <div class="info-block">
+    <div class="info-label">${t('profileEntrepreneur.totalPayments')}</div>
+    <div class="info-value">${yearPayments.length}</div>
+  </div>
+  <div class="info-block">
+    <div class="info-label">${t('profileEntrepreneur.totalAmountPaid')}</div>
+    <div class="info-value" style="color:#00A5A9;font-size:18px;">$${totalAmount.toFixed(2)} CAD</div>
+  </div>
+</div>
+<div class="section-title">${t('profileEntrepreneur.paymentDetails')}</div>
+<table>
+  <thead><tr>
+    <th>${t('profileEntrepreneur.date')}</th>
+    <th>${t('profileEntrepreneur.description')}</th>
+    <th>${t('profileEntrepreneur.paymentType')}</th>
+    <th style="text-align:right">${t('profileEntrepreneur.amount')}</th>
+  </tr></thead>
+  <tbody>
+    ${rows}
+    <tr class="total-row">
+      <td colspan="3">${t('profileEntrepreneur.totalForYear')} ${year}</td>
+      <td style="text-align:right;color:#00A5A9;">$${totalAmount.toFixed(2)} CAD</td>
+    </tr>
+  </tbody>
+</table>
+<div class="footer">
+  <p>${t('profileEntrepreneur.invoiceFooterNote')}</p>
+  <p style="margin-top:8px;">InterVos Construction Platform &bull; ${invoiceDate}</p>
+</div>
+</body></html>`;
+
+    const invoiceWindow = window.open('', '_blank');
+    invoiceWindow.document.write(html);
+    invoiceWindow.document.close();
+  }
 
   const specializationOptions = [
     'Electrical', 'Plumbing', 'Carpentry', 'Masonry', 'Roofing', 'HVAC',
@@ -278,6 +377,26 @@ function ProfilePageEntrepreneur() {
     'Tile Work', 'Insulation', 'Cabinetry', 'Fire Protection', 'Solar Installation',
     'Welding', 'General Contracting'
   ];
+
+  const [otherSpecialization, setOtherSpecialization] = useState('');
+
+  useEffect(() => {
+    if (isEditModalOpen) {
+      const knownSpecs = profile.specializations?.filter(s => specializationOptions.includes(s)) || [];
+      const customSpecs = profile.specializations?.filter(s => !specializationOptions.includes(s)) || [];
+      setFormData({
+        company_name: profile.companyName,
+        license_number: profile.licenseNumber,
+        years_in_business: profile.yearsInBusiness,
+        num_employees: profile.numEmployees,
+        address: profile.address,
+        phone: profile.phone,
+        email: profile.email,
+        specializations: knownSpecs
+      });
+      setOtherSpecialization(customSpecs.join(', '));
+    }
+  }, [isEditModalOpen, profile]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -376,7 +495,10 @@ function ProfilePageEntrepreneur() {
             years_in_business: parseInt(formData.years_in_business),
             num_employees: parseInt(formData.num_employees),
             address: formData.address,
-            specializations: formData.specializations
+            specializations: [
+              ...formData.specializations,
+              ...otherSpecialization.split(',').map(s => s.trim()).filter(s => s.length > 0)
+            ]
           })
         })
 
@@ -884,7 +1006,7 @@ function ProfilePageEntrepreneur() {
               <button
                 className="ep-mobile-action-btn"
                 onClick={() => setIsEditModalOpen(true)}
-                title="Edit Profile"
+                title={t('profileEntrepreneur.editProfile')}
               >
                 <Edit size={18} />
               </button>
@@ -892,7 +1014,7 @@ function ProfilePageEntrepreneur() {
             <button
               className="ep-mobile-action-btn ep-mobile-logout-btn"
               onClick={handleLogout}
-              title="Logout"
+              title={t('profileEntrepreneur.logout')}
             >
               <LogOut size={18} />
             </button>
@@ -1497,13 +1619,34 @@ function ProfilePageEntrepreneur() {
                     <h2>{t('profileEntrepreneur.billingHistory')}</h2>
                     <p>{t('profileEntrepreneur.viewBillingHistory')}</p>
                   </div>
-                  <button
-                    className="ep-btn ep-btn-secondary"
-                    onClick={fetchBillingHistory}
-                    disabled={billingLoading}
-                  >
-                    {billingLoading ? t('common.loading') : t('profileEntrepreneur.refreshBilling')}
-                  </button>
+                  <div className="ep-billing-actions">
+                    <button
+                      className="ep-btn ep-btn-secondary"
+                      onClick={fetchBillingHistory}
+                      disabled={billingLoading}
+                    >
+                      {billingLoading ? t('common.loading') : t('profileEntrepreneur.refreshBilling')}
+                    </button>
+                    <div className="ep-invoice-group">
+                      <select
+                        className="ep-invoice-year-select"
+                        value={invoiceYear}
+                        onChange={(e) => setInvoiceYear(parseInt(e.target.value))}
+                      >
+                        {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(y => (
+                          <option key={y} value={y}>{y}</option>
+                        ))}
+                      </select>
+                      <button
+                        className="ep-btn ep-btn-invoice"
+                        onClick={() => generateAnnualInvoice(invoiceYear)}
+                        disabled={billingLoading || billingHistory.length === 0}
+                      >
+                        <Receipt size={16} />
+                        {t('profileEntrepreneur.generateInvoice')}
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Summary Cards */}
@@ -1961,8 +2104,8 @@ function ProfilePageEntrepreneur() {
           <div className="edit-modal-container">
             <div className="edit-modal-header">
               <div className="edit-header-content">
-                <h2 className="edit-modal-title">Edit Company Profile</h2>
-                <p className="edit-modal-subtitle">Update your business information</p>
+                <h2 className="edit-modal-title">{t('profileEntrepreneur.editCompanyProfile')}</h2>
+                <p className="edit-modal-subtitle">{t('profileEntrepreneur.updateBusinessInfo')}</p>
               </div>
               <button onClick={() => setIsEditModalOpen(false)} className="edit-close-btn">
                 <X size={24} />
@@ -1974,7 +2117,7 @@ function ProfilePageEntrepreneur() {
               <div className="edit-section">
                 <div className="edit-section-header">
                   <Camera size={18} className="edit-section-icon" />
-                  <span>Company Logo / Profile Picture</span>
+                  <span>{t('profileEntrepreneur.companyLogoProfilePicture')}</span>
                 </div>
                 <div className="edit-image-upload-container">
                   <div className="edit-image-preview">
@@ -1985,14 +2128,14 @@ function ProfilePageEntrepreneur() {
                     ) : (
                       <div className="edit-no-image">
                         <Camera size={40} />
-                        <span>No image</span>
+                        <span>{t('profileEntrepreneur.noImage')}</span>
                       </div>
                     )}
                   </div>
                   <div className="edit-image-actions">
                     <label className="edit-upload-btn">
                       <Upload size={18} />
-                      {profileImage ? 'Change Image' : 'Upload Image'}
+                      {profileImage ? t('profileEntrepreneur.changeImage') : t('profileEntrepreneur.uploadImage')}
                       <input
                         type="file"
                         accept="image/*"
@@ -2007,11 +2150,11 @@ function ProfilePageEntrepreneur() {
                         onClick={handleRemoveImage}
                       >
                         <X size={18} />
-                        Remove
+                        {t('profileEntrepreneur.remove')}
                       </button>
                     )}
                   </div>
-                  <p className="edit-image-hint">Recommended: Square image, max 5MB (JPG, PNG)</p>
+                  <p className="edit-image-hint">{t('profileEntrepreneur.imageHint')}</p>
                 </div>
               </div>
 
@@ -2019,13 +2162,13 @@ function ProfilePageEntrepreneur() {
               <div className="edit-section">
                 <div className="edit-section-header">
                   <Briefcase size={18} className="edit-section-icon" />
-                  <span>Company Information</span>
+                  <span>{t('profileEntrepreneur.companyInformation')}</span>
                 </div>
 
                 <div className="edit-form-group">
                   <label className="edit-form-label">
                     <Briefcase size={14} />
-                    Company Name <span className="edit-required">*</span>
+                    {t('profileEntrepreneur.companyNameLabel')} <span className="edit-required">*</span>
                   </label>
                   <input
                     type="text"
@@ -2033,14 +2176,14 @@ function ProfilePageEntrepreneur() {
                     value={formData.company_name}
                     onChange={handleInputChange}
                     className="edit-form-input"
-                    placeholder="Enter your company name"
+                    placeholder={t('profileEntrepreneur.enterCompanyName')}
                   />
                 </div>
 
                 <div className="edit-form-group">
                   <label className="edit-form-label">
                     <Award size={14} />
-                    License Number <span className="edit-required">*</span>
+                    {t('profileEntrepreneur.licenseNumberLabel')} <span className="edit-required">*</span>
                   </label>
                   <input
                     type="text"
@@ -2048,7 +2191,7 @@ function ProfilePageEntrepreneur() {
                     value={formData.license_number}
                     onChange={handleInputChange}
                     className="edit-form-input"
-                    placeholder="Enter business license number"
+                    placeholder={t('profileEntrepreneur.enterLicenseNumber')}
                   />
                 </div>
 
@@ -2056,7 +2199,7 @@ function ProfilePageEntrepreneur() {
                   <div className="edit-form-group">
                     <label className="edit-form-label">
                       <Calendar size={14} />
-                      Years in Business <span className="edit-required">*</span>
+                      {t('profileEntrepreneur.yearsInBusinessLabel')} <span className="edit-required">*</span>
                     </label>
                     <input
                       type="number"
@@ -2071,7 +2214,7 @@ function ProfilePageEntrepreneur() {
                   <div className="edit-form-group">
                     <label className="edit-form-label">
                       <User size={14} />
-                      Number of Employees <span className="edit-required">*</span>
+                      {t('profileEntrepreneur.numberOfEmployeesLabel')} <span className="edit-required">*</span>
                     </label>
                     <input
                       type="number"
@@ -2090,14 +2233,14 @@ function ProfilePageEntrepreneur() {
               <div className="edit-section">
                 <div className="edit-section-header">
                   <Phone size={18} className="edit-section-icon" />
-                  <span>Contact Information</span>
+                  <span>{t('profileEntrepreneur.contactInformation')}</span>
                 </div>
 
                 <div className="edit-form-row">
                   <div className="edit-form-group">
                     <label className="edit-form-label">
                       <Phone size={14} />
-                      Phone Number
+                      {t('profileEntrepreneur.phoneNumber')}
                     </label>
                     <input
                       type="tel"
@@ -2111,7 +2254,7 @@ function ProfilePageEntrepreneur() {
                   <div className="edit-form-group">
                     <label className="edit-form-label">
                       <Mail size={14} />
-                      Email Address
+                      {t('profileEntrepreneur.emailAddress')}
                     </label>
                     <input
                       type="email"
@@ -2128,14 +2271,14 @@ function ProfilePageEntrepreneur() {
                 <div className="edit-form-group">
                   <label className="edit-form-label">
                     <MapPin size={14} />
-                    Business Address <span className="edit-required">*</span>
+                    {t('profileEntrepreneur.businessAddress')} <span className="edit-required">*</span>
                   </label>
                   <textarea
                     name="address"
                     value={formData.address}
                     onChange={handleInputChange}
                     className="edit-form-textarea"
-                    placeholder="Enter your business address"
+                    placeholder={t('profileEntrepreneur.enterBusinessAddress')}
                     rows="3"
                   />
                 </div>
@@ -2145,9 +2288,9 @@ function ProfilePageEntrepreneur() {
               <div className="edit-section">
                 <div className="edit-section-header">
                   <CheckCircle size={18} className="edit-section-icon" />
-                  <span>Specializations</span>
+                  <span>{t('profileEntrepreneur.specializations')}</span>
                   <span className="edit-selected-count">
-                    {formData.specializations.length} selected
+                    {formData.specializations.length} {t('profileEntrepreneur.selected')}
                   </span>
                 </div>
                 <div className="edit-specializations-grid">
@@ -2169,6 +2312,19 @@ function ProfilePageEntrepreneur() {
                     </label>
                   ))}
                 </div>
+                <div className="edit-other-specialization">
+                  <label className="edit-form-label">
+                    <Edit size={14} />
+                    {t('profileEntrepreneur.otherSpecialization')}
+                  </label>
+                  <input
+                    type="text"
+                    value={otherSpecialization}
+                    onChange={(e) => setOtherSpecialization(e.target.value)}
+                    className="edit-form-input"
+                    placeholder={t('profileEntrepreneur.otherSpecializationPlaceholder')}
+                  />
+                </div>
               </div>
 
               {/* Action Buttons */}
@@ -2179,7 +2335,7 @@ function ProfilePageEntrepreneur() {
                   disabled={isUpdating}
                 >
                   <X size={18} />
-                  Cancel
+                  {t('profileEntrepreneur.cancel')}
                 </button>
                 <button
                   onClick={handleSubmit}
@@ -2189,12 +2345,12 @@ function ProfilePageEntrepreneur() {
                   {isUpdating ? (
                     <>
                       <span className="edit-spinner"></span>
-                      {isUploadingImage ? 'Uploading Image...' : 'Saving Changes...'}
+                      {isUploadingImage ? t('profileEntrepreneur.uploadingImage') : t('profileEntrepreneur.saving')}
                     </>
                   ) : (
                     <>
                       <Check size={18} />
-                      Save Changes
+                      {t('profileEntrepreneur.saveChanges')}
                     </>
                   )}
                 </button>
@@ -2219,11 +2375,11 @@ function ProfilePageEntrepreneur() {
 
             <div className="modal-header">
               <div className="sub-message">
-                <h2>Subscription Plans</h2>
+                <h2>{t('profileEntrepreneur.subscriptionPlans')}</h2>
                 <p className="subtitle">
                   {subscription.plan_type
-                    ? `You are currently on the ${subscription.plan_type === 'premium' ? 'Premium' : 'Basic'} plan`
-                    : 'Select the plan that fits your business needs'}
+                    ? `${t('profileEntrepreneur.currentPlan')}: ${subscription.plan_type === 'premium' ? t('profileEntrepreneur.premiumPlan') : t('profileEntrepreneur.basicPlan')}`
+                    : t('profileEntrepreneur.selectPlanMessage')}
                 </p>
               </div>
             </div>
@@ -2232,17 +2388,17 @@ function ProfilePageEntrepreneur() {
               {/* Basic Plan */}
               <div className={`plan-card ${subscription.plan_type === 'basic' ? 'current-plan' : ''}`}>
                 {subscription.plan_type === 'basic' && (
-                  <div className="current-plan-badge">Current Plan</div>
+                  <div className="current-plan-badge">{t('profileEntrepreneur.currentPlan')}</div>
                 )}
                 <div className="plan-header">
-                  <div className="plan-label">Basic Plan</div>
+                  <div className="plan-label">{t('profileEntrepreneur.basicPlan')}</div>
                   <div className="price">
                     <span className="currency">$</span>
                     <span className="amount">250</span>
-                    <span className="period">/month</span>
+                    <span className="period">{t('profileEntrepreneur.month')}</span>
                   </div>
                   <div className="plan-description">
-                    Essential features for contractors
+                    {t('profileEntrepreneur.essentialFeatures')}
                   </div>
                 </div>
 
@@ -2252,28 +2408,28 @@ function ProfilePageEntrepreneur() {
                       <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
                       <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span>Browse & view jobs</span>
+                    <span>{t('profileEntrepreneur.browseViewJobs')}</span>
                   </li>
                   <li className="feature-item">
                     <svg width="16" height="16" viewBox="0 0 20 20" className="feature-icon">
                       <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
                       <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span>Submit up to 30 bids</span>
+                    <span>{t('profileEntrepreneur.submitUpTo30Bids')}</span>
                   </li>
                   <li className="feature-item">
                     <svg width="16" height="16" viewBox="0 0 20 20" className="feature-icon">
                       <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
                       <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span>Unlock budgets</span>
+                    <span>{t('profileEntrepreneur.unlockBudgets')}</span>
                   </li>
                   <li className="feature-item">
                     <svg width="16" height="16" viewBox="0 0 20 20" className="feature-icon">
                       <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
                       <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span>Message approved contacts</span>
+                    <span>{t('profileEntrepreneur.messageApprovedContacts')}</span>
                   </li>
                 </ul>
 
@@ -2282,27 +2438,27 @@ function ProfilePageEntrepreneur() {
                   onClick={() => handleSelectPlan('basic')}
                   disabled={subscription.plan_type === 'basic' || subscription.plan_type === 'premium'}
                 >
-                  {subscription.plan_type === 'basic' ? 'Current Plan' : subscription.plan_type === 'premium' ? 'Unavailable' : 'Select Basic'}
+                  {subscription.plan_type === 'basic' ? t('profileEntrepreneur.currentPlan') : subscription.plan_type === 'premium' ? t('profileEntrepreneur.unavailablePlan') : t('profileEntrepreneur.selectBasic')}
                 </button>
               </div>
 
               {/* Premium Plan */}
               <div className={`plan-card premium ${subscription.plan_type === 'premium' ? 'current-plan' : ''}`}>
                 {subscription.plan_type === 'premium' ? (
-                  <div className="current-plan-badge">Current Plan</div>
+                  <div className="current-plan-badge">{t('profileEntrepreneur.currentPlan')}</div>
                 ) : (
-                  <div className="plan-badge">RECOMMENDED</div>
+                  <div className="plan-badge">{t('profileEntrepreneur.recommended')}</div>
                 )}
 
                 <div className="plan-header">
-                  <div className="plan-label">Premium Plan</div>
+                  <div className="plan-label">{t('profileEntrepreneur.premiumPlan')}</div>
                   <div className="price">
                     <span className="currency">$</span>
                     <span className="amount">429</span>
-                    <span className="period">/month</span>
+                    <span className="period">{t('profileEntrepreneur.month')}</span>
                   </div>
                   <div className="plan-description">
-                    Unlimited bidding for growing businesses
+                    {t('profileEntrepreneur.unlimitedBidding')}
                   </div>
                 </div>
 
@@ -2312,35 +2468,35 @@ function ProfilePageEntrepreneur() {
                       <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
                       <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span>Browse & view jobs</span>
+                    <span>{t('profileEntrepreneur.browseViewJobs')}</span>
                   </li>
                   <li className="feature-item highlight">
                     <svg width="16" height="16" viewBox="0 0 20 20" className="feature-icon">
                       <circle cx="10" cy="10" r="10" fill="#00A5A9"/>
                       <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span>Submit unlimited bids</span>
+                    <span>{t('profileEntrepreneur.submitUnlimitedBids')}</span>
                   </li>
                   <li className="feature-item">
                     <svg width="16" height="16" viewBox="0 0 20 20" className="feature-icon">
                       <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
                       <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span>Unlock budgets</span>
+                    <span>{t('profileEntrepreneur.unlockBudgets')}</span>
                   </li>
                   <li className="feature-item">
                     <svg width="16" height="16" viewBox="0 0 20 20" className="feature-icon">
                       <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
                       <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span>Message approved contacts</span>
+                    <span>{t('profileEntrepreneur.messageApprovedContacts')}</span>
                   </li>
                   <li className="feature-item highlight">
                     <svg width="16" height="16" viewBox="0 0 20 20" className="feature-icon">
                       <circle cx="10" cy="10" r="10" fill="#00A5A9"/>
                       <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    <span>Priority support</span>
+                    <span>{t('profileEntrepreneur.prioritySupport')}</span>
                   </li>
                 </ul>
 
@@ -2349,7 +2505,7 @@ function ProfilePageEntrepreneur() {
                   onClick={() => handleSelectPlan('premium')}
                   disabled={subscription.plan_type === 'premium'}
                 >
-                  {subscription.plan_type === 'premium' ? 'Current Plan' : 'Upgrade to Premium'}
+                  {subscription.plan_type === 'premium' ? t('profileEntrepreneur.currentPlan') : t('profileEntrepreneur.upgradeToPremium')}
                 </button>
               </div>
             </div>

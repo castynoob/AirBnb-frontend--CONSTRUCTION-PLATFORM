@@ -37,6 +37,7 @@ import {
   Eye,
   Edit3,
   Trash2,
+  Calendar,
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { useLanguage } from "../../contexts/LanguageContext"
@@ -251,6 +252,10 @@ function HomePageEntrepreneur() {
   // Collapsible floating panel state (collapsed by default)
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(true)
 
+  // Skill match filter state
+  const [skillMatchEnabled, setSkillMatchEnabled] = useState(false)
+  const [entrepreneurSpecializations, setEntrepreneurSpecializations] = useState([])
+
   // data variables
   const [properties, setProperties] = useState([])
   const [jobs, setJobs] = useState([])
@@ -288,12 +293,11 @@ function HomePageEntrepreneur() {
     workTypes: [],
     otherWorkType: "",
     urgency: [],
-    daysUntilNeeded: "",
-    duration: "",
+    deadlinePreset: "",
+    deadlineDate: "",
     budgetMin: "",
     budgetMax: "",
     budgetPreset: "",
-    durationPreset: "",
     bidCount: "",
     propertyTypes: [],
     propertySizes: [],
@@ -486,8 +490,8 @@ function HomePageEntrepreneur() {
   useEffect(() => {
     setIsLoadingLocation(true)
 
-    // Default location (Philippines - Baguio City coordinates as fallback)
-    const defaultLocation = { lat: 16.4023, lng: 120.5960 }
+    // Default location (Montreal, QC as fallback)
+    const defaultLocation = { lat: 45.5017, lng: -73.5673 }
 
     if (!navigator.geolocation) {
       setError('Geolocation is not supported by your browser');
@@ -573,15 +577,38 @@ function HomePageEntrepreneur() {
         )
 
       const matchesUrgency =
-        appliedFilters.urgency.length === 0 || propertyJobs.some((job) => appliedFilters.urgency.includes(job.urgency))
+        appliedFilters.urgency.length === 0 || propertyJobs.some((job) => {
+          const jobUrgency = (job.urgency || "").toLowerCase()
+          return appliedFilters.urgency.some(filterVal => {
+            if (filterVal === "Urgent") {
+              return jobUrgency.includes("urgent") || jobUrgency === "critical" || jobUrgency === "high"
+            }
+            if (filterVal === "Planned") {
+              return !jobUrgency.includes("urgent") && jobUrgency !== "critical" && jobUrgency !== "high"
+            }
+            return false
+          })
+        })
 
-      const matchesDays =
-        !appliedFilters.daysUntilNeeded ||
-        propertyJobs.some((job) => job.daysUntilNeeded <= Number.parseInt(appliedFilters.daysUntilNeeded))
-
-      const matchesDuration =
-        !appliedFilters.duration ||
-        propertyJobs.some((job) => job.estimated_duration_days <= Number.parseInt(appliedFilters.duration))
+      // Submission deadline filter - checks job's due_date
+      const matchesDeadline = (() => {
+        if (!appliedFilters.deadlinePreset && !appliedFilters.deadlineDate) return true
+        let cutoffDate = null
+        if (appliedFilters.deadlineDate) {
+          cutoffDate = new Date(appliedFilters.deadlineDate)
+          cutoffDate.setHours(23, 59, 59, 999)
+        } else if (appliedFilters.deadlinePreset) {
+          const days = { "7": 7, "30": 30, "90": 90 }[appliedFilters.deadlinePreset]
+          if (days) {
+            cutoffDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000)
+          }
+        }
+        if (!cutoffDate) return true
+        return propertyJobs.some((job) => {
+          if (!job.due_date) return false
+          return new Date(job.due_date) <= cutoffDate
+        })
+      })()
 
       const matchesBudget =
         (!appliedFilters.budgetMin && !appliedFilters.budgetMax) ||
@@ -598,6 +625,15 @@ function HomePageEntrepreneur() {
       const matchesBidCount =
         !appliedFilters.bidCount || propertyJobs.some((job) => job.bidCount <= Number.parseInt(appliedFilters.bidCount))
 
+      // Skill match filter - only show properties with jobs matching entrepreneur's specializations
+      const matchesSkills = !skillMatchEnabled || entrepreneurSpecializations.length === 0 ||
+        propertyJobs.some((job) =>
+          entrepreneurSpecializations.some(spec =>
+            job.category?.toLowerCase().includes(spec.toLowerCase()) ||
+            spec.toLowerCase().includes(job.category?.toLowerCase() || '')
+          )
+        )
+
       return (
         matchesSearch &&
         matchesProvince &&
@@ -606,10 +642,10 @@ function HomePageEntrepreneur() {
         matchesRadius &&
         matchesWorkType &&
         matchesUrgency &&
-        matchesDays &&
-        matchesDuration &&
+        matchesDeadline &&
         matchesBudget &&
-        matchesBidCount
+        matchesBidCount &&
+        matchesSkills
       )
     })
 
@@ -621,7 +657,7 @@ function HomePageEntrepreneur() {
     })
 
     return sorted
-  }, [properties, jobs, searchTerm, appliedFilters, radiusFilter, calculateDistance])
+  }, [properties, jobs, searchTerm, appliedFilters, radiusFilter, calculateDistance, skillMatchEnabled, entrepreneurSpecializations])
 
   // Get search results for dropdown (only based on search term, not other filters)
   const searchResults = useMemo(() => {
@@ -647,12 +683,11 @@ function HomePageEntrepreneur() {
       filters.workTypes.length > 0 ||
       filters.otherWorkType !== "" ||
       filters.urgency.length > 0 ||
-      filters.daysUntilNeeded !== "" ||
-      filters.duration !== "" ||
+      filters.deadlinePreset !== "" ||
+      filters.deadlineDate !== "" ||
       filters.budgetMin !== "" ||
       filters.budgetMax !== "" ||
       filters.budgetPreset !== "" ||
-      filters.durationPreset !== "" ||
       filters.bidCount !== "" ||
       filters.propertyTypes.length > 0 ||
       filters.propertySizes.length > 0
@@ -667,8 +702,7 @@ function HomePageEntrepreneur() {
     if (appliedFilters.neighborhoods.length > 0) count++
     if (appliedFilters.workTypes.length > 0 || appliedFilters.otherWorkType !== "") count++
     if (appliedFilters.urgency.length > 0) count++
-    if (appliedFilters.daysUntilNeeded !== "") count++
-    if (appliedFilters.duration !== "" || appliedFilters.durationPreset !== "") count++
+    if (appliedFilters.deadlinePreset !== "" || appliedFilters.deadlineDate !== "") count++
     if (appliedFilters.budgetMin !== "" || appliedFilters.budgetMax !== "" || appliedFilters.budgetPreset !== "") count++
     if (appliedFilters.bidCount !== "") count++
     if (appliedFilters.propertyTypes.length > 0) count++
@@ -708,22 +742,56 @@ function HomePageEntrepreneur() {
   }
 
   const handleBidClick = (job) => {
-    // Subscription is already checked at property level - users without subscription
-    // cannot see job details, so they cannot reach this point
-
-    // Check bid limit for basic plan users
     const subscription = userProfile?.entrepProfile?.subscription?.subscription
+
+    // Check if user has no subscription
+    if (!subscription) {
+      toast.error(t('entrepreneurHome.subscriptionRequired') || 'You need a subscription to place bids.')
+      setShowSubscriptionModal(true)
+      return
+    }
+
+    // Check if trial has expired (0 days remaining)
+    if (subscription.is_trial && subscription.trial_days_remaining !== null && subscription.trial_days_remaining <= 0) {
+      toast.error(t('entrepreneurHome.trialExpired') || 'Your free trial has ended. Please subscribe or update your payment method to continue.')
+      setShowSubscriptionModal(true)
+      return
+    }
+
+    // Check if subscription is past_due (card charge failed)
+    if (subscription.status === 'past_due') {
+      toast.error(t('entrepreneurHome.paymentFailed') || 'Your payment failed. Please update your payment method to continue.')
+      setShowSubscriptionModal(true)
+      return
+    }
+
+    // Check if subscription is canceled or inactive
+    if (subscription.status && !['active', 'trialing'].includes(subscription.status)) {
+      toast.error(t('entrepreneurHome.subscriptionInactive') || 'Your subscription is inactive. Please resubscribe to continue.')
+      setShowSubscriptionModal(true)
+      return
+    }
+
+    // Check bid limit for starter and basic plan users
     const planType = subscription?.plan_type
     const bidsInfo = subscription?.bids
 
-    // For basic plan, check if bid limit is reached
-    if (planType === 'basic' && bidsInfo) {
+    if ((planType === 'starter' || planType === 'basic') && bidsInfo) {
       const remaining = bidsInfo.remaining ?? (bidsInfo.limit - bidsInfo.used)
       if (remaining <= 0) {
-        toast.error(`You have used all ${bidsInfo.limit} bids for this month. Upgrade to Premium for unlimited bids.`)
+        const upgradeMsg = planType === 'starter'
+          ? `You have used all ${bidsInfo.limit} bids for this month. Upgrade to Basic or Premium for more bids.`
+          : `You have used all ${bidsInfo.limit} bids for this month. Upgrade to Premium for unlimited bids.`
+        toast.error(upgradeMsg)
         setShowSubscriptionModal(true)
         return
       }
+    }
+
+    // Starter plan: cannot bid on projects over $2,500
+    if (planType === 'starter' && job.budget && parseFloat(job.budget) > 2500) {
+      toast.error('Starter plan cannot bid on projects over $2,500. Upgrade to Basic or Premium to bid on larger projects.')
+      return
     }
 
     setSelectedJob(job)
@@ -766,15 +834,29 @@ function HomePageEntrepreneur() {
           })
         });
 
-        // Handle bid limit error (403)
+        // Handle subscription/bid errors (403)
         if (response.status === 403) {
           const errorData = await response.json()
-          if (errorData.error === 'Bid limit reached') {
-            toast.error(`${errorData.message}. Upgrade to Premium for unlimited bids.`)
-            setBidModalOpen(false)
+          setBidModalOpen(false)
+
+          if (errorData.action === 'update_payment_method' || errorData.error === 'Trial expired' || errorData.error === 'Payment failed') {
+            toast.error(errorData.message || 'Your trial has ended. Please update your payment method.')
             setShowSubscriptionModal(true)
             return
           }
+
+          if (errorData.error === 'Bid limit reached') {
+            toast.error(`${errorData.message}. Upgrade to Premium for unlimited bids.`)
+            setShowSubscriptionModal(true)
+            return
+          }
+
+          if (errorData.action === 'create_subscription' || errorData.action === 'reactivate_subscription') {
+            toast.error(errorData.message || 'Subscription required to place bids.')
+            setShowSubscriptionModal(true)
+            return
+          }
+
           throw new Error(errorData.message || 'Access denied')
         }
 
@@ -786,8 +868,8 @@ function HomePageEntrepreneur() {
         const result = await response.json()
         fetchBids()
 
-        // Update local subscription data with new bids_remaining for basic plan
-        if (result.subscription && result.subscription.plan_type === 'basic') {
+        // Update local subscription data with new bids_remaining for starter/basic plan
+        if (result.subscription && (result.subscription.plan_type === 'starter' || result.subscription.plan_type === 'basic')) {
           const updatedProfile = {
             ...user,
             entrepProfile: {
@@ -1125,6 +1207,11 @@ function HomePageEntrepreneur() {
           const user = JSON.parse(profileString)
           setUserProfile(user)
           getProfileAfterSubs(user)
+
+          // Extract entrepreneur specializations for skill-based filtering
+          const specs = user.entrepProfile?.entrepProfile?.specializations ||
+                        user.entrepProfile?.profile?.specializations || []
+          setEntrepreneurSpecializations(Array.isArray(specs) ? specs : [])
 
           const newProperties = await fetchPropertiesData(user)
           setProperties(newProperties)
@@ -1485,6 +1572,17 @@ function HomePageEntrepreneur() {
             </div>
           )}
         </div>
+
+        {entrepreneurSpecializations.length > 0 && (
+          <button
+            className={`eh-skill-match-btn ${skillMatchEnabled ? "eh-active" : ""}`}
+            onClick={() => setSkillMatchEnabled(!skillMatchEnabled)}
+            title={skillMatchEnabled ? t('entrepreneurHome.showAllJobs') : t('entrepreneurHome.matchMySkills')}
+          >
+            <Target size={16} />
+            <span className="eh-filter-btn-text">{t('entrepreneurHome.mySkills')}</span>
+          </button>
+        )}
 
         <button
           className={`eh-filters-btn ${activeFiltersCount > 0 ? "eh-active" : ""}`}
@@ -1847,68 +1945,93 @@ function HomePageEntrepreneur() {
 
             <div className="eh-modal-body">
               <div className="eh-filters-grid">
-                {/* Location Filters - Province/State based */}
+                {/* Location Filters - Quebec Regions */}
                 <div className="eh-filter-group">
                   <div className="eh-filter-group-header">
                     <MapPin size={18} />
                     <h3>{t('entrepreneurHome.location')}</h3>
                   </div>
                   <div className="eh-filter-section">
-                    <div className="eh-filter-subsection-title">Province / State</div>
+                    <div className="eh-filter-subsection-title">{t('entrepreneurHome.filterRegion')}</div>
                     <div className="eh-checkbox-group">
-                      {["California", "Ontario", "Pangasinan"].map((province) => (
-                        <label key={province} className="eh-checkbox-label">
+                      {[
+                        { value: "Montreal", labelKey: "entrepreneurHome.regionMontreal" },
+                        { value: "Laval", labelKey: "entrepreneurHome.regionLaval" },
+                        { value: "Rive-Nord", labelKey: "entrepreneurHome.regionNorthShore" },
+                        { value: "Rive-Sud", labelKey: "entrepreneurHome.regionSouthShore" },
+                        { value: "Quebec City", labelKey: "entrepreneurHome.regionQuebecCity" },
+                        { value: "Gatineau", labelKey: "entrepreneurHome.regionGatineau" },
+                        { value: "Sherbrooke", labelKey: "entrepreneurHome.regionSherbrooke" },
+                        { value: "Trois-Rivieres", labelKey: "entrepreneurHome.regionTroisRivieres" },
+                      ].map((region) => (
+                        <label key={region.value} className="eh-checkbox-label">
                           <input
                             type="checkbox"
-                            checked={filters.provinces.includes(province)}
-                            onChange={() => handleFilterChange("provinces", province)}
+                            checked={filters.provinces.includes(region.value)}
+                            onChange={() => handleFilterChange("provinces", region.value)}
                           />
-                          <span className="eh-checkbox-text">{province}</span>
+                          <span className="eh-checkbox-text">{t(region.labelKey)}</span>
                         </label>
                       ))}
                     </div>
                     <div className="eh-input-group eh-other-input">
-                      <label>Other Province / State</label>
+                      <label>{t('entrepreneurHome.otherRegion')}</label>
                       <input
                         type="text"
                         value={filters.otherProvince}
                         onChange={(e) => handleFilterChange("otherProvince", e.target.value)}
-                        placeholder="Type province or state name..."
+                        placeholder={t('entrepreneurHome.otherRegionPlaceholder')}
                       />
                     </div>
                   </div>
                 </div>
 
-                {/* Work Type Filters - Top 3 + Others */}
+                {/* Work Type Filters - Expanded */}
                 <div className="eh-filter-group">
                   <div className="eh-filter-group-header">
                     <Wrench size={18} />
                     <h3>{t('entrepreneurHome.workType')}</h3>
                   </div>
-                  <div className="eh-checkbox-group">
-                    {["Plumbing", "Electrical", "HVAC"].map((type) => (
-                      <label key={type} className="eh-checkbox-label">
+                  <div className="eh-checkbox-group eh-checkbox-grid-scrollable">
+                    {[
+                      { value: "Plumbing", labelKey: "entrepreneurHome.wtPlumbing" },
+                      { value: "Electrical", labelKey: "entrepreneurHome.wtElectrical" },
+                      { value: "HVAC", labelKey: "entrepreneurHome.wtHVAC" },
+                      { value: "Roofing", labelKey: "entrepreneurHome.wtRoofing" },
+                      { value: "Windows/Doors", labelKey: "entrepreneurHome.wtWindowsDoors" },
+                      { value: "Snow Removal", labelKey: "entrepreneurHome.wtSnowRemoval" },
+                      { value: "Janitorial", labelKey: "entrepreneurHome.wtJanitorial" },
+                      { value: "Painting", labelKey: "entrepreneurHome.wtPainting" },
+                      { value: "Masonry", labelKey: "entrepreneurHome.wtMasonry" },
+                      { value: "Landscaping", labelKey: "entrepreneurHome.wtLandscaping" },
+                      { value: "Duct Cleaning", labelKey: "entrepreneurHome.wtDuctCleaning" },
+                      { value: "Elevators", labelKey: "entrepreneurHome.wtElevators" },
+                      { value: "Carpentry", labelKey: "entrepreneurHome.wtCarpentry" },
+                      { value: "Flooring", labelKey: "entrepreneurHome.wtFlooring" },
+                      { value: "General Repair", labelKey: "entrepreneurHome.wtGeneralRepair" },
+                    ].map((type) => (
+                      <label key={type.value} className="eh-checkbox-label">
                         <input
                           type="checkbox"
-                          checked={filters.workTypes.includes(type)}
-                          onChange={() => handleFilterChange("workTypes", type)}
+                          checked={filters.workTypes.includes(type.value)}
+                          onChange={() => handleFilterChange("workTypes", type.value)}
                         />
-                        <span className="eh-checkbox-text">{type}</span>
+                        <span className="eh-checkbox-text">{t(type.labelKey)}</span>
                       </label>
                     ))}
                   </div>
                   <div className="eh-input-group eh-other-input">
-                    <label>Other Work Type</label>
+                    <label>{t('entrepreneurHome.otherWorkType')}</label>
                     <input
                       type="text"
                       value={filters.otherWorkType}
                       onChange={(e) => handleFilterChange("otherWorkType", e.target.value)}
-                      placeholder="Type work type..."
+                      placeholder={t('entrepreneurHome.otherWorkTypePlaceholder')}
                     />
                   </div>
                 </div>
 
-                {/* Urgency Filters - with color coding */}
+                {/* Urgency Filters - Urgent vs Planned */}
                 <div className="eh-filter-group">
                   <div className="eh-filter-group-header">
                     <Zap size={18} />
@@ -1916,10 +2039,8 @@ function HomePageEntrepreneur() {
                   </div>
                   <div className="eh-checkbox-group">
                     {[
-                      { value: "Critical", color: "#dc2626" },
-                      { value: "High", color: "#f97316" },
-                      { value: "Medium", color: "#eab308" },
-                      { value: "Low", color: "#22c55e" }
+                      { value: "Urgent", color: "#dc2626", labelKey: "entrepreneurHome.urgentLabel" },
+                      { value: "Planned", color: "#7F8C8D", labelKey: "entrepreneurHome.plannedLabel" },
                     ].map((urgency) => (
                       <label key={urgency.value} className="eh-checkbox-label">
                         <input
@@ -1929,7 +2050,7 @@ function HomePageEntrepreneur() {
                         />
                         <span className="eh-checkbox-text">
                           <span className="eh-urgency-dot" style={{ backgroundColor: urgency.color }}></span>
-                          {urgency.value}
+                          {t(urgency.labelKey)}
                         </span>
                       </label>
                     ))}
@@ -1944,23 +2065,23 @@ function HomePageEntrepreneur() {
                   </div>
                   <div className="eh-preset-buttons">
                     {[
-                      { label: "Under $1K", min: "0", max: "1000" },
-                      { label: "$1K - $5K", min: "1000", max: "5000" },
-                      { label: "$5K - $10K", min: "5000", max: "10000" },
-                      { label: "$10K+", min: "10000", max: "" }
+                      { id: "under1k", labelKey: "entrepreneurHome.budgetUnder1K", min: "0", max: "1000" },
+                      { id: "1k5k", labelKey: "entrepreneurHome.budget1Kto5K", min: "1000", max: "5000" },
+                      { id: "5k10k", labelKey: "entrepreneurHome.budget5Kto10K", min: "5000", max: "10000" },
+                      { id: "10kplus", labelKey: "entrepreneurHome.budget10KPlus", min: "10000", max: "" }
                     ].map((preset) => (
                       <button
-                        key={preset.label}
-                        className={`eh-preset-btn ${filters.budgetPreset === preset.label ? 'active' : ''}`}
+                        key={preset.id}
+                        className={`eh-preset-btn ${filters.budgetPreset === preset.id ? 'active' : ''}`}
                         onClick={() => {
-                          if (filters.budgetPreset === preset.label) {
+                          if (filters.budgetPreset === preset.id) {
                             setFilters({ ...filters, budgetPreset: "", budgetMin: "", budgetMax: "" })
                           } else {
-                            setFilters({ ...filters, budgetPreset: preset.label, budgetMin: preset.min, budgetMax: preset.max })
+                            setFilters({ ...filters, budgetPreset: preset.id, budgetMin: preset.min, budgetMax: preset.max })
                           }
                         }}
                       >
-                        {preset.label}
+                        {t(preset.labelKey)}
                       </button>
                     ))}
                   </div>
@@ -1986,41 +2107,40 @@ function HomePageEntrepreneur() {
                   </div>
                 </div>
 
-                {/* Duration Filters - with presets */}
+                {/* Submission Deadline Filters */}
                 <div className="eh-filter-group">
                   <div className="eh-filter-group-header">
-                    <Clock size={18} />
-                    <h3>{t('entrepreneurHome.duration')}</h3>
+                    <Calendar size={18} />
+                    <h3>{t('entrepreneurHome.submissionDeadline')}</h3>
                   </div>
                   <div className="eh-preset-buttons">
                     {[
-                      { label: "1-3 days", value: "3" },
-                      { label: "1 week", value: "7" },
-                      { label: "2 weeks", value: "14" },
-                      { label: "1 month+", value: "30" }
+                      { labelKey: "entrepreneurHome.next7Days", value: "7" },
+                      { labelKey: "entrepreneurHome.next30Days", value: "30" },
+                      { labelKey: "entrepreneurHome.next90Days", value: "90" },
                     ].map((preset) => (
                       <button
-                        key={preset.label}
-                        className={`eh-preset-btn ${filters.durationPreset === preset.label ? 'active' : ''}`}
+                        key={preset.value}
+                        className={`eh-preset-btn ${filters.deadlinePreset === preset.value ? 'active' : ''}`}
                         onClick={() => {
-                          if (filters.durationPreset === preset.label) {
-                            setFilters({ ...filters, durationPreset: "", duration: "" })
+                          if (filters.deadlinePreset === preset.value) {
+                            setFilters({ ...filters, deadlinePreset: "", deadlineDate: "" })
                           } else {
-                            setFilters({ ...filters, durationPreset: preset.label, duration: preset.value })
+                            setFilters({ ...filters, deadlinePreset: preset.value, deadlineDate: "" })
                           }
                         }}
                       >
-                        {preset.label}
+                        {t(preset.labelKey)}
                       </button>
                     ))}
                   </div>
                   <div className="eh-input-group">
-                    <label>{t('entrepreneurHome.maxDuration')}</label>
+                    <label>{t('entrepreneurHome.customDeadline')}</label>
                     <input
-                      type="number"
-                      value={filters.duration}
-                      onChange={(e) => setFilters({ ...filters, duration: e.target.value, durationPreset: "" })}
-                      placeholder={t('entrepreneurHome.any')}
+                      type="date"
+                      value={filters.deadlineDate}
+                      onChange={(e) => setFilters({ ...filters, deadlineDate: e.target.value, deadlinePreset: "" })}
+                      min={new Date().toISOString().split('T')[0]}
                     />
                   </div>
                 </div>
@@ -2032,14 +2152,17 @@ function HomePageEntrepreneur() {
                     <h3>{t('entrepreneurHome.propertyType')}</h3>
                   </div>
                   <div className="eh-checkbox-group">
-                    {["Commercial", "Residential", "Industrial"].map((type) => (
-                      <label key={type} className="eh-checkbox-label">
+                    {[
+                      { value: "Residential", labelKey: "entrepreneurHome.ptResidential" },
+                      { value: "Commercial", labelKey: "entrepreneurHome.ptCommercial" },
+                    ].map((type) => (
+                      <label key={type.value} className="eh-checkbox-label">
                         <input
                           type="checkbox"
-                          checked={filters.propertyTypes.includes(type)}
-                          onChange={() => handleFilterChange("propertyTypes", type)}
+                          checked={filters.propertyTypes.includes(type.value)}
+                          onChange={() => handleFilterChange("propertyTypes", type.value)}
                         />
-                        <span className="eh-checkbox-text">{type}</span>
+                        <span className="eh-checkbox-text">{t(type.labelKey)}</span>
                       </label>
                     ))}
                   </div>
@@ -2317,8 +2440,9 @@ function HomePageEntrepreneur() {
                 </p>
               </div>
 
-              {/* Bid Count Indicator for Basic Plan */}
-              {userProfile?.entrepProfile?.subscription?.subscription?.plan_type === 'basic' &&
+              {/* Bid Count Indicator for Starter/Basic Plan */}
+              {(userProfile?.entrepProfile?.subscription?.subscription?.plan_type === 'starter' ||
+                userProfile?.entrepProfile?.subscription?.subscription?.plan_type === 'basic') &&
                userProfile?.entrepProfile?.subscription?.subscription?.bids && (
                 <div className="eh-bid-count-indicator">
                   <div className="eh-bid-count-info">
