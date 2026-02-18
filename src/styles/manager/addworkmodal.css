@@ -50,6 +50,20 @@
   margin: 0 0 12px 0;
 }
 
+.optional-tag {
+  font-weight: 400;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.form-hint {
+  display: block;
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+  line-height: 1.4;
+}
+
 .budget-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

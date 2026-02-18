@@ -38,6 +38,7 @@ import {
   Edit3,
   Trash2,
   Calendar,
+  Loader,
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { useLanguage } from "../../contexts/LanguageContext"
@@ -259,6 +260,7 @@ function HomePageEntrepreneur() {
   // data variables
   const [properties, setProperties] = useState([])
   const [jobs, setJobs] = useState([])
+  const [jobsLoading, setJobsLoading] = useState(true)
   const [submittedBids, setSubmittedBids] = useState([]) // Now stores full bid objects
   const [showUnlockBudgetModal, setShowUnlockBudgetModal] = useState(false)
   const [budgetJobId, setBudgetJobId] = useState('')
@@ -295,9 +297,6 @@ function HomePageEntrepreneur() {
     urgency: [],
     deadlinePreset: "",
     deadlineDate: "",
-    budgetMin: "",
-    budgetMax: "",
-    budgetPreset: "",
     bidCount: "",
     propertyTypes: [],
     propertySizes: [],
@@ -389,43 +388,58 @@ function HomePageEntrepreneur() {
       jobsArray = Object.values(jobsData).filter(item => typeof item === 'object' && item !== null && item.id)
     }
 
-    const transformedJobsPromises = jobsArray.map(async job => {
-      let budgetData = { unlocked: false, unlock_date: null, amount_paid: 0 }
-      try {
-        budgetData = await fetchBudgetStatus(job, user, API_BASE_URL)
-      } catch (error) {
-        console.warn('Error fetching budget status for job:', job.id, error)
+    // Transform jobs immediately without waiting for budget status
+    const transformedJobs = jobsArray.map(job => ({
+      id: job.id,
+      property_id: job.property_id,
+      title: job.title,
+      description: job.description,
+      category: job.category,
+      urgency: job.urgency,
+      due_date: job.due_date,
+      estimated_duration_days: job.estimated_duration_days,
+      budget_min: (job.budget_min ?? 0).toString(),
+      budget_max: (job.budget_max ?? 0).toString(),
+      status: job.status,
+      bidCount: 0,
+      daysUntilNeeded: Math.ceil(
+        (new Date(job.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
+      ),
+      budgetData: {
+        unlocked: false,
+        unlockDate: null,
+        amountPaid: 0
       }
-      return {
-        id: job.id,
-        property_id: job.property_id,
-        title: job.title,
-        description: job.description,
-        category: job.category,
-        urgency: job.urgency,
-        due_date: job.due_date,
-        estimated_duration_days: job.estimated_duration_days,
-        budget_min: job.budget_min.toString(),
-        budget_max: job.budget_max.toString(),
-        status: job.status,
-        bidCount: 0,
-        daysUntilNeeded: Math.ceil(
-          (new Date(job.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
-        ),
-        budgetData: {
-          unlocked: budgetData.unlocked,
-          unlockDate: budgetData.unlock_date,
-          amountPaid: budgetData.amount_paid
+    }))
+
+    return transformedJobs
+  }, [])
+
+  // Fetch budget status for all jobs in the background and update state
+  const enrichJobsWithBudgetData = useCallback(async (jobsList, user) => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+    const budgetResults = await Promise.allSettled(
+      jobsList.map(async (job) => {
+        const budgetData = await fetchBudgetStatus(job, user, API_BASE_URL)
+        return { jobId: job.id, budgetData }
+      })
+    )
+
+    const budgetMap = {}
+    budgetResults.forEach(result => {
+      if (result.status === 'fulfilled') {
+        budgetMap[result.value.jobId] = {
+          unlocked: result.value.budgetData.unlocked,
+          unlockDate: result.value.budgetData.unlock_date,
+          amountPaid: result.value.budgetData.amount_paid
         }
       }
     })
 
-    const transformedJobsResults = await Promise.allSettled(transformedJobsPromises)
-    const successfulJobs = transformedJobsResults
-      .filter(result => result.status === 'fulfilled')
-      .map(result => result.value)
-
-    return successfulJobs
+    setJobs(prev => prev.map(job => budgetMap[job.id]
+      ? { ...job, budgetData: budgetMap[job.id] }
+      : job
+    ))
   }, [])
 
   const fetchBidsData = useCallback(async (user) => {
@@ -453,7 +467,7 @@ function HomePageEntrepreneur() {
     try {
       const user = JSON.parse(profileString)
 
-      // Fetch all data in parallel
+      // Fetch all data in parallel (fast)
       const [newProperties, newJobs, bidsData] = await Promise.all([
         fetchPropertiesData(user),
         fetchJobsData(user),
@@ -463,6 +477,9 @@ function HomePageEntrepreneur() {
       setProperties(newProperties)
       setJobs(newJobs)
       setSubmittedBids(bidsData)
+
+      // Enrich budget data in background
+      enrichJobsWithBudgetData(newJobs, user)
 
       // Restore selected property if it exists
       if (selectedProperty) {
@@ -490,37 +507,10 @@ function HomePageEntrepreneur() {
   useEffect(() => {
     setIsLoadingLocation(true)
 
-    // Default location (Montreal, QC as fallback)
+    // Always center on Montreal, QC — platform is for Quebec/Canada
     const defaultLocation = { lat: 45.5017, lng: -73.5673 }
-
-    if (!navigator.geolocation) {
-      setError('Geolocation is not supported by your browser');
-      setUserLocation(defaultLocation)
-      setIsLoadingLocation(false)
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
-
-        setIsLoadingLocation(false)
-      },
-      (err) => {
-        console.warn('Geolocation error:', err.message);
-        setError(err.message);
-        // Use default location if geolocation fails
-        setUserLocation(defaultLocation)
-        setIsLoadingLocation(false)
-      },
-      {
-        timeout: 10000, // 10 second timeout
-        enableHighAccuracy: false
-      }
-    );
+    setUserLocation(defaultLocation)
+    setIsLoadingLocation(false)
   }, [])
 
 
@@ -610,18 +600,6 @@ function HomePageEntrepreneur() {
         })
       })()
 
-      const matchesBudget =
-        (!appliedFilters.budgetMin && !appliedFilters.budgetMax) ||
-        propertyJobs.some((job) => {
-          const min = appliedFilters.budgetMin
-            ? Number.parseFloat(job.budget_min) >= Number.parseFloat(appliedFilters.budgetMin)
-            : true
-          const max = appliedFilters.budgetMax
-            ? Number.parseFloat(job.budget_max) <= Number.parseFloat(appliedFilters.budgetMax)
-            : true
-          return min && max
-        })
-
       const matchesBidCount =
         !appliedFilters.bidCount || propertyJobs.some((job) => job.bidCount <= Number.parseInt(appliedFilters.bidCount))
 
@@ -643,7 +621,6 @@ function HomePageEntrepreneur() {
         matchesWorkType &&
         matchesUrgency &&
         matchesDeadline &&
-        matchesBudget &&
         matchesBidCount &&
         matchesSkills
       )
@@ -685,9 +662,6 @@ function HomePageEntrepreneur() {
       filters.urgency.length > 0 ||
       filters.deadlinePreset !== "" ||
       filters.deadlineDate !== "" ||
-      filters.budgetMin !== "" ||
-      filters.budgetMax !== "" ||
-      filters.budgetPreset !== "" ||
       filters.bidCount !== "" ||
       filters.propertyTypes.length > 0 ||
       filters.propertySizes.length > 0
@@ -703,7 +677,6 @@ function HomePageEntrepreneur() {
     if (appliedFilters.workTypes.length > 0 || appliedFilters.otherWorkType !== "") count++
     if (appliedFilters.urgency.length > 0) count++
     if (appliedFilters.deadlinePreset !== "" || appliedFilters.deadlineDate !== "") count++
-    if (appliedFilters.budgetMin !== "" || appliedFilters.budgetMax !== "" || appliedFilters.budgetPreset !== "") count++
     if (appliedFilters.bidCount !== "") count++
     if (appliedFilters.propertyTypes.length > 0) count++
     if (appliedFilters.propertySizes.length > 0) count++
@@ -1052,21 +1025,11 @@ function HomePageEntrepreneur() {
   }
 
   const getUrgencyColor = (urgency) => {
-    if (urgency === "Immediate") return "var(--color-status-urgent)"
-    if (urgency === "This Month") return "var(--color-status-warning)"
-    if (urgency === "This Year") return "var(--color-status-warning)"
-    switch (urgency) {
-      case "Critical":
-        return "var(--color-status-urgent)"
-      case "High":
-        return "#FF8C42"
-      case "Medium":
-        return "#FFB84D"
-      case "Low":
-        return "#7F8C8D"
-      default:
-        return "#7F8C8D"
+    const u = (urgency || "").toLowerCase()
+    if (u === "urgent" || u.includes("urgent") || u.includes("critical") || u.includes("high") || u.includes("immediate")) {
+      return "#dc2626"
     }
+    return "#7F8C8D" // Planned / default
   }
 
   const handleSearchResultClick = (property) => {
@@ -1242,26 +1205,35 @@ function HomePageEntrepreneur() {
   useEffect(() => {
     const fetchInitialJobs = async () => {
       const profileString = localStorage.getItem("userProfile")
+      setJobsLoading(true)
 
       try {
         if (profileString) {
           const user = JSON.parse(profileString)
-          const successfulJobs = await fetchJobsData(user)
-          console.log(`Successfully transformed ${successfulJobs.length} jobs`)
-          setJobs(successfulJobs)
 
-          // Fetch bids
-          const bidIds = await fetchBidsData(user)
+          // Fetch jobs and bids in parallel (fast — no budget status calls)
+          const [jobsList, bidIds] = await Promise.all([
+            fetchJobsData(user),
+            fetchBidsData(user)
+          ])
+
+          setJobs(jobsList)
           setSubmittedBids(bidIds)
+          setJobsLoading(false)
+
+          // Enrich with budget data in the background (slow — per-job API calls)
+          enrichJobsWithBudgetData(jobsList, user)
         }
       } catch (error) {
         console.error("Error fetching jobs:", error)
         toast.error(t('entrepreneurHome.failedLoadJobs'))
+      } finally {
+        setJobsLoading(false)
       }
     }
 
     fetchInitialJobs()
-  }, [fetchJobsData, fetchBidsData])
+  }, [fetchJobsData, fetchBidsData, enrichJobsWithBudgetData])
 
   const getProfileAfterSubs = (user) => {
     const uProf = localStorage.getItem('userProfile')
@@ -1776,10 +1748,20 @@ function HomePageEntrepreneur() {
                   <div className="eh-section-tabs">
                     <div className="eh-section-header">
                       <h3>{t('entrepreneurHome.availableJobsForBidding')}</h3>
-                      <span className="eh-job-count-badge">{getPropertyOpenJobs(selectedProperty.id).length} {t('entrepreneurHome.jobs')}</span>
+                      {!jobsLoading && (
+                        <span className="eh-job-count-badge">{getPropertyOpenJobs(selectedProperty.id).length} {t('entrepreneurHome.jobs')}</span>
+                      )}
                     </div>
                     <div className="eh-jobs-list">
-                      {getPropertyOpenJobs(selectedProperty.id).length > 0 ? (
+                      {jobsLoading ? (
+                        <div className="eh-jobs-loading">
+                          <Loader size={20} className="eh-loading-spinner" />
+                          <p className="eh-loading-text">{t('entrepreneurHome.loadingJobs')}</p>
+                          <SkeletonJobCard />
+                          <SkeletonJobCard />
+                          <SkeletonJobCard />
+                        </div>
+                      ) : getPropertyOpenJobs(selectedProperty.id).length > 0 ? (
                         getPropertyOpenJobs(selectedProperty.id).map((job) => {
                           return (
                             <div key={job.id} className="eh-job-card">
@@ -1806,8 +1788,8 @@ function HomePageEntrepreneur() {
                                     <span className="eh-detail-value">
                                       {
                                         job.budgetData.unlocked?
-                                      `$${Number.parseFloat(job.budget_min).toLocaleString()} -
-                                       $${Number.parseFloat(job.budget_max).toLocaleString()}` :
+                                      `$${Number.parseFloat(job.budget_min).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} -
+                                       $${Number.parseFloat(job.budget_max).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` :
                                        <>
                                         <button className="unlock-budget-button" onClick={() => {
                                           setBudgetJobId(job.id)
@@ -2057,56 +2039,6 @@ function HomePageEntrepreneur() {
                   </div>
                 </div>
 
-                {/* Budget Filters - with presets */}
-                <div className="eh-filter-group">
-                  <div className="eh-filter-group-header">
-                    <DollarSign size={18} />
-                    <h3>{t('entrepreneurHome.budgetRange')}</h3>
-                  </div>
-                  <div className="eh-preset-buttons">
-                    {[
-                      { id: "under1k", labelKey: "entrepreneurHome.budgetUnder1K", min: "0", max: "1000" },
-                      { id: "1k5k", labelKey: "entrepreneurHome.budget1Kto5K", min: "1000", max: "5000" },
-                      { id: "5k10k", labelKey: "entrepreneurHome.budget5Kto10K", min: "5000", max: "10000" },
-                      { id: "10kplus", labelKey: "entrepreneurHome.budget10KPlus", min: "10000", max: "" }
-                    ].map((preset) => (
-                      <button
-                        key={preset.id}
-                        className={`eh-preset-btn ${filters.budgetPreset === preset.id ? 'active' : ''}`}
-                        onClick={() => {
-                          if (filters.budgetPreset === preset.id) {
-                            setFilters({ ...filters, budgetPreset: "", budgetMin: "", budgetMax: "" })
-                          } else {
-                            setFilters({ ...filters, budgetPreset: preset.id, budgetMin: preset.min, budgetMax: preset.max })
-                          }
-                        }}
-                      >
-                        {t(preset.labelKey)}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="eh-budget-inputs">
-                    <div className="eh-input-group">
-                      <label>{t('entrepreneurHome.minBudget')}</label>
-                      <input
-                        type="number"
-                        value={filters.budgetMin}
-                        onChange={(e) => setFilters({ ...filters, budgetMin: e.target.value, budgetPreset: "" })}
-                        placeholder="0"
-                      />
-                    </div>
-                    <div className="eh-input-group">
-                      <label>{t('entrepreneurHome.maxBudget')}</label>
-                      <input
-                        type="number"
-                        value={filters.budgetMax}
-                        onChange={(e) => setFilters({ ...filters, budgetMax: e.target.value, budgetPreset: "" })}
-                        placeholder={t('entrepreneurHome.any')}
-                      />
-                    </div>
-                  </div>
-                </div>
-
                 {/* Submission Deadline Filters */}
                 <div className="eh-filter-group">
                   <div className="eh-filter-group-header">
@@ -2326,8 +2258,8 @@ function HomePageEntrepreneur() {
                                   <span className="eh-detail-value">
                                     {
                                         job.budgetData.unlocked?
-                                      `$${Number.parseFloat(job.budget_min).toLocaleString()} -
-                                       $${Number.parseFloat(job.budget_max).toLocaleString()}` :
+                                      `$${Number.parseFloat(job.budget_min).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} -
+                                       $${Number.parseFloat(job.budget_max).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` :
                                        <>
                                         <button className="unlock-budget-button" onClick={() => {
                                           setBudgetJobId(job.id)
@@ -2428,8 +2360,8 @@ function HomePageEntrepreneur() {
                 <p className="eh-job-summary-budget">
                   {t('entrepreneurHome.budgetRange')}: {
                     selectedJob.budgetData.unlocked ?
-                    `$${Number.parseFloat(selectedJob.budget_min).toLocaleString()} -
-                     $${Number.parseFloat(selectedJob.budget_max).toLocaleString()}` :
+                    `$${Number.parseFloat(selectedJob.budget_min).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} -
+                     $${Number.parseFloat(selectedJob.budget_max).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` :
                     <>
                     <button className="unlock-budget-button" onClick={() => {
                       setBudgetJobId(selectedJob.id)
@@ -2599,7 +2531,7 @@ function HomePageEntrepreneur() {
                       <DollarSign size={20} />
                       <div>
                         <span className="eh-view-bid-label">{t('entrepreneurHome.yourBidAmountLabel')}</span>
-                        <span className="eh-view-bid-value">${Number(selectedBidToView.amount).toLocaleString()}</span>
+                        <span className="eh-view-bid-value">${Number(selectedBidToView.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </div>
                     </div>
 

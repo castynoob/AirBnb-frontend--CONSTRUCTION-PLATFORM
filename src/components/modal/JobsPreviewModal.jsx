@@ -26,9 +26,8 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
   ];
 
   const urgencyLevels = [
-    'Urgent (Current Year)',
-    'Next Year',
-    'Year After'
+    'Urgent',
+    'Planned',
   ];
 
   const startEditing = (index) => {
@@ -241,7 +240,7 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
                           <div className="preview-form-group">
                             <label className="preview-label">{t('jobsPreview.urgency')}</label>
                             <select
-                              value={editedJob.urgency || 'Next Year'}
+                              value={editedJob.urgency || 'Planned'}
                               onChange={(e) => handleEditChange('urgency', e.target.value)}
                               className="preview-select"
                             >
@@ -340,10 +339,9 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
                         <div className="preview-detail-row">
                           <span className="preview-detail-label">{t('jobsPreview.urgency')}:</span>
                           <span className={`preview-urgency-badge ${
-                            job.urgency?.includes('Urgent') ? 'urgent' :
-                            job.urgency?.includes('Next') ? 'medium' : 'low'
+                            job.urgency?.toLowerCase().includes('urgent') ? 'urgent' : 'low'
                           }`}>
-                            {job.urgency || 'Next Year'}
+                            {job.urgency || 'Planned'}
                           </span>
                         </div>
                         {job.description && (

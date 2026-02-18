@@ -76,6 +76,7 @@ const translations = {
       sendingRequest: 'Sending urgent request',
       requestSent: 'Urgent request sent',
       requestFailed: 'Failed to send urgent request. Please try again.',
+      infoNote: 'This will send an email notification to all registered contractors on the platform with the selected job details, your contact information, and a link to the dashboard. Use this to quickly attract bids for time-sensitive work.',
     },
 
     // Urgent Email Template
@@ -221,9 +222,8 @@ const translations = {
       gridView: 'Grid View',
       listView: 'List View',
       // Urgency levels
-      urgentCurrentYear: 'Urgent (Current Year)',
-      nextYear: 'Next Year',
-      yearAfter: 'Year After',
+      urgent: 'Urgent',
+      planned: 'Planned',
     },
 
     // Summary Section
@@ -276,6 +276,10 @@ const translations = {
       jobCreated: 'Job created successfully!',
       uploadingExcel: 'Uploading Excel file...',
       foundJobs: 'Found jobs!',
+      optional: 'Optional',
+      durationHint: 'Leave blank if unsure. Contractors can estimate during bidding.',
+      budgetHint: 'Set the budget range you are willing to pay for this work.',
+      budgetVisibilityNote: 'Contractors can unlock the budget to view your range before submitting a bid.',
     },
 
     // Payment Modal
@@ -851,6 +855,7 @@ const translations = {
       submitYourBid: 'Submit Your Bid',
       noOpenJobs: 'No Open Jobs',
       noOpenJobsDescription: 'This property has no available jobs for bidding at the moment.',
+      loadingJobs: 'Loading available work...',
       viewBid: 'View Bid',
 
       // Filters Modal
@@ -1240,6 +1245,9 @@ const translations = {
       descriptionPlaceholder: 'Please describe your issue in detail...',
       creating: 'Creating...',
       createTicket: 'Create Ticket',
+      close: 'Close',
+      requestSent: 'Your request has been sent!',
+      requestSentMessage: 'Our support team will review your ticket and get back to you as soon as possible.',
       // View Details
       status: 'Status',
       type: 'Type',
@@ -2376,7 +2384,7 @@ const translations = {
       browseJobs: 'Browse jobs',
       viewJobDetails: 'View job details',
       submitBids: 'Submit bids',
-      unlockBudget: 'Unlock budget ($20)',
+      unlockBudget: 'Unlock budget ($19.99)',
       messageApproved: 'Message (approved)',
       projectBudgetLimit: 'Project budget limit',
       prioritySupportFeature: 'Priority support',
@@ -3157,6 +3165,7 @@ const translations = {
       sendingRequest: 'Envoi de la demande urgente',
       requestSent: 'Demande urgente envoyée',
       requestFailed: "Échec de l'envoi de la demande urgente. Veuillez réessayer.",
+      infoNote: 'Ceci enverra une notification par courriel à tous les entrepreneurs inscrits sur la plateforme avec les détails des travaux sélectionnés, vos coordonnées et un lien vers le tableau de bord. Utilisez cette fonction pour attirer rapidement des soumissions pour des travaux urgents.',
     },
 
     // Urgent Email Template
@@ -3302,9 +3311,8 @@ const translations = {
       gridView: 'Vue Grille',
       listView: 'Vue Liste',
       // Urgency levels
-      urgentCurrentYear: 'Urgent (Année en cours)',
-      nextYear: 'Année prochaine',
-      yearAfter: 'Année suivante',
+      urgent: 'Urgent',
+      planned: 'Planifié',
     },
 
     // Summary Section
@@ -3357,6 +3365,10 @@ const translations = {
       jobCreated: 'Travail créé avec succès!',
       uploadingExcel: 'Téléchargement du fichier Excel...',
       foundJobs: 'Travaux trouvés!',
+      optional: 'Optionnel',
+      durationHint: 'Laissez vide si incertain. Les entrepreneurs peuvent estimer lors de la soumission.',
+      budgetHint: 'Définissez la fourchette budgétaire que vous êtes prêt à payer pour ce travail.',
+      budgetVisibilityNote: 'Les entrepreneurs peuvent déverrouiller le budget pour voir votre fourchette avant de soumettre une offre.',
     },
 
     // Payment Modal
@@ -3932,6 +3944,7 @@ const translations = {
       submitYourBid: 'Soumettre Votre Offre',
       noOpenJobs: 'Aucun Travail Ouvert',
       noOpenJobsDescription: 'Cette propriété n\'a pas de travaux disponibles pour soumissionner en ce moment.',
+      loadingJobs: 'Chargement des travaux disponibles...',
       viewBid: 'Voir l\'Offre',
 
       // Filters Modal
@@ -4320,6 +4333,9 @@ const translations = {
       descriptionPlaceholder: 'Veuillez décrire votre problème en détail...',
       creating: 'Création...',
       createTicket: 'Créer le Ticket',
+      close: 'Fermer',
+      requestSent: 'Votre demande a été envoyée!',
+      requestSentMessage: 'Notre équipe de support examinera votre ticket et vous répondra dès que possible.',
       // View Details
       status: 'Statut',
       type: 'Type',
@@ -5456,7 +5472,7 @@ const translations = {
       browseJobs: 'Parcourir les travaux',
       viewJobDetails: 'Voir les détails des travaux',
       submitBids: 'Soumettre des offres',
-      unlockBudget: 'Débloquer le budget (20$)',
+      unlockBudget: 'Débloquer le budget (19,99$)',
       messageApproved: 'Message (approuvé)',
       projectBudgetLimit: 'Limite de budget de projet',
       prioritySupportFeature: 'Support prioritaire',

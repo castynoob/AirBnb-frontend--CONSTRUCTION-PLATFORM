@@ -34,7 +34,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
     title: '',
     description: '',
     category: 'Roofing',
-    urgency: 'Urgent (Current Year)',
+    urgency: 'Urgent',
     due_date: '',
     estimated_duration_days: '',
     budget_min: '',
@@ -66,9 +66,8 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
   ];
 
   const urgencyLevels = [
-    'Urgent (Current Year)',
-    'Next Year',
-    'Year After'
+    'Urgent',
+    'Planned',
   ];
 
   // Fetch properties when modal opens
@@ -561,7 +560,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                 </div>
                 <div className="compact-form-group">
                   <label className="compact-label">
-                    <Clock size={14} /> {t('addWorkModal.duration')}
+                    <Clock size={14} /> {t('addWorkModal.duration')} <span className="compact-optional">({t('addWorkModal.optional')})</span>
                   </label>
                   <input
                     type="number"
@@ -573,6 +572,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                     min="1"
                     disabled={isSubmitting}
                   />
+                  <span className="compact-hint">{t('addWorkModal.durationHint')}</span>
                 </div>
               </div>
 
@@ -581,6 +581,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                 <label className="compact-label">
                   <DollarSign size={14} /> {t('addWorkModal.budgetRange')}
                 </label>
+                <span className="compact-hint">{t('addWorkModal.budgetHint')}</span>
                 <div className="compact-form-row">
                   <input
                     type="number"
@@ -605,6 +606,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                     disabled={isSubmitting}
                   />
                 </div>
+                <span className="compact-hint compact-hint-note">{t('addWorkModal.budgetVisibilityNote')}</span>
               </div>
 
               {/* Description */}

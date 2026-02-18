@@ -19,6 +19,37 @@ const checkIsPublicPage = () => {
   return PUBLIC_PAGES.some(page => pathname === page || pathname.startsWith(page + '/'));
 };
 
+// Dismissible toast helper - shows a toast with a close (X) button
+const showDismissibleToast = (message, { icon = '🔔', bg = '#333', ...options } = {}) => {
+  toast(
+    (t) => (
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
+        <span style={{ fontSize: '18px', flexShrink: 0 }}>{icon}</span>
+        <span style={{ flex: 1 }}>{message}</span>
+        <button
+          onClick={() => toast.dismiss(t.id)}
+          style={{
+            background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)',
+            cursor: 'pointer', padding: '2px 4px', fontSize: '16px', flexShrink: 0,
+            lineHeight: 1,
+          }}
+        >
+          ✕
+        </button>
+      </div>
+    ),
+    {
+      duration: options.duration || 5000,
+      style: {
+        borderRadius: '10px',
+        background: bg,
+        color: '#fff',
+        ...options.style,
+      },
+    }
+  );
+};
+
 const SocketContext = createContext(null);
 
 export const useSocket = () => {
@@ -39,8 +70,9 @@ export const SocketProvider = ({ children }) => {
   // Auth version - increment this to trigger socket re-initialization after login
   const [authVersion, setAuthVersion] = useState(0);
 
-  // Track if we've already shown login toasts (to avoid showing on every reconnect)
-  const hasShownLoginToastsRef = useRef(false);
+  // Track if we've already shown login toasts this session (survives page refresh within tab)
+  const getHasShownToasts = () => sessionStorage.getItem('notif_toasts_shown') === 'true';
+  const setHasShownToasts = (val) => sessionStorage.setItem('notif_toasts_shown', val ? 'true' : 'false');
 
   // Function to reinitialize socket (call this after login)
   const reinitializeSocket = useCallback(() => {
@@ -122,116 +154,39 @@ export const SocketProvider = ({ children }) => {
         console.log("🔔 Notification check:", {
           unreadCount: unreadNotifications.length,
           userRole,
-          hasShownBefore: hasShownLoginToastsRef.current,
+          hasShownBefore: getHasShownToasts(),
           isPublicPage: checkIsPublicPage(),
-          shouldShowToast: unreadNotifications.length > 0 && !hasShownLoginToastsRef.current && !checkIsPublicPage()
+          shouldShowToast: unreadNotifications.length > 0 && !getHasShownToasts() && !checkIsPublicPage()
         });
 
         // Don't show toasts on public pages (landing, login, etc.)
-        if (unreadNotifications.length > 0 && !hasShownLoginToastsRef.current && !checkIsPublicPage()) {
-          hasShownLoginToastsRef.current = true; // Mark as shown
+        if (unreadNotifications.length > 0 && !getHasShownToasts() && !checkIsPublicPage()) {
+          setHasShownToasts(true); // Mark as shown for this session
 
           // Play sound once for all unread notifications
           playNotificationSound();
 
           // Show a summary toast if there are multiple unread
           if (unreadNotifications.length > 3) {
-            toast.success(
+            showDismissibleToast(
               `You have ${unreadNotifications.length} unread notifications`,
-              {
-                duration: 5000,
-                icon: '🔔',
-                style: {
-                  borderRadius: '10px',
-                  background: '#333',
-                  color: '#fff',
-                },
-              }
+              { icon: '🔔' }
             );
           } else {
             // Show individual toasts for up to 3 unread notifications
             unreadNotifications.slice(0, 3).forEach((notif, index) => {
               setTimeout(() => {
-                if (notif.type === 'bid') {
-                  toast.success(
-                    `New bid from ${notif.bidder || 'A contractor'}`,
-                    {
-                      duration: 5000,
-                      icon: '📋',
-                      style: {
-                        borderRadius: '10px',
-                        background: '#333',
-                        color: '#fff',
-                      },
-                    }
-                  );
-                } else if (notif.type === 'message') {
-                  toast.success(
-                    `New message from ${notif.senderName || 'Someone'}`,
-                    {
-                      duration: 5000,
-                      icon: '💬',
-                      style: {
-                        borderRadius: '10px',
-                        background: '#333',
-                        color: '#fff',
-                      },
-                    }
-                  );
-                } else if (notif.type === 'started') {
-                  toast.success(
-                    `${notif.contractor || 'Contractor'} started work`,
-                    {
-                      duration: 5000,
-                      icon: '🔨',
-                      style: {
-                        borderRadius: '10px',
-                        background: '#333',
-                        color: '#fff',
-                      },
-                    }
-                  );
-                } else if (notif.type === 'completed') {
-                  toast.success(
-                    `${notif.contractor || 'Contractor'} completed work`,
-                    {
-                      duration: 5000,
-                      icon: '✅',
-                      style: {
-                        borderRadius: '10px',
-                        background: '#333',
-                        color: '#fff',
-                      },
-                    }
-                  );
-                } else if (notif.type === 'bid_approved') {
-                  toast.success(
-                    notif.content || `Your bid for "${notif.jobTitle}" has been approved!`,
-                    {
-                      duration: 8000,
-                      icon: '🎉',
-                      style: {
-                        borderRadius: '10px',
-                        background: '#059669',
-                        color: '#fff',
-                      },
-                    }
-                  );
-                } else if (notif.type === 'bid_declined') {
-                  toast(
-                    notif.content || `Your bid for "${notif.jobTitle}" was not selected.`,
-                    {
-                      duration: 8000,
-                      icon: '😔',
-                      style: {
-                        borderRadius: '10px',
-                        background: '#dc2626',
-                        color: '#fff',
-                      },
-                    }
-                  );
-                }
-              }, index * 500); // Stagger toasts by 500ms
+                const toastMap = {
+                  bid: { msg: `New bid from ${notif.bidder || 'A contractor'}`, icon: '📋' },
+                  message: { msg: `New message from ${notif.senderName || 'Someone'}`, icon: '💬' },
+                  started: { msg: `${notif.contractor || 'Contractor'} started work`, icon: '🔨' },
+                  completed: { msg: `${notif.contractor || 'Contractor'} completed work`, icon: '✅' },
+                  bid_approved: { msg: notif.content || `Your bid for "${notif.jobTitle}" has been approved!`, icon: '🎉', bg: '#059669', duration: 8000 },
+                  bid_declined: { msg: notif.content || `Your bid for "${notif.jobTitle}" was not selected.`, icon: '😔', bg: '#dc2626', duration: 8000 },
+                };
+                const config = toastMap[notif.type] || { msg: 'New notification', icon: '🔔' };
+                showDismissibleToast(config.msg, { icon: config.icon, bg: config.bg, duration: config.duration });
+              }, index * 500);
             });
           }
         }
@@ -320,7 +275,7 @@ export const SocketProvider = ({ children }) => {
   const clearNotifications = useCallback(() => {
     setNotifications([]);
     // Reset the toast flag so new user will see their notifications
-    hasShownLoginToastsRef.current = false;
+    setHasShownToasts(false);
     console.log("🧹 Notifications cleared and toast flag reset");
   }, []);
 
@@ -336,7 +291,7 @@ export const SocketProvider = ({ children }) => {
       setSocket(null);
       setIsConnected(false);
       setNotifications([]); // Clear notifications when logged out
-      hasShownLoginToastsRef.current = false; // Reset toast flag for next login
+      setHasShownToasts(false); // Reset toast flag for next login
       return;
     }
 
@@ -348,7 +303,7 @@ export const SocketProvider = ({ children }) => {
       setSocket(null);
       setIsConnected(false);
       setNotifications([]); // Clear notifications when logged out
-      hasShownLoginToastsRef.current = false; // Reset toast flag for next login
+      setHasShownToasts(false); // Reset toast flag for next login
       return;
     }
 
@@ -420,18 +375,7 @@ export const SocketProvider = ({ children }) => {
       playNotificationSound();
 
       // Show toast notification
-      toast.success(
-        `New message from ${senderName}`,
-        {
-          duration: 5000,
-          icon: '💬',
-          style: {
-            borderRadius: '10px',
-            background: '#333',
-            color: '#fff',
-          },
-        }
-      );
+      showDismissibleToast(`New message from ${senderName}`, { icon: '💬' });
 
       // Show desktop notification (if permission granted)
       if (showNotificationRef.current) {
@@ -484,18 +428,7 @@ export const SocketProvider = ({ children }) => {
       playNotificationSound();
 
       // Show toast notification
-      toast.success(
-        `New bid from ${bidderName}`,
-        {
-          duration: 5000,
-          icon: '📋',
-          style: {
-            borderRadius: '10px',
-            background: '#333',
-            color: '#fff',
-          },
-        }
-      );
+      showDismissibleToast(`New bid from ${bidderName}`, { icon: '📋' });
 
       // Show desktop notification
       if (showNotificationRef.current) {
@@ -542,18 +475,7 @@ export const SocketProvider = ({ children }) => {
       playNotificationSound();
 
       // Show toast notification
-      toast.success(
-        `${contractorName} started work`,
-        {
-          duration: 5000,
-          icon: '🔨',
-          style: {
-            borderRadius: '10px',
-            background: '#333',
-            color: '#fff',
-          },
-        }
-      );
+      showDismissibleToast(`${contractorName} started work`, { icon: '🔨' });
 
       // Show desktop notification
       if (showNotificationRef.current) {
@@ -600,18 +522,7 @@ export const SocketProvider = ({ children }) => {
       playNotificationSound();
 
       // Show toast notification
-      toast.success(
-        `${contractorName} completed work`,
-        {
-          duration: 5000,
-          icon: '✅',
-          style: {
-            borderRadius: '10px',
-            background: '#333',
-            color: '#fff',
-          },
-        }
-      );
+      showDismissibleToast(`${contractorName} completed work`, { icon: '✅' });
 
       // Show desktop notification
       if (showNotificationRef.current) {
@@ -659,17 +570,9 @@ export const SocketProvider = ({ children }) => {
       playNotificationSound();
 
       // Show toast notification with success styling
-      toast.success(
+      showDismissibleToast(
         data.message || `Your bid for "${jobTitle}" has been approved!`,
-        {
-          duration: 8000,
-          icon: '🎉',
-          style: {
-            borderRadius: '10px',
-            background: '#059669',
-            color: '#fff',
-          },
-        }
+        { icon: '🎉', bg: '#059669', duration: 8000 }
       );
 
       // Show desktop notification
@@ -718,17 +621,9 @@ export const SocketProvider = ({ children }) => {
       playNotificationSound();
 
       // Show toast notification with error styling
-      toast(
+      showDismissibleToast(
         data.message || `Your bid for "${jobTitle}" was not selected.`,
-        {
-          duration: 8000,
-          icon: '😔',
-          style: {
-            borderRadius: '10px',
-            background: '#dc2626',
-            color: '#fff',
-          },
-        }
+        { icon: '😔', bg: '#dc2626', duration: 8000 }
       );
 
       // Show desktop notification
@@ -778,17 +673,9 @@ export const SocketProvider = ({ children }) => {
 
       // Show toast notification with success styling
       const amountFormatted = data.amount ? `$${Number(data.amount).toLocaleString()}` : 'Payment';
-      toast.success(
+      showDismissibleToast(
         `${amountFormatted} has been released to your account!`,
-        {
-          duration: 8000,
-          icon: '💰',
-          style: {
-            borderRadius: '10px',
-            background: '#059669',
-            color: '#fff',
-          },
-        }
+        { icon: '💰', bg: '#059669', duration: 8000 }
       );
 
       // Show desktop notification

@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useState, useEffect, useRef } from "react"
-import { Wrench, Search, Plus, Megaphone, Building2, Bell, AlertTriangle, X, Check } from "lucide-react"
+import { Wrench, Search, Plus, Megaphone, Building2, Bell, AlertTriangle, X, Check, Info } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import toast from "react-hot-toast"
 import "../../styles/manager/homepage.css"
@@ -943,6 +943,12 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
             </div>
 
             <div className="pm-urgent-modal-body">
+              {/* Info Note */}
+              <div className="pm-urgent-info-note">
+                <Info size={16} />
+                <p>{t('urgentModal.infoNote')}</p>
+              </div>
+
               {/* Job Selection Section */}
               <div className="pm-urgent-section">
                 <div className="pm-urgent-section-header">

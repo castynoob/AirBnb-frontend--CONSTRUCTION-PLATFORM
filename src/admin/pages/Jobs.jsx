@@ -48,12 +48,11 @@ const getStatusBadgeClass = (status) => {
 
 // Urgency badge colors
 const getUrgencyBadgeClass = (urgency) => {
-  const classes = {
-    "Urgent (Current Year)": "admin-badge-danger",
-    "Next Year": "admin-badge-warning",
-    "Year After": "admin-badge-info",
-  };
-  return classes[urgency] || "admin-badge-secondary";
+  const u = (urgency || "").toLowerCase();
+  if (u === "urgent" || u.includes("urgent") || u.includes("critical") || u.includes("high") || u.includes("immediate")) {
+    return "admin-badge-danger";
+  }
+  return "admin-badge-info"; // Planned / default
 };
 
 function Jobs() {
@@ -478,9 +477,8 @@ function Jobs() {
               onChange={(e) => handleFilterChange("urgency", e.target.value)}
             >
               <option value="">All Urgencies</option>
-              <option value="Urgent (Current Year)">Urgent (Current Year)</option>
-              <option value="Next Year">Next Year</option>
-              <option value="Year After">Year After</option>
+              <option value="Urgent">Urgent</option>
+              <option value="Planned">Planned</option>
             </select>
           </div>
 

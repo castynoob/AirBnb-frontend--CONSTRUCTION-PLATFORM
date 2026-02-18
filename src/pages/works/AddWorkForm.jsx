@@ -28,7 +28,7 @@ function AddWorkForm() {
     title: "",
     description: "",
     category: "Roofing",
-    urgency: "Urgent (Current Year)",
+    urgency: "Urgent",
     due_date: "",
     estimated_duration_days: "",
     budget_min: "",
@@ -237,7 +237,7 @@ function AddWorkForm() {
           title: "",
           description: "",
           category: "Roofing",
-          urgency: "Urgent (Current Year)",
+          urgency: "Urgent",
           due_date: "",
           estimated_duration_days: "",
           budget_min: "",
@@ -427,9 +427,8 @@ function AddWorkForm() {
                   onChange={handleChange}
                   disabled={isSubmitting}
                 >
-                  <option value="Urgent (Current Year)">Urgent (Current Year)</option>
-                  <option value="Next Year">Next Year</option>
-                  <option value="Year After">Year After</option>
+                  <option value="Urgent">Urgent</option>
+                  <option value="Planned">Planned</option>
                 </select>
               </div>
             </div>

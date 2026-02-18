@@ -86,7 +86,8 @@ export default function LandingPage() {
     website: "",
     delivery_areas: "",
     provider: 'local',
-    num_properties: ""
+    num_properties: "",
+    termsAccepted: false
   })
 
   // Country and State/Province options
@@ -749,6 +750,12 @@ export default function LandingPage() {
         delete payload.confirm_password;
         delete payload.property_name;
         delete payload.role; // Don't send role, it's determined by endpoint
+
+        // Add consent timestamp
+        if (payload.termsAccepted) {
+            payload.terms_accepted_at = new Date().toISOString();
+        }
+        delete payload.termsAccepted;
 
         // ✅ FIX: Handle Google OAuth registration
         if (payload.provider === 'google') {
@@ -3289,7 +3296,12 @@ export default function LandingPage() {
 
                   <div className="lp-form-group lp-form-checkbox">
                     <label className="lp-checkbox">
-                      <input type="checkbox" required />
+                      <input
+                        type="checkbox"
+                        required
+                        checked={registerFormData.termsAccepted}
+                        onChange={(e) => setRegisterFormData({ ...registerFormData, termsAccepted: e.target.checked })}
+                      />
                       <span>
                         {t('landingPage.register.agreeToTerms')}{" "}
                         <a href="/legal?tab=terms" target="_blank" rel="noopener noreferrer">

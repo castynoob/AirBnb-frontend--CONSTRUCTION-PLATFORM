@@ -457,6 +457,41 @@
   border-radius: 0 0 16px 16px;
 }
 
+/* Ticket Success State */
+.cs-ticket-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.cs-success-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 1.25rem;
+}
+
+.cs-success-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.cs-ticket-success h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 0.5rem;
+}
+
+.cs-ticket-success p {
+  font-size: 0.9375rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+  max-width: 360px;
+}
+
 /* ============================================
    FORM ELEMENTS
    ============================================ */

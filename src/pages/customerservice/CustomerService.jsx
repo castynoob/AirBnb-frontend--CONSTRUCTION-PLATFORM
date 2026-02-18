@@ -96,6 +96,7 @@ function CustomerService() {
     description: "",
   });
   const [submittingTicket, setSubmittingTicket] = useState(false);
+  const [ticketSuccess, setTicketSuccess] = useState(false);
 
   // Reply form
   const [newMessage, setNewMessage] = useState("");
@@ -223,7 +224,7 @@ function CustomerService() {
       });
 
       if (response.ok) {
-        setShowTicketModal(false);
+        setTicketSuccess(true);
         setTicketForm({
           subject: "",
           category: "other",
@@ -602,106 +603,146 @@ function CustomerService() {
 
       {/* New Ticket Modal */}
       {showTicketModal && (
-        <div className="cs-modal-overlay" onClick={() => setShowTicketModal(false)}>
+        <div className="cs-modal-overlay" onClick={() => { setShowTicketModal(false); setTicketSuccess(false); }}>
           <div className="cs-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="cs-modal-header">
-              <h3>
-                <MessageSquare size={20} />
-                {t('customerService.ticketModalTitle')}
-              </h3>
-              <button
-                className="cs-modal-close"
-                onClick={() => setShowTicketModal(false)}
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <form onSubmit={handleSubmitTicket}>
-              <div className="cs-modal-body">
-                <div className="cs-form-group">
-                  <label>{t('customerService.subject')} *</label>
-                  <input
-                    type="text"
-                    value={ticketForm.subject}
-                    onChange={(e) =>
-                      setTicketForm({ ...ticketForm, subject: e.target.value })
-                    }
-                    placeholder={t('customerService.subjectPlaceholder')}
-                    required
-                  />
+            {ticketSuccess ? (
+              <>
+                <div className="cs-modal-header">
+                  <h3>
+                    <CheckCircle size={20} />
+                    {t('customerService.ticketModalTitle')}
+                  </h3>
+                  <button
+                    className="cs-modal-close"
+                    onClick={() => { setShowTicketModal(false); setTicketSuccess(false); }}
+                  >
+                    <X size={20} />
+                  </button>
                 </div>
-
-                <div className="cs-form-row">
-                  <div className="cs-form-group">
-                    <label>{t('customerService.category')}</label>
-                    <select
-                      value={ticketForm.category}
-                      onChange={(e) =>
-                        setTicketForm({ ...ticketForm, category: e.target.value })
-                      }
-                    >
-                      <option value="technical">{t('customerService.categoryTechnical')}</option>
-                      <option value="account">{t('customerService.categoryAccount')}</option>
-                      <option value="payment">{t('customerService.categoryPayment')}</option>
-                      <option value="job_issue">{t('customerService.categoryJobIssue')}</option>
-                      <option value="other">{t('customerService.categoryOther')}</option>
-                    </select>
-                  </div>
-                  <div className="cs-form-group">
-                    <label>{t('customerService.priority')}</label>
-                    <select
-                      value={ticketForm.priority}
-                      onChange={(e) =>
-                        setTicketForm({ ...ticketForm, priority: e.target.value })
-                      }
-                    >
-                      <option value="low">{t('customerService.priorityLow')}</option>
-                      <option value="medium">{t('customerService.priorityMedium')}</option>
-                      <option value="high">{t('customerService.priorityHigh')}</option>
-                    </select>
+                <div className="cs-modal-body">
+                  <div className="cs-ticket-success">
+                    <div className="cs-success-icon">
+                      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="10" fill="#00A5A9"/>
+                        <path d="M8 12l3 3 5-6" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <h3>{t('customerService.requestSent')}</h3>
+                    <p>{t('customerService.requestSentMessage')}</p>
                   </div>
                 </div>
-
-                <div className="cs-form-group">
-                  <label>{t('customerService.description')} *</label>
-                  <textarea
-                    value={ticketForm.description}
-                    onChange={(e) =>
-                      setTicketForm({ ...ticketForm, description: e.target.value })
-                    }
-                    placeholder={t('customerService.descriptionPlaceholder')}
-                    rows={5}
-                    required
-                  />
+                <div className="cs-modal-footer">
+                  <button
+                    type="button"
+                    className="cs-btn cs-btn-primary"
+                    onClick={() => { setShowTicketModal(false); setTicketSuccess(false); }}
+                  >
+                    {t('customerService.close')}
+                  </button>
                 </div>
-              </div>
-              <div className="cs-modal-footer">
-                <button
-                  type="button"
-                  className="cs-btn cs-btn-secondary"
-                  onClick={() => setShowTicketModal(false)}
-                >
-                  {t('customerService.cancel')}
-                </button>
-                <button
-                  type="submit"
-                  className="cs-btn cs-btn-primary"
-                  disabled={submittingTicket}
-                >
-                  {submittingTicket ? (
-                    <>
-                      <Loader2 size={16} className="spin" />
-                      {t('customerService.creating')}
-                    </>
-                  ) : (
-                    <>
-                      <Send size={16} />
-                      {t('customerService.createTicket')}
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
+              </>
+            ) : (
+              <>
+                <div className="cs-modal-header">
+                  <h3>
+                    <MessageSquare size={20} />
+                    {t('customerService.ticketModalTitle')}
+                  </h3>
+                  <button
+                    className="cs-modal-close"
+                    onClick={() => setShowTicketModal(false)}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+                <form onSubmit={handleSubmitTicket}>
+                  <div className="cs-modal-body">
+                    <div className="cs-form-group">
+                      <label>{t('customerService.subject')} *</label>
+                      <input
+                        type="text"
+                        value={ticketForm.subject}
+                        onChange={(e) =>
+                          setTicketForm({ ...ticketForm, subject: e.target.value })
+                        }
+                        placeholder={t('customerService.subjectPlaceholder')}
+                        required
+                      />
+                    </div>
+
+                    <div className="cs-form-row">
+                      <div className="cs-form-group">
+                        <label>{t('customerService.category')}</label>
+                        <select
+                          value={ticketForm.category}
+                          onChange={(e) =>
+                            setTicketForm({ ...ticketForm, category: e.target.value })
+                          }
+                        >
+                          <option value="technical">{t('customerService.categoryTechnical')}</option>
+                          <option value="account">{t('customerService.categoryAccount')}</option>
+                          <option value="payment">{t('customerService.categoryPayment')}</option>
+                          <option value="job_issue">{t('customerService.categoryJobIssue')}</option>
+                          <option value="other">{t('customerService.categoryOther')}</option>
+                        </select>
+                      </div>
+                      <div className="cs-form-group">
+                        <label>{t('customerService.priority')}</label>
+                        <select
+                          value={ticketForm.priority}
+                          onChange={(e) =>
+                            setTicketForm({ ...ticketForm, priority: e.target.value })
+                          }
+                        >
+                          <option value="low">{t('customerService.priorityLow')}</option>
+                          <option value="medium">{t('customerService.priorityMedium')}</option>
+                          <option value="high">{t('customerService.priorityHigh')}</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="cs-form-group">
+                      <label>{t('customerService.description')} *</label>
+                      <textarea
+                        value={ticketForm.description}
+                        onChange={(e) =>
+                          setTicketForm({ ...ticketForm, description: e.target.value })
+                        }
+                        placeholder={t('customerService.descriptionPlaceholder')}
+                        rows={5}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="cs-modal-footer">
+                    <button
+                      type="button"
+                      className="cs-btn cs-btn-secondary"
+                      onClick={() => setShowTicketModal(false)}
+                    >
+                      {t('customerService.cancel')}
+                    </button>
+                    <button
+                      type="submit"
+                      className="cs-btn cs-btn-primary"
+                      disabled={submittingTicket}
+                    >
+                      {submittingTicket ? (
+                        <>
+                          <Loader2 size={16} className="spin" />
+                          {t('customerService.creating')}
+                        </>
+                      ) : (
+                        <>
+                          <Send size={16} />
+                          {t('customerService.createTicket')}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}

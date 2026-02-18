@@ -2691,6 +2691,30 @@
   padding: 1.25rem;
 }
 
+.pm-urgent-info-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.pm-urgent-info-note svg {
+  flex-shrink: 0;
+  color: #3b82f6;
+  margin-top: 1px;
+}
+
+.pm-urgent-info-note p {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #1e40af;
+}
+
 .pm-urgent-section {
   margin-bottom: 1.5rem;
 }

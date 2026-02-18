@@ -25,7 +25,7 @@ const AddWorkModal = ({ isOpen, onClose, onSuccess, onOpenExcelUpload }) => {
     title: '',
     description: '',
     category: 'Roofing',
-    urgency: 'Urgent (Current Year)',
+    urgency: 'Urgent',
     due_date: '',
     estimated_duration_days: '',
     budget_min: '',
@@ -55,9 +55,8 @@ const AddWorkModal = ({ isOpen, onClose, onSuccess, onOpenExcelUpload }) => {
   ];
 
   const urgencyLevels = [
-    'Urgent (Current Year)',
-    'Next Year',
-    'Year After'
+    'Urgent',
+    'Planned',
   ];
 
   // Fetch properties when modal opens
@@ -264,7 +263,7 @@ const AddWorkModal = ({ isOpen, onClose, onSuccess, onOpenExcelUpload }) => {
         title: '',
         description: '',
         category: 'Roofing',
-        urgency: 'Urgent (Current Year)',
+        urgency: 'Urgent',
         due_date: '',
         estimated_duration_days: '',
         budget_min: '',
@@ -497,7 +496,7 @@ const AddWorkModal = ({ isOpen, onClose, onSuccess, onOpenExcelUpload }) => {
 
             <div className="form-group">
               <label htmlFor="estimated_duration_days" className="form-label">
-                <Clock size={16} /> Duration (Days)
+                <Clock size={16} /> Duration (Days) <span className="optional-tag">(Optional)</span>
               </label>
               <input
                 type="number"
@@ -510,6 +509,7 @@ const AddWorkModal = ({ isOpen, onClose, onSuccess, onOpenExcelUpload }) => {
                 min="1"
                 disabled={isSubmitting}
               />
+              <span className="form-hint">Leave blank if unsure. Contractors can estimate during bidding.</span>
             </div>
           </div>
 
@@ -518,6 +518,7 @@ const AddWorkModal = ({ isOpen, onClose, onSuccess, onOpenExcelUpload }) => {
             <h4 className="section-subtitle">
               <DollarSign size={18} /> Budget
             </h4>
+            <span className="form-hint">Set the budget range you are willing to pay for this work. Contractors can unlock the budget to see your range before submitting their bid.</span>
             <div className="budget-row">
               <div className="form-group">
                 <label htmlFor="budget_min" className="form-label">
@@ -575,7 +576,7 @@ const AddWorkModal = ({ isOpen, onClose, onSuccess, onOpenExcelUpload }) => {
                 className="form-checkbox"
                 disabled={isSubmitting}
               />
-              <span>Hide budget from entrepreneurs</span>
+              <span>Hide budget from contractors (budget will not be available even with unlock)</span>
             </label>
           </div>
 

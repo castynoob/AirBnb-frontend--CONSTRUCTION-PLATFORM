@@ -8,12 +8,11 @@ function RepairList({ repairs, handleRepairClicked }) {
 
   // Helper function to translate urgency/category
   const getUrgencyLabel = (urgency) => {
-    const urgencyMap = {
-      'Urgent (Current Year)': t('repairList.urgentCurrentYear'),
-      'Next Year': t('repairList.nextYear'),
-      'Year After': t('repairList.yearAfter')
-    };
-    return urgencyMap[urgency] || urgency;
+    const u = (urgency || '').toLowerCase();
+    if (u === 'urgent' || u.includes('urgent') || u.includes('critical') || u.includes('high') || u.includes('immediate')) {
+      return t('repairList.urgent');
+    }
+    return t('repairList.planned');
   };
   const [imagesLoaded, setImagesLoaded] = useState({});
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
