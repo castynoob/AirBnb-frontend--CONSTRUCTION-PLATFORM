@@ -614,6 +614,15 @@ export default function LandingPage() {
       const data = await response.json()
       setEmailHasAccount(data.exists)
       setExistingRoles(data.roles || [])
+      // Auto-fill name and phone from existing account
+      if (data.exists && data.first_name) {
+        setRegisterFormData(prev => ({
+          ...prev,
+          first_name: data.first_name || prev.first_name,
+          last_name: data.last_name || prev.last_name,
+          phone: data.phone || prev.phone,
+        }))
+      }
     } catch (error) {
       console.error("Error checking email:", error)
       setEmailHasAccount(false)
@@ -946,7 +955,7 @@ export default function LandingPage() {
     console.log("Google user:", userData);
 
     const providerId = userData.sub;
-    
+
     // ✅ FIX: Make sure provider_id is set
     setRegisterFormData((prev) => ({
         ...prev,
@@ -963,6 +972,30 @@ export default function LandingPage() {
         phone: prev.phone,
         // ... other fields
     }));
+
+    // Check if Google email already has an account (for multi-role support)
+    if (userData.email) {
+      try {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+        const response = await fetch(`${API_BASE_URL}/api/register/check-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: userData.email }),
+        })
+        const data = await response.json()
+        setEmailHasAccount(data.exists)
+        setExistingRoles(data.roles || [])
+        // Auto-fill phone from existing account if available
+        if (data.exists && data.phone) {
+          setRegisterFormData(prev => ({
+            ...prev,
+            phone: data.phone || prev.phone,
+          }))
+        }
+      } catch (error) {
+        console.error("Error checking Google email:", error)
+      }
+    }
 
     // ✅ Advance to Step 3 (Profile Completion) after Google OAuth
     setRegistrationStep(3);
@@ -2363,53 +2396,6 @@ export default function LandingPage() {
                     </div>
                   )}
 
-                  <div className="lp-form-row">
-                    <div className="lp-form-group">
-                      <label>{t('landingPage.register.firstName')}</label>
-                      <div className="lp-input-wrapper">
-                        <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                          <circle cx="12" cy="7" r="4"/>
-                        </svg>
-                        <input
-                          type="text"
-                          name="first_name"
-                          placeholder={t('landingPage.register.firstNamePlaceholder')}
-                          value={registerFormData.first_name}
-                          onChange={handleRegisterChange}
-                          required
-                          className={registerErrors.first_name ? 'error' : ''}
-                          disabled={registerFormData.provider === 'google' && registerFormData.first_name}
-                        />
-                      </div>
-                      {registerErrors.first_name && (
-                        <span className="lp-field-error">{registerErrors.first_name}</span>
-                      )}
-                    </div>
-                    <div className="lp-form-group">
-                      <label>{t('landingPage.register.lastName')} {registerFormData.provider === 'google' && t('landingPage.register.optional')}</label>
-                      <div className="lp-input-wrapper">
-                        <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                          <circle cx="12" cy="7" r="4"/>
-                        </svg>
-                        <input
-                          type="text"
-                          name="last_name"
-                          placeholder={t('landingPage.register.lastNamePlaceholder')}
-                          value={registerFormData.last_name}
-                          onChange={handleRegisterChange}
-                          required={registerFormData.provider !== 'google'}
-                          className={registerErrors.last_name ? 'error' : ''}
-                          disabled={registerFormData.provider === 'google' && registerFormData.last_name}
-                        />
-                      </div>
-                      {registerErrors.last_name && (
-                        <span className="lp-field-error">{registerErrors.last_name}</span>
-                      )}
-                    </div>
-                  </div>
-
                   <div className="lp-form-group">
                     <label>{t('landingPage.register.emailAddress')}</label>
                     <div className="lp-input-wrapper">
@@ -2447,6 +2433,53 @@ export default function LandingPage() {
                         {t('landingPage.register.existingAccountNotice')}
                       </div>
                     )}
+                  </div>
+
+                  <div className="lp-form-row">
+                    <div className="lp-form-group">
+                      <label>{t('landingPage.register.firstName')}</label>
+                      <div className="lp-input-wrapper">
+                        <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                          <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <input
+                          type="text"
+                          name="first_name"
+                          placeholder={t('landingPage.register.firstNamePlaceholder')}
+                          value={registerFormData.first_name}
+                          onChange={handleRegisterChange}
+                          required
+                          className={registerErrors.first_name ? 'error' : ''}
+                          disabled={(registerFormData.provider === 'google' && registerFormData.first_name) || emailHasAccount}
+                        />
+                      </div>
+                      {registerErrors.first_name && (
+                        <span className="lp-field-error">{registerErrors.first_name}</span>
+                      )}
+                    </div>
+                    <div className="lp-form-group">
+                      <label>{t('landingPage.register.lastName')} {registerFormData.provider === 'google' && t('landingPage.register.optional')}</label>
+                      <div className="lp-input-wrapper">
+                        <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                          <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <input
+                          type="text"
+                          name="last_name"
+                          placeholder={t('landingPage.register.lastNamePlaceholder')}
+                          value={registerFormData.last_name}
+                          onChange={handleRegisterChange}
+                          required={registerFormData.provider !== 'google'}
+                          className={registerErrors.last_name ? 'error' : ''}
+                          disabled={(registerFormData.provider === 'google' && registerFormData.last_name) || emailHasAccount}
+                        />
+                      </div>
+                      {registerErrors.last_name && (
+                        <span className="lp-field-error">{registerErrors.last_name}</span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Password fields - only show for local registration without existing account */}
