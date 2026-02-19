@@ -862,6 +862,7 @@ export default function LandingPage() {
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
                         email: data.user.email,
+                        role: data.user.role,
                         provider_id: registerFormData.provider_id
                     }),
                 });

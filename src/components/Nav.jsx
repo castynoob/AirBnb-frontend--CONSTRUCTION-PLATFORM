@@ -17,6 +17,7 @@ function Nav() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [showReportModal, setShowReportModal] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const profileMenuRef = useRef(null);
   const { socket, clearNotifications } = useSocket();
 
@@ -94,21 +95,19 @@ function Nav() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = async () => {
-    // Call backend logout API to log activity and invalidate refresh token
-    try {
-      await logout();
-    } catch (error) {
-      console.error("Logout API error:", error);
-    }
+  const handleLogout = () => {
+    setIsLoggingOut(true);
 
-    // Clear notifications and disconnect socket before removing userProfile
+    // Clear notifications and disconnect socket immediately
     if (clearNotifications) {
       clearNotifications();
     }
     if (socket) {
       socket.disconnect();
     }
+
+    // Call backend logout API in background (don't block redirect)
+    logout().catch(error => console.error("Logout API error:", error));
 
     // Clear all auth-related localStorage items
     localStorage.removeItem("userProfile");
@@ -117,7 +116,7 @@ function Nav() {
     localStorage.removeItem("userId");
     localStorage.removeItem("selectedPropertyId");
 
-    // Force a page reload to ensure all state is reset
+    // Redirect immediately
     window.location.href = "/";
   };
 
@@ -347,6 +346,13 @@ function Nav() {
           </div>
         </nav>
       }
+
+      {isLoggingOut && (
+        <div className="logout-overlay">
+          <div className="logout-spinner"></div>
+          <p>{t('nav.loggingOut')}</p>
+        </div>
+      )}
     </>
   );
 }

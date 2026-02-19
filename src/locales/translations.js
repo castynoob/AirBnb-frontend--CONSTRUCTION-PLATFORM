@@ -34,6 +34,7 @@ const translations = {
       customerService: 'Customer Service',
       report: 'Report',
       logout: 'Log out',
+      loggingOut: 'Logging out...',
       // Roles
       propertyManager: 'Property Manager',
       entrepreneur: 'Entrepreneur',
@@ -1492,6 +1493,15 @@ const translations = {
       willApplyAfterTrial: 'Will apply automatically after your trial ends',
       promoAppliedNow: 'Promo code applied! You now have free premium access.',
       noSilentBilling: 'No silent billing changes. You are in control.',
+      // Payment Failed / Trial Expired
+      paymentFailedTitle: 'Payment Failed',
+      actionRequired: 'Action Required',
+      paymentFailedDesc: 'Your trial has ended and we were unable to charge your card. Please update your payment method to continue your subscription.',
+      paymentFailedModalDesc: 'Your trial period has ended and your card could not be charged. Please update your payment method to continue your subscription.',
+      updatePaymentMethod: 'Update Payment Method',
+      paymentMethodUpdated: 'Payment method updated! Your subscription has been restored.',
+      dismissModal: 'Dismiss',
+      pastDue: 'Past Due',
       // Billing Tab
       viewBillingHistory: 'View your subscription payments and budget unlock history',
       refreshBilling: 'Refresh',
@@ -3123,6 +3133,7 @@ const translations = {
       customerService: 'Service Client',
       report: 'Signaler',
       logout: 'Déconnexion',
+      loggingOut: 'Déconnexion en cours...',
       // Roles
       propertyManager: 'Gestionnaire Immobilier',
       entrepreneur: 'Entrepreneur',
@@ -4580,6 +4591,15 @@ const translations = {
       willApplyAfterTrial: 'Sera appliqué automatiquement après la fin de votre essai',
       promoAppliedNow: 'Code promo appliqué! Vous avez maintenant un accès premium gratuit.',
       noSilentBilling: 'Aucun changement de facturation silencieux. Vous gardez le contrôle.',
+      // Payment Failed / Trial Expired
+      paymentFailedTitle: 'Paiement Échoué',
+      actionRequired: 'Action Requise',
+      paymentFailedDesc: 'Votre période d\'essai est terminée et nous n\'avons pas pu débiter votre carte. Veuillez mettre à jour votre méthode de paiement pour continuer votre abonnement.',
+      paymentFailedModalDesc: 'Votre période d\'essai est terminée et votre carte n\'a pas pu être débitée. Veuillez mettre à jour votre méthode de paiement pour continuer votre abonnement.',
+      updatePaymentMethod: 'Mettre à Jour le Paiement',
+      paymentMethodUpdated: 'Méthode de paiement mise à jour! Votre abonnement a été restauré.',
+      dismissModal: 'Fermer',
+      pastDue: 'En Souffrance',
       // Billing Tab
       viewBillingHistory: 'Consultez vos paiements d\'abonnement et historique de déblocages',
       refreshBilling: 'Actualiser',

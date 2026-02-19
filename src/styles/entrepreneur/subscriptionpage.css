@@ -301,6 +301,57 @@
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
+/* Payment Failed Banner */
+.status-banner.payment-failed-banner {
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+.banner-icon-wrapper.payment-failed {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.banner-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  background: #fff;
+  color: #dc2626;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: var(--font-weight-lg);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+}
+
+.banner-action-btn:hover {
+  background: #fef2f2;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Status indicator past-due */
+.status-indicator.past-due {
+  color: #dc2626;
+}
+
+.status-indicator.past-due .status-dot {
+  background-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
+}
+
+/* Payment failed modal icon */
+.cancel-confirm-icon.payment-failed {
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  color: #dc2626;
+}
+
 /* Current Plan Section */
 .current-plan-section {
   margin-bottom: 2.5rem;

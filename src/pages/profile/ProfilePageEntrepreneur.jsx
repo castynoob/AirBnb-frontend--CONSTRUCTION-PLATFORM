@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import EntrepreneurProfileSkeleton from '../../components/loading/EntrepreneurProfileSkeleton'
 import SubscriptionPaymentForm from '../../components/SubscriptionPaymentModal'
+import UpdatePaymentMethodModal from '../../components/UpdatePaymentMethodModal'
 import '../../styles/entrepreneur/subscriptionmodal.css'
 import { logout } from '../../utils/api'
 import { useLanguage, LANGUAGES } from '../../contexts/LanguageContext'
@@ -37,6 +38,8 @@ function ProfilePageEntrepreneur() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
   const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false)
   const [isCancellingSubscription, setIsCancellingSubscription] = useState(false)
+  const [showPaymentFailedModal, setShowPaymentFailedModal] = useState(false)
+  const [showUpdatePaymentModal, setShowUpdatePaymentModal] = useState(false)
   const navigate = useNavigate();
 
   // Promo code states
@@ -93,9 +96,41 @@ function ProfilePageEntrepreneur() {
     settings: t('profileEntrepreneur.settings')
   }
 
+  // Refresh subscription data from API (not just localStorage)
+  // showModalOnFailure: only show the payment failed modal on initial page load, not after payment update
+  const refreshSubscriptionData = async (showModalOnFailure = false) => {
+    const uProf = localStorage.getItem('userProfile')
+    if (!uProf) return
+    const user = JSON.parse(uProf)
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/payments/subscription`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${user.token}` }
+      })
+      if (response.ok) {
+        const subscriptionData = await response.json()
+        const sub = subscriptionData.subscription || {}
+        setSubscription(sub)
+        const updatedProfile = {
+          ...user,
+          entrepProfile: { ...user.entrepProfile, subscription: subscriptionData }
+        }
+        localStorage.setItem('userProfile', JSON.stringify(updatedProfile))
+        setUserProfile(updatedProfile)
+        // Only auto-show payment failed modal on initial page load
+        if (showModalOnFailure && sub.status === 'past_due') {
+          setShowPaymentFailedModal(true)
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing subscription:', error)
+    }
+  }
+
   useEffect(() => {
     fetchEntreprenuerProfile()
     fetchQueuedPromo()
+    refreshSubscriptionData(true)
 
     const uProfile = localStorage.getItem('userProfile')
     if (uProfile) {
@@ -1309,6 +1344,37 @@ function ProfilePageEntrepreneur() {
                   </div>
                 ) : (
                   <>
+                    {/* Payment Failed / Trial Expired Banner */}
+                    {subscription.status === 'past_due' && (
+                      <div className="status-banner payment-failed-banner">
+                        <div className="banner-content">
+                          <div className="banner-icon-wrapper payment-failed">
+                            <AlertCircle size={28} />
+                          </div>
+                          <div className="banner-info">
+                            <div className="banner-header">
+                              <h3 className="banner-title">
+                                {t('profileEntrepreneur.paymentFailedTitle') || 'Payment Failed'}
+                              </h3>
+                              <div className="trial-badge cancelled">
+                                {t('profileEntrepreneur.actionRequired') || 'Action Required'}
+                              </div>
+                            </div>
+                            <p className="banner-text">
+                              {t('profileEntrepreneur.paymentFailedDesc') || 'Your trial has ended and we were unable to charge your card. Please update your payment method to continue your subscription.'}
+                            </p>
+                          </div>
+                          <button
+                            className="banner-action-btn"
+                            onClick={() => setShowUpdatePaymentModal(true)}
+                          >
+                            <Lock size={18} />
+                            {t('profileEntrepreneur.updatePaymentMethod') || 'Update Payment Method'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Trial Banner */}
                     {subscription.is_trial && getTrialInfo() && (
                       <div className={`status-banner trial-banner ${subscription.cancel_at_period_end ? 'trial-cancelled' : ''}`}>
@@ -1386,11 +1452,13 @@ function ProfilePageEntrepreneur() {
                               <div className="card-icon">
                                 <Shield size={24} />
                               </div>
-                              <div className={`status-indicator ${subscription.cancel_at_period_end ? 'cancelling' : 'active'}`}>
+                              <div className={`status-indicator ${subscription.status === 'past_due' ? 'past-due' : subscription.cancel_at_period_end ? 'cancelling' : 'active'}`}>
                                 <span className="status-dot"></span>
-                                {subscription.cancel_at_period_end
-                                  ? t('profileEntrepreneur.cancelling') || 'Cancelling'
-                                  : t('profileEntrepreneur.active')}
+                                {subscription.status === 'past_due'
+                                  ? t('profileEntrepreneur.pastDue') || 'Past Due'
+                                  : subscription.cancel_at_period_end
+                                    ? t('profileEntrepreneur.cancelling') || 'Cancelling'
+                                    : t('profileEntrepreneur.active')}
                               </div>
                             </div>
                             <h2 className="plan-name">{subscription.plan_type === 'premium' ? t('profileEntrepreneur.premiumPlan') : t('profileEntrepreneur.basicPlan')}</h2>
@@ -2557,7 +2625,7 @@ function ProfilePageEntrepreneur() {
             )}
 
             {/* Cancel Subscription Button */}
-            {(subscription.plan_type === 'basic' || subscription.plan_type === 'premium') && !subscription.cancel_at_period_end && (
+            {(subscription.plan_type === 'basic' || subscription.plan_type === 'premium') && !subscription.cancel_at_period_end && subscription.status !== 'past_due' && (
               <div className="cancel-subscription-section">
                 <button
                   className="cancel-subscription-btn"
@@ -2642,6 +2710,55 @@ function ProfilePageEntrepreneur() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Payment Failed Modal */}
+      {showPaymentFailedModal && (
+        <div className="subscription-modal">
+          <div className="modal-overlay" onClick={() => setShowPaymentFailedModal(false)} />
+          <div className="modal-content cancel-confirm-modal">
+            <div className="cancel-confirm-header">
+              <div className="cancel-confirm-icon payment-failed">
+                <AlertCircle size={48} />
+              </div>
+              <h2>{t('profileEntrepreneur.paymentFailedTitle') || 'Payment Failed'}</h2>
+              <p>
+                {t('profileEntrepreneur.paymentFailedModalDesc') || 'Your trial period has ended and your card could not be charged. Please update your payment method to continue your subscription.'}
+              </p>
+            </div>
+            <div className="cancel-confirm-actions">
+              <button
+                className="cancel-confirm-btn cancel-confirm-no"
+                onClick={() => {
+                  setShowPaymentFailedModal(false)
+                  setShowUpdatePaymentModal(true)
+                }}
+              >
+                <Lock size={16} />
+                {t('profileEntrepreneur.updatePaymentMethod') || 'Update Payment Method'}
+              </button>
+              <button
+                className="cancel-confirm-btn cancel-confirm-yes"
+                style={{ background: '#6b7280' }}
+                onClick={() => setShowPaymentFailedModal(false)}
+              >
+                {t('profileEntrepreneur.dismissModal') || 'Dismiss'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Update Payment Method Modal */}
+      {showUpdatePaymentModal && userProfile && (
+        <UpdatePaymentMethodModal
+          token={userProfile.token}
+          onClose={() => setShowUpdatePaymentModal(false)}
+          onSuccess={() => {
+            refreshSubscriptionData()
+            toast.success(t('profileEntrepreneur.paymentMethodUpdated') || 'Payment method updated! Your subscription has been restored.')
+          }}
+        />
       )}
 
       {/* Trial Promo Decision Modal */}
