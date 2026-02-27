@@ -24,7 +24,7 @@ import {
 import { useLanguage } from "../../contexts/LanguageContext";
 import "../../styles/modal/supplierprofilemodal.css";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) => {
   const { t, language } = useLanguage();
