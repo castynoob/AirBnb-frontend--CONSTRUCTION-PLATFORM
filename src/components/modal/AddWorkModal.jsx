@@ -15,11 +15,13 @@ import {
   ClipboardList
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useLanguage } from '../../contexts/LanguageContext';
 import '../../styles/manager/addworkmodal.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const AddWorkModal = ({ isOpen, onClose, onSuccess, onOpenExcelUpload }) => {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     property_id: '',
     title: '',
@@ -42,21 +44,21 @@ const AddWorkModal = ({ isOpen, onClose, onSuccess, onOpenExcelUpload }) => {
   const [uploadProgress, setUploadProgress] = useState({ stage: '', message: '' });
 
   const categories = [
-    'Roofing',
-    'Plumbing',
-    'Electrical',
-    'Painting',
-    'HVAC',
-    'Flooring',
-    'Carpentry',
-    'Masonry',
-    'Landscaping',
-    'Other'
+    { value: 'Roofing', key: 'roofing' },
+    { value: 'Plumbing', key: 'plumbing' },
+    { value: 'Electrical', key: 'electrical' },
+    { value: 'Painting', key: 'painting' },
+    { value: 'HVAC', key: 'hvac' },
+    { value: 'Flooring', key: 'flooring' },
+    { value: 'Carpentry', key: 'carpentry' },
+    { value: 'Masonry', key: 'masonry' },
+    { value: 'Landscaping', key: 'landscaping' },
+    { value: 'Other', key: 'other' }
   ];
 
   const urgencyLevels = [
-    'Urgent',
-    'Planned',
+    { value: 'Urgent', key: 'urgent' },
+    { value: 'Planned', key: 'planned' },
   ];
 
   // Fetch properties when modal opens
@@ -440,17 +442,17 @@ const AddWorkModal = ({ isOpen, onClose, onSuccess, onOpenExcelUpload }) => {
                 disabled={isSubmitting}
               >
                 {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                  <option key={cat.value} value={cat.value}>{t(`addWorkModal.cat_${cat.key}`)}</option>
                 ))}
               </select>
             </div>
 
             <div className="form-group">
               <label htmlFor="urgency" className="form-label">
-                Urgency
+                {t('addWorkModal.urgency')}
                 {formData.is_emergency && (
                   <span className="emergency-badge">
-                    <AlertTriangle size={12} /> Emergency
+                    <AlertTriangle size={12} /> {t('addWorkModal.emergency')}
                   </span>
                 )}
               </label>
@@ -463,7 +465,7 @@ const AddWorkModal = ({ isOpen, onClose, onSuccess, onOpenExcelUpload }) => {
                 disabled={isSubmitting}
               >
                 {urgencyLevels.map(level => (
-                  <option key={level} value={level}>{level}</option>
+                  <option key={level.value} value={level.value}>{t(`addWorkModal.urg_${level.key}`)}</option>
                 ))}
               </select>
               <label className="checkbox-inline">

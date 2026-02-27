@@ -53,21 +53,21 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
   const [uploadProgress, setUploadProgress] = useState({ stage: '', message: '' });
 
   const categories = [
-    'Roofing',
-    'Plumbing',
-    'Electrical',
-    'Painting',
-    'HVAC',
-    'Flooring',
-    'Carpentry',
-    'Masonry',
-    'Landscaping',
-    'Other'
+    { value: 'Roofing', key: 'roofing' },
+    { value: 'Plumbing', key: 'plumbing' },
+    { value: 'Electrical', key: 'electrical' },
+    { value: 'Painting', key: 'painting' },
+    { value: 'HVAC', key: 'hvac' },
+    { value: 'Flooring', key: 'flooring' },
+    { value: 'Carpentry', key: 'carpentry' },
+    { value: 'Masonry', key: 'masonry' },
+    { value: 'Landscaping', key: 'landscaping' },
+    { value: 'Other', key: 'other' }
   ];
 
   const urgencyLevels = [
-    'Urgent',
-    'Planned',
+    { value: 'Urgent', key: 'urgent' },
+    { value: 'Planned', key: 'planned' },
   ];
 
   // Fetch properties when modal opens
@@ -506,7 +506,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                     disabled={isSubmitting}
                   >
                     {categories.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
+                      <option key={cat.value} value={cat.value}>{t(`addWorkModal.cat_${cat.key}`)}</option>
                     ))}
                   </select>
                 </div>
@@ -520,7 +520,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                     disabled={isSubmitting}
                   >
                     {urgencyLevels.map(level => (
-                      <option key={level} value={level}>{level}</option>
+                      <option key={level.value} value={level.value}>{t(`addWorkModal.urg_${level.key}`)}</option>
                     ))}
                   </select>
                 </div>

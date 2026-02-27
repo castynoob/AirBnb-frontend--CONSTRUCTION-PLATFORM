@@ -52,6 +52,7 @@ const ProfilePageResident = () => {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isSendingReset, setIsSendingReset] = useState(false);
 
   const [formData, setFormData] = useState({
     bio: '',
@@ -311,6 +312,25 @@ const ProfilePageResident = () => {
       setIsChangingPassword(false);
     }
   };
+
+  const handleForgotPassword = async () => {
+    const userProfile = JSON.parse(localStorage.getItem('userProfile'));
+    const email = userProfile?.email
+    if (!email) return
+    setIsSendingReset(true)
+    try {
+      await fetch(`${API_BASE_URL}/api/auth/request-password-reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      })
+      toast.success(t('profilePageResident.resetEmailSent'))
+    } catch {
+      toast.error(t('profilePageResident.resetEmailFailed'))
+    } finally {
+      setIsSendingReset(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -819,6 +839,25 @@ const ProfilePageResident = () => {
                             {showPasswords.current ? <EyeOff size={18} /> : <Eye size={18} />}
                           </button>
                         </div>
+                        <button
+                          type="button"
+                          onClick={handleForgotPassword}
+                          disabled={isSendingReset}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--color-secondary, #14919B)',
+                            fontSize: '0.8125rem',
+                            fontWeight: '500',
+                            cursor: isSendingReset ? 'not-allowed' : 'pointer',
+                            padding: '0.25rem 0',
+                            marginTop: '0.25rem',
+                            alignSelf: 'flex-end',
+                            opacity: isSendingReset ? 0.6 : 1
+                          }}
+                        >
+                          {isSendingReset ? t('profilePageResident.sendingResetLink') : t('profilePageResident.forgotPasswordLink')}
+                        </button>
                       </div>
 
                       <div className="rp-form-group">

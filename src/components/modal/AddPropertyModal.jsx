@@ -27,18 +27,18 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
   const [error, setError] = useState(null);
 
   const buildingTypes = [
-    'Apartment',
-    'Condominium',
-    'High-Rise',
-    'Townhouse',
-    'Duplex',
-    'Triplex',
-    'Single Family',
-    'Multi-Family',
-    'Commercial Building',
-    'Mixed-Use',
-    'Student Housing',
-    'Senior Living'
+    { value: 'Apartment', key: 'apartment' },
+    { value: 'Condominium', key: 'condominium' },
+    { value: 'High-Rise', key: 'highRise' },
+    { value: 'Townhouse', key: 'townhouse' },
+    { value: 'Duplex', key: 'duplex' },
+    { value: 'Triplex', key: 'triplex' },
+    { value: 'Single Family', key: 'singleFamily' },
+    { value: 'Multi-Family', key: 'multiFamily' },
+    { value: 'Commercial Building', key: 'commercialBuilding' },
+    { value: 'Mixed-Use', key: 'mixedUse' },
+    { value: 'Student Housing', key: 'studentHousing' },
+    { value: 'Senior Living', key: 'seniorLiving' }
   ];
 
   // Initialize map when modal opens
@@ -456,8 +456,8 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
                   required
                 >
                   {buildingTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
+                    <option key={type.value} value={type.value}>
+                      {t(`addPropertyModal.${type.key}`)}
                     </option>
                   ))}
                 </select>

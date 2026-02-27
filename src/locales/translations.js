@@ -281,6 +281,21 @@ const translations = {
       durationHint: 'Leave blank if unsure. Contractors can estimate during bidding.',
       budgetHint: 'Set the budget range you are willing to pay for this work.',
       budgetVisibilityNote: 'Contractors can unlock the budget to view your range before submitting a bid.',
+      emergency: 'Emergency',
+      // Categories
+      cat_roofing: 'Roofing',
+      cat_plumbing: 'Plumbing',
+      cat_electrical: 'Electrical',
+      cat_painting: 'Painting',
+      cat_hvac: 'HVAC',
+      cat_flooring: 'Flooring',
+      cat_carpentry: 'Carpentry',
+      cat_masonry: 'Masonry',
+      cat_landscaping: 'Landscaping',
+      cat_other: 'Other',
+      // Urgency Levels
+      urg_urgent: 'Urgent',
+      urg_planned: 'Planned',
     },
 
     // Payment Modal
@@ -414,6 +429,19 @@ const translations = {
       cancel: 'Cancel',
       addProperty: 'Add Property',
       adding: 'Adding...',
+      // Building Types
+      apartment: 'Apartment',
+      condominium: 'Condominium',
+      highRise: 'High-Rise',
+      townhouse: 'Townhouse',
+      duplex: 'Duplex',
+      triplex: 'Triplex',
+      singleFamily: 'Single Family',
+      multiFamily: 'Multi-Family',
+      commercialBuilding: 'Commercial Building',
+      mixedUse: 'Mixed-Use',
+      studentHousing: 'Student Housing',
+      seniorLiving: 'Senior Living',
     },
 
     // Submissions Page
@@ -600,6 +628,10 @@ const translations = {
       passwordsNotMatch: 'New passwords do not match',
       passwordRequirements: 'Password does not meet all requirements',
       passwordChanged: 'Password changed successfully!',
+      forgotPasswordLink: 'Forgot your password?',
+      sendingResetLink: 'Sending reset link...',
+      resetEmailSent: 'A password reset link has been sent to your email.',
+      resetEmailFailed: 'Failed to send reset email. Please try again.',
       // Property Modal
       propertyDetails: 'Property Details',
       addressInfo: 'Address Information',
@@ -1387,6 +1419,10 @@ const translations = {
       profileUpdatedSuccess: 'Profile updated successfully!',
       failedUpdateProfile: 'Failed to update profile. Please try again.',
       passwordChangedSuccess: 'Password changed successfully!',
+      forgotPasswordLink: 'Forgot your password?',
+      sendingResetLink: 'Sending reset link...',
+      resetEmailSent: 'A password reset link has been sent to your email.',
+      resetEmailFailed: 'Failed to send reset email. Please try again.',
       // Sidebar
       entrepreneur: 'Entrepreneur',
       logout: 'Logout',
@@ -2242,6 +2278,10 @@ const translations = {
       // Success messages
       profileUpdatedSuccess: 'Profile updated successfully!',
       passwordChangedSuccess: 'Password changed successfully!',
+      forgotPasswordLink: 'Forgot your password?',
+      sendingResetLink: 'Sending reset link...',
+      resetEmailSent: 'A password reset link has been sent to your email.',
+      resetEmailFailed: 'Failed to send reset email. Please try again.',
 
       // Account tab header
       accountInformation: 'Account Information',
@@ -2874,6 +2914,60 @@ const translations = {
       },
     },
 
+    // Forgot Password Page
+    forgotPassword: {
+      title: 'Forgot Password?',
+      subtitle: "No worries! Enter your email and we'll send you a reset link.",
+      emailLabel: 'Email Address',
+      sending: 'Sending...',
+      sendLink: 'Send Reset Link',
+      backToLogin: 'Back to Login',
+      checkEmail: 'Check Your Email',
+      emailSentTo: 'We sent a password reset link to',
+      noEmail: "Didn't receive the email? Check your spam folder or",
+      tryAgain: 'try again',
+      illustrationTitle: 'Secure Access',
+      illustrationSubtitle: 'Reset your password safely and get back to managing your projects.',
+    },
+
+    // Reset Password Page
+    resetPassword: {
+      title: 'Reset Password',
+      subtitle: 'Create a strong new password for your account.',
+      newPassword: 'New Password',
+      enterNewPassword: 'Enter new password',
+      confirmPassword: 'Confirm Password',
+      confirmYourPassword: 'Confirm your new password',
+      resetButton: 'Reset Password',
+      resetting: 'Resetting...',
+      goBack: 'Go Back',
+      // Strength
+      veryWeak: 'Very Weak',
+      weak: 'Weak',
+      fair: 'Fair',
+      good: 'Good',
+      strong: 'Strong',
+      // Requirements
+      req8Chars: '8+ characters',
+      reqUppercase: 'Uppercase',
+      reqLowercase: 'Lowercase',
+      reqNumber: 'Number',
+      reqSpecial: 'Special char',
+      // Validation
+      passwordsNoMatch: 'Passwords do not match',
+      passwordsMatch: 'Passwords match',
+      requirementsNotMet: 'Password does not meet all requirements',
+      invalidToken: 'Invalid or missing reset token. Please request a new link.',
+      // Success
+      successTitle: 'Password Reset!',
+      successSubtitle: 'Your password has been changed successfully. You can now log in with your new password.',
+      successMessage: 'Password reset successful!',
+      failedMessage: 'Failed to reset password. The link may have expired.',
+      // Illustration
+      illustrationTitle: 'New Password',
+      illustrationSubtitle: 'Choose a strong password to keep your account secure.',
+    },
+
     // Legal Page
     legalPage: {
       // Navigation
@@ -3121,15 +3215,15 @@ const translations = {
     nav: {
       home: 'Accueil',
       messages: 'Messages',
-      biddings: 'Offres',
+      biddings: 'Détails',
       members: 'Membres',
       favorites: 'Favoris',
       jobs: 'Travaux',
       supplier: 'Fournisseur',
-      profile: 'Profil',
+      profile: 'Compte',
       settings: 'Paramètres',
       mainMenu: 'Menu Principal',
-      viewProfile: 'Voir le Profil',
+      viewProfile: 'Voir le Compte',
       customerService: 'Service Client',
       report: 'Signaler',
       logout: 'Déconnexion',
@@ -3380,6 +3474,21 @@ const translations = {
       durationHint: 'Laissez vide si incertain. Les entrepreneurs peuvent estimer lors de la soumission.',
       budgetHint: 'Définissez la fourchette budgétaire que vous êtes prêt à payer pour ce travail.',
       budgetVisibilityNote: 'Les entrepreneurs peuvent déverrouiller le budget pour voir votre fourchette avant de soumettre une offre.',
+      emergency: 'Urgence',
+      // Categories
+      cat_roofing: 'Toiture',
+      cat_plumbing: 'Plomberie',
+      cat_electrical: 'Électricité',
+      cat_painting: 'Peinture',
+      cat_hvac: 'CVC',
+      cat_flooring: 'Revêtement de Sol',
+      cat_carpentry: 'Menuiserie',
+      cat_masonry: 'Maçonnerie',
+      cat_landscaping: 'Aménagement Paysager',
+      cat_other: 'Autre',
+      // Urgency Levels
+      urg_urgent: 'Urgent',
+      urg_planned: 'Planifié',
     },
 
     // Payment Modal
@@ -3513,6 +3622,19 @@ const translations = {
       cancel: 'Annuler',
       addProperty: 'Ajouter la Propriété',
       adding: 'Ajout...',
+      // Building Types
+      apartment: 'Appartement',
+      condominium: 'Copropriété',
+      highRise: 'Immeuble de Grande Hauteur',
+      townhouse: 'Maison de Ville',
+      duplex: 'Duplex',
+      triplex: 'Triplex',
+      singleFamily: 'Maison Unifamiliale',
+      multiFamily: 'Maison Multifamiliale',
+      commercialBuilding: 'Bâtiment Commercial',
+      mixedUse: 'Usage Mixte',
+      studentHousing: 'Logement Étudiant',
+      seniorLiving: 'Résidence pour Aînés',
     },
 
     // Submissions Page
@@ -3699,6 +3821,10 @@ const translations = {
       passwordsNotMatch: 'Les nouveaux mots de passe ne correspondent pas',
       passwordRequirements: 'Le mot de passe ne répond pas à toutes les exigences',
       passwordChanged: 'Mot de passe changé avec succès!',
+      forgotPasswordLink: 'Mot de passe oublié?',
+      sendingResetLink: 'Envoi du lien...',
+      resetEmailSent: 'Un lien de réinitialisation a été envoyé à votre courriel.',
+      resetEmailFailed: 'Échec de l\'envoi. Veuillez réessayer.',
       // Property Modal
       propertyDetails: 'Détails de la Propriété',
       addressInfo: 'Informations d\'Adresse',
@@ -3715,7 +3841,7 @@ const translations = {
       close: 'Fermer',
       editProperty: 'Modifier la Propriété',
       // Sidebar/Mobile
-      profile: 'Profil',
+      profile: 'Compte',
       logout: 'Déconnexion',
     },
 
@@ -4485,6 +4611,10 @@ const translations = {
       profileUpdatedSuccess: 'Profil mis à jour avec succès!',
       failedUpdateProfile: 'Échec de la mise à jour du profil. Veuillez réessayer.',
       passwordChangedSuccess: 'Mot de passe modifié avec succès!',
+      forgotPasswordLink: 'Mot de passe oublié?',
+      sendingResetLink: 'Envoi du lien...',
+      resetEmailSent: 'Un lien de réinitialisation a été envoyé à votre courriel.',
+      resetEmailFailed: 'Échec de l\'envoi. Veuillez réessayer.',
       // Sidebar
       entrepreneur: 'Entrepreneur',
       logout: 'Déconnexion',
@@ -5340,6 +5470,10 @@ const translations = {
       // Success messages
       profileUpdatedSuccess: 'Profil mis à jour avec succès !',
       passwordChangedSuccess: 'Mot de passe modifié avec succès !',
+      forgotPasswordLink: 'Mot de passe oublié?',
+      sendingResetLink: 'Envoi du lien...',
+      resetEmailSent: 'Un lien de réinitialisation a été envoyé à votre courriel.',
+      resetEmailFailed: 'Échec de l\'envoi. Veuillez réessayer.',
 
       // Account tab header
       accountInformation: 'Informations du compte',
@@ -5970,6 +6104,60 @@ const translations = {
         invalidToken: 'Le lien de vérification est invalide ou expiré.',
         serverError: 'Erreur du serveur lors de la vérification. Veuillez réessayer.',
       },
+    },
+
+    // Forgot Password Page
+    forgotPassword: {
+      title: 'Mot de passe oublié?',
+      subtitle: 'Pas de souci! Entrez votre courriel et nous vous enverrons un lien de réinitialisation.',
+      emailLabel: 'Adresse courriel',
+      sending: 'Envoi en cours...',
+      sendLink: 'Envoyer le lien',
+      backToLogin: 'Retour à la connexion',
+      checkEmail: 'Vérifiez votre courriel',
+      emailSentTo: 'Nous avons envoyé un lien de réinitialisation à',
+      noEmail: "Vous n'avez pas reçu le courriel? Vérifiez votre dossier spam ou",
+      tryAgain: 'réessayer',
+      illustrationTitle: 'Accès Sécurisé',
+      illustrationSubtitle: 'Réinitialisez votre mot de passe en toute sécurité et reprenez la gestion de vos projets.',
+    },
+
+    // Reset Password Page
+    resetPassword: {
+      title: 'Réinitialiser le mot de passe',
+      subtitle: 'Créez un nouveau mot de passe sécurisé pour votre compte.',
+      newPassword: 'Nouveau mot de passe',
+      enterNewPassword: 'Entrez le nouveau mot de passe',
+      confirmPassword: 'Confirmer le mot de passe',
+      confirmYourPassword: 'Confirmez votre nouveau mot de passe',
+      resetButton: 'Réinitialiser',
+      resetting: 'Réinitialisation...',
+      goBack: 'Retour',
+      // Strength
+      veryWeak: 'Très faible',
+      weak: 'Faible',
+      fair: 'Moyen',
+      good: 'Bon',
+      strong: 'Fort',
+      // Requirements
+      req8Chars: '8+ caractères',
+      reqUppercase: 'Majuscule',
+      reqLowercase: 'Minuscule',
+      reqNumber: 'Chiffre',
+      reqSpecial: 'Caractère spécial',
+      // Validation
+      passwordsNoMatch: 'Les mots de passe ne correspondent pas',
+      passwordsMatch: 'Les mots de passe correspondent',
+      requirementsNotMet: 'Le mot de passe ne satisfait pas toutes les exigences',
+      invalidToken: 'Jeton invalide ou manquant. Veuillez demander un nouveau lien.',
+      // Success
+      successTitle: 'Mot de passe réinitialisé!',
+      successSubtitle: 'Votre mot de passe a été modifié avec succès. Vous pouvez maintenant vous connecter avec votre nouveau mot de passe.',
+      successMessage: 'Mot de passe réinitialisé avec succès!',
+      failedMessage: 'Échec de la réinitialisation. Le lien a peut-être expiré.',
+      // Illustration
+      illustrationTitle: 'Nouveau mot de passe',
+      illustrationSubtitle: 'Choisissez un mot de passe sécurisé pour protéger votre compte.',
     },
 
     // Legal Page

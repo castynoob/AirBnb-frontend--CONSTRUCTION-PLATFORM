@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Lock, Eye, EyeOff, ArrowLeft, ShieldCheck, CheckCircle, AlertCircle, Check, X } from 'lucide-react';
+import logo from '../../assets/logo.png';
+import illustrationImg from '../../assets/images/illustration.png';
+import { useLanguage } from '../../contexts/LanguageContext';
 import '../../styles/auth/authpage.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const ResetPassword = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
 
@@ -18,34 +23,34 @@ const ResetPassword = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [errors, setErrors] = useState({});
+  const [resetSuccess, setResetSuccess] = useState(false);
 
-  const validatePassword = (password) => {
-    const errors = [];
+  const requirements = {
+    minLength: formData.password.length >= 8,
+    hasUpperCase: /[A-Z]/.test(formData.password),
+    hasLowerCase: /[a-z]/.test(formData.password),
+    hasNumber: /[0-9]/.test(formData.password),
+    hasSpecialChar: /[!@#$%^&*(),.?":{}|<>]/.test(formData.password)
+  };
 
-    if (password.length < 8) {
-      errors.push('Password must be at least 8 characters long');
-    }
-    if (!/[A-Z]/.test(password)) {
-      errors.push('Password must contain at least one uppercase letter');
-    }
-    if (!/[a-z]/.test(password)) {
-      errors.push('Password must contain at least one lowercase letter');
-    }
-    if (!/[0-9]/.test(password)) {
-      errors.push('Password must contain at least one number');
-    }
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      errors.push('Password must contain at least one special character');
-    }
+  const passedCount = Object.values(requirements).filter(Boolean).length;
 
-    return errors;
+  const getStrengthLabel = () => {
+    if (passedCount <= 1) return t('resetPassword.veryWeak');
+    if (passedCount <= 2) return t('resetPassword.weak');
+    if (passedCount <= 3) return t('resetPassword.fair');
+    if (passedCount <= 4) return t('resetPassword.good');
+    return t('resetPassword.strong');
+  };
+
+  const getStrengthColor = () => {
+    const colors = ['#ef4444', '#ef4444', '#f97316', '#eab308', '#22c55e', '#16a34a'];
+    return colors[passedCount];
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-
-    // Clear errors when user types
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -56,24 +61,20 @@ const ResetPassword = () => {
     setErrors({});
     setMessage({ type: '', text: '' });
 
-    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
-      setErrors({ confirmPassword: 'Passwords do not match' });
+      setErrors({ confirmPassword: t('resetPassword.passwordsNoMatch') });
       return;
     }
 
-    // Validate password strength
-    const passwordErrors = validatePassword(formData.password);
-    if (passwordErrors.length > 0) {
-      setErrors({ password: passwordErrors.join('. ') });
+    if (!Object.values(requirements).every(Boolean)) {
+      setErrors({ password: t('resetPassword.requirementsNotMet') });
       return;
     }
 
-    // Check if token exists
     if (!token) {
       setMessage({
         type: 'error',
-        text: 'Invalid or missing reset token. Please request a new password reset link.'
+        text: t('resetPassword.invalidToken')
       });
       return;
     }
@@ -83,13 +84,8 @@ const ResetPassword = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token,
-          newPassword: formData.password
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, newPassword: formData.password }),
       });
 
       const data = await response.json();
@@ -98,118 +94,264 @@ const ResetPassword = () => {
         throw new Error(data.message || 'Failed to reset password');
       }
 
+      setResetSuccess(true);
       setMessage({
         type: 'success',
-        text: data.message || 'Password reset successful! Redirecting to login...'
+        text: data.message || t('resetPassword.successMessage')
       });
-
-      // Redirect to home page (landing page with login modal) after 2 seconds
-      setTimeout(() => {
-        navigate('/');
-      }, 2000);
-
     } catch (error) {
       setMessage({
         type: 'error',
-        text: error.message || 'Failed to reset password. The link may have expired.'
+        text: error.message || t('resetPassword.failedMessage')
       });
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleGoBack = () => {
+    try {
+      const userProfile = JSON.parse(localStorage.getItem('userProfile'));
+      if (userProfile?.role) {
+        navigate('/profile/' + userProfile.role);
+        return;
+      }
+    } catch {}
+    navigate('/');
+  };
+
   return (
     <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-header">
-          <h1>Reset Password</h1>
-          <p>Enter your new password below</p>
+      {/* Left Side - Form */}
+      <div className="auth-box">
+        <div className="auth-content">
+          {/* Brand */}
+          <div className="brand-section">
+            <img src={logo} alt="INTERVOS" className="brand-logo" />
+            <h1 className="brand-name">INTERVOS</h1>
+          </div>
+
+          {!resetSuccess ? (
+            /* Reset Form */
+            <div className="form-section">
+              <h2 className="form-title">{t('resetPassword.title')}</h2>
+              <p className="form-subtitle">{t('resetPassword.subtitle')}</p>
+
+              {message.type === 'error' && (
+                <div className="auth-message auth-message-error">
+                  <AlertCircle size={18} style={{ marginRight: '0.5rem', flexShrink: 0 }} />
+                  {message.text}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="auth-form">
+                {/* New Password */}
+                <div className="form-field">
+                  <label>
+                    <Lock size={16} />
+                    {t('resetPassword.newPassword')}
+                  </label>
+                  <div className="password-input">
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder={t('resetPassword.enterNewPassword')}
+                      required
+                      disabled={isLoading}
+                      className={errors.password ? 'error' : ''}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <span className="error-message">
+                      <AlertCircle size={14} />
+                      {errors.password}
+                    </span>
+                  )}
+
+                  {/* Password Strength */}
+                  {formData.password && (
+                    <>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        marginTop: '0.5rem'
+                      }}>
+                        <div style={{
+                          flex: 1,
+                          height: '4px',
+                          borderRadius: '2px',
+                          backgroundColor: '#e5e7eb',
+                          overflow: 'hidden'
+                        }}>
+                          <div style={{
+                            width: `${(passedCount / 5) * 100}%`,
+                            height: '100%',
+                            borderRadius: '2px',
+                            backgroundColor: getStrengthColor(),
+                            transition: 'all 0.3s ease'
+                          }} />
+                        </div>
+                        <span style={{
+                          fontSize: '0.75rem',
+                          fontWeight: '600',
+                          color: getStrengthColor(),
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {getStrengthLabel()}
+                        </span>
+                      </div>
+
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: '0.25rem 1rem',
+                        marginTop: '0.5rem'
+                      }}>
+                        {[
+                          { key: 'minLength', label: t('resetPassword.req8Chars') },
+                          { key: 'hasUpperCase', label: t('resetPassword.reqUppercase') },
+                          { key: 'hasLowerCase', label: t('resetPassword.reqLowercase') },
+                          { key: 'hasNumber', label: t('resetPassword.reqNumber') },
+                          { key: 'hasSpecialChar', label: t('resetPassword.reqSpecial') }
+                        ].map((req) => (
+                          <div
+                            key={req.key}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.375rem',
+                              fontSize: '0.75rem',
+                              color: requirements[req.key] ? '#22c55e' : 'var(--color-text-muted, #6b7280)'
+                            }}
+                          >
+                            {requirements[req.key] ? <Check size={12} /> : <X size={12} />}
+                            <span>{req.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Confirm Password */}
+                <div className="form-field">
+                  <label>
+                    <Lock size={16} />
+                    {t('resetPassword.confirmPassword')}
+                  </label>
+                  <div className="password-input">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      placeholder={t('resetPassword.confirmYourPassword')}
+                      required
+                      disabled={isLoading}
+                      className={errors.confirmPassword ? 'error' : ''}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  {errors.confirmPassword && (
+                    <span className="error-message">
+                      <AlertCircle size={14} />
+                      {errors.confirmPassword}
+                    </span>
+                  )}
+                  {formData.confirmPassword && formData.password === formData.confirmPassword && (
+                    <span style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.375rem',
+                      fontSize: '0.8125rem',
+                      color: '#22c55e',
+                      marginTop: '0.25rem'
+                    }}>
+                      <Check size={14} />
+                      {t('resetPassword.passwordsMatch')}
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  className="submit-btn"
+                  disabled={isLoading || !formData.password || !formData.confirmPassword}
+                >
+                  {isLoading ? t('resetPassword.resetting') : t('resetPassword.resetButton')}
+                </button>
+              </form>
+
+              <div className="form-footer">
+                <p>
+                  <a
+                    href="#"
+                    onClick={(e) => { e.preventDefault(); handleGoBack(); }}
+                  >
+                    <ArrowLeft size={14} style={{ verticalAlign: 'middle', marginRight: '0.25rem' }} />
+                    {t('resetPassword.goBack')}
+                  </a>
+                </p>
+              </div>
+            </div>
+          ) : (
+            /* Success State */
+            <div className="form-section">
+              <div style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '50%',
+                background: 'rgba(16, 185, 129, 0.1)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '1.5rem'
+              }}>
+                <CheckCircle size={32} color="#10b981" />
+              </div>
+              <h2 className="form-title">{t('resetPassword.successTitle')}</h2>
+              <p className="form-subtitle">{t('resetPassword.successSubtitle')}</p>
+
+              <div className="auth-message auth-message-success">
+                <CheckCircle size={18} style={{ marginRight: '0.5rem', flexShrink: 0 }} />
+                {message.text}
+              </div>
+
+              <button
+                className="submit-btn"
+                onClick={handleGoBack}
+                style={{ marginTop: '1.5rem' }}
+              >
+                {t('resetPassword.goBack')}
+              </button>
+            </div>
+          )}
         </div>
+      </div>
 
-        {message.text && (
-          <div className={`auth-message auth-message-${message.type}`}>
-            {message.text}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="auth-form-group">
-            <label htmlFor="password">New Password</label>
-            <div className="auth-password-wrapper">
-              <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Enter new password"
-                required
-                disabled={isLoading}
-                className={`auth-input ${errors.password ? 'auth-input-error' : ''}`}
-              />
-              <button
-                type="button"
-                className="auth-password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? "👁️" : "👁️‍🗨️"}
-              </button>
-            </div>
-            {errors.password && (
-              <span className="auth-error-message">{errors.password}</span>
-            )}
-            <div className="auth-password-requirements">
-              <small>
-                Password must contain at least 8 characters, including uppercase, lowercase, number, and special character
-              </small>
-            </div>
-          </div>
-
-          <div className="auth-form-group">
-            <label htmlFor="confirmPassword">Confirm New Password</label>
-            <div className="auth-password-wrapper">
-              <input
-                id="confirmPassword"
-                type={showConfirmPassword ? "text" : "password"}
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                placeholder="Confirm new password"
-                required
-                disabled={isLoading}
-                className={`auth-input ${errors.confirmPassword ? 'auth-input-error' : ''}`}
-              />
-              <button
-                type="button"
-                className="auth-password-toggle"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-              >
-                {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
-              </button>
-            </div>
-            {errors.confirmPassword && (
-              <span className="auth-error-message">{errors.confirmPassword}</span>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            className="auth-btn-primary"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Resetting Password...' : 'Reset Password'}
-          </button>
-        </form>
-
-        <div className="auth-footer">
-          <button
-            onClick={() => navigate('/')}
-            className="auth-link-btn"
-          >
-            ← Back to Login
-          </button>
+      {/* Right Side - Illustration */}
+      <div className="auth-illustration">
+        <img src={illustrationImg} alt="" />
+        <div className="illustration-overlay">
+          <ShieldCheck size={48} style={{ marginBottom: '1rem', opacity: 0.9 }} />
+          <h2>{t('resetPassword.illustrationTitle')}</h2>
+          <p>{t('resetPassword.illustrationSubtitle')}</p>
         </div>
       </div>
     </div>
