@@ -131,6 +131,12 @@ const ThankYouModal = ({ onClose }) => {
   );
 };
 
+const SUBTOTAL = 19.99;
+const TAX_RATE = 0.05;
+const TAX_LABEL = "GST/HST";
+const TAX_AMOUNT = parseFloat((SUBTOTAL * TAX_RATE).toFixed(2)); // 1.00
+const TOTAL = parseFloat((SUBTOTAL + TAX_AMOUNT).toFixed(2)); // 20.99
+
 const UnlockBudgetForm = ({ jobId, token, handleBudgetModal }) => {
   const stripe = useStripe();
   const elements = useElements();
@@ -294,11 +300,15 @@ const UnlockBudgetForm = ({ jobId, token, handleBudgetModal }) => {
               </div>
               <div className="ub-summary-row">
                 <span>Budget Unlock Fee</span>
-                <strong>$19.99</strong>
+                <strong>${SUBTOTAL.toFixed(2)}</strong>
+              </div>
+              <div className="ub-summary-row ub-tax-row">
+                <span>Tax ({TAX_LABEL} {TAX_RATE * 100}%)</span>
+                <strong>${TAX_AMOUNT.toFixed(2)}</strong>
               </div>
               <div className="ub-summary-total">
                 <span>Total</span>
-                <strong>$19.99</strong>
+                <strong>${TOTAL.toFixed(2)}</strong>
               </div>
             </div>
 
@@ -346,7 +356,7 @@ const UnlockBudgetForm = ({ jobId, token, handleBudgetModal }) => {
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M12 15V17M6 21H18C19.1046 21 20 20.1046 20 19V13C20 11.8954 19.1046 11 18 11H6C4.89543 11 4 11.8954 4 13V19C4 20.1046 4.89543 21 6 21ZM16 11V7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7V11H16Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                     </svg>
-                    <span>Unlock Budget — $19.99</span>
+                    <span>Unlock Budget — ${TOTAL.toFixed(2)}</span>
                   </>
                 )}
               </button>

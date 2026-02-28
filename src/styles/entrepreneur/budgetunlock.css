@@ -451,6 +451,17 @@
   font-weight: 700;
 }
 
+.ub-summary-row.ub-tax-row span {
+  color: #6B7280;
+  font-size: 0.85rem;
+}
+
+.ub-summary-row.ub-tax-row strong {
+  color: #6B7280;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
 /* ===== Form ===== */
 .ub-form {
   padding: 0;

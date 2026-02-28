@@ -216,10 +216,16 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
     setMessage("");
   };
 
+  const TAX_RATE = 0.05;
+  const TAX_LABEL = "GST/HST";
+
   const planDetails = {
     premium: {
       name: "Premium Plan",
+      basePrice: 429,
       price: "$429",
+      tax: parseFloat((429 * TAX_RATE).toFixed(2)),
+      totalWithTax: parseFloat((429 * (1 + TAX_RATE)).toFixed(2)),
       period: "month",
       features: [
         "Unlimited bids per month",
@@ -230,7 +236,10 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
     },
     basic: {
       name: "Basic Plan",
+      basePrice: 250,
       price: "$250",
+      tax: parseFloat((250 * TAX_RATE).toFixed(2)),
+      totalWithTax: parseFloat((250 * (1 + TAX_RATE)).toFixed(2)),
       period: "month",
       features: [
         "30 bids per month",
@@ -241,7 +250,10 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
     },
     starter: {
       name: "Starter Plan",
+      basePrice: 89,
       price: "$89",
+      tax: parseFloat((89 * TAX_RATE).toFixed(2)),
+      totalWithTax: parseFloat((89 * (1 + TAX_RATE)).toFixed(2)),
       period: "month",
       features: [
         "15 bids per month",
@@ -411,9 +423,10 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
             {/* Plan Info */}
             <h2 className="sp-left-title">{currentPlan.name}</h2>
             <div className="sp-left-price">
-              <span className="sp-price-amount">{currentPlan.price}</span>
+              <span className="sp-price-amount">${currentPlan.totalWithTax.toFixed(2)}</span>
               <span className="sp-price-period">/{currentPlan.period}</span>
             </div>
+            <div className="sp-price-tax-note">incl. ${currentPlan.tax.toFixed(2)} {TAX_LABEL}</div>
 
             {/* Trial Badge */}
             <div className="sp-left-trial">
@@ -451,7 +464,11 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
               </div>
               <div className="sp-summary-row">
                 <span>{currentPlan.name}</span>
-                <strong>{currentPlan.price}/{currentPlan.period}</strong>
+                <strong>${currentPlan.basePrice.toFixed(2)}/{currentPlan.period}</strong>
+              </div>
+              <div className="sp-summary-row sp-tax-row">
+                <span>Tax ({TAX_LABEL} {TAX_RATE * 100}%)</span>
+                <strong>${currentPlan.tax.toFixed(2)}/{currentPlan.period}</strong>
               </div>
               <div className="sp-summary-row sp-trial-row">
                 <span>14-Day Trial</span>
@@ -460,6 +477,10 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
               <div className="sp-summary-total">
                 <span>Due Today</span>
                 <strong>$0.00</strong>
+              </div>
+              <div className="sp-summary-after-trial">
+                <span>After trial</span>
+                <strong>${currentPlan.totalWithTax.toFixed(2)}/{currentPlan.period}</strong>
               </div>
             </div>
 
@@ -618,7 +639,7 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
 
               {promoData?.type !== "activation" && (
                 <p className="sp-card-note">
-                  Your card will be charged {currentPlan.price} after the trial ends. Cancel anytime.
+                  Your card will be charged ${currentPlan.totalWithTax.toFixed(2)} (incl. tax) after the trial ends. Cancel anytime.
                 </p>
               )}
             </form>
