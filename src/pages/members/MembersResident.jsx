@@ -1,90 +1,42 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Phone, MessageSquare, MapPin } from 'lucide-react';
+import { MessageSquare, MapPin } from 'lucide-react';
 import Nav from '../../components/Nav';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useResidentDirectory, useInvalidateResidentData } from '../../hooks/useResidentData';
 import '../../styles/resident/members.css';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const MembersResident = () => {
   const navigate = useNavigate();
   const { t, language } = useLanguage();
-  const [residents, setResidents] = useState([]);
-  const [filteredResidents, setFilteredResidents] = useState([]);
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [filterOnline, setFilterOnline] = useState(false);
 
-  console.log('🏠 MembersResident component mounted');
+  // TanStack Query: resident directory
+  const { data: cachedResidents = [], isLoading: queryLoading, error: queryError } = useResidentDirectory();
+  const { invalidateDirectory } = useInvalidateResidentData();
 
-  useEffect(() => {
-    console.log('🔄 Fetching residents...');
-    fetchResidents();
-  }, []);
+  // Filter out current user from the cached list
+  const userProfile = JSON.parse(localStorage.getItem('userProfile') || '{}');
+  const residents = cachedResidents.filter(r => r.user_id !== userProfile.id);
 
-  useEffect(() => {
-    // Filter residents based on search and online status
-    let filtered = residents;
+  // Client-side filtering
+  let filteredResidents = residents;
+  if (search) {
+    filteredResidents = filteredResidents.filter(
+      (resident) =>
+        resident.first_name?.toLowerCase().includes(search.toLowerCase()) ||
+        resident.last_name?.toLowerCase().includes(search.toLowerCase()) ||
+        resident.unit_number?.toLowerCase().includes(search.toLowerCase()) ||
+        resident.bio?.toLowerCase().includes(search.toLowerCase())
+    );
+  }
+  if (filterOnline) {
+    filteredResidents = filteredResidents.filter((resident) => resident.is_online);
+  }
 
-    if (search) {
-      filtered = filtered.filter(
-        (resident) =>
-          resident.first_name?.toLowerCase().includes(search.toLowerCase()) ||
-          resident.last_name?.toLowerCase().includes(search.toLowerCase()) ||
-          resident.unit_number?.toLowerCase().includes(search.toLowerCase()) ||
-          resident.bio?.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-
-    if (filterOnline) {
-      filtered = filtered.filter((resident) => resident.is_online);
-    }
-
-    setFilteredResidents(filtered);
-  }, [search, filterOnline, residents]);
-
-  const fetchResidents = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const userProfile = JSON.parse(localStorage.getItem('userProfile'));
-      if (!userProfile?.token) {
-        setError(t('membersResident.pleaseLogIn'));
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/residents/directory`, {
-        headers: {
-          'Authorization': `Bearer ${userProfile.token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) throw new Error('Failed to fetch residents');
-
-      const data = await response.json();
-      if (data.success) {
-        // Filter out current user from the list - users shouldn't message themselves
-        const otherResidents = data.residents.filter(
-          resident => resident.user_id !== userProfile.id
-        );
-        console.log(`📋 Loaded ${data.residents.length} residents, showing ${otherResidents.length} (excluding self)`);
-        setResidents(otherResidents);
-        setFilteredResidents(otherResidents);
-      } else {
-        setError(data.message || 'Failed to load residents');
-      }
-    } catch (error) {
-      console.error('❌ Error fetching residents:', error);
-      setError(t('membersResident.failedToLoadMembers'));
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = queryLoading && residents.length === 0;
+  const error = queryError?.message || null;
 
   const handleContact = (resident, method) => {
     console.log('🖱️ handleContact called - method:', method, 'resident:', resident.first_name, resident.last_name);
@@ -180,7 +132,7 @@ const MembersResident = () => {
         {error && !loading && (
           <div className="error-container">
             <p className="error-message">{error}</p>
-            <button className="retry-btn" onClick={fetchResidents}>
+            <button className="retry-btn" onClick={() => invalidateDirectory()}>
               {t('membersResident.tryAgain')}
             </button>
           </div>

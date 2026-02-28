@@ -15,6 +15,7 @@ import AddPropertyModal from "../../components/modal/AddPropertyModal"
 import AddWorkModalCompact from "../../components/modal/AddWorkModalCompact"
 import InspectionReportUploadModal from "../../components/InspectionReportUploadModal"
 import NotificationBell from "../../components/NotificationBell"
+import { useManagerDashboard, useInvalidateManagerData } from '../../hooks/useManagerData'
 
 // Skeleton Loader Component
 function SkeletonCard() {
@@ -97,10 +98,19 @@ function HomePage() {
   const navigate = useNavigate()
   const { t } = useLanguage()
 
-  const [properties, setProperties] = useState([])
-  const [jobs, setJobs] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
+  // TanStack Query — cached data, instant on revisit
+  const { data: dashboard, isLoading: queryLoading, error: queryError } = useManagerDashboard()
+  const invalidateManager = useInvalidateManagerData()
+
+  // Derive data from query cache (fallback to empty defaults)
+  const properties = dashboard?.properties || []
+  const jobs = dashboard?.jobs || []
+  const totalProperties = dashboard?.totalProperties || 0
+  const totalJobs = dashboard?.totalJobs || 0
+  const totalBidsApproved = dashboard?.totalBidsApproved || 0
+  const isLoading = queryLoading && !dashboard
+
+  const error = queryError?.message || null
   const [imagesLoaded, setImagesLoaded] = useState({})
 
   const [uProfile, setUProfile] = useState({})
@@ -110,234 +120,17 @@ function HomePage() {
   const [showInspectionModal, setShowInspectionModal] = useState(false)
   const [selectedPropertyForInspection, setSelectedPropertyForInspection] = useState('')
 
-  // Summary statistics
-  const [totalProperties, setTotalProperties] = useState(0)
-  const [totalBidsApproved, setTotalBidsApproved] = useState(0)
-  const [totalJobs, setTotalJobs] = useState(0)
-
-  // Refetch function that can be called to update data
-  const fetchData = useCallback(async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-
-      const userProfile = localStorage.getItem("userProfile")
-      if (!userProfile) {
-        throw new Error("User profile not found")
-      }
-
-      const user = JSON.parse(userProfile)
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-      setUProfile(user)
-        
-        // Fetch jobs
-        const jobsResponse = await fetch(`${API_BASE_URL}/api/jobs/manager/${user.id}`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
-        })
-
-        if (!jobsResponse.ok) {
-          throw new Error(`Failed to fetch jobs: ${jobsResponse.status}`)
-        }
-
-        const jobsData = await jobsResponse.json()
-        setJobs(jobsData.jobs || [])
-
-        // Fetch properties, bids, and images for each job
-        const propertiesData = await Promise.all(
-          (jobsData.jobs || []).map(async (job) => {
-            try {
-              // Skip if property_id is null or invalid
-              if (!job.property_id || job.property_id === 'null' || job.property_id === 'undefined') {
-                console.warn(`Job ${job.id} has invalid property_id:`, job.property_id);
-                return null;
-              }
-
-              // Fetch property details
-              const propertyResponse = await fetch(`${API_BASE_URL}/api/properties/${job.property_id}`, {
-                method: "GET",
-                headers: {
-                  'Authorization': `Bearer ${user.token}`,
-                },
-              })
-
-              if (!propertyResponse.ok) {
-                throw new Error(`Failed to fetch property: ${propertyResponse.status}`)
-              }
-
-              const propertyData = await propertyResponse.json()
-              const property = propertyData.property
-
-              // Fetch bids for this job
-              let bidCount = 0
-              let hasApprovedBid = false
-              try {
-                const bidsResponse = await fetch(`${API_BASE_URL}/api/bids/job/${job.id}`, {
-                  method: "GET",
-                  headers: {
-                    Authorization: `Bearer ${user.token}`,
-                  },
-                })
-
-                if (bidsResponse.ok) {
-                  const bidsData = await bidsResponse.json()
-                  bidCount = bidsData.total_bids || 0
-                  // Check if there's any approved bid
-                  const bids = bidsData.bids || []
-                  hasApprovedBid = bids.some(bid =>
-                    bid.status?.toLowerCase() === 'approved' ||
-                    bid.status?.toLowerCase() === 'accepted'
-                  )
-                }
-              } catch (bidError) {
-                console.error("Error fetching bids:", bidError)
-                // Continue with 0 bids if fetch fails
-              }
-
-              // Fetch images for this job
-              let jobImages = []
-              const placeholderImage = "/defaultjobs.png"
-
-              try {
-                const imagesResponse = await fetch(`${API_BASE_URL}/api/jobs/${job.id}/images`, {
-                  method: "GET",
-                  headers: {
-                    Authorization: `Bearer ${user.token}`,
-                  },
-                })
-
-                if (imagesResponse.ok) {
-                  const imagesData = await imagesResponse.json()
-                  if (imagesData.images && imagesData.images.length > 0) {
-                    jobImages = imagesData.images.map(img => img.image_url)
-                  }
-                }
-              } catch (imageError) {
-                console.error("Error fetching job images:", imageError)
-              }
-
-              // Use fetched images or fallback to placeholder
-              const finalImages = jobImages.length > 0 ? jobImages : [placeholderImage]
-
-              return {
-                id: job.id,
-                property: property.building_name || property.address || "Unknown Property",
-                address: `${property.city} ${property.province}`,
-                apartment: job.title,
-                category: job.urgency,
-                description: job.description,
-                bids: bidCount,
-                hasApprovedBid: hasApprovedBid,
-                budget: `$${job.budget_min} - $${job.budget_max}`,
-                images: finalImages,
-                data: {
-                  mangerId: property.manager_id,
-                  propertyId: property.id,
-                  jobId: job.id,
-                },
-                created_at: job.created_at,
-                building_type: property.building_type,
-                status: job.status
-              }
-            } catch (err) {
-              console.error("Error fetching property:", err)
-              return null
-            }
-          }),
-        )
-
-        // Filter out null values from failed requests
-        const validProperties = propertiesData.filter((p) => p !== null)
-        setProperties(validProperties)
-
-        // Calculate summary statistics
-        // 1. Total properties - Fetch all properties owned by the manager
-        try {
-          const propertiesResponse = await fetch(`${API_BASE_URL}/api/properties/`, {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${user.token}`,
-            },
-          })
-
-          if (propertiesResponse.ok) {
-            const propertiesData = await propertiesResponse.json()
-            // Count unique properties by ID
-            const uniquePropertyIds = new Set(
-              (propertiesData.properties || []).map(p => p.id)
-            )
-            setTotalProperties(uniquePropertyIds.size)
-          } else {
-            // Fallback: count from jobs if properties fetch fails
-            const uniquePropertyIds = new Set(
-              (jobsData.jobs || [])
-                .filter(job => job.property_id && job.property_id !== 'null' && job.property_id !== 'undefined')
-                .map(job => job.property_id)
-            )
-            setTotalProperties(uniquePropertyIds.size)
-          }
-        } catch (error) {
-          console.error('Error fetching properties count:', error)
-          // Fallback: count from jobs
-          const uniquePropertyIds = new Set(
-            (jobsData.jobs || [])
-              .filter(job => job.property_id && job.property_id !== 'null' && job.property_id !== 'undefined')
-              .map(job => job.property_id)
-          )
-          setTotalProperties(uniquePropertyIds.size)
-        }
-
-        // 2. Total jobs
-        setTotalJobs(jobsData.jobs?.length || 0)
-
-        // 3. Total approved bids - fetch all bids for all jobs
-        let approvedBidsCount = 0
-        try {
-          const bidsPromises = (jobsData.jobs || []).map(async (job) => {
-            try {
-              const bidsResponse = await fetch(`${API_BASE_URL}/api/bids/job/${job.id}`, {
-                method: "GET",
-                headers: {
-                  Authorization: `Bearer ${user.token}`,
-                },
-              })
-
-              if (bidsResponse.ok) {
-                const bidsData = await bidsResponse.json()
-                const bids = bidsData.bids || []
-                return bids.filter(bid =>
-                  bid.status?.toLowerCase() === 'approved' ||
-                  bid.status?.toLowerCase() === 'accepted'
-                ).length
-              }
-              return 0
-            } catch (error) {
-              console.error(`Error fetching bids for job ${job.id}:`, error)
-              return 0
-            }
-          })
-
-          const approvedBidsCounts = await Promise.all(bidsPromises)
-          approvedBidsCount = approvedBidsCounts.reduce((sum, count) => sum + count, 0)
-        } catch (error) {
-          console.error('Error calculating approved bids:', error)
-        }
-
-        setTotalBidsApproved(approvedBidsCount)
-        setIsLoading(false)
-      } catch (err) {
-        console.error("Error fetching data:", err)
-        setError(err.message)
-        setIsLoading(false)
-      }
-    }, [])
-
-  // Call fetchData on component mount
+  // Initialize user profile from localStorage
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    const profileString = localStorage.getItem("userProfile")
+    if (profileString) {
+      try {
+        setUProfile(JSON.parse(profileString))
+      } catch (e) {
+        console.error("Error parsing profile:", e)
+      }
+    }
+  }, [])
 
   const [selectedRepair, setSelectedRepair] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
@@ -894,7 +687,7 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
           console.log('Property added successfully:', property);
           setShowAddPropertyModal(false);
           // Refetch data to update property count
-          fetchData();
+          invalidateManager();
         }}
       />
 
@@ -905,7 +698,7 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
         onSuccess={(result) => {
           setShowAddWorkModal(false);
           // Refetch data to show new job(s)
-          fetchData();
+          invalidateManager();
         }}
       />
 
@@ -920,7 +713,7 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
           console.log('Jobs created from inspection:', createdJobs);
           setShowInspectionModal(false);
           // Refetch data to show new jobs
-          fetchData();
+          invalidateManager();
         }}
         propertyId={selectedPropertyForInspection}
       />

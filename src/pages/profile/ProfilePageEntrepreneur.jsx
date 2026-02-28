@@ -16,21 +16,39 @@ import UpdatePaymentMethodModal from '../../components/UpdatePaymentMethodModal'
 import '../../styles/entrepreneur/subscriptionmodal.css'
 import { logout } from '../../utils/api'
 import { useLanguage, LANGUAGES } from '../../contexts/LanguageContext'
+import {
+  useEntrepreneurProfile,
+  useEntrepreneurReviews,
+  useEntrepreneurSubscription,
+  useQueuedPromo,
+  useBillingHistory,
+  useInvalidateEntrepreneurProfile,
+} from '../../hooks/useEntrepreneurProfileData'
 
 function ProfilePageEntrepreneur() {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
   const { t, language, changeLanguage, languages } = useLanguage();
   const [activeTab, setActiveTab] = useState('account');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [profile, setProfile] = useState(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [reviews, setReviews] = useState([])
-  const [reviewsLoading, setReviewsLoading] = useState(false)
+
+  // TanStack Query hooks — cached data, instant on revisit
+  const { data: profile = null, isLoading: profileLoading } = useEntrepreneurProfile()
+  const { data: reviews = [], isLoading: reviewsLoading } = useEntrepreneurReviews()
+  const { data: cachedSubscription = {}, isLoading: subscriptionLoading } = useEntrepreneurSubscription()
+  const { data: queuedPromo = null } = useQueuedPromo()
+  const { data: billingData, isLoading: billingLoading } = useBillingHistory(activeTab === 'billing')
+  const invalidate = useInvalidateEntrepreneurProfile()
+
+  // Derived data from query cache
+  const subscription = cachedSubscription
+  const billingHistory = billingData?.payments || []
+  const billingSummary = billingData?.summary || null
+  const isLoading = profileLoading && !profile
+
   const [isUpdating, setIsUpdating] = useState(false)
   const [profileImage, setProfileImage] = useState(null)
   const [profileImagePreview, setProfileImagePreview] = useState(null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
-  const [subscription, setSubscription] = useState({})
   const [userProfile, setUserProfile] = useState(null)
   const [showPlansModal, setShowPlansModal] = useState(false)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
@@ -52,7 +70,6 @@ function ProfilePageEntrepreneur() {
   const [trialPromoData, setTrialPromoData] = useState(null)
   const [isQueueingPromo, setIsQueueingPromo] = useState(false)
   const [isApplyingPromoNow, setIsApplyingPromoNow] = useState(false)
-  const [queuedPromo, setQueuedPromo] = useState(null)
 
   // Password change states
   const [passwordForm, setPasswordForm] = useState({
@@ -70,11 +87,7 @@ function ProfilePageEntrepreneur() {
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [isSendingReset, setIsSendingReset] = useState(false)
 
-
-  // Billing history states
-  const [billingHistory, setBillingHistory] = useState([])
-  const [billingSummary, setBillingSummary] = useState(null)
-  const [billingLoading, setBillingLoading] = useState(false)
+  // Billing states
   const [invoiceYear, setInvoiceYear] = useState(new Date().getFullYear())
 
   const [formData, setFormData] = useState({
@@ -97,9 +110,10 @@ function ProfilePageEntrepreneur() {
     settings: t('profileEntrepreneur.settings')
   }
 
-  // Refresh subscription data from API (not just localStorage)
-  // showModalOnFailure: only show the payment failed modal on initial page load, not after payment update
+  // Refresh subscription data — invalidates TanStack Query cache + syncs localStorage
   const refreshSubscriptionData = async (showModalOnFailure = false) => {
+    await invalidate.invalidateSubscription()
+    // Sync localStorage for other components that still read from it
     const uProf = localStorage.getItem('userProfile')
     if (!uProf) return
     const user = JSON.parse(uProf)
@@ -111,14 +125,12 @@ function ProfilePageEntrepreneur() {
       if (response.ok) {
         const subscriptionData = await response.json()
         const sub = subscriptionData.subscription || {}
-        setSubscription(sub)
         const updatedProfile = {
           ...user,
           entrepProfile: { ...user.entrepProfile, subscription: subscriptionData }
         }
         localStorage.setItem('userProfile', JSON.stringify(updatedProfile))
         setUserProfile(updatedProfile)
-        // Only auto-show payment failed modal on initial page load
         if (showModalOnFailure && sub.status === 'past_due') {
           setShowPaymentFailedModal(true)
         }
@@ -128,20 +140,21 @@ function ProfilePageEntrepreneur() {
     }
   }
 
+  // Initialize userProfile from localStorage + check for payment failure on mount
   useEffect(() => {
-    fetchEntreprenuerProfile()
-    fetchQueuedPromo()
-    refreshSubscriptionData(true)
-
     const uProfile = localStorage.getItem('userProfile')
     if (uProfile) {
       const u = JSON.parse(uProfile)
       setUserProfile(u)
-      if (u.entrepProfile && u.entrepProfile.subscription) {
-        setSubscription(u.entrepProfile.subscription.subscription || {})
-      }
     }
   }, [])
+
+  // Show payment failed modal when subscription data loads with past_due status
+  useEffect(() => {
+    if (subscription.status === 'past_due') {
+      setShowPaymentFailedModal(true)
+    }
+  }, [subscription.status])
 
   // Subscription helper functions
   const formatDate = (dateString) => {
@@ -187,110 +200,11 @@ function ProfilePageEntrepreneur() {
     return { percentage, daysRemaining, endDate: end };
   };
 
-  const fetchEntreprenuerProfile = async () => {
-    const userProfile = localStorage.getItem('userProfile')
-
-    if(userProfile) {
-      const user = JSON.parse(userProfile)
-      const entrepResponse = await fetch(`${API_BASE_URL}/api/users/entrepreneur/profile`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${user.token}`
-        }
-      })
-
-      if(!entrepResponse.ok) {
-        throw new Error(`Error ${entrepResponse.status}`)
-      }
-
-      const entrepData = await entrepResponse.json()
-
-      const newEntrepData = {
-        userId: user.id,
-        companyName: entrepData.profile.company_name,
-        licenseNumber: entrepData.profile.license_number,
-        yearsInBusiness: entrepData.profile.years_in_business,
-        numEmployees: entrepData.profile.num_employees,
-        address: entrepData.profile.address,
-        phone: entrepData.profile.phone || 'Not provided',
-        email: entrepData.profile.email,
-        specializations: entrepData.profile.specializations,
-        averageRating: entrepData.profile.average_rating,
-        totalReviews: entrepData.profile.total_reviews || 0,
-        image: entrepData.profile.image
-      }
-
-      setProfile(newEntrepData)
-      setIsLoading(false)
-
-      fetchReviews(user.id, user.token)
-    }
-  }
-
-  const fetchReviews = async (userId, token) => {
-    setReviewsLoading(true)
-
-    try {
-      const reviewsResponse = await fetch(`${API_BASE_URL}/api/reviews/reviewed/${userId}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-
-      if(reviewsResponse.ok) {
-        const reviewsData = await reviewsResponse.json()
-        setReviews(reviewsData.reviews || [])
-      }
-    } catch (error) {
-      console.error('Error fetching reviews:', error)
-      setReviews([])
-    } finally {
-      setReviewsLoading(false)
-    }
-  }
-
   const calculateAverageRating = () => {
     if (reviews.length === 0) return 0
     const sum = reviews.reduce((acc, review) => acc + review.rating, 0)
     return (sum / reviews.length).toFixed(1)
   }
-
-  // Fetch billing history
-  const fetchBillingHistory = async () => {
-    setBillingLoading(true)
-    try {
-      const uProfile = localStorage.getItem('userProfile')
-      if (!uProfile) return
-
-      const user = JSON.parse(uProfile)
-      const response = await fetch(`${API_BASE_URL}/api/payments/billing-history`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${user.token}`
-        }
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setBillingHistory(data.payments || [])
-        setBillingSummary(data.summary || null)
-      }
-    } catch (error) {
-      console.error('Error fetching billing history:', error)
-      setBillingHistory([])
-      setBillingSummary(null)
-    } finally {
-      setBillingLoading(false)
-    }
-  }
-
-  // Fetch billing history when tab changes to billing
-  useEffect(() => {
-    if (activeTab === 'billing' && billingHistory.length === 0 && !billingLoading) {
-      fetchBillingHistory()
-    }
-  }, [activeTab])
 
   const generateAnnualInvoice = (year) => {
     const yearPayments = billingHistory.filter(p => {
@@ -555,7 +469,7 @@ function ProfilePageEntrepreneur() {
           })
         }
 
-        await fetchEntreprenuerProfile()
+        await invalidate.invalidateProfile()
 
         setProfileImage(null)
         setProfileImagePreview(null)
@@ -601,34 +515,7 @@ function ProfilePageEntrepreneur() {
     setShowPaymentModal(false)
     setSelectedPlanType('')
     if (success) {
-      const uProf = localStorage.getItem('userProfile')
-      if (uProf) {
-        const u = JSON.parse(uProf)
-        try {
-          const response = await fetch(`${API_BASE_URL}/api/payments/subscription`, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${u.token}`
-            }
-          })
-          if (response.ok) {
-            const subscriptionData = await response.json()
-            setSubscription(subscriptionData.subscription || {})
-
-            const updatedProfile = {
-              ...u,
-              entrepProfile: {
-                ...u.entrepProfile,
-                subscription: subscriptionData,
-              },
-            }
-            localStorage.setItem('userProfile', JSON.stringify(updatedProfile))
-            setUserProfile(updatedProfile)
-          }
-        } catch (error) {
-          console.error('Error refreshing subscription:', error)
-        }
-      }
+      await refreshSubscriptionData()
     }
   };
 
@@ -655,28 +542,8 @@ function ProfilePageEntrepreneur() {
         throw new Error(data.message || 'Failed to cancel subscription')
       }
 
-      // Refresh subscription data
-      const subResponse = await fetch(`${API_BASE_URL}/api/payments/subscription`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${user.token}`
-        }
-      })
-
-      if (subResponse.ok) {
-        const subscriptionData = await subResponse.json()
-        setSubscription(subscriptionData.subscription || {})
-
-        const updatedProfile = {
-          ...user,
-          entrepProfile: {
-            ...user.entrepProfile,
-            subscription: subscriptionData,
-          },
-        }
-        localStorage.setItem('userProfile', JSON.stringify(updatedProfile))
-        setUserProfile(updatedProfile)
-      }
+      // Refresh subscription data via cache invalidation + localStorage sync
+      await refreshSubscriptionData()
 
       setShowCancelConfirmModal(false)
       setShowPlansModal(false)
@@ -731,29 +598,11 @@ function ProfilePageEntrepreneur() {
         throw new Error(data.error || data.message || 'Invalid promo code')
       }
 
-      // Update subscription state
-      if (data.subscription) {
-        setSubscription(data.subscription)
-
-        const updatedProfile = {
-          ...user,
-          entrepProfile: {
-            ...user.entrepProfile,
-            subscription: {
-              hasSubscription: true,
-              subscription: data.subscription,
-            },
-          },
-        }
-        localStorage.setItem('userProfile', JSON.stringify(updatedProfile))
-        setUserProfile(updatedProfile)
-      }
+      // Refresh subscription via cache invalidation + localStorage sync
+      await refreshSubscriptionData()
 
       setPromoCode('')
       toast.success(t('profileEntrepreneur.promoCodeApplied') || 'Promo code applied successfully!')
-
-      // Reload the page to refresh all subscription data
-      window.location.reload()
     } catch (error) {
       console.error('Error applying promo code:', error)
       setPromoError(error.message || t('profileEntrepreneur.invalidPromoCode') || 'Invalid promo code')
@@ -791,10 +640,7 @@ function ProfilePageEntrepreneur() {
         throw new Error(data.error || data.message || 'Failed to queue promo code')
       }
 
-      setQueuedPromo({
-        code: trialPromoData.promo_code,
-        will_apply_on: trialPromoData.trial_info.trial_end
-      })
+      invalidate.invalidatePromo()
 
       setShowTrialPromoModal(false)
       setTrialPromoData(null)
@@ -837,60 +683,19 @@ function ProfilePageEntrepreneur() {
         throw new Error(data.error || data.message || 'Failed to apply promo code')
       }
 
-      // Update subscription state
-      if (data.subscription) {
-        setSubscription(data.subscription)
-
-        const updatedProfile = {
-          ...user,
-          entrepProfile: {
-            ...user.entrepProfile,
-            subscription: {
-              hasSubscription: true,
-              subscription: data.subscription,
-            },
-          },
-        }
-        localStorage.setItem('userProfile', JSON.stringify(updatedProfile))
-        setUserProfile(updatedProfile)
-      }
+      // Refresh subscription via cache invalidation + localStorage sync
+      await refreshSubscriptionData()
 
       setShowTrialPromoModal(false)
       setTrialPromoData(null)
       setPromoCode('')
       toast.success(data.message || t('profileEntrepreneur.promoAppliedNow') || 'Promo code applied! You now have free premium access.')
 
-      // Reload the page to refresh all subscription data
-      window.location.reload()
-
     } catch (error) {
       console.error('Error applying promo code now:', error)
       toast.error(error.message || 'Failed to apply promo code')
     } finally {
       setIsApplyingPromoNow(false)
-    }
-  }
-
-  // Fetch queued promo on mount
-  const fetchQueuedPromo = async () => {
-    try {
-      const uProf = localStorage.getItem('userProfile')
-      if (!uProf) return
-
-      const user = JSON.parse(uProf)
-      const response = await fetch(`${API_BASE_URL}/api/payments/queued-promo`, {
-        headers: {
-          'Authorization': `Bearer ${user.token}`
-        }
-      })
-
-      const data = await response.json()
-
-      if (data.has_queued_promo) {
-        setQueuedPromo(data.queued_promo)
-      }
-    } catch (error) {
-      console.error('Error fetching queued promo:', error)
     }
   }
 
@@ -1709,7 +1514,7 @@ function ProfilePageEntrepreneur() {
                   <div className="ep-billing-actions">
                     <button
                       className="ep-btn ep-btn-secondary"
-                      onClick={fetchBillingHistory}
+                      onClick={() => invalidate.invalidateBilling()}
                       disabled={billingLoading}
                     >
                       {billingLoading ? t('common.loading') : t('profileEntrepreneur.refreshBilling')}

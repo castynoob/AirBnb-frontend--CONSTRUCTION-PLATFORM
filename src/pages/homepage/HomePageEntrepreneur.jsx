@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useMemo, useRef, useEffect, useCallback } from "react"
+import { useQueryClient } from '@tanstack/react-query'
+import { useProperties, useJobs, useBids } from '../../hooks/useEntrepreneurData'
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
@@ -195,6 +197,12 @@ const SkeletonJobCard = () => (
 
 function HomePageEntrepreneur() {
   const { t, language } = useLanguage()
+  const queryClient = useQueryClient()
+
+  // TanStack Query hooks — cached data, instant on revisit
+  const { data: cachedProperties = [], isLoading: propertiesLoading } = useProperties()
+  const { data: cachedJobs = [], isLoading: jobsQueryLoading } = useJobs()
+  const { data: cachedBids = [], isLoading: bidsLoading } = useBids()
 
   // Job type image mapping
   const PLACEHOLDER_IMAGE = "/defaultjob.jpg";
@@ -257,11 +265,27 @@ function HomePageEntrepreneur() {
   const [skillMatchEnabled, setSkillMatchEnabled] = useState(false)
   const [entrepreneurSpecializations, setEntrepreneurSpecializations] = useState([])
 
-  // data variables
+  // data variables — seeded from TanStack Query cache
   const [properties, setProperties] = useState([])
   const [jobs, setJobs] = useState([])
   const [jobsLoading, setJobsLoading] = useState(true)
-  const [submittedBids, setSubmittedBids] = useState([]) // Now stores full bid objects
+  const [submittedBids, setSubmittedBids] = useState([])
+
+  // Sync query cache → local state (enables instant data on revisit)
+  useEffect(() => {
+    if (cachedProperties.length > 0) setProperties(cachedProperties)
+  }, [cachedProperties])
+
+  useEffect(() => {
+    if (cachedJobs.length > 0) {
+      setJobs(cachedJobs)
+      setJobsLoading(false)
+    }
+  }, [cachedJobs])
+
+  useEffect(() => {
+    if (cachedBids.length > 0) setSubmittedBids(cachedBids)
+  }, [cachedBids])
   const [showUnlockBudgetModal, setShowUnlockBudgetModal] = useState(false)
   const [budgetJobId, setBudgetJobId] = useState('')
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false)
@@ -323,97 +347,8 @@ function HomePageEntrepreneur() {
     return R * c;
   }, [])
 
-  // Extracted fetch functions for reusability
-  const fetchPropertiesData = useCallback(async (user) => {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-    const response = await fetch(`${API_BASE_URL}/api/properties/all`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${user.token}`,
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`)
-    }
-
-    const data = await response.json()
-    const newProperties = []
-    data.properties.forEach((d) => {
-      const propertyName = d.building_name && d.building_name.trim() ? d.building_name : d.address
-      newProperties.push({
-        id: d.id,
-        name: propertyName,
-        latitude: Number(d.latitude),
-        longitude: Number(d.longitude),
-        address: d.address,
-        region: d.province,
-        city: d.city,
-        totalUnits: d.num_units,
-        propertyType: d.building_type,
-        // Manager info
-        managerId: d.manager_id,
-        managerUserId: d.manager_user_id,
-        managerCompanyName: d.manager_company_name,
-        managerFirstName: d.manager_first_name,
-        managerLastName: d.manager_last_name,
-        managerEmail: d.manager_email,
-        managerImage: d.manager_image,
-      })
-    })
-    return newProperties
-  }, [])
-
-  const fetchJobsData = useCallback(async (user) => {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-    const response = await fetch(`${API_BASE_URL}/api/jobs`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${user.token}`,
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`)
-    }
-
-    const jobsData = await response.json()
-    let jobsArray = []
-
-    if (Array.isArray(jobsData)) {
-      jobsArray = jobsData
-    } else if (jobsData.jobs && Array.isArray(jobsData.jobs)) {
-      jobsArray = jobsData.jobs
-    } else if (typeof jobsData === 'object' && jobsData !== null) {
-      jobsArray = Object.values(jobsData).filter(item => typeof item === 'object' && item !== null && item.id)
-    }
-
-    // Transform jobs immediately without waiting for budget status
-    const transformedJobs = jobsArray.map(job => ({
-      id: job.id,
-      property_id: job.property_id,
-      title: job.title,
-      description: job.description,
-      category: job.category,
-      urgency: job.urgency,
-      due_date: job.due_date,
-      estimated_duration_days: job.estimated_duration_days,
-      budget_min: (job.budget_min ?? 0).toString(),
-      budget_max: (job.budget_max ?? 0).toString(),
-      status: job.status,
-      bidCount: 0,
-      daysUntilNeeded: Math.ceil(
-        (new Date(job.due_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
-      ),
-      budgetData: {
-        unlocked: false,
-        unlockDate: null,
-        amountPaid: 0
-      }
-    }))
-
-    return transformedJobs
-  }, [])
+  // NOTE: Properties, jobs, and bids initial fetching is handled by TanStack Query hooks
+  // (useProperties, useJobs, useBids) — see top of component.
 
   // Fetch budget status for all jobs in the background and update state
   const enrichJobsWithBudgetData = useCallback(async (jobsList, user) => {
@@ -442,56 +377,25 @@ function HomePageEntrepreneur() {
     ))
   }, [])
 
-  const fetchBidsData = useCallback(async (user) => {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-    const bidsResponse = await fetch(`${API_BASE_URL}/api/bids/mine`, {
-      headers: {
-        Authorization: `Bearer ${user.token}`
-      }
-    })
-
-    if (!bidsResponse.ok) {
-      throw new Error(`HTTP error! Status: ${bidsResponse.status}`)
-    }
-
-    const bids = await bidsResponse.json()
-    // Return full bid objects for view/edit/delete functionality
-    return bids.bids.all
-  }, [])
-
   // Refresh data function (used after subscription/budget unlock)
+  // Invalidates TanStack Query cache so fresh data is fetched
   const refreshData = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['entrepreneur'] })
+
+    // Also enrich budget data after refresh
     const profileString = localStorage.getItem("userProfile")
-    if (!profileString) return
-
-    try {
-      const user = JSON.parse(profileString)
-
-      // Fetch all data in parallel (fast)
-      const [newProperties, newJobs, bidsData] = await Promise.all([
-        fetchPropertiesData(user),
-        fetchJobsData(user),
-        fetchBidsData(user)
-      ])
-
-      setProperties(newProperties)
-      setJobs(newJobs)
-      setSubmittedBids(bidsData)
-
-      // Enrich budget data in background
-      enrichJobsWithBudgetData(newJobs, user)
-
-      // Restore selected property if it exists
-      if (selectedProperty) {
-        const restoredProperty = newProperties.find(p => p.id === selectedProperty.id)
-        if (restoredProperty) {
-          setSelectedProperty(restoredProperty)
+    if (profileString) {
+      try {
+        const user = JSON.parse(profileString)
+        const freshJobs = queryClient.getQueryData(['entrepreneur', 'jobs'])
+        if (freshJobs) {
+          enrichJobsWithBudgetData(freshJobs, user)
         }
+      } catch (error) {
+        console.error("Error enriching budget data:", error)
       }
-    } catch (error) {
-      console.error("Error refreshing data:", error)
     }
-  }, [fetchPropertiesData, fetchJobsData, fetchBidsData, selectedProperty])
+  }, [queryClient, enrichJobsWithBudgetData])
 
   // Helper function to check if user has bid on a job
   const hasBidOnJob = useCallback((jobId) => {
@@ -839,7 +743,7 @@ function HomePageEntrepreneur() {
         }
 
         const result = await response.json()
-        fetchBids()
+        refreshBids()
 
         // Update local subscription data with new bids_remaining for starter/basic plan
         if (result.subscription && (result.subscription.plan_type === 'starter' || result.subscription.plan_type === 'basic')) {
@@ -876,30 +780,9 @@ function HomePageEntrepreneur() {
     }
   }
 
-  const fetchBids = async () => {
-    const userProfile = localStorage.getItem('userProfile')
-    if (userProfile) {
-      try {
-        const user = JSON.parse(userProfile)
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-        const bidsResponse = await fetch(`${API_BASE_URL}/api/bids/mine`, {
-          headers: {
-            Authorization: `Bearer ${user.token}`
-          }
-        })
-
-        if (!bidsResponse.ok) {
-          throw new Error(`HTTP error! Status: ${bidsResponse.status}`)
-        }
-
-        const bids = await bidsResponse.json()
-
-        // Store full bid objects
-        setSubmittedBids(bids.bids.all)
-      } catch (error) {
-        console.error("Failed to fetch bids:", error)
-      }
-    }
+  // Refresh bids via TanStack Query cache invalidation
+  const refreshBids = () => {
+    queryClient.invalidateQueries({ queryKey: ['entrepreneur', 'bids'] })
   }
 
   // Handle viewing a bid
@@ -949,7 +832,7 @@ function HomePageEntrepreneur() {
       setViewBidModalOpen(false)
       setIsEditingBid(false)
       setSelectedBidToView(null)
-      fetchBids() // Refresh bids
+      refreshBids() // Refresh bids via cache
     } catch (err) {
       console.error(err)
       toast.error(err.message || "Failed to update bid. Please try again.")
@@ -982,7 +865,7 @@ function HomePageEntrepreneur() {
       toast.success(t('entrepreneurHome.bidDeletedSuccess'))
       setViewBidModalOpen(false)
       setSelectedBidToView(null)
-      fetchBids() // Refresh bids
+      refreshBids() // Refresh bids via cache
     } catch (err) {
       console.error(err)
       toast.error(err.message || "Failed to delete bid. Please try again.")
@@ -1161,79 +1044,58 @@ function HomePageEntrepreneur() {
     }
   }, [selectedProperty])
 
-  // Fetch properties from API (using extracted function)
+  // Initialize user profile and restore selected property from cache
   useEffect(() => {
-    const fetchInitialData = async () => {
-      const profileString = localStorage.getItem("userProfile")
+    const profileString = localStorage.getItem("userProfile")
+    if (profileString) {
       try {
-        if (profileString) {
-          const user = JSON.parse(profileString)
-          setUserProfile(user)
-          getProfileAfterSubs(user)
+        const user = JSON.parse(profileString)
+        setUserProfile(user)
+        getProfileAfterSubs(user)
 
-          // Extract entrepreneur specializations for skill-based filtering
-          const specs = user.entrepProfile?.entrepProfile?.specializations ||
-                        user.entrepProfile?.profile?.specializations || []
-          setEntrepreneurSpecializations(Array.isArray(specs) ? specs : [])
-
-          const newProperties = await fetchPropertiesData(user)
-          setProperties(newProperties)
-
-          const savedPropertyId = localStorage.getItem("selectedPropertyId")
-          if (savedPropertyId) {
-            const restoredProperty = newProperties.find((p) => p.id === savedPropertyId)
-            if (restoredProperty) {
-              setSelectedProperty(restoredProperty)
-              setMapCenter([restoredProperty.latitude, restoredProperty.longitude])
-              setMapZoom(17)
-            }
-          }
-        } else {
-          console.log("User profile not found.")
-        }
+        // Extract entrepreneur specializations for skill-based filtering
+        const specs = user.entrepProfile?.entrepProfile?.specializations ||
+                      user.entrepProfile?.profile?.specializations || []
+        setEntrepreneurSpecializations(Array.isArray(specs) ? specs : [])
       } catch (error) {
-        console.error("Error fetching properties or parsing profile:", error)
-      } finally {
-        setIsLoading(false)
+        console.error("Error parsing profile:", error)
       }
     }
+  }, [])
 
-    fetchInitialData()
-  }, [fetchPropertiesData])
-
-  // Fetch jobs from API (using extracted function)
+  // Restore selected property when properties are loaded (from cache or fetch)
   useEffect(() => {
-    const fetchInitialJobs = async () => {
-      const profileString = localStorage.getItem("userProfile")
-      setJobsLoading(true)
-
-      try {
-        if (profileString) {
-          const user = JSON.parse(profileString)
-
-          // Fetch jobs and bids in parallel (fast — no budget status calls)
-          const [jobsList, bidIds] = await Promise.all([
-            fetchJobsData(user),
-            fetchBidsData(user)
-          ])
-
-          setJobs(jobsList)
-          setSubmittedBids(bidIds)
-          setJobsLoading(false)
-
-          // Enrich with budget data in the background (slow — per-job API calls)
-          enrichJobsWithBudgetData(jobsList, user)
+    if (cachedProperties.length > 0) {
+      const savedPropertyId = localStorage.getItem("selectedPropertyId")
+      if (savedPropertyId && !selectedProperty) {
+        const restoredProperty = cachedProperties.find((p) => p.id === savedPropertyId)
+        if (restoredProperty) {
+          setSelectedProperty(restoredProperty)
+          setMapCenter([restoredProperty.latitude, restoredProperty.longitude])
+          setMapZoom(17)
         }
-      } catch (error) {
-        console.error("Error fetching jobs:", error)
-        toast.error(t('entrepreneurHome.failedLoadJobs'))
-      } finally {
-        setJobsLoading(false)
+      }
+      setIsLoading(false)
+    }
+    if (!propertiesLoading && cachedProperties.length === 0) {
+      setIsLoading(false)
+    }
+  }, [cachedProperties, propertiesLoading])
+
+  // Enrich jobs with budget data once TanStack Query delivers them
+  useEffect(() => {
+    if (cachedJobs.length > 0) {
+      const profileString = localStorage.getItem("userProfile")
+      if (profileString) {
+        try {
+          const user = JSON.parse(profileString)
+          enrichJobsWithBudgetData(cachedJobs, user)
+        } catch (error) {
+          console.error("Error enriching budget data:", error)
+        }
       }
     }
-
-    fetchInitialJobs()
-  }, [fetchJobsData, fetchBidsData, enrichJobsWithBudgetData])
+  }, [cachedJobs, enrichJobsWithBudgetData])
 
   const getProfileAfterSubs = (user) => {
     const uProf = localStorage.getItem('userProfile')

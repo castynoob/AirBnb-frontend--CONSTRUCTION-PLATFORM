@@ -5,6 +5,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { Image as ImageIcon, Paperclip, X, File, Download, Loader2 } from 'lucide-react';
 import Nav from '../../components/Nav';
 import '../../styles/resident/messagesresident.css';
+import { useResidentGroupChats, useResidentDirectMessages, useInvalidateMessages } from '../../hooks/useMessagesData';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -71,6 +72,12 @@ const MessagesResident = () => {
   // defensive: useSocket() may return null if context not available during refresh
   const socketContext = useSocket();
   const socket = socketContext?.socket;
+
+  // TanStack Query — cached chat lists, instant on revisit
+  const { data: cachedGroupChats = [], isLoading: groupsLoading } = useResidentGroupChats()
+  const { data: cachedDirectMessages = [], isLoading: dmsLoading } = useResidentDirectMessages()
+  const { invalidateResidentGroups, invalidateResidentDMs } = useInvalidateMessages()
+
   const [activeTab, setActiveTab] = useState('group'); // 'group' or 'dm'
   const [groupChats, setGroupChats] = useState([]);
   const [directMessages, setDirectMessages] = useState([]);
@@ -78,7 +85,7 @@ const MessagesResident = () => {
   const [activeDM, setActiveDM] = useState(null);
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
-  const [loading, setLoading] = useState(true);
+  const loading = (groupsLoading || dmsLoading) && groupChats.length === 0 && directMessages.length === 0;
   const [error, setError] = useState(null);
   const [typingUsers, setTypingUsers] = useState([]);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
@@ -141,90 +148,20 @@ const MessagesResident = () => {
     return undefined;
   };
 
+  // Sync query cache → local state
   useEffect(() => {
-    const initializeChat = async () => {
-      console.log('🔌 Socket status:', socket ? '✅ Connected' : '❌ Not connected');
-      console.log('🚀 Initializing chat - fetching data...');
-      setLoading(true);
-      setError(null);
-      
-      try {
-        await fetchGroupChats();
-        await fetchDirectMessages();
-      } catch (error) {
-        console.error('❌ Error during initialization:', error);
-      } finally {
-        console.log('✅ Initialization complete, setting loading to false');
-        setLoading(false);
+    if (cachedGroupChats.length > 0) {
+      setGroupChats(cachedGroupChats);
+      // Auto-select first chat if none selected
+      if (!activeChat && activeTab === 'group' && socket) {
+        selectChatInternal(cachedGroupChats[0]);
       }
-    };
-
-    // Fetch chats immediately, don't wait for socket
-    initializeChat();
-  }, []);
-
-  const fetchGroupChats = async () => {
-    try {
-      const userProfile = JSON.parse(localStorage.getItem('userProfile'));
-      if (!userProfile?.token) {
-        setError(t('messagesResident.pleaseLoginToView'));
-        return;
-      }
-
-      console.log('🔄 Fetching group chats from:', `${API_BASE_URL}/api/residents/group-chats`);
-      const response = await fetchWithAuth(`${API_BASE_URL}/api/residents/group-chats`);
-
-      if (!response.ok) {
-        console.error('❌ Response not ok:', response.status, response.statusText);
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Failed to fetch group chats: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('📥 Group chats response:', data);
-
-      if (data.success) {
-        const chats = data.group_chats || data.groupChats || [];
-        console.log(`✅ Setting ${chats.length} group chat(s)`, chats);
-        setGroupChats(chats);
-
-        // Auto-select first chat if available and socket is connected
-        if (chats.length > 0 && !activeChat && activeTab === 'group' && socket) {
-          console.log('🎯 Auto-selecting first chat:', chats[0].name);
-          await selectChatInternal(chats[0]);
-        }
-      } else {
-        console.warn('⚠️ API returned success: false', data);
-        setGroupChats([]);
-      }
-    } catch (error) {
-      console.error('❌ Error fetching group chats:', error);
-      setError(error.message || t('messagesResident.failedToLoadChats'));
-    } finally {
-      console.log('✅ Finished fetching group chats');
     }
-  };
+  }, [cachedGroupChats]);
 
-  const fetchDirectMessages = async () => {
-    try {
-      const userProfile = JSON.parse(localStorage.getItem('userProfile'));
-      if (!userProfile?.token) return;
-
-      console.log('🔄 Fetching direct messages...');
-      const response = await fetchWithAuth(`${API_BASE_URL}/api/residents/direct-messages`);
-
-      if (!response.ok) throw new Error('Failed to fetch direct messages');
-
-      const data = await response.json();
-      console.log('📥 Direct messages response:', data);
-      if (data.success) {
-        setDirectMessages(data.conversations || []);
-      }
-    } catch (error) {
-      console.error('❌ Error fetching direct messages:', error);
-      // Don't set error state for DMs since it's not critical
-    }
-  };
+  useEffect(() => {
+    if (cachedDirectMessages.length > 0) setDirectMessages(cachedDirectMessages);
+  }, [cachedDirectMessages]);
 
   const selectChatInternal = async (chat) => {
     console.log('💬 Selecting chat:', chat.name, 'ID:', chat.id);
@@ -642,7 +579,7 @@ const MessagesResident = () => {
         setShowCreateGroupModal(false);
         setNewGroupName('');
         setNewGroupDescription('');
-        await fetchGroupChats();
+        await invalidateResidentGroups();
       }
     } catch (error) {
       console.error('❌ Error creating group chat:', error);

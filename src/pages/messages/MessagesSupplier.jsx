@@ -5,6 +5,7 @@ import { Image as ImageIcon, Paperclip, X, File, Download, Loader2, Search, Arro
 import toast from 'react-hot-toast';
 import Nav from '../../components/Nav';
 import EntrepreneurProfileModal from '../../components/modal/EntrepreneurProfileModal';
+import { useSupplierConversations, useInvalidateMessages } from '../../hooks/useMessagesData';
 import '../../styles/supplier/messagessupplier.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -69,12 +70,16 @@ const MessagesSupplier = () => {
   const socket = socketContext?.socket;
   const { t, language } = useLanguage();
 
+  // TanStack Query: supplier conversations
+  const { data: cachedConversations = [], isLoading: conversationsLoading } = useSupplierConversations();
+  const { invalidateSupplier } = useInvalidateMessages();
+
   const [conversations, setConversations] = useState([]);
   const [activeConversation, setActiveConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState('');
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const loading = conversationsLoading && conversations.length === 0;
   const [searchTerm, setSearchTerm] = useState('');
   const [showMobileChat, setShowMobileChat] = useState(false);
   const [uploadedImage, setUploadedImage] = useState(null);
@@ -135,63 +140,12 @@ const MessagesSupplier = () => {
     return undefined;
   };
 
-  // Fetch conversations on mount
+  // Sync cached conversations → local state
   useEffect(() => {
-    const initializeChat = async () => {
-      console.log('🔌 Socket status:', socket ? '✅ Connected' : '❌ Not connected');
-      setLoading(true);
-      setError(null);
-
-      try {
-        await fetchConversations();
-      } catch (error) {
-        console.error('❌ Error during initialization:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initializeChat();
-  }, []);
-
-  // Fetch supplier conversations (only entrepreneurs)
-  const fetchConversations = async () => {
-    try {
-      const userProfile = JSON.parse(localStorage.getItem('userProfile'));
-      if (!userProfile?.token) {
-        setError(t('messagesSupplier.pleaseLoginToView'));
-        return;
-      }
-
-      console.log('🔄 Fetching supplier conversations...');
-      // Use the existing conversations endpoint (mounted at /api, not /api/messages)
-      const response = await fetchWithAuth(`${API_BASE_URL}/api/conversations`);
-
-      if (!response.ok) {
-        console.error('❌ Response not ok:', response.status, response.statusText);
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Failed to fetch conversations: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('📥 Conversations response:', data);
-
-      if (data.success) {
-        // Filter to only show entrepreneur conversations (suppliers can only message entrepreneurs)
-        const entrepreneurConversations = (data.conversations || []).filter(
-          conv => conv.other_user_role === 'entrepreneur'
-        );
-        console.log(`✅ Loaded ${entrepreneurConversations.length} entrepreneur conversations`);
-        setConversations(entrepreneurConversations);
-      } else {
-        console.warn('⚠️ API returned success: false', data);
-        setConversations([]);
-      }
-    } catch (error) {
-      console.error('❌ Error fetching conversations:', error);
-      setError(error.message || 'Failed to load conversations');
+    if (cachedConversations.length > 0) {
+      setConversations(cachedConversations);
     }
-  };
+  }, [cachedConversations]);
 
   // Select a conversation
   const selectConversation = async (conversation) => {
@@ -570,7 +524,7 @@ const MessagesSupplier = () => {
             ) : error ? (
               <div className="error-container-supplier">
                 <p className="error-message-supplier">{error}</p>
-                <button className="retry-btn-supplier" onClick={fetchConversations}>
+                <button className="retry-btn-supplier" onClick={() => invalidateSupplier()}>
                   {t('messagesSupplier.tryAgain')}
                 </button>
               </div>

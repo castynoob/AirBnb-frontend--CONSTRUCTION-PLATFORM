@@ -4,6 +4,7 @@ import { Search, Bell, Calendar, Wrench, AlertTriangle, Megaphone } from 'lucide
 import Nav from '../../components/Nav';
 import AnnouncementCard from '../../components/AnnouncementCard';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useResidentProfile, useResidentAnnouncements, useInvalidateResidentData } from '../../hooks/useResidentData';
 import '../../styles/resident/homepageresident.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -13,121 +14,25 @@ const HomePageResident = () => {
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
   const [announcements, setAnnouncements] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [socket, setSocket] = useState(null);
-  const [propertyId, setPropertyId] = useState(null);
-  
+
+  // TanStack Query: resident profile (shared with ProfilePageResident)
+  const { data: profile, isLoading: profileLoading, error: profileError } = useResidentProfile();
+  const propertyId = profile?.property_id || null;
+
+  // TanStack Query: announcements (parameterized by filter/search)
+  const { data: cachedAnnouncements = [], isLoading: announcementsLoading, error: announcementsError } = useResidentAnnouncements(propertyId, activeFilter, search);
+  const { invalidateAnnouncements } = useInvalidateResidentData();
+
+  const loading = (profileLoading || announcementsLoading) && announcements.length === 0;
+  const error = profileError?.message || announcementsError?.message || (!profileLoading && profile && !propertyId ? t('homePageResident.noPropertyAssigned') : null);
+
+  // Sync cached announcements → local state (for socket updates)
   useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          setError(t('homePageResident.authenticationRequired'));
-          setLoading(false);
-          return;
-        }
-
-        const response = await fetch(`${API_BASE_URL}/api/residents/profile`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(t('homePageResident.failedToFetchProfile'));
-        }
-
-        const data = await response.json();
-        
-        if (data.success && data.profile.property_id) {
-          setPropertyId(data.profile.property_id);
-          console.log('✅ Property ID:', data.profile.property_id);
-        } else {
-          setError(t('homePageResident.noPropertyAssigned'));
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error('❌ Error fetching user profile:', err);
-        setError(t('homePageResident.failedToLoadProfile'));
-        setLoading(false);
-      }
-    };
-
-    fetchUserProfile();
-  }, [t]);
-
-  // ============================================
-  // FETCH ANNOUNCEMENTS (triggered when propertyId changes)
-  // ============================================
-  useEffect(() => {
-    if (propertyId) {
-      console.log('🚀 Fetching announcements for property:', propertyId);
-      fetchAnnouncements();
+    if (cachedAnnouncements.length > 0 || !announcementsLoading) {
+      setAnnouncements(cachedAnnouncements);
     }
-  }, [propertyId, activeFilter, search]);
-
-  // ============================================
-  // FETCH ANNOUNCEMENTS FUNCTION
-  // ============================================
-  const fetchAnnouncements = async () => {
-    try {
-      if (!propertyId) {
-        console.warn('⚠️ Property ID not available');
-        return;
-      }
-
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError(t('homePageResident.authenticationRequired'));
-        setLoading(false);
-        return;
-      }
-
-      // Build query parameters
-      const params = new URLSearchParams();
-      if (activeFilter !== 'All') {
-        params.append('type', activeFilter);
-      }
-      if (search) {
-        params.append('search', search);
-      }
-      params.append('limit', '50');
-      params.append('offset', '0');
-
-      const url = `${API_BASE_URL}/api/residents/announcements?${params.toString()}`;
-      console.log('🔍 Fetching from:', url);
-
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('❌ Response error:', response.status, errorData);
-        throw new Error(errorData.message || 'Failed to fetch announcements');
-      }
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setAnnouncements(data.announcements || []);
-        setError(null);
-      } else {
-        setAnnouncements([]);
-        setError(data.message || t('homePageResident.noAnnouncementsAvailable'));
-      }
-
-      setLoading(false);
-    } catch (err) {
-      console.error('❌ Error fetching announcements:', err);
-      setError(err.message || t('homePageResident.failedToFetchAnnouncements'));
-      setLoading(false);
-    }
-  };
+  }, [cachedAnnouncements, announcementsLoading]);
 
   // ============================================
   // SETUP SOCKET.IO FOR REAL-TIME UPDATES
@@ -250,7 +155,7 @@ const HomePageResident = () => {
               <p className="error-message">{error}</p>
               <button
                 className="retry-btn"
-                onClick={fetchAnnouncements}
+                onClick={() => invalidateAnnouncements()}
               >
                 {t('homePageResident.tryAgain')}
               </button>

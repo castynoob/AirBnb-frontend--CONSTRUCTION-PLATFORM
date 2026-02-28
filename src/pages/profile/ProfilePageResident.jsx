@@ -25,18 +25,22 @@ import toast from 'react-hot-toast';
 import '../../styles/resident/profilepageresident.css';
 import { logout } from '../../utils/api';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useResidentProfile, useInvalidateResidentData } from '../../hooks/useResidentData';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const ProfilePageResident = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('account');
-  const [profile, setProfile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  // TanStack Query: resident profile (shared with HomePageResident)
+  const { data: profile = null, isLoading: profileLoading } = useResidentProfile();
+  const { invalidateProfile } = useInvalidateResidentData();
+  const loading = profileLoading && !profile;
 
   // Password change states
   const [passwordForm, setPasswordForm] = useState({
@@ -80,58 +84,27 @@ const ProfilePageResident = () => {
     settings: t('profilePageResident.settings')
   };
 
+  // Sync profile data → form when profile loads
   useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const userProfile = JSON.parse(localStorage.getItem('userProfile'));
-      if (!userProfile?.token) {
-        setError(t('profilePageResident.pleaseLogIn'));
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/residents/profile`, {
-        headers: {
-          'Authorization': `Bearer ${userProfile.token}`,
-          'Content-Type': 'application/json'
-        }
+    if (profile) {
+      setFormData({
+        bio: profile.bio || '',
+        unit_number: profile.unit_number || '',
+        floor: profile.floor || '',
+        building_section: profile.building_section || '',
+        move_in_date: profile.move_in_date ? profile.move_in_date.split('T')[0] : '',
+        show_email: profile.show_email ?? true,
+        show_phone: profile.show_phone ?? true,
+        show_unit: profile.show_unit ?? true,
+        show_move_in_date: profile.show_move_in_date ?? false,
+        allow_messages: profile.allow_messages ?? true,
+        show_online_status: profile.show_online_status ?? true,
+        contact_via_email: profile.contact_via_email ?? true,
+        contact_via_phone: profile.contact_via_phone ?? true,
+        contact_via_message: profile.contact_via_message ?? true
       });
-
-      if (!response.ok) throw new Error('Failed to fetch profile');
-
-      const data = await response.json();
-      if (data.success) {
-        setProfile(data.profile);
-        setFormData({
-          bio: data.profile.bio || '',
-          unit_number: data.profile.unit_number || '',
-          floor: data.profile.floor || '',
-          building_section: data.profile.building_section || '',
-          move_in_date: data.profile.move_in_date ? data.profile.move_in_date.split('T')[0] : '',
-          show_email: data.profile.show_email ?? true,
-          show_phone: data.profile.show_phone ?? true,
-          show_unit: data.profile.show_unit ?? true,
-          show_move_in_date: data.profile.show_move_in_date ?? false,
-          allow_messages: data.profile.allow_messages ?? true,
-          show_online_status: data.profile.show_online_status ?? true,
-          contact_via_email: data.profile.contact_via_email ?? true,
-          contact_via_phone: data.profile.contact_via_phone ?? true,
-          contact_via_message: data.profile.contact_via_message ?? true
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      setError(t('profilePageResident.failedToLoadProfile'));
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [profile]);
 
   const handleSave = async () => {
     try {
@@ -153,7 +126,7 @@ const ProfilePageResident = () => {
 
       const data = await response.json();
       if (data.success) {
-        setProfile(data.profile);
+        invalidateProfile();
         setIsEditing(false);
         toast.success(t('profilePageResident.profileUpdatedSuccess'));
       }
@@ -351,7 +324,7 @@ const ProfilePageResident = () => {
         <div className="rp-error-container">
           <AlertCircle size={48} />
           <p>{error}</p>
-          <button className="rp-btn rp-btn-primary" onClick={fetchProfile}>
+          <button className="rp-btn rp-btn-primary" onClick={() => invalidateProfile()}>
             {t('profilePageResident.tryAgain')}
           </button>
         </div>

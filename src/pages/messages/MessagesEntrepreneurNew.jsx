@@ -24,7 +24,6 @@ import toast from "react-hot-toast";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { useSocket } from "../../contexts/SocketContext";
 import {
-  getConversations,
   getMessages,
   markConversationAsRead,
 } from "../../utils/api";
@@ -32,16 +31,21 @@ import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfile
 import PropertyManagerProfileModal from "../../components/modal/PropertyManagerProfileModal";
 // SUPPLIER TEMPORARILY DISABLED — uncomment to re-enable
 // import SupplierProfileModal from "../../components/modal/SupplierProfileModal";
+import { useConversations, useInvalidateMessages } from '../../hooks/useMessagesData';
 
 function MessagesEntrepreneurNew() {
   const { t, language } = useLanguage();
   const { socket } = useSocket();
+  // TanStack Query — cached conversations, instant on revisit
+  const { data: cachedConversations = [], isLoading: conversationsLoading } = useConversations()
+  const { invalidateConversations } = useInvalidateMessages()
+
   const [selectedChat, setSelectedChat] = useState(null);
   const [message, setMessage] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const isLoading = conversationsLoading && conversations.length === 0;
   const [isSending, setIsSending] = useState(false);
   const [uploadedImage, setUploadedImage] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -73,24 +77,12 @@ function MessagesEntrepreneurNew() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Load conversations
+  // Sync query cache → local state (keeps existing setConversations mutations working)
   useEffect(() => {
-    loadConversations();
-  }, []);
-
-  const loadConversations = async () => {
-    try {
-      setIsLoading(true);
-      const response = await getConversations();
-      if (response.success) {
-        setConversations(response.conversations || []);
-      }
-    } catch (error) {
-      console.error("Error loading conversations:", error);
-    } finally {
-      setIsLoading(false);
+    if (cachedConversations.length > 0) {
+      setConversations(cachedConversations);
     }
-  };
+  }, [cachedConversations]);
 
   // Initialize conversation from SubmittedBids page (when entrepreneur clicks message)
   useEffect(() => {
@@ -216,7 +208,7 @@ function MessagesEntrepreneurNew() {
       }
 
       // Always reload conversations to update preview and unread count
-      loadConversations();
+      invalidateConversations();
     };
 
     socket.on("new_message", handleNewMessage);
@@ -440,7 +432,7 @@ function MessagesEntrepreneurNew() {
               ...prev,
               id: response.conversationId
             }));
-            loadConversations();
+            invalidateConversations();
           }
 
           // Clear inputs
@@ -507,7 +499,7 @@ function MessagesEntrepreneurNew() {
             id: data.message.conversation_id
           }));
           // Reload conversations to get the new one in the list
-          loadConversations();
+          invalidateConversations();
         }
 
         socket.off("error", errorHandler);

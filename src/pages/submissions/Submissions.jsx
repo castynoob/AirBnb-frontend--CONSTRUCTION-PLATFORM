@@ -31,17 +31,27 @@ import { useLanguage } from "../../contexts/LanguageContext"
 import toast from "react-hot-toast"
 import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal"
 import { createContract, getContractByJob, approveWork } from "../../utils/contractApi"
+import { useSubmissions, useFavorites, useInvalidateSubmissions } from "../../hooks/useSubmissionsData"
 
 function SubmissionsPage() {
   const { t } = useLanguage()
+
+  // TanStack Query: submissions + favorites
+  const { data: cachedSubmissions = [], isLoading: submissionsLoading, error: queryError } = useSubmissions()
+  const { data: cachedFavorites = [] } = useFavorites()
+  const { invalidateList: invalidateSubmissions, invalidateFavorites } = useInvalidateSubmissions()
+
   const [submissions, setSubmissions] = useState([])
   const [filteredSubmissions, setFilteredSubmissions] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState("all")
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [uProfile, setUProfile] = useState({})
+
+  const loading = submissionsLoading && submissions.length === 0
+  const error = queryError?.message || null
+
+  // Get user profile for mutations
+  const uProfile = JSON.parse(localStorage.getItem("userProfile") || "{}")
 
   const navigate = useNavigate()
 
@@ -113,10 +123,20 @@ function SubmissionsPage() {
   const releasingFundsRef = useRef(new Set())
   const approvingBidsRef = useRef(new Set())
 
+  // Sync cached submissions → local state
   useEffect(() => {
-    fetchSubmissions()
-    fetchFavorites()
-  }, [])
+    if (cachedSubmissions.length > 0 || !submissionsLoading) {
+      setSubmissions(cachedSubmissions)
+      setFilteredSubmissions(cachedSubmissions)
+    }
+  }, [cachedSubmissions, submissionsLoading])
+
+  // Sync cached favorites → local state
+  useEffect(() => {
+    if (cachedFavorites.length > 0) {
+      setFavorites(cachedFavorites)
+    }
+  }, [cachedFavorites])
 
   const showNotification = (message, type = "success") => {
     if (type === "success") {
@@ -128,36 +148,6 @@ function SubmissionsPage() {
     }
   }
 
-  // Fetch favorites
-  const fetchFavorites = async () => {
-    try {
-      const userProfile = localStorage.getItem("userProfile")
-      if (!userProfile) return
-
-      const user = JSON.parse(userProfile)
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-
-      const response = await fetch(`${API_BASE_URL}/api/favorites`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch favorites: ${response.status}`)
-      }
-
-      const data = await response.json()
-      // Extract bid IDs from favorites
-      const favoriteBidIds = data.favorites
-        .filter(fav => fav.bid_id)
-        .map(fav => fav.bid_id)
-      setFavorites(favoriteBidIds)
-    } catch (err) {
-      console.error("Error fetching favorites:", err)
-    }
-  }
 
   // Toggle favorite
   const toggleFavorite = async (submission, e) => {
@@ -221,180 +211,6 @@ function SubmissionsPage() {
     }
   }
 
-  const fetchSubmissions = async () => {
-      try {
-        setLoading(true)
-        const userProfile = localStorage.getItem("userProfile")
-
-        if (!userProfile) {
-          setError("User profile not found")
-          setLoading(false)
-          return
-        }
-
-        const user = JSON.parse(userProfile)
-        setUProfile(user)
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-
-        // Fetch jobs for the manager
-        const jobsResponse = await fetch(`${API_BASE_URL}/api/jobs/manager/${user.id}`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
-        })
-
-        if (!jobsResponse.ok) {
-          throw new Error(`Failed to fetch jobs: ${jobsResponse.status}`)
-        }
-
-        const jobsData = await jobsResponse.json()
-        const jobs = jobsData.jobs || []
-
-        // Fetch bids and property details for each job
-        const submissionsData = []
-
-        for (const job of jobs) {
-          try {
-            console.log(job)
-            // Fetch bids for this job (includes entrepreneur info)
-            const bidsResponse = await fetch(`${API_BASE_URL}/api/bids/job/${job.id}`, {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${user.token}`,
-              },
-            })
-
-            const jobReview = await fetch(`${API_BASE_URL}/api/reviews/job/${job.id}`, {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${user.token}`
-              }
-            })
-
-            if (!bidsResponse.ok) {
-              console.warn(`Failed to fetch bids for job ${job.id}`)
-              continue
-            }
-
-            const bidsData = await bidsResponse.json()
-            const bids = bidsData.bids || []
-
-            // Fetch property details
-            let propertyAddress = "Unknown Location"
-            let propertyName = "Unknown Property"
-            if (job.property_id) {
-              try {
-                const propertyResponse = await fetch(`${API_BASE_URL}/api/properties/${job.property_id}`, {
-                  method: "GET",
-                  headers: {
-                    Authorization: `Bearer ${user.token}`,
-                  },
-                })
-
-                if (propertyResponse.ok) {
-                  const propertyData = await propertyResponse.json()
-                  const property = propertyData.property
-                  propertyName = property.building_name || property.name || property.address || "Unknown Property"
-                  propertyAddress = `${property.address}, ${property.city}, ${property.province}`
-                }
-              } catch (err) {
-                console.warn(`Failed to fetch property ${job.property_id}:`, err)
-              }
-            }
-
-            // Transform bids into submissions format (filter out declined bids)
-            for (const bid of bids) {
-              // Skip declined bids
-              if (bid.status === "declined") {
-                continue
-              }
-
-              // Fetch review if job is completed
-              let reviewData = null
-              if (job.status === 'completed') {
-                try {
-                  const reviewResponse = await fetch(`${API_BASE_URL}/api/reviews/job/${job.id}`, {
-                    headers: {
-                      'Authorization': `Bearer ${uProfile.token}`,
-                    },
-                  })
-                  if (reviewResponse.ok) {
-                    const reviewJson = await reviewResponse.json()
-                    reviewData = reviewJson.review && reviewJson.review.length > 0 ? reviewJson.review[0] : null
-                  }
-                } catch (err) {
-                  console.warn(`Failed to fetch review for job ${job.id}:`, err)
-                }
-              }
-
-              submissionsData.push({
-                bid: {
-                  id: bid.id,
-                  job_id: bid.job_id,
-                  entrepreneur_id: bid.entrepreneur_id,
-                  amount: bid.amount,
-                  message: bid.message,
-                  status: bid.status,
-                  created_at: bid.created_at,
-                  updated_at: bid.updated_at,
-                },
-                job: {
-                  id: job.id,
-                  title: job.title,
-                  description: job.description,
-                  category: job.category,
-                  urgency: job.urgency,
-                  budget_min: job.budget_min,
-                  budget_max: job.budget_max,
-                  is_budget_hidden: job.is_budget_hidden,
-                  is_emergency: job.is_emergency,
-                  status: job.status,
-                  due_date: job.due_date,
-                  estimated_duration_days: job.estimated_duration_days,
-                  property_id: job.property_id,
-                  manager_id: job.manager_id,
-                  unit_id: job.unit_id,
-                  created_at: job.created_at,
-                  updated_at: job.updated_at,
-                },
-                entrepreneur_profile: {
-                  id: bid.entrepreneur_id,
-                  user_id: bid.user_id || bid.entrepreneur_user_id, // ✅ User ID for reviews/messaging
-                  entrepreneur_user_id: bid.entrepreneur_user_id, // Keep for backward compatibility
-                  company_name: bid.company_name,
-                  license_number: bid.license_number,
-                  years_in_business: bid.years_in_business,
-                  specializations: bid.specializations || [],
-                  average_rating: bid.average_rating,
-                  total_reviews: bid.total_reviews,
-                },
-                user: {
-                  first_name: bid.first_name,
-                  last_name: bid.last_name,
-                  email: bid.email,
-                },
-                property_name: propertyName,
-                property_address: propertyAddress,
-                review: reviewData, // ✅ Add review data
-              })
-            }
-          } catch (err) {
-            console.warn(`Error processing job ${job.id}:`, err)
-          }
-        }
-
-        setSubmissions(submissionsData)
-        console.log(submissionsData)
-        setFilteredSubmissions(submissionsData)
-        setError(null)
-      } catch (err) {
-        console.error("Error fetching submissions:", err)
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
-  }
 
   const handleViewDetails = async (submission) => {
     // Check if funds were already released for this job BEFORE showing the modal
@@ -605,7 +421,7 @@ function SubmissionsPage() {
       )
 
       // Refresh submissions to update UI
-      fetchSubmissions()
+      invalidateSubmissions()
       setShowDetailsModal(false)
 
     } catch (error) {
@@ -802,7 +618,7 @@ function SubmissionsPage() {
       setReviewImagePreviews([])
 
       // Refresh submissions to update UI
-      await fetchSubmissions()
+      invalidateSubmissions()
     } catch (error) {
       console.error("Error submitting review:", error)
       showNotification(error.message || "Failed to submit review", "error")

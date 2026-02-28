@@ -24,18 +24,24 @@ import {
 import { useSocket } from "../../contexts/SocketContext";
 import { useLanguage } from "../../contexts/LanguageContext";
 import {
-  getConversations,
   getMessages,
   markConversationAsRead,
 } from "../../utils/api";
 import toast from "react-hot-toast";
 import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal";
+import { useConversations, useGroupChats, useInvalidateMessages } from '../../hooks/useMessagesData';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 function MessagesNew() {
   const { socket, isConnected } = useSocket();
   const { t } = useLanguage();
+
+  // TanStack Query — cached conversations, instant on revisit
+  const { data: cachedConversations = [], isLoading: convsLoading } = useConversations()
+  const { data: cachedGroupChats = [], isLoading: groupsLoading } = useGroupChats()
+  const { invalidateConversations, invalidateGroupChats } = useInvalidateMessages()
+
   const [activeTab, setActiveTab] = useState("dm"); // "dm" or "group"
   const [selectedChat, setSelectedChat] = useState(null);
   const [selectedGroupChat, setSelectedGroupChat] = useState(null);
@@ -44,7 +50,7 @@ function MessagesNew() {
   const [conversations, setConversations] = useState([]);
   const [groupChats, setGroupChats] = useState([]);
   const [messages, setMessages] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const isLoading = (convsLoading || groupsLoading) && conversations.length === 0 && groupChats.length === 0;
   const [isSending, setIsSending] = useState(false);
   const [uploadedImage, setUploadedImage] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -74,11 +80,14 @@ function MessagesNew() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Load conversations and group chats
+  // Sync query cache → local state
   useEffect(() => {
-    loadConversations();
-    loadGroupChats();
-  }, []);
+    if (cachedConversations.length > 0) setConversations(cachedConversations);
+  }, [cachedConversations]);
+
+  useEffect(() => {
+    if (cachedGroupChats.length > 0) setGroupChats(cachedGroupChats);
+  }, [cachedGroupChats]);
 
   // Handle initialization from Submissions page (when property manager clicks message button)
   useEffect(() => {
@@ -147,49 +156,6 @@ function MessagesNew() {
 
     initializeConversation();
   }, [conversations]);
-
-  const loadConversations = async () => {
-    try {
-      setIsLoading(true);
-
-      // All conversations (both resident and entrepreneur) are now in the unified conversations table
-      const response = await getConversations();
-
-      if (response.success) {
-        console.log(`📋 Loaded ${response.conversations?.length || 0} conversations`);
-        setConversations(response.conversations || []);
-      }
-    } catch (error) {
-      console.error("Error loading conversations:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Load group chats for property manager
-  const loadGroupChats = async () => {
-    try {
-      const token = getAuthToken();
-      if (!token) return;
-
-      const response = await fetch(`${API_BASE_URL}/api/residents/group-chats`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          console.log(`🏢 Loaded ${data.group_chats?.length || 0} group chats`);
-          setGroupChats(data.group_chats || []);
-        }
-      }
-    } catch (error) {
-      console.error("Error loading group chats:", error);
-    }
-  };
 
   // Load group chat messages
   const loadGroupChatMessages = async (chatId) => {
@@ -431,7 +397,7 @@ function MessagesNew() {
       if (newMsg.sender_id === currentUserId) {
         console.log("⚠️ Ignoring own message (already handled via message_sent)");
         // Still reload conversations to update the list
-        loadConversations();
+        invalidateConversations();
         return;
       }
 
@@ -450,7 +416,7 @@ function MessagesNew() {
       }
 
       // Always reload conversations to update preview and unread count
-      loadConversations();
+      invalidateConversations();
     };
 
     socket.on("new_message", handleNewMessage);
@@ -469,7 +435,7 @@ function MessagesNew() {
       }
 
       // Reload group chats to update unread count
-      loadGroupChats();
+      invalidateGroupChats();
     };
 
     socket.on("new_group_message", handleNewGroupMessage);
@@ -717,7 +683,7 @@ function MessagesNew() {
         }
 
         // Reload conversations to update the list with latest message
-        loadConversations();
+        invalidateConversations();
 
         socket.off("error", errorHandler);
         socket.off("message_sent", successHandler);
