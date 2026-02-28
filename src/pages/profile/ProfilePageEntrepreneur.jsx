@@ -2484,13 +2484,70 @@ function ProfilePageEntrepreneur() {
                 <h2>{t('profileEntrepreneur.subscriptionPlans')}</h2>
                 <p className="subtitle">
                   {subscription.plan_type
-                    ? `${t('profileEntrepreneur.currentPlan')}: ${subscription.plan_type === 'premium' ? t('profileEntrepreneur.premiumPlan') : t('profileEntrepreneur.basicPlan')}`
+                    ? `${t('profileEntrepreneur.currentPlan')}: ${subscription.plan_type === 'premium' ? t('profileEntrepreneur.premiumPlan') : subscription.plan_type === 'basic' ? t('profileEntrepreneur.basicPlan') : t('profileEntrepreneur.starterPlan')}`
                     : t('profileEntrepreneur.selectPlanMessage')}
                 </p>
               </div>
             </div>
 
             <div className="plans-container">
+              {/* Starter Plan */}
+              <div className={`plan-card ${subscription.plan_type === 'starter' ? 'current-plan' : ''}`}>
+                {subscription.plan_type === 'starter' && (
+                  <div className="current-plan-badge">{t('profileEntrepreneur.currentPlan')}</div>
+                )}
+                <div className="plan-header">
+                  <div className="plan-label">{t('profileEntrepreneur.starterPlan')}</div>
+                  <div className="price">
+                    <span className="currency">$</span>
+                    <span className="amount">89</span>
+                    <span className="period">{t('profileEntrepreneur.month')}</span>
+                  </div>
+                  <div className="plan-description">
+                    {t('profileEntrepreneur.starterDescription')}
+                  </div>
+                </div>
+
+                <ul className="features-list">
+                  <li className="feature-item">
+                    <svg width="16" height="16" viewBox="0 0 20 20" className="feature-icon">
+                      <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
+                      <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span>{t('profileEntrepreneur.browseViewJobs')}</span>
+                  </li>
+                  <li className="feature-item">
+                    <svg width="16" height="16" viewBox="0 0 20 20" className="feature-icon">
+                      <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
+                      <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span>{t('profileEntrepreneur.submitUpTo15Bids')}</span>
+                  </li>
+                  <li className="feature-item">
+                    <svg width="16" height="16" viewBox="0 0 20 20" className="feature-icon">
+                      <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
+                      <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span>{t('profileEntrepreneur.starterRestriction')}</span>
+                  </li>
+                  <li className="feature-item">
+                    <svg width="16" height="16" viewBox="0 0 20 20" className="feature-icon">
+                      <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
+                      <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span>{t('profileEntrepreneur.messageApprovedContacts')}</span>
+                  </li>
+                </ul>
+
+                <button
+                  className="cta-btn btn-basic"
+                  onClick={() => handleSelectPlan('starter')}
+                  disabled={subscription.plan_type === 'starter' || subscription.plan_type === 'basic' || subscription.plan_type === 'premium'}
+                >
+                  {subscription.plan_type === 'starter' ? t('profileEntrepreneur.currentPlan') : (subscription.plan_type === 'basic' || subscription.plan_type === 'premium') ? t('profileEntrepreneur.unavailablePlan') : t('profileEntrepreneur.selectStarter')}
+                </button>
+              </div>
+
               {/* Basic Plan */}
               <div className={`plan-card ${subscription.plan_type === 'basic' ? 'current-plan' : ''}`}>
                 {subscription.plan_type === 'basic' && (
@@ -2544,7 +2601,7 @@ function ProfilePageEntrepreneur() {
                   onClick={() => handleSelectPlan('basic')}
                   disabled={subscription.plan_type === 'basic' || subscription.plan_type === 'premium'}
                 >
-                  {subscription.plan_type === 'basic' ? t('profileEntrepreneur.currentPlan') : subscription.plan_type === 'premium' ? t('profileEntrepreneur.unavailablePlan') : t('profileEntrepreneur.selectBasic')}
+                  {subscription.plan_type === 'basic' ? t('profileEntrepreneur.currentPlan') : subscription.plan_type === 'premium' ? t('profileEntrepreneur.unavailablePlan') : subscription.plan_type === 'starter' ? t('profileEntrepreneur.upgradeToBasic') : t('profileEntrepreneur.selectBasic')}
                 </button>
               </div>
 
@@ -2663,7 +2720,7 @@ function ProfilePageEntrepreneur() {
             )}
 
             {/* Cancel Subscription Button */}
-            {(subscription.plan_type === 'basic' || subscription.plan_type === 'premium') && !subscription.cancel_at_period_end && subscription.status !== 'past_due' && (
+            {(subscription.plan_type === 'starter' || subscription.plan_type === 'basic' || subscription.plan_type === 'premium') && !subscription.cancel_at_period_end && subscription.status !== 'past_due' && (
               <div className="cancel-subscription-section">
                 <button
                   className="cancel-subscription-btn"
