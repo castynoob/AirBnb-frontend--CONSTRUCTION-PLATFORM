@@ -728,6 +728,12 @@ function HomePageEntrepreneur() {
             return
           }
 
+          if (errorData.action === 'upgrade_plan') {
+            toast.error(errorData.message || 'Upgrade your subscription to bid on this project.')
+            setShowSubscriptionModal(true)
+            return
+          }
+
           if (errorData.action === 'create_subscription' || errorData.action === 'reactivate_subscription') {
             toast.error(errorData.message || 'Subscription required to place bids.')
             setShowSubscriptionModal(true)
