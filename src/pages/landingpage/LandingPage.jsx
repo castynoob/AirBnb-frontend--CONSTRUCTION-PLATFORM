@@ -1382,12 +1382,12 @@ export default function LandingPage() {
       {/* Navigation Bar */}
       <nav className={`lp-navbar ${scrolled ? "lp-scrolled" : ""}`}>
         <div className="lp-navbar-container">
-          <div className="lp-navbar-logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ cursor: 'pointer' }}>
+          <a href="#hero" className="lp-navbar-logo" onClick={(e) => { e.preventDefault(); document.getElementById('hero').scrollIntoView({ behavior: 'smooth' }); }}>
             <span className="lp-logo-icon">
               <img src={logo} alt="INTERVOS" />
             </span>
             <span className="lp-logo-text">INTERVOS</span>
-          </div>
+          </a>
           <ul className="lp-navbar-links">
             <li><a href="#about">{t('landingPage.nav.about')}</a></li>
             <li><a href="#features">{t('landingPage.nav.features')}</a></li>
@@ -1478,7 +1478,7 @@ export default function LandingPage() {
       )}
 
       {/* Hero Section */}
-      <section className="lp-hero">
+      <section id="hero" className="lp-hero">
         <div className="lp-hero-background">
           <div className="lp-hero-gradient"></div>
         </div>
@@ -2012,7 +2012,7 @@ export default function LandingPage() {
       <footer className="lp-footer">
         <div className="lp-footer-content">
           <div className="lp-footer-section lp-footer-brand">
-            <div className="lp-footer-logo">
+            <div className="lp-footer-logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} style={{ cursor: 'pointer' }}>
               <span className="lp-logo-icon">
                 <img src={logoLight} alt="INTERVOS" />
               </span>

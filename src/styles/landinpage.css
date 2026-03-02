@@ -110,6 +110,14 @@ body {
   color: var(--color-primary);
   cursor: pointer;
   padding-left: var(--spacing-xl);
+  position: relative;
+  z-index: 2;
+  text-decoration: none;
+}
+
+.lp-navbar-logo:hover {
+  color: var(--color-primary);
+  text-decoration: none;
 }
 
 .lp-logo-icon {
