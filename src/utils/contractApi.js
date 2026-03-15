@@ -142,3 +142,24 @@ export async function approveWork(contractId) {
 
   return response.json();
 }
+
+/**
+ * Confirm job completion (for either party)
+ * @param {string} contractId - The contract ID
+ */
+export async function confirmCompletion(contractId) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/contracts/${contractId}/confirm-completion`,
+    {
+      method: 'POST',
+      headers: getAuthHeaders()
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || error.error || 'Failed to confirm completion');
+  }
+
+  return response.json();
+}

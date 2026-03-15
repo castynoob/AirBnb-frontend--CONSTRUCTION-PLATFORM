@@ -83,8 +83,9 @@ export const useSubmissions = () => {
           for (const bid of bids) {
             if (bid.status === 'declined') continue
 
-            // Fetch review if job is completed
+            // Fetch review and contract data if job is completed
             let reviewData = null
+            let contractData = null
             if (job.status === 'completed') {
               try {
                 const reviewJson = await authFetch(
@@ -94,6 +95,15 @@ export const useSubmissions = () => {
                 reviewData = reviewJson.review && reviewJson.review.length > 0 ? reviewJson.review[0] : null
               } catch {
                 // no review
+              }
+              try {
+                const contractJson = await authFetch(
+                  `${API_BASE_URL}/api/contracts/job/${job.id}`,
+                  user.token
+                )
+                contractData = contractJson.contract || null
+              } catch {
+                // no contract
               }
             }
 
@@ -146,6 +156,7 @@ export const useSubmissions = () => {
               property_name: propertyName,
               property_address: propertyAddress,
               review: reviewData,
+              contract: contractData,
             })
           }
         } catch (err) {

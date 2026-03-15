@@ -30,7 +30,7 @@ import { useNavigate } from "react-router-dom"
 import { useLanguage } from "../../contexts/LanguageContext"
 import toast from "react-hot-toast"
 import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal"
-import { createContract, getContractByJob, approveWork } from "../../utils/contractApi"
+import { createContract, getContractByJob, approveWork, confirmCompletion } from "../../utils/contractApi"
 import { useSubmissions, useFavorites, useInvalidateSubmissions } from "../../hooks/useSubmissionsData"
 
 function SubmissionsPage() {
@@ -65,7 +65,7 @@ function SubmissionsPage() {
 
   // review
   const [isAddingReview, setIsAddingReview] = useState(false)
-  const [selectedSubmission, setSelectedSubmission] = useState({})
+  const [selectedSubmission, setSelectedSubmission] = useState(null)
   const [rating, setRating] = useState(1)
   const [comment, setComment] = useState('')
   const [reviewImages, setReviewImages] = useState([])
@@ -98,6 +98,12 @@ function SubmissionsPage() {
   // Release funds confirmation modal
   const [showReleaseConfirm, setShowReleaseConfirm] = useState(false)
   const [releaseJobId, setReleaseJobId] = useState(null)
+
+  // Confirm completion + review invitation
+  const [showConfirmCompletionModal, setShowConfirmCompletionModal] = useState(false)
+  const [confirmCompletionJobId, setConfirmCompletionJobId] = useState(null)
+  const [showReviewInvitation, setShowReviewInvitation] = useState(false)
+  const [reviewInvitationData, setReviewInvitationData] = useState(null)
 
   // Track which jobs have had funds released (for hiding the slider after release)
   // Initialize from localStorage to persist across page refreshes
@@ -424,6 +430,10 @@ function SubmissionsPage() {
       invalidateSubmissions()
       setShowDetailsModal(false)
 
+      // Automatically show the confirm completion modal
+      setConfirmCompletionJobId(jobId)
+      setShowConfirmCompletionModal(true)
+
     } catch (error) {
       console.error("Error approving work:", error)
       showNotification(
@@ -435,6 +445,38 @@ function SubmissionsPage() {
     } finally {
       setIsProcessing(false)
       setProcessingJobId(null)
+    }
+  }
+
+  // Handle confirm job completion (mutual confirmation)
+  const handleConfirmCompletion = async (jobId) => {
+    setIsProcessing(true)
+    try {
+      const contractData = await getContractByJob(jobId)
+      if (!contractData.has_contract || !contractData.contract) {
+        showNotification("No contract found for this job.", "error")
+        return
+      }
+
+      const result = await confirmCompletion(contractData.contract.id)
+
+      if (result.both_confirmed) {
+        showNotification("Both parties confirmed! Time to leave reviews.", "success")
+        // Find the submission for review invitation
+        const sub = submissions.find(s => s.job.id === jobId)
+        setReviewInvitationData({ jobId, submission: sub })
+        setShowReviewInvitation(true)
+      } else {
+        showNotification("Your confirmation recorded. Waiting for the contractor to confirm.", "success")
+      }
+
+      invalidateSubmissions()
+    } catch (error) {
+      showNotification(error.message || "Failed to confirm completion", "error")
+    } finally {
+      setIsProcessing(false)
+      setShowConfirmCompletionModal(false)
+      setConfirmCompletionJobId(null)
     }
   }
 
@@ -1009,7 +1051,7 @@ function SubmissionsPage() {
           </div>
         )}
 
-        {isAddingReview && (
+        {isAddingReview && selectedSubmission && (
           <div className="rm-modal-overlay" onClick={() => {
             setIsAddingReview(false)
             reviewImagePreviews.forEach(url => URL.revokeObjectURL(url))
@@ -1143,7 +1185,7 @@ function SubmissionsPage() {
         )}
 
         {/* View Reviews Modal */}
-        {showViewReviews && (
+        {showViewReviews && selectedSubmission && (
           <div className="bid-modal-overlay" onClick={() => setShowViewReviews(false)}>
             <div className="bid-modal-content view-reviews-modal" onClick={(e) => e.stopPropagation()}>
               <div className="bid-modal-header">
@@ -1318,7 +1360,7 @@ function SubmissionsPage() {
         )}
 
         {/* Submission Details Modal - Redesigned */}
-        {showDetailsModal && selectedSubmission && (
+        {showDetailsModal && selectedSubmission?.job && (
           <div className="details-overlay" onClick={() => setShowDetailsModal(false)}>
             <div className="details-content" onClick={(e) => e.stopPropagation()}>
               {/* Navy Header */}
@@ -1517,9 +1559,36 @@ function SubmissionsPage() {
                   </div>
                 )}
                 {selectedSubmission.bid.status === "approved" && normalizeStatus(selectedSubmission.job.status) === "completed" && releasedJobIds.has(selectedSubmission.job.id) && (
-                  <div className="details-status-message details-status-success">
-                    {t('submissions.fundsReleasedMessage')}
-                  </div>
+                  <>
+                    {/* Confirm completion button or status */}
+                    {selectedSubmission.contract && !selectedSubmission.contract.manager_completion_confirmed ? (
+                      <button
+                        className="release-funds-btn"
+                        onClick={() => {
+                          setConfirmCompletionJobId(selectedSubmission.job.id)
+                          setShowConfirmCompletionModal(true)
+                        }}
+                        disabled={isProcessing}
+                      >
+                        <CheckCircle size={18} />
+                        {t('submissions.confirmCompletion') || 'Confirm Job Completion'}
+                      </button>
+                    ) : selectedSubmission.contract?.manager_completion_confirmed && !selectedSubmission.contract?.mutual_confirmation_completed_at ? (
+                      <div className="details-status-message details-status-success">
+                        <CheckCircle size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.375rem' }} />
+                        {t('submissions.youConfirmedWaiting') || 'You confirmed. Waiting for the contractor to confirm.'}
+                      </div>
+                    ) : selectedSubmission.contract?.mutual_confirmation_completed_at ? (
+                      <div className="details-status-message details-status-success">
+                        <Star size={16} fill="#f59e0b" stroke="#f59e0b" style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.375rem' }} />
+                        {t('submissions.bothConfirmed') || 'Both parties confirmed!'}
+                      </div>
+                    ) : (
+                      <div className="details-status-message details-status-success">
+                        {t('submissions.fundsReleasedMessage')}
+                      </div>
+                    )}
+                  </>
                 )}
                 {selectedSubmission.bid.status === "approved" && normalizeStatus(selectedSubmission.job.status) !== "completed" && (
                   <div className="details-status-message">
@@ -1699,6 +1768,90 @@ function SubmissionsPage() {
                     {t('submissions.confirmReleaseBtn') || 'Yes, Confirm Completion'}
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Job Completion Modal */}
+      {showConfirmCompletionModal && (
+        <div className="release-confirm-overlay" onClick={() => setShowConfirmCompletionModal(false)}>
+          <div className="release-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="release-confirm-icon">
+              <CheckCircle size={32} />
+            </div>
+            <h3>{t('submissions.confirmCompletionTitle') || 'Confirm Job Completion'}</h3>
+            <p>{t('submissions.confirmCompletionMessage') || 'By confirming, you acknowledge that this job has been completed satisfactorily. Both you and the contractor must confirm before reviews can be exchanged.'}</p>
+            <div className="release-confirm-actions">
+              <button
+                className="release-confirm-cancel"
+                onClick={() => {
+                  setShowConfirmCompletionModal(false)
+                  setConfirmCompletionJobId(null)
+                }}
+                disabled={isProcessing}
+              >
+                {t('common.cancel') || 'Cancel'}
+              </button>
+              <button
+                className="release-confirm-submit"
+                onClick={() => {
+                  if (confirmCompletionJobId) {
+                    handleConfirmCompletion(confirmCompletionJobId)
+                  }
+                }}
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <>
+                    <span className="btn-spinner"></span>
+                    {t('submissions.confirming') || 'Confirming...'}
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle size={18} />
+                    {t('submissions.confirmCompletionBtn') || 'Yes, Confirm Completion'}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Review Invitation Modal */}
+      {showReviewInvitation && reviewInvitationData && (
+        <div className="release-confirm-overlay" onClick={() => setShowReviewInvitation(false)}>
+          <div className="release-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="release-confirm-icon" style={{ color: '#f59e0b' }}>
+              <Star size={32} fill="#f59e0b" stroke="#f59e0b" />
+            </div>
+            <h3>{t('submissions.reviewInvitationTitle') || 'Leave a Review'}</h3>
+            <p>{t('submissions.reviewInvitationMessage') || 'Both parties have confirmed the job is complete! Take a moment to rate your experience.'}</p>
+            <div className="release-confirm-actions">
+              <button
+                className="release-confirm-cancel"
+                onClick={() => setShowReviewInvitation(false)}
+              >
+                {t('submissions.skipReview') || 'Maybe Later'}
+              </button>
+              <button
+                className="release-confirm-submit"
+                onClick={() => {
+                  setShowReviewInvitation(false)
+                  if (reviewInvitationData.submission) {
+                    setSelectedSubmission(reviewInvitationData.submission)
+                    setRating(5)
+                    setComment('')
+                    setReviewImages([])
+                    setReviewImagePreviews([])
+                    setIsAddingReview(true)
+                  }
+                }}
+              >
+                <Star size={18} />
+                {t('submissions.leaveReviewNow') || 'Leave Review Now'}
               </button>
             </div>
           </div>

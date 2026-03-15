@@ -71,6 +71,13 @@ function EntrepreneurJobs() {
   const [reviewImagePreviews, setReviewImagePreviews] = useState([])
   const [isSubmittingReview, setIsSubmittingReview] = useState(false)
 
+  // Confirm completion + review invitation
+  const [showConfirmCompletionModal, setShowConfirmCompletionModal] = useState(false)
+  const [confirmCompletionJob, setConfirmCompletionJob] = useState(null)
+  const [isConfirmingCompletion, setIsConfirmingCompletion] = useState(false)
+  const [showReviewInvitation, setShowReviewInvitation] = useState(false)
+  const [reviewInvitationJob, setReviewInvitationJob] = useState(null)
+
   useEffect(() => {
     fetchJobs()
   }, [])
@@ -268,6 +275,51 @@ function EntrepreneurJobs() {
       toast.error("Failed to complete job. Please try again.")
     } finally {
       setIsConfirming(false)
+    }
+  }
+
+  // Handle confirm job completion (mutual confirmation)
+  const handleConfirmCompletion = async (job) => {
+    setIsConfirmingCompletion(true)
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+    const user = JSON.parse(localStorage.getItem("userProfile"))
+
+    try {
+      if (!job.contract?.id) {
+        toast.error("No contract found for this job.")
+        return
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/contracts/${job.contract.id}/confirm-completion`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to confirm')
+      }
+
+      const result = await response.json()
+
+      if (result.both_confirmed) {
+        toast.success(t('entrepreneurJobs.bothConfirmed') || "Both parties confirmed! Time to leave a review.")
+        setReviewInvitationJob(job)
+        setShowReviewInvitation(true)
+      } else {
+        toast.success(t('entrepreneurJobs.youConfirmedWaiting') || "Your confirmation recorded. Waiting for the property manager.")
+      }
+
+      await fetchJobs()
+    } catch (error) {
+      toast.error(error.message || "Failed to confirm completion")
+    } finally {
+      setIsConfirmingCompletion(false)
+      setShowConfirmCompletionModal(false)
+      setConfirmCompletionJob(null)
     }
   }
 
@@ -788,21 +840,49 @@ function EntrepreneurJobs() {
                       )}
 
                       {job.status === "completed" && (
-                        <button
-                          className="ej-btn ej-btn-review"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setSelectedJob(job)
-                            if (job.review.length === 0) {
-                              setOpenReviewModal(true)
-                            } else {
-                              getJobInformation(job)
-                            }
-                          }}
-                        >
-                          <Star size={16} />
-                          {job.review.length === 0 ? t('entrepreneurJobs.leaveReview') : t('entrepreneurJobs.viewReview')}
-                        </button>
+                        <>
+                          {/* Confirm completion button (if not yet confirmed) */}
+                          {job.contract && !job.contract.contractor_completion_confirmed && (
+                            <button
+                              className="ej-btn ej-btn-complete"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setConfirmCompletionJob(job)
+                                setShowConfirmCompletionModal(true)
+                              }}
+                            >
+                              <CheckCircle size={16} />
+                              {t('entrepreneurJobs.confirmCompletion') || 'Confirm Completion'}
+                            </button>
+                          )}
+
+                          {/* Awaiting manager confirmation */}
+                          {job.contract?.contractor_completion_confirmed && !job.contract?.mutual_confirmation_completed_at && (
+                            <span className="ej-confirmation-status">
+                              {t('entrepreneurJobs.awaitingManagerConfirmation') || 'Awaiting manager confirmation'}
+                            </span>
+                          )}
+
+                          {/* Review button (after mutual confirmation or if no contract) */}
+                          {(!job.contract || job.contract?.mutual_confirmation_completed_at) && (
+                            <button
+                              className="ej-btn ej-btn-review"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setSelectedJob(job)
+                                if (job.review.length === 0) {
+                                  setReviewForm({ rating: 5, comment: "" })
+                                  setOpenReviewModal(true)
+                                } else {
+                                  getJobInformation(job)
+                                }
+                              }}
+                            >
+                              <Star size={16} />
+                              {job.review.length === 0 ? t('entrepreneurJobs.leaveReview') : t('entrepreneurJobs.viewReview')}
+                            </button>
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
@@ -1417,21 +1497,49 @@ function EntrepreneurJobs() {
                 )}
 
                 {detailsJob.status === "completed" && (
-                  <button
-                    className="ej-modal-action-btn ej-modal-review"
-                    onClick={() => {
-                      setShowDetailsModal(false)
-                      setSelectedJob(detailsJob)
-                      if (detailsJob.review && detailsJob.review.length === 0) {
-                        setOpenReviewModal(true)
-                      } else {
-                        getJobInformation(detailsJob)
-                      }
-                    }}
-                  >
-                    <Star size={16} />
-                    {detailsJob.review && detailsJob.review.length === 0 ? t('entrepreneurJobs.leaveReview') : t('entrepreneurJobs.viewReview')}
-                  </button>
+                  <>
+                    {/* Confirm completion button (if not yet confirmed) */}
+                    {detailsJob.contract && !detailsJob.contract.contractor_completion_confirmed && (
+                      <button
+                        className="ej-modal-action-btn ej-modal-complete"
+                        onClick={() => {
+                          setShowDetailsModal(false)
+                          setConfirmCompletionJob(detailsJob)
+                          setShowConfirmCompletionModal(true)
+                        }}
+                      >
+                        <CheckCircle size={16} />
+                        {t('entrepreneurJobs.confirmCompletion') || 'Confirm Completion'}
+                      </button>
+                    )}
+
+                    {/* Awaiting manager confirmation */}
+                    {detailsJob.contract?.contractor_completion_confirmed && !detailsJob.contract?.mutual_confirmation_completed_at && (
+                      <span className="ej-confirmation-status">
+                        {t('entrepreneurJobs.awaitingManagerConfirmation') || 'Awaiting manager confirmation'}
+                      </span>
+                    )}
+
+                    {/* Review button (only after mutual confirmation or if no contract) */}
+                    {(!detailsJob.contract || detailsJob.contract?.mutual_confirmation_completed_at) && (
+                      <button
+                        className="ej-modal-action-btn ej-modal-review"
+                        onClick={() => {
+                          setShowDetailsModal(false)
+                          setSelectedJob(detailsJob)
+                          if (detailsJob.review && detailsJob.review.length === 0) {
+                            setReviewForm({ rating: 5, comment: "" })
+                            setOpenReviewModal(true)
+                          } else {
+                            getJobInformation(detailsJob)
+                          }
+                        }}
+                      >
+                        <Star size={16} />
+                        {detailsJob.review && detailsJob.review.length === 0 ? t('entrepreneurJobs.leaveReview') : t('entrepreneurJobs.viewReview')}
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
@@ -1526,6 +1634,101 @@ function EntrepreneurJobs() {
                 </Popup>
               </Marker>
             </MapContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Job Completion Modal */}
+      {showConfirmCompletionModal && confirmCompletionJob && (
+        <div className="rm-modal-overlay" onClick={() => { setShowConfirmCompletionModal(false); setConfirmCompletionJob(null); }}>
+          <div className="rm-modal-container" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+            <div className="rm-modal-header">
+              <div className="rm-header-content">
+                <h2 className="rm-modal-title">{t('entrepreneurJobs.confirmCompletionTitle') || 'Confirm Job Completion'}</h2>
+                <p className="rm-modal-subtitle">{confirmCompletionJob.title}</p>
+              </div>
+              <button className="rm-close-btn" onClick={() => { setShowConfirmCompletionModal(false); setConfirmCompletionJob(null); }}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="rm-modal-body" style={{ textAlign: 'center', padding: '1.5rem' }}>
+              <CheckCircle size={48} style={{ color: '#059669', marginBottom: '1rem' }} />
+              <p style={{ color: '#374151', fontSize: '0.875rem', lineHeight: 1.6 }}>
+                {t('entrepreneurJobs.confirmCompletionMessage') || 'By confirming, you acknowledge that this job has been completed satisfactorily. Both you and the property manager must confirm before reviews can be exchanged.'}
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem', padding: '1rem 1.5rem', borderTop: '1px solid #e5e7eb' }}>
+              <button
+                className="ej-btn"
+                style={{ flex: 1, background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db' }}
+                onClick={() => { setShowConfirmCompletionModal(false); setConfirmCompletionJob(null); }}
+                disabled={isConfirmingCompletion}
+              >
+                {t('common.cancel') || 'Cancel'}
+              </button>
+              <button
+                className="ej-btn ej-btn-complete"
+                style={{ flex: 1 }}
+                onClick={() => handleConfirmCompletion(confirmCompletionJob)}
+                disabled={isConfirmingCompletion}
+              >
+                {isConfirmingCompletion ? (
+                  <>{t('entrepreneurJobs.confirming') || 'Confirming...'}</>
+                ) : (
+                  <>
+                    <CheckCircle size={16} />
+                    {t('entrepreneurJobs.confirmCompletionBtn') || 'Yes, Confirm'}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Review Invitation Modal */}
+      {showReviewInvitation && reviewInvitationJob && (
+        <div className="rm-modal-overlay" onClick={() => setShowReviewInvitation(false)}>
+          <div className="rm-modal-container" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+            <div className="rm-modal-header">
+              <div className="rm-header-content">
+                <h2 className="rm-modal-title">{t('entrepreneurJobs.reviewInvitationTitle') || 'Leave a Review'}</h2>
+                <p className="rm-modal-subtitle">{reviewInvitationJob.title}</p>
+              </div>
+              <button className="rm-close-btn" onClick={() => setShowReviewInvitation(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div className="rm-modal-body" style={{ textAlign: 'center', padding: '1.5rem' }}>
+              <Star size={48} fill="#f59e0b" stroke="#f59e0b" style={{ marginBottom: '1rem' }} />
+              <p style={{ color: '#374151', fontSize: '0.875rem', lineHeight: 1.6 }}>
+                {t('entrepreneurJobs.reviewInvitationMessage') || 'Both parties have confirmed the job is complete! Take a moment to rate your experience.'}
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem', padding: '1rem 1.5rem', borderTop: '1px solid #e5e7eb' }}>
+              <button
+                className="ej-btn"
+                style={{ flex: 1, background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db' }}
+                onClick={() => setShowReviewInvitation(false)}
+              >
+                {t('entrepreneurJobs.skipReview') || 'Maybe Later'}
+              </button>
+              <button
+                className="ej-btn ej-btn-review"
+                style={{ flex: 1 }}
+                onClick={() => {
+                  setShowReviewInvitation(false)
+                  setSelectedJob(reviewInvitationJob)
+                  setReviewForm({ rating: 5, comment: "" })
+                  setReviewImages([])
+                  setReviewImagePreviews([])
+                  setOpenReviewModal(true)
+                }}
+              >
+                <Star size={16} />
+                {t('entrepreneurJobs.leaveReviewNow') || 'Leave Review Now'}
+              </button>
+            </div>
           </div>
         </div>
       )}

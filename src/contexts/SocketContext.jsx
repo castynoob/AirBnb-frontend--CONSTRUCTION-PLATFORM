@@ -691,6 +691,53 @@ export const SocketProvider = ({ children }) => {
       }
     });
 
+    // Completion confirmed by one party
+    newSocket.on("completion_confirmed", (data) => {
+      console.log("Completion confirmed notification:", data);
+
+      setNotifications(prev => [{
+        id: Date.now(),
+        read: false,
+        timestamp: new Date().toISOString(),
+        type: 'completion_confirmed',
+        jobId: data.jobId,
+        jobTitle: data.jobTitle,
+        content: `${data.confirmerName} confirmed job completion for "${data.jobTitle}"`,
+      }, ...prev]);
+
+      if (checkIsPublicPage()) return;
+      playNotificationSound();
+      showDismissibleToast(
+        `${data.confirmerName} confirmed job completion`,
+        { icon: '✅' }
+      );
+    });
+
+    // Review invitation (both parties confirmed)
+    newSocket.on("review_invitation", (data) => {
+      console.log("Review invitation received:", data);
+
+      setNotifications(prev => [{
+        id: Date.now(),
+        read: false,
+        timestamp: new Date().toISOString(),
+        type: 'review_invitation',
+        jobId: data.jobId,
+        jobTitle: data.jobTitle,
+        content: `Leave a review for ${data.revieweeName} on "${data.jobTitle}"`,
+        revieweeId: data.revieweeId,
+        revieweeName: data.revieweeName,
+        suggestedRating: data.suggestedRating,
+      }, ...prev]);
+
+      if (checkIsPublicPage()) return;
+      playNotificationSound();
+      showDismissibleToast(
+        `Job confirmed! Leave a review for ${data.revieweeName}`,
+        { icon: '⭐', bg: '#059669', duration: 8000 }
+      );
+    });
+
     setSocket(newSocket);
 
     return () => {
