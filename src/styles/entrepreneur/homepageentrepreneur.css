@@ -879,15 +879,16 @@
 
 .eh-job-card-header {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: flex-start;
-  gap: 0.75rem;
+  gap: 0.5rem;
   margin-bottom: 0.625rem;
 }
 
 .eh-job-title-section {
   flex: 1;
   min-width: 0;
+  width: 100%;
 }
 
 .eh-job-title {
@@ -920,14 +921,34 @@
 }
 
 .eh-urgency-badge {
-  padding: 0.3125rem 0.625rem;
-  color: var(--color-white);
+  padding: 0.35rem 0.75rem;
+  color: #ffffff;
   border-radius: 6px;
-  font-size: 0.6875rem;
-  font-weight: var(--font-weight-lg);
+  font-size: 0.75rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.eh-urgency-badge.eh-urgency-urgent {
+  background: #b91c1c;
+  border: 2px solid #f87171;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2), 0 2px 10px rgba(220, 38, 38, 0.45);
+  animation: ehUrgentPulse 2s ease-in-out infinite;
+}
+
+@keyframes ehUrgentPulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2), 0 2px 10px rgba(220, 38, 38, 0.45); }
+  50% { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0.1), 0 2px 16px rgba(220, 38, 38, 0.55); }
+}
+
+.eh-urgency-badge.eh-urgency-planned {
+  background: #2563eb;
+  border: 1.5px solid #60a5fa;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
 }
 
 .eh-job-description {
@@ -935,6 +956,20 @@
   color: var(--color-text-dark);
   line-height: 1.5;
   margin: 0 0 0.75rem 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.eh-job-description.eh-desc-clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.eh-job-description.eh-desc-expanded {
+  display: block;
+  overflow: visible;
 }
 
 /* Job Details Grid */
@@ -2160,6 +2195,26 @@
 
 .eh-submit-bid-button:active {
   transform: translateY(0);
+}
+
+.eh-submit-bid-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.eh-bid-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: eh-spin 0.6s linear infinite;
+}
+
+@keyframes eh-spin {
+  to { transform: rotate(360deg); }
 }
 
 /* ============================================

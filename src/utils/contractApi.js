@@ -163,3 +163,88 @@ export async function confirmCompletion(contractId) {
 
   return response.json();
 }
+
+/**
+ * Cancel a bid approval (for managers)
+ * @param {string} bidId - The bid ID to cancel approval for
+ */
+export async function cancelBidApproval(bidId) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/bids/${bidId}/cancel-approval`,
+    {
+      method: 'PATCH',
+      headers: getAuthHeaders()
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || error.error || 'Failed to cancel bid approval');
+  }
+
+  return response.json();
+}
+
+/**
+ * Get archived jobs for the current manager
+ */
+export async function getArchivedJobs() {
+  const response = await fetch(
+    `${API_BASE_URL}/api/jobs/archived`,
+    {
+      method: 'GET',
+      headers: getAuthHeaders()
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to fetch archived jobs');
+  }
+
+  return response.json();
+}
+
+/**
+ * Archive a job (for managers)
+ * @param {string} jobId - The job ID to archive
+ * @param {boolean} archive - true to archive, false to restore
+ */
+export async function archiveJob(jobId, archive = true) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/jobs/${jobId}/archive`,
+    {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ archive })
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || error.error || 'Failed to archive job');
+  }
+
+  return response.json();
+}
+
+/**
+ * Delete a job (for managers)
+ * @param {string} jobId - The job ID to delete
+ */
+export async function deleteJob(jobId) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/jobs/${jobId}`,
+    {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || error.error || 'Failed to delete job');
+  }
+
+  return response.json();
+}

@@ -153,14 +153,30 @@
 
 /* Notification Badge */
 .notification-badge {
-  background-color: var(--color-status-urgent);
+  background-color: #ef4444;
   color: var(--color-white);
   font-size: 0.6875rem;
-  font-weight: var(--font-weight-lg);
-  padding: 0.125rem 0.5rem;
-  border-radius: 10px;
-  min-width: 20px;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  min-width: 22px;
   text-align: center;
+  line-height: 1;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3); }
+  50% { box-shadow: 0 0 0 5px rgba(239, 68, 68, 0.1); }
+}
+
+/* Messages nav link highlight when has unread */
+.nav-link.has-unread .nav-icon {
+  color: #fff;
+}
+.nav-link.has-unread .nav-text {
+  font-weight: 600;
 }
 
 /* ============================================ */
@@ -396,8 +412,11 @@
 
   .notification-badge {
     position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
+    top: 0.25rem;
+    right: 0.25rem;
+    font-size: 0.625rem;
+    padding: 0.15rem 0.35rem;
+    min-width: 18px;
   }
 
   /* Tablet sidebar footer */
@@ -517,10 +536,10 @@
 
   .notification-badge {
     position: absolute;
-    top: 0.125rem;
-    right: 0.125rem;
+    top: 0rem;
+    right: 0rem;
     font-size: 0.5625rem;
-    padding: 0.125rem 0.3rem;
+    padding: 0.15rem 0.3rem;
     min-width: 16px;
   }
 

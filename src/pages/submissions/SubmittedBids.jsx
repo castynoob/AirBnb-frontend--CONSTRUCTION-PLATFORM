@@ -19,6 +19,7 @@ import {
   Building2,
   Mail,
   Phone,
+  Trash2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -40,6 +41,11 @@ const SubmittedBids = () => {
   const [showManagerModal, setShowManagerModal] = useState(false);
   const [selectedManagerProfile, setSelectedManagerProfile] = useState(null);
   const [isLoadingManagerProfile, setIsLoadingManagerProfile] = useState(false);
+
+  // Withdraw bid states
+  const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
+  const [withdrawBidId, setWithdrawBidId] = useState(null);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
 
 
   const navigate = useNavigate()
@@ -180,6 +186,46 @@ const SubmittedBids = () => {
     setShowDetailsModal(true);
   };
 
+  const handleWithdrawBid = async () => {
+    if (!withdrawBidId) return;
+    setIsWithdrawing(true);
+    try {
+      const user = JSON.parse(localStorage.getItem('userProfile'));
+      const res = await fetch(`${API_BASE_URL}/api/bids/${withdrawBidId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Failed to withdraw bid');
+      }
+      // Remove bid from local state
+      setBids(prev => ({
+        all: prev.all.filter(b => b.id !== withdrawBidId),
+        pending: prev.pending.filter(b => b.id !== withdrawBidId),
+        accepted: prev.accepted,
+        declined: prev.declined,
+      }));
+      setSummary(prev => ({
+        ...prev,
+        total: prev.total - 1,
+        pending: prev.pending - 1,
+      }));
+      setShowWithdrawConfirm(false);
+      setWithdrawBidId(null);
+      // Close detail modal if viewing the withdrawn bid
+      if (selectedBid?.id === withdrawBidId) {
+        setShowDetailsModal(false);
+        setSelectedBid(null);
+      }
+      toast.success(t('submittedBids.bidWithdrawn') || 'Bid withdrawn successfully');
+    } catch (err) {
+      toast.error(err.message || t('submittedBids.withdrawError') || 'Failed to withdraw bid');
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
+
   const handleMessageClicked = (bid) => {
     const userProfileData = localStorage.getItem('userProfile')
 
@@ -250,7 +296,7 @@ const SubmittedBids = () => {
       setShowManagerModal(true);
     } catch (error) {
       console.error('Error fetching manager profile:', error);
-      toast.error('Failed to load manager profile');
+      toast.error(t('toasts.failedLoadManagerProfile'));
     } finally {
       setIsLoadingManagerProfile(false);
     }
@@ -446,9 +492,6 @@ const SubmittedBids = () => {
                       {statusInfo.label}
                     </div>
                     <div className="subs-card-top-right">
-                      {bid.urgency && bid.urgency.includes('Urgent') && (
-                        <span className="subs-urgency urgent">{t('submittedBids.urgent')}</span>
-                      )}
                       <span className="subs-bid-amount">{formatCurrency(bid.amount)}</span>
                     </div>
                   </div>
@@ -483,7 +526,22 @@ const SubmittedBids = () => {
 
                     {(bid.status === 'accepted' || bid.status === 'approved') && (
                       <button className="subs-chat-btn" onClick={(e) => { e.stopPropagation(); handleMessageClicked(bid); }}>
-                        <MessageSquare size={14} />
+                        <MessageSquare size={18} />
+                        <span>{t('submittedBids.chat') || 'Chat'}</span>
+                      </button>
+                    )}
+
+                    {bid.status === 'pending' && (
+                      <button
+                        className="subs-withdraw-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setWithdrawBidId(bid.id);
+                          setShowWithdrawConfirm(true);
+                        }}
+                      >
+                        <Trash2 size={14} />
+                        <span>{t('submittedBids.withdraw') || 'Withdraw'}</span>
                       </button>
                     )}
                   </div>
@@ -626,6 +684,19 @@ const SubmittedBids = () => {
 
               {/* Modal Footer */}
               <div className="bid-modal-footer">
+                {selectedBid.status === 'pending' && (
+                  <button
+                    className="bid-btn-withdraw"
+                    onClick={() => {
+                      setWithdrawBidId(selectedBid.id);
+                      setShowWithdrawConfirm(true);
+                    }}
+                    style={{ marginRight: 'auto' }}
+                  >
+                    <Trash2 size={16} />
+                    {t('submittedBids.withdrawBid') || 'Withdraw Bid'}
+                  </button>
+                )}
                 {(selectedBid.status === 'accepted' || selectedBid.status === 'approved') && (
                   <button
                     className="bid-btn-accept"
@@ -643,6 +714,46 @@ const SubmittedBids = () => {
                   onClick={() => setShowDetailsModal(false)}
                 >
                   {t('submittedBids.close')}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Withdraw Bid Confirmation Modal */}
+        {showWithdrawConfirm && (
+          <div className="release-confirm-overlay" onClick={() => { if (!isWithdrawing) { setShowWithdrawConfirm(false); setWithdrawBidId(null); } }}>
+            <div className="release-confirm-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="release-confirm-icon" style={{ color: '#ef4444' }}>
+                <AlertCircle size={32} />
+              </div>
+              <h3>{t('submittedBids.withdrawConfirmTitle') || 'Withdraw Bid?'}</h3>
+              <p>{t('submittedBids.withdrawConfirmMessage') || 'Are you sure you want to withdraw this bid? This action cannot be undone and the property manager will be notified.'}</p>
+              <div className="release-confirm-actions">
+                <button
+                  className="release-confirm-cancel"
+                  onClick={() => { setShowWithdrawConfirm(false); setWithdrawBidId(null); }}
+                  disabled={isWithdrawing}
+                >
+                  {t('common.cancel') || 'Cancel'}
+                </button>
+                <button
+                  className="release-confirm-submit"
+                  onClick={handleWithdrawBid}
+                  disabled={isWithdrawing}
+                  style={{ background: '#ef4444' }}
+                >
+                  {isWithdrawing ? (
+                    <>
+                      <span className="btn-spinner" style={{ width: 16, height: 16, marginRight: 8 }}></span>
+                      {t('submittedBids.withdrawing') || 'Withdrawing...'}
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={16} style={{ marginRight: 6 }} />
+                      {t('submittedBids.confirmWithdraw') || 'Yes, Withdraw'}
+                    </>
+                  )}
                 </button>
               </div>
             </div>

@@ -20,8 +20,8 @@ function AddPropertyPage() {
     postal_code: "",
     num_units: 0,
     building_type: "Apartment",
-    latitude: 14.5995,
-    longitude: 120.9842,
+    latitude: 45.5017,
+    longitude: -73.5673,
   });
 
   const [errors, setErrors] = useState({});
@@ -143,11 +143,9 @@ function AddPropertyPage() {
   };
 
   const initializeMap = (lat, lng, L) => {
-    const mapInstance = L.map(mapRef.current).setView([lat, lng], 13);
+    const mapInstance = L.map(mapRef.current, { attributionControl: false }).setView([lat, lng], 13);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(mapInstance);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { subdomains: 'abcd' }).addTo(mapInstance);
 
     const marker = L.marker([lat, lng], { draggable: true }).addTo(mapInstance);
 

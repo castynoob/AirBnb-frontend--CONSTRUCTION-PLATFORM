@@ -1,4 +1,5 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMemo } from 'react'
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
@@ -29,146 +30,59 @@ const authFetch = async (url, token) => {
 
 // ============================================
 // SUBMISSIONS (PM Biddings page)
+// Uses single optimized endpoint with cursor pagination
 // ============================================
 
+const PAGE_SIZE = 50
+
 /**
- * Hook: Fetch all submissions (jobs + bids + properties + reviews)
- * Replicates the complex N+1 fetch from Submissions.jsx
+ * Hook: Fetch all submissions via single optimized endpoint
+ * Replaces the old N+1 fetch pattern (40+ API calls → 1 API call)
  */
-export const useSubmissions = () => {
-  return useQuery({
-    queryKey: ['submissions', 'list'],
-    queryFn: async () => {
+export const useSubmissions = (statusFilter = 'all') => {
+  const query = useInfiniteQuery({
+    queryKey: ['submissions', 'list', statusFilter],
+    queryFn: async ({ pageParam }) => {
       const user = getUser()
       if (!user) throw new Error('Not authenticated')
 
-      // 1. Fetch manager's jobs
-      const jobsData = await authFetch(
-        `${API_BASE_URL}/api/jobs/manager/${user.id}`,
+      const params = new URLSearchParams({ limit: PAGE_SIZE })
+      if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter)
+      if (pageParam) params.set('cursor', pageParam)
+
+      const data = await authFetch(
+        `${API_BASE_URL}/api/bids/manager/submissions?${params}`,
         user.token
       )
-      const jobs = jobsData.jobs || []
-
-      // 2. Enrich each job with bids, property, reviews
-      const submissionsData = []
-
-      for (const job of jobs) {
-        try {
-          // Fetch bids for this job
-          const bidsData = await authFetch(
-            `${API_BASE_URL}/api/bids/job/${job.id}`,
-            user.token
-          ).catch(() => ({ bids: [] }))
-
-          const bids = bidsData.bids || []
-
-          // Fetch property details
-          let propertyAddress = 'Unknown Location'
-          let propertyName = 'Unknown Property'
-          if (job.property_id) {
-            try {
-              const propertyData = await authFetch(
-                `${API_BASE_URL}/api/properties/${job.property_id}`,
-                user.token
-              )
-              const property = propertyData.property
-              propertyName = property.building_name || property.name || property.address || 'Unknown Property'
-              propertyAddress = `${property.address}, ${property.city}, ${property.province}`
-            } catch {
-              // keep defaults
-            }
-          }
-
-          // Process each bid (skip declined)
-          for (const bid of bids) {
-            if (bid.status === 'declined') continue
-
-            // Fetch review and contract data if job is completed
-            let reviewData = null
-            let contractData = null
-            if (job.status === 'completed') {
-              try {
-                const reviewJson = await authFetch(
-                  `${API_BASE_URL}/api/reviews/job/${job.id}`,
-                  user.token
-                )
-                reviewData = reviewJson.review && reviewJson.review.length > 0 ? reviewJson.review[0] : null
-              } catch {
-                // no review
-              }
-              try {
-                const contractJson = await authFetch(
-                  `${API_BASE_URL}/api/contracts/job/${job.id}`,
-                  user.token
-                )
-                contractData = contractJson.contract || null
-              } catch {
-                // no contract
-              }
-            }
-
-            submissionsData.push({
-              bid: {
-                id: bid.id,
-                job_id: bid.job_id,
-                entrepreneur_id: bid.entrepreneur_id,
-                amount: bid.amount,
-                message: bid.message,
-                status: bid.status,
-                created_at: bid.created_at,
-                updated_at: bid.updated_at,
-              },
-              job: {
-                id: job.id,
-                title: job.title,
-                description: job.description,
-                category: job.category,
-                urgency: job.urgency,
-                budget_min: job.budget_min,
-                budget_max: job.budget_max,
-                is_budget_hidden: job.is_budget_hidden,
-                is_emergency: job.is_emergency,
-                status: job.status,
-                due_date: job.due_date,
-                estimated_duration_days: job.estimated_duration_days,
-                property_id: job.property_id,
-                manager_id: job.manager_id,
-                unit_id: job.unit_id,
-                created_at: job.created_at,
-                updated_at: job.updated_at,
-              },
-              entrepreneur_profile: {
-                id: bid.entrepreneur_id,
-                user_id: bid.user_id || bid.entrepreneur_user_id,
-                entrepreneur_user_id: bid.entrepreneur_user_id,
-                company_name: bid.company_name,
-                license_number: bid.license_number,
-                years_in_business: bid.years_in_business,
-                specializations: bid.specializations || [],
-                average_rating: bid.average_rating,
-                total_reviews: bid.total_reviews,
-              },
-              user: {
-                first_name: bid.first_name,
-                last_name: bid.last_name,
-                email: bid.email,
-              },
-              property_name: propertyName,
-              property_address: propertyAddress,
-              review: reviewData,
-              contract: contractData,
-            })
-          }
-        } catch (err) {
-          console.warn(`Error processing job ${job.id}:`, err)
-        }
-      }
-
-      return submissionsData
+      return data
     },
+    initialPageParam: null,
+    getNextPageParam: (lastPage) => lastPage.pagination?.nextCursor ?? undefined,
     enabled: !!getUser(),
-    staleTime: 2 * 60 * 1000, // 2 minutes — submissions don't change super frequently
+    staleTime: 2 * 60 * 1000,
   })
+
+  // Memoize flattened results to prevent infinite re-render loops
+  const allSubmissions = useMemo(
+    () => query.data?.pages?.flatMap(page => page.submissions) ?? [],
+    [query.data]
+  )
+  const counts = useMemo(
+    () => query.data?.pages?.[0]?.counts ?? {},
+    [query.data]
+  )
+
+  return {
+    data: allSubmissions,
+    counts,
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isFetchingNextPage: query.isFetchingNextPage,
+    hasNextPage: query.hasNextPage,
+    fetchNextPage: query.fetchNextPage,
+    error: query.error,
+    refetch: query.refetch,
+  }
 }
 
 // ============================================

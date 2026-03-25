@@ -2,10 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Check, CheckCheck, X, Briefcase, MessageSquare, Hammer, CheckCircle, XCircle } from 'lucide-react';
 import { useSocket } from '../contexts/SocketContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import '../styles/notificationbell.css';
 
 function NotificationBell() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useSocket();
@@ -44,36 +46,41 @@ function NotificationBell() {
   const getNotificationTitle = (notif) => {
     switch (notif.type) {
       case 'bid':
-        return `New Bid from ${notif.bidder || 'Contractor'}`;
+        return t('notifications.newBid').replace('{{name}}', notif.bidder || t('notifications.defaultContractor'));
       case 'bid_approved':
-        return 'Bid Approved!';
+        return t('notifications.bidApproved');
       case 'bid_declined':
-        return 'Bid Not Selected';
+        return t('notifications.bidDeclined');
       case 'message':
-        return `Message from ${notif.senderName || 'Someone'}`;
+        return t('notifications.messageFrom').replace('{{name}}', notif.senderName || t('notifications.defaultSomeone'));
       case 'started':
-        return `${notif.contractor || 'Contractor'} Started Work`;
+        return t('notifications.workStarted').replace('{{name}}', notif.contractor || t('notifications.defaultContractor'));
       case 'completed':
-        return `${notif.contractor || 'Contractor'} Completed Work`;
+        return t('notifications.workCompleted').replace('{{name}}', notif.contractor || t('notifications.defaultContractor'));
       default:
-        return 'Notification';
+        return t('notifications.notification');
     }
   };
 
   const getNotificationBody = (notif) => {
     switch (notif.type) {
       case 'bid':
-        return `${notif.budget ? `$${Number(notif.budget).toLocaleString()} bid` : 'New bid'} for ${notif.jobTitle || 'a job'}`;
+        if (notif.budget) {
+          return t('notifications.bidBody')
+            .replace('{{amount}}', `$${Number(notif.budget).toLocaleString()}`)
+            .replace('{{job}}', notif.jobTitle || '');
+        }
+        return t('notifications.newBidBody').replace('{{job}}', notif.jobTitle || '');
       case 'bid_approved':
-        return notif.content || `Your bid for "${notif.jobTitle}" has been approved!`;
+        return t('notifications.bidApprovedBody').replace('{{job}}', notif.jobTitle || '');
       case 'bid_declined':
-        return notif.content || `Your bid for "${notif.jobTitle}" was not selected.`;
+        return t('notifications.bidDeclinedBody').replace('{{job}}', notif.jobTitle || '');
       case 'message':
-        return notif.content || 'New message received';
+        return notif.content || t('notifications.newMessageBody');
       case 'started':
-        return `Working on ${notif.jobTitle || notif.workTitle || 'a project'}`;
+        return t('notifications.workStartedBody').replace('{{job}}', notif.jobTitle || notif.workTitle || '');
       case 'completed':
-        return `Finished ${notif.workTitle || notif.jobTitle || 'a project'}`;
+        return t('notifications.workCompletedBody').replace('{{job}}', notif.workTitle || notif.jobTitle || '');
       default:
         return notif.content || '';
     }
@@ -122,10 +129,10 @@ function NotificationBell() {
     const date = new Date(timestamp);
     const diffInSeconds = Math.floor((now - date) / 1000);
 
-    if (diffInSeconds < 60) return 'Just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+    if (diffInSeconds < 60) return t('notifications.justNow');
+    if (diffInSeconds < 3600) return t('notifications.minutesAgo').replace('{{count}}', Math.floor(diffInSeconds / 60));
+    if (diffInSeconds < 86400) return t('notifications.hoursAgo').replace('{{count}}', Math.floor(diffInSeconds / 3600));
+    if (diffInSeconds < 604800) return t('notifications.daysAgo').replace('{{count}}', Math.floor(diffInSeconds / 86400));
     return date.toLocaleDateString();
   };
 
@@ -134,7 +141,7 @@ function NotificationBell() {
       <button
         className={`notification-bell-btn ${isOpen ? 'active' : ''}`}
         onClick={() => setIsOpen(!isOpen)}
-        aria-label="Notifications"
+        aria-label={t('notifications.title')}
       >
         <Bell size={20} />
         {unreadCount > 0 && (
@@ -154,15 +161,15 @@ function NotificationBell() {
           />
           <div className="notification-dropdown">
           <div className="notification-dropdown-header">
-            <h3>Notifications</h3>
+            <h3>{t('notifications.title')}</h3>
             {unreadCount > 0 && (
               <button
                 className="mark-all-read-btn"
                 onClick={() => markAllAsRead()}
-                title="Mark all as read"
+                title={t('notifications.markAllRead')}
               >
                 <CheckCheck size={16} />
-                Mark all read
+                {t('notifications.markAllRead')}
               </button>
             )}
           </div>
@@ -171,7 +178,7 @@ function NotificationBell() {
             {notifications.length === 0 ? (
               <div className="notification-empty">
                 <Bell size={32} />
-                <p>No notifications yet</p>
+                <p>{t('notifications.noNotifications')}</p>
               </div>
             ) : (
               <ul className="notification-list">
@@ -207,7 +214,9 @@ function NotificationBell() {
           {notifications.length > 0 && (
             <div className="notification-dropdown-footer">
               <span className="notification-count">
-                {notifications.length} notification{notifications.length !== 1 ? 's' : ''}
+                {notifications.length === 1
+                  ? t('notifications.notificationCount').replace('{{count}}', notifications.length)
+                  : t('notifications.notificationCountPlural').replace('{{count}}', notifications.length)}
               </span>
             </div>
           )}

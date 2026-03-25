@@ -41,6 +41,7 @@ import {
   Trash2,
   Calendar,
   Loader,
+  Briefcase,
 } from "lucide-react"
 import toast from "react-hot-toast"
 import { useLanguage } from "../../contexts/LanguageContext"
@@ -246,12 +247,17 @@ function HomePageEntrepreneur() {
   const [mapZoom, setMapZoom] = useState(null)
   const [mapTriggerKey, setMapTriggerKey] = useState(0)
   const searchInputRef = useRef(null)
+  const [searchTab, setSearchTab] = useState('all') // 'all' | 'jobs' | 'properties' | 'places'
+  const [placeResults, setPlaceResults] = useState([])
+  const [isSearchingPlaces, setIsSearchingPlaces] = useState(false)
+  const placeSearchTimeout = useRef(null)
   const searchContainerRef = useRef(null)
   const [userProfile, setUserProfile] = useState()
   const [isLoading, setIsLoading] = useState(true)
   const mapRef = useRef(null)
   const floatingPanelRef = useRef(null)
   const [savedScrollPosition, setSavedScrollPosition] = useState(0)
+  const [expandedDescs, setExpandedDescs] = useState(new Set())
 
   // Mobile view states
   const [mobileView, setMobileView] = useState("map") // "map" or "list"
@@ -297,6 +303,7 @@ function HomePageEntrepreneur() {
   const [editBidAmount, setEditBidAmount] = useState("")
   const [editBidMessage, setEditBidMessage] = useState("")
   const [isSubmittingBidAction, setIsSubmittingBidAction] = useState(false)
+  const [isSubmittingBid, setIsSubmittingBid] = useState(false)
 
   // Property Manager Profile Modal states
   const [showManagerModal, setShowManagerModal] = useState(false)
@@ -407,14 +414,28 @@ function HomePageEntrepreneur() {
     return submittedBids.find(bid => bid.job_id === jobId)
   }, [submittedBids])
 
-  // get user location
+  // get user location — try browser geolocation, fallback to Montreal
   useEffect(() => {
     setIsLoadingLocation(true)
-
-    // Always center on Montreal, QC — platform is for Quebec/Canada
     const defaultLocation = { lat: 45.5017, lng: -73.5673 }
-    setUserLocation(defaultLocation)
-    setIsLoadingLocation(false)
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude })
+          setIsLoadingLocation(false)
+        },
+        () => {
+          // Denied or error — fallback to Montreal
+          setUserLocation(defaultLocation)
+          setIsLoadingLocation(false)
+        },
+        { timeout: 5000, maximumAge: 300000 }
+      )
+    } else {
+      setUserLocation(defaultLocation)
+      setIsLoadingLocation(false)
+    }
   }, [])
 
 
@@ -540,10 +561,9 @@ function HomePageEntrepreneur() {
     return sorted
   }, [properties, jobs, searchTerm, appliedFilters, radiusFilter, calculateDistance, skillMatchEnabled, entrepreneurSpecializations])
 
-  // Get search results for dropdown (only based on search term, not other filters)
+  // Get search results for dropdown — properties and jobs
   const searchResults = useMemo(() => {
     if (!searchTerm.trim()) return []
-
     return properties
       .filter((property) => {
         const matchesSearch =
@@ -551,8 +571,22 @@ function HomePageEntrepreneur() {
           property.address.toLowerCase().includes(searchTerm.toLowerCase())
         return matchesSearch && getPropertyOpenJobsCount(property.id) > 0
       })
-      .slice(0, 5) // Limit to 5 results
+      .slice(0, 4)
   }, [searchTerm, properties, jobs])
+
+  const jobSearchResults = useMemo(() => {
+    if (!searchTerm.trim()) return []
+    const term = searchTerm.toLowerCase()
+    return jobs
+      .filter(job =>
+        job.title?.toLowerCase().includes(term) ||
+        job.category?.toLowerCase().includes(term) ||
+        job.description?.toLowerCase().includes(term)
+      )
+      .slice(0, 4)
+  }, [searchTerm, jobs])
+
+  const hasAnyResults = searchResults.length > 0 || jobSearchResults.length > 0 || placeResults.length > 0
 
   // Check if any filters are active (in the modal - pending)
   const hasActiveFilters = useMemo(() => {
@@ -667,7 +701,7 @@ function HomePageEntrepreneur() {
 
     // Starter plan: cannot bid on projects over $2,500
     if (planType === 'starter' && job.budget && parseFloat(job.budget) > 2500) {
-      toast.error('Starter plan cannot bid on projects over $2,500. Upgrade to Basic or Premium to bid on larger projects.')
+      toast.error(t('toasts.starterPlanLimit'))
       return
     }
 
@@ -696,6 +730,7 @@ function HomePageEntrepreneur() {
 
     if(storedProfile) {
       const user = JSON.parse(storedProfile)
+      setIsSubmittingBid(true)
       try {
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
         const response = await fetch(`${API_BASE_URL}/api/bids`, {
@@ -717,25 +752,25 @@ function HomePageEntrepreneur() {
           setBidModalOpen(false)
 
           if (errorData.action === 'update_payment_method' || errorData.error === 'Trial expired' || errorData.error === 'Payment failed') {
-            toast.error(errorData.message || 'Your trial has ended. Please update your payment method.')
+            toast.error(t('common.trialEnded') || 'Your trial has ended. Please update your payment method.')
             setShowSubscriptionModal(true)
             return
           }
 
           if (errorData.error === 'Bid limit reached') {
-            toast.error(`${errorData.message}. Upgrade to Premium for unlimited bids.`)
+            toast.error(t('common.upgradeRequired') || 'Upgrade to Premium for unlimited bids.')
             setShowSubscriptionModal(true)
             return
           }
 
           if (errorData.action === 'upgrade_plan') {
-            toast.error(errorData.message || 'Upgrade your subscription to bid on this project.')
+            toast.error(t('common.upgradeRequired') || 'Upgrade your subscription to bid on this project.')
             setShowSubscriptionModal(true)
             return
           }
 
           if (errorData.action === 'create_subscription' || errorData.action === 'reactivate_subscription') {
-            toast.error(errorData.message || 'Subscription required to place bids.')
+            toast.error(t('common.subscriptionRequired') || 'Subscription required to place bids.')
             setShowSubscriptionModal(true)
             return
           }
@@ -781,7 +816,9 @@ function HomePageEntrepreneur() {
         setSelectedJob(null)
       } catch(err) {
         console.log(err)
-        toast.error(err.message || "Failed to submit bid. Please try again.")
+        toast.error(t('entrepreneurHome.bidSubmitError') || "Failed to submit bid. Please try again.")
+      } finally {
+        setIsSubmittingBid(false)
       }
     }
   }
@@ -841,7 +878,7 @@ function HomePageEntrepreneur() {
       refreshBids() // Refresh bids via cache
     } catch (err) {
       console.error(err)
-      toast.error(err.message || "Failed to update bid. Please try again.")
+      toast.error(t('entrepreneurHome.bidUpdateError') || "Failed to update bid.")
     } finally {
       setIsSubmittingBidAction(false)
     }
@@ -874,7 +911,7 @@ function HomePageEntrepreneur() {
       refreshBids() // Refresh bids via cache
     } catch (err) {
       console.error(err)
-      toast.error(err.message || "Failed to delete bid. Please try again.")
+      toast.error(t('entrepreneurHome.bidDeleteError') || "Failed to delete bid.")
     } finally {
       setIsSubmittingBidAction(false)
     }
@@ -913,12 +950,22 @@ function HomePageEntrepreneur() {
     }
   }
 
-  const getUrgencyColor = (urgency) => {
+  const getUrgencyClass = (urgency) => {
     const u = (urgency || "").toLowerCase()
     if (u === "urgent" || u.includes("urgent") || u.includes("critical") || u.includes("high") || u.includes("immediate")) {
-      return "#dc2626"
+      return "eh-urgency-urgent"
     }
-    return "#7F8C8D" // Planned / default
+    return "eh-urgency-planned"
+  }
+
+  const toggleDescExpand = (jobId, e) => {
+    e.stopPropagation()
+    setExpandedDescs(prev => {
+      const next = new Set(prev)
+      if (next.has(jobId)) next.delete(jobId)
+      else next.add(jobId)
+      return next
+    })
   }
 
   const handleSearchResultClick = (property) => {
@@ -939,6 +986,41 @@ function HomePageEntrepreneur() {
         searchInputRef.current?.focus()
       }, 100)
     }
+  }
+
+  // Search places via Nominatim when searchTerm changes
+  useEffect(() => {
+    if (placeSearchTimeout.current) clearTimeout(placeSearchTimeout.current)
+    if (!searchTerm.trim() || searchTerm.length < 3) {
+      setPlaceResults([])
+      return
+    }
+    placeSearchTimeout.current = setTimeout(async () => {
+      setIsSearchingPlaces(true)
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)}&countrycodes=ca&limit=4&addressdetails=1`,
+          { headers: { 'User-Agent': 'INTERVOS Construction Platform' } }
+        )
+        const data = await res.json()
+        setPlaceResults(data || [])
+      } catch {
+        setPlaceResults([])
+      }
+      setIsSearchingPlaces(false)
+    }, 500)
+    return () => { if (placeSearchTimeout.current) clearTimeout(placeSearchTimeout.current) }
+  }, [searchTerm])
+
+  const handlePlaceClick = (place) => {
+    const lat = parseFloat(place.lat)
+    const lng = parseFloat(place.lon)
+    setMapCenter([lat, lng])
+    setMapZoom(14)
+    setMapTriggerKey(prev => prev + 1)
+    setShowSearchResults(false)
+    setSearchTerm(place.display_name.split(',').slice(0, 2).join(','))
+    setSearchExpanded(false)
   }
 
   // Close search when clicking outside
@@ -1028,7 +1110,7 @@ function HomePageEntrepreneur() {
       setMapTriggerKey(prev => prev + 1)
     } else {
       // Property has no valid coordinates - show toast to user
-      toast.error(`Location not available for "${property.name}". This property needs its coordinates to be set.`)
+      toast.error(t('entrepreneurHome.locationNotAvailable') || `Location not available for this property.`)
       return
     }
 
@@ -1254,7 +1336,7 @@ function HomePageEntrepreneur() {
           <MapContainer
             ref={mapRef}
             center={[userLocation.lat, userLocation.lng]}
-            zoom={6}
+            zoom={17}
             style={{ height: "100%", width: "100%" }}
             zoomControl={false}
             attributionControl={false}
@@ -1383,32 +1465,116 @@ function HomePageEntrepreneur() {
             </button>
           )}
 
-          {showSearchResults && (
-            <div className="eh-search-results-dropdown">
-              {searchResults.length > 0 ? (
-                searchResults.map((property) => (
-                  <div
-                    key={property.id}
-                    className="eh-search-result-item"
-                    onClick={() => handleSearchResultClick(property)}
+          {showSearchResults && searchTerm.trim() && (
+            <div className="eh-search-results-dropdown" style={{ maxHeight: '360px', display: 'flex', flexDirection: 'column' }}>
+              {/* Tabs */}
+              <div style={{ display: 'flex', borderBottom: '1px solid #e5e7eb', flexShrink: 0, padding: '0 0.25rem' }}>
+                {[
+                  { key: 'all', label: t('entrepreneurHome.searchAll') || 'All' },
+                  { key: 'jobs', label: t('entrepreneurHome.searchJobs') || 'Jobs', count: jobSearchResults.length },
+                  { key: 'properties', label: t('entrepreneurHome.searchProperties') || 'Properties', count: searchResults.length },
+                  { key: 'places', label: t('entrepreneurHome.searchPlaces') || 'Places', count: placeResults.length },
+                ].map(tab => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setSearchTab(tab.key) }}
+                    style={{
+                      flex: 1, padding: '0.5rem 0.25rem', border: 'none', background: 'none', cursor: 'pointer',
+                      fontSize: '0.6875rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em',
+                      color: searchTab === tab.key ? '#00A5A9' : '#9ca3af',
+                      borderBottom: searchTab === tab.key ? '2px solid #00A5A9' : '2px solid transparent',
+                      transition: 'all 0.15s', whiteSpace: 'nowrap'
+                    }}
                   >
-                    <div className="eh-search-result-icon">
-                      <Building2 size={20} />
-                    </div>
-                    <div className="eh-search-result-content">
-                      <div className="eh-search-result-name">{property.name}</div>
-                      <div className="eh-search-result-address">{property.address}</div>
-                    </div>
-                    <div className="eh-search-result-badge">
-                      {getPropertyOpenJobsCount(property.id)} {t('entrepreneurHome.jobs')}
-                    </div>
+                    {tab.label}{tab.count !== undefined ? ` (${tab.count})` : ''}
+                  </button>
+                ))}
+              </div>
+
+              {/* Results */}
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                {/* Jobs */}
+                {(searchTab === 'all' || searchTab === 'jobs') && jobSearchResults.length > 0 && (
+                  <>
+                    {searchTab === 'all' && <div style={{ padding: '0.375rem 0.75rem', fontSize: '0.625rem', fontWeight: 700, textTransform: 'uppercase', color: '#9ca3af', letterSpacing: '0.05em', background: '#f9fafb' }}>{t('entrepreneurHome.searchJobs') || 'Jobs'}</div>}
+                    {jobSearchResults.map(job => {
+                      const prop = properties.find(p => p.jobs?.some(j => j.id === job.id))
+                      return (
+                        <div key={job.id} className="eh-search-result-item" onClick={() => {
+                          if (prop) {
+                            setSelectedProperty(prop)
+                            setMapCenter([prop.latitude, prop.longitude])
+                            setMapZoom(17)
+                          }
+                          setShowSearchResults(false)
+                          setSearchExpanded(false)
+                        }}>
+                          <div style={{ width: 32, height: 32, borderRadius: 8, background: '#f0fdfa', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <Briefcase size={16} style={{ color: '#00A5A9' }} />
+                          </div>
+                          <div className="eh-search-result-content">
+                            <div className="eh-search-result-name">{job.title}</div>
+                            <div className="eh-search-result-address">{job.category}{prop ? ` · ${prop.address}` : ''}</div>
+                          </div>
+                          {job.budget_min && <div className="eh-search-result-badge">${Number(job.budget_min).toLocaleString()}</div>}
+                        </div>
+                      )
+                    })}
+                  </>
+                )}
+
+                {/* Properties */}
+                {(searchTab === 'all' || searchTab === 'properties') && searchResults.length > 0 && (
+                  <>
+                    {searchTab === 'all' && <div style={{ padding: '0.375rem 0.75rem', fontSize: '0.625rem', fontWeight: 700, textTransform: 'uppercase', color: '#9ca3af', letterSpacing: '0.05em', background: '#f9fafb' }}>{t('entrepreneurHome.searchProperties') || 'Properties'}</div>}
+                    {searchResults.map(property => (
+                      <div key={property.id} className="eh-search-result-item" onClick={() => handleSearchResultClick(property)}>
+                        <div style={{ width: 32, height: 32, borderRadius: 8, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <Building2 size={16} style={{ color: '#2563eb' }} />
+                        </div>
+                        <div className="eh-search-result-content">
+                          <div className="eh-search-result-name">{property.name}</div>
+                          <div className="eh-search-result-address">{property.address}</div>
+                        </div>
+                        <div className="eh-search-result-badge">{getPropertyOpenJobsCount(property.id)} {t('entrepreneurHome.jobs')}</div>
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {/* Places */}
+                {(searchTab === 'all' || searchTab === 'places') && placeResults.length > 0 && (
+                  <>
+                    {searchTab === 'all' && <div style={{ padding: '0.375rem 0.75rem', fontSize: '0.625rem', fontWeight: 700, textTransform: 'uppercase', color: '#9ca3af', letterSpacing: '0.05em', background: '#f9fafb' }}>{t('entrepreneurHome.searchPlaces') || 'Places'}</div>}
+                    {placeResults.map((place, i) => (
+                      <div key={i} className="eh-search-result-item" onClick={() => handlePlaceClick(place)}>
+                        <div style={{ width: 32, height: 32, borderRadius: 8, background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <MapPin size={16} style={{ color: '#d97706' }} />
+                        </div>
+                        <div className="eh-search-result-content">
+                          <div className="eh-search-result-name">{place.display_name.split(',')[0]}</div>
+                          <div className="eh-search-result-address">{place.display_name.split(',').slice(1, 3).join(',').trim()}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {/* Loading places */}
+                {isSearchingPlaces && placeResults.length === 0 && (searchTab === 'all' || searchTab === 'places') && (
+                  <div style={{ padding: '1rem', textAlign: 'center', color: '#9ca3af', fontSize: '0.8125rem' }}>
+                    {t('entrepreneurHome.searchingPlaces') || 'Searching places...'}
                   </div>
-                ))
-              ) : (
-                <div className="eh-no-results">
-                  <p>{t('entrepreneurHome.noPropertiesFound')}</p>
-                </div>
-              )}
+                )}
+
+                {/* No results */}
+                {!hasAnyResults && !isSearchingPlaces && (
+                  <div className="eh-no-results">
+                    <p>{t('entrepreneurHome.noResultsFound') || 'No results found'}</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -1634,18 +1800,23 @@ function HomePageEntrepreneur() {
                           return (
                             <div key={job.id} className="eh-job-card">
                               <div className="eh-job-card-header">
+                                <span className={`eh-urgency-badge ${getUrgencyClass(job.urgency)}`}>
+                                  {job.urgency}
+                                </span>
                                 <div className="eh-job-title-section">
                                   <h4 className="eh-job-title">{job.title}</h4>
                                   <div className="eh-job-meta-row">
                                     <span className="eh-job-category">{job.category}</span>
                                   </div>
                                 </div>
-                                <span className="eh-urgency-badge" style={{ backgroundColor: getUrgencyColor(job.urgency) }}>
-                                  {job.urgency}
-                                </span>
                               </div>
 
-                              <p className="eh-job-description">{job.description}</p>
+                              <p
+                                className={`eh-job-description ${expandedDescs.has(job.id) ? 'eh-desc-expanded' : 'eh-desc-clamped'}`}
+                                onClick={(e) => toggleDescExpand(job.id, e)}
+                              >
+                                {job.description}
+                              </p>
 
                               <div className="eh-job-details-grid">
                                 <div className="eh-detail-item">
@@ -1655,6 +1826,8 @@ function HomePageEntrepreneur() {
                                     <span className="eh-detail-label">{t('entrepreneurHome.budgetRange')}</span>
                                     <span className="eh-detail-value">
                                       {
+                                        (job.budget_min == null || job.budget_max == null) ?
+                                        'Budget to be defined' :
                                         job.budgetData.unlocked?
                                       `$${Number.parseFloat(job.budget_min).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} -
                                        $${Number.parseFloat(job.budget_max).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` :
@@ -2104,6 +2277,9 @@ function HomePageEntrepreneur() {
                         return (
                           <div key={job.id} className="eh-job-card">
                             <div className="eh-job-card-header">
+                              <span className={`eh-urgency-badge ${getUrgencyClass(job.urgency)}`}>
+                                {job.urgency}
+                              </span>
                               <div className="eh-job-title-section">
                                 <h4 className="eh-job-title">{job.title}</h4>
                                 <div className="eh-job-meta-row">
@@ -2111,12 +2287,14 @@ function HomePageEntrepreneur() {
                                   <span className="eh-bid-count-badge">{job.bidCount} {t('entrepreneurHome.bids')}</span>
                                 </div>
                               </div>
-                              <span className="eh-urgency-badge" style={{ backgroundColor: getUrgencyColor(job.urgency) }}>
-                                {job.urgency}
-                              </span>
                             </div>
 
-                            <p className="eh-job-description">{job.description}</p>
+                            <p
+                              className={`eh-job-description ${expandedDescs.has(job.id) ? 'eh-desc-expanded' : 'eh-desc-clamped'}`}
+                              onClick={(e) => toggleDescExpand(job.id, e)}
+                            >
+                              {job.description}
+                            </p>
 
                             <div className="eh-job-details-grid">
                               <div className="eh-detail-item">
@@ -2125,6 +2303,8 @@ function HomePageEntrepreneur() {
                                   <span className="eh-detail-label">{t('entrepreneurHome.budgetRange')}</span>
                                   <span className="eh-detail-value">
                                     {
+                                        (job.budget_min == null || job.budget_max == null) ?
+                                        'Budget to be defined' :
                                         job.budgetData.unlocked?
                                       `$${Number.parseFloat(job.budget_min).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} -
                                        $${Number.parseFloat(job.budget_max).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` :
@@ -2299,9 +2479,18 @@ function HomePageEntrepreneur() {
                   />
                 </div>
 
-                <button onClick={handleSubmitBid} className="eh-submit-bid-button">
-                  <Send size={18} />
-                  {t('entrepreneurHome.submitBid')}
+                <button onClick={handleSubmitBid} className="eh-submit-bid-button" disabled={isSubmittingBid}>
+                  {isSubmittingBid ? (
+                    <>
+                      <span className="eh-bid-spinner" />
+                      {t('entrepreneurHome.submitting') || 'Submitting...'}
+                    </>
+                  ) : (
+                    <>
+                      <Send size={18} />
+                      {t('entrepreneurHome.submitBid')}
+                    </>
+                  )}
                 </button>
               </div>
             </div>

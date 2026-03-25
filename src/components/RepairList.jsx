@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { Building2, Home, DollarSign, Users, Grid3x3, List, ChevronDown, Filter, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Building2, Home, DollarSign, Users, ChevronDown, Filter, CheckCircle2, ChevronLeft, ChevronRight, Wrench } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
-function RepairList({ repairs, handleRepairClicked }) {
+function RepairList({ repairs, handleRepairClicked, hideFilters, externalFilters }) {
   const { t } = useLanguage();
   const PLACEHOLDER_IMAGE = "/defaultjob.jpg";
 
@@ -15,9 +15,14 @@ function RepairList({ repairs, handleRepairClicked }) {
     return t('repairList.planned');
   };
   const [imagesLoaded, setImagesLoaded] = useState({});
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
-  const [selectedProperty, setSelectedProperty] = useState('all'); // 'all' or property name
-  const [selectedUrgency, setSelectedUrgency] = useState('all'); // 'all' or urgency level
+  const [_selectedProperty, _setSelectedProperty] = useState('all');
+  const [_selectedUrgency, _setSelectedUrgency] = useState('all');
+  const [_selectedJobCategory, _setSelectedJobCategory] = useState('all');
+
+  // Use external filters if provided, otherwise internal
+  const selectedProperty = externalFilters?.selectedProperty ?? _selectedProperty;
+  const selectedUrgency = externalFilters?.selectedUrgency ?? _selectedUrgency;
+  const selectedJobCategory = externalFilters?.selectedJobCategory ?? _selectedJobCategory;
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 12;
 
@@ -136,14 +141,33 @@ function RepairList({ repairs, handleRepairClicked }) {
     return Array.from(urgenciesSet).sort();
   }, [repairs]);
 
-  // Filter repairs based on selected property and urgency
+  // Get unique job categories from repairs
+  const uniqueJobCategories = useMemo(() => {
+    const categoriesSet = new Set();
+    repairs.forEach(repair => {
+      if (repair.jobCategory) {
+        categoriesSet.add(repair.jobCategory);
+      }
+    });
+    return Array.from(categoriesSet).sort();
+  }, [repairs]);
+
+  // Translate job category name
+  const getCategoryLabel = (category) => {
+    const key = `addWork.cat_${category.toLowerCase()}`;
+    const translated = t(key);
+    return translated !== key ? translated : category;
+  };
+
+  // Filter repairs based on selected property, urgency, and job category
   const filteredRepairs = useMemo(() => {
     return repairs.filter(repair => {
       const propertyMatch = selectedProperty === 'all' || repair.property === selectedProperty;
       const urgencyMatch = selectedUrgency === 'all' || repair.category === selectedUrgency;
-      return propertyMatch && urgencyMatch;
+      const categoryMatch = selectedJobCategory === 'all' || repair.jobCategory === selectedJobCategory;
+      return propertyMatch && urgencyMatch && categoryMatch;
     });
-  }, [repairs, selectedProperty, selectedUrgency]);
+  }, [repairs, selectedProperty, selectedUrgency, selectedJobCategory]);
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredRepairs.length / ITEMS_PER_PAGE);
@@ -154,7 +178,7 @@ function RepairList({ repairs, handleRepairClicked }) {
   // Reset to page 1 when filters change
   useMemo(() => {
     setCurrentPage(1);
-  }, [selectedProperty, selectedUrgency]);
+  }, [selectedProperty, selectedUrgency, selectedJobCategory]);
 
   // Pagination handlers
   const goToPage = (page) => {
@@ -211,7 +235,7 @@ function RepairList({ repairs, handleRepairClicked }) {
 
   return (
     <section className="hp-repairs-section">
-      <div className="hp-section-header">
+      {!hideFilters && <div className="hp-section-header">
         <div className="hp-section-title-group">
           <div className="hp-filters-row">
             <div className="hp-property-filter-dropdown">
@@ -252,40 +276,45 @@ function RepairList({ repairs, handleRepairClicked }) {
                 ))}
               </select>
             </div>
+
+            <div className="hp-category-filter-dropdown">
+              <Wrench size={14} className="hp-filter-icon" />
+              <span className="hp-select-label">
+                {selectedJobCategory === 'all' ? t('repairList.allCategories') : getCategoryLabel(selectedJobCategory)}
+              </span>
+              <ChevronDown size={16} className="hp-select-icon" />
+              <select
+                value={selectedJobCategory}
+                onChange={(e) => setSelectedJobCategory(e.target.value)}
+                className="hp-property-select"
+              >
+                <option value="all">{t('repairList.allCategories')}</option>
+                {uniqueJobCategories.map(cat => (
+                  <option key={cat} value={cat}>
+                    {getCategoryLabel(cat)}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <p className="hp-section-subtitle">
             {filteredRepairs.length} {filteredRepairs.length !== 1 ? t('repairList.repairs') : t('repairList.repair')}
             {selectedProperty !== 'all' && ` ${t('repairList.in')} ${selectedProperty}`}
             {selectedUrgency !== 'all' && ` - ${selectedUrgency}`}
-            {selectedProperty === 'all' && selectedUrgency === 'all' && ` ${t('repairList.available')}`}
+            {selectedJobCategory !== 'all' && ` - ${getCategoryLabel(selectedJobCategory)}`}
+            {selectedProperty === 'all' && selectedUrgency === 'all' && selectedJobCategory === 'all' && ` ${t('repairList.available')}`}
             {totalPages > 1 && ` (${t('repairList.page')} ${currentPage} ${t('repairList.of')} ${totalPages})`}
           </p>
         </div>
-        <div className="hp-view-toggle">
-          <button
-            className={`hp-view-btn ${viewMode === 'grid' ? 'active' : ''}`}
-            onClick={() => setViewMode('grid')}
-            title={t('repairList.gridView')}
-          >
-            <Grid3x3 size={18} />
-          </button>
-          <button
-            className={`hp-view-btn ${viewMode === 'list' ? 'active' : ''}`}
-            onClick={() => setViewMode('list')}
-            title={t('repairList.listView')}
-          >
-            <List size={18} />
-          </button>
-        </div>
-      </div>
+      </div>}
 
-      <div className={viewMode === 'grid' ? 'hp-repair-cards-grid' : 'hp-repair-cards-list'}>
+      <div className="hp-repair-cards-grid">
         {paginatedRepairs.map((repair) => {
           const workTypeImg = getWorkTypeImage(repair.apartment);
           console.log(`Repair ${repair.id} - Title: ${repair.apartment} - Using image:`, workTypeImg);
           return (
           <div
-            className="hp-repair-card-modern"
+            className={`hp-repair-card-modern ${repair.status?.toLowerCase() === 'completed' ? 'hp-card-completed' : ''}`}
             key={repair.id}
             onClick={() => handleRepairClicked(repair)}
           >
@@ -322,6 +351,12 @@ function RepairList({ repairs, handleRepairClicked }) {
                 <span className="hp-approved-badge">
                   <CheckCircle2 size={12} />
                   <span>{t('repairList.approved')}</span>
+                </span>
+              )}
+              {repair.status?.toLowerCase() === 'completed' && (
+                <span className="hp-completed-badge">
+                  <CheckCircle2 size={12} />
+                  <span>{t('repairList.completed') || 'Completed'}</span>
                 </span>
               )}
             </div>

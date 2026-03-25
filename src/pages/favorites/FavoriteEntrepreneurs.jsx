@@ -4,7 +4,8 @@ import {
   getFavorites,
   removeFavorite,
   getEntrepreneurHistory,
-  updateFavoriteNotes
+  updateFavoriteNotes,
+  updateFavoriteCategory
 } from '../../utils/api';
 import {
   Star,
@@ -49,18 +50,43 @@ const FavoriteEntrepreneurs = () => {
 
   // New state for filtering/searching
   const [activeTab, setActiveTab] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
   const [filters, setFilters] = useState({
     minRating: '',
     minJobs: '',
   });
 
+  // Get unique categories from favorites
+  const categories = useMemo(() => {
+    const cats = favorites
+      .map(f => f.category)
+      .filter(Boolean)
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .sort()
+    return cats
+  }, [favorites])
+
+  // Handle category update
+  const handleUpdateCategory = async (favoriteId, newCategory) => {
+    try {
+      await updateFavoriteCategory(favoriteId, newCategory)
+      setFavorites(prev => prev.map(f =>
+        f.favorite_id === favoriteId ? { ...f, category: newCategory } : f
+      ))
+      setEditingCategory(null)
+    } catch (error) {
+      console.error('Error updating category:', error)
+    }
+  }
+
   // Tabs configuration
   const tabs = [
-    { id: 'all', label: t('favorites.allFavorites'), icon: Heart },
-    { id: 'approved', label: t('favorites.approved'), icon: CheckCircle },
-    { id: 'pending', label: t('favorites.pending'), icon: Clock },
+    { id: 'all', label: t('favorites.allFavorites') || 'All Favorites', icon: Heart },
+    { id: 'approved', label: t('favorites.approved') || 'Approved', icon: CheckCircle },
+    { id: 'pending', label: t('favorites.pending') || 'Pending', icon: Clock },
   ];
 
   // Filtered favorites based on tab and search
@@ -84,6 +110,15 @@ const FavoriteEntrepreneurs = () => {
       );
     }
 
+    // Filter by category
+    if (categoryFilter !== 'all') {
+      if (categoryFilter === 'uncategorized') {
+        result = result.filter(fav => !fav.category);
+      } else {
+        result = result.filter(fav => fav.category === categoryFilter);
+      }
+    }
+
     // Apply additional filters
     if (filters.minRating) {
       result = result.filter(fav => Number(fav.average_rating) >= Number(filters.minRating));
@@ -93,7 +128,7 @@ const FavoriteEntrepreneurs = () => {
     }
 
     return result;
-  }, [favorites, activeTab, searchQuery, filters]);
+  }, [favorites, activeTab, searchQuery, filters, categoryFilter]);
 
   // Get counts for tabs
   const tabCounts = useMemo(() => ({
@@ -194,7 +229,7 @@ const FavoriteEntrepreneurs = () => {
 
     try {
       localStorage.setItem('targetReceiverId', favorite.user_id);
-      localStorage.setItem('targetReceiverName', `${favorite.first_name} ${favorite.last_name}`);
+      localStorage.setItem('targetReceiverName', favorite.company_name || `${favorite.first_name} ${favorite.last_name}`);
       if (favorite.job_id) {
         localStorage.setItem('targetJobId', favorite.job_id);
       }
@@ -376,6 +411,41 @@ const FavoriteEntrepreneurs = () => {
           })}
         </div>
 
+        {/* Category Filter Pills */}
+        {categories.length > 0 && (
+          <div className="fav-category-pills">
+            <button
+              className={`fav-cat-pill ${categoryFilter === 'all' ? 'active' : ''}`}
+              onClick={() => setCategoryFilter('all')}
+            >
+              {t('favorites.allCategories') || 'All'}
+            </button>
+            {categories.map(cat => (
+              <button
+                key={cat}
+                className={`fav-cat-pill ${categoryFilter === cat ? 'active' : ''}`}
+                onClick={() => setCategoryFilter(cat)}
+              >
+                {cat}
+                <span className="fav-cat-pill-count">
+                  {favorites.filter(f => f.category === cat).length}
+                </span>
+              </button>
+            ))}
+            {favorites.some(f => !f.category) && (
+              <button
+                className={`fav-cat-pill ${categoryFilter === 'uncategorized' ? 'active' : ''}`}
+                onClick={() => setCategoryFilter('uncategorized')}
+              >
+                {t('favorites.uncategorized') || 'Uncategorized'}
+                <span className="fav-cat-pill-count">
+                  {favorites.filter(f => !f.category).length}
+                </span>
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Controls Bar */}
         <div className="fav-controls-bar">
           <div className="fav-search-box">
@@ -487,7 +557,7 @@ const FavoriteEntrepreneurs = () => {
                     )}
                     <button
                       className="fav-favorite-btn active"
-                      onClick={() => handleRemoveFavorite(favorite.bid_id, `${favorite.first_name} ${favorite.last_name}`)}
+                      onClick={() => handleRemoveFavorite(favorite.bid_id, favorite.company_name || `${favorite.first_name} ${favorite.last_name}`)}
                       aria-label={t('favorites.removeFromFavorites')}
                     >
                       <Heart size={16} fill="#E74C3C" stroke="#E74C3C" />
@@ -506,7 +576,7 @@ const FavoriteEntrepreneurs = () => {
                       <img src={favorite.profile_picture_url} alt={favorite.first_name} />
                     ) : (
                       <span className="fav-avatar-initials">
-                        {favorite.first_name?.charAt(0)}{favorite.last_name?.charAt(0)}
+                        {favorite.company_name ? favorite.company_name.charAt(0) : `${favorite.first_name?.charAt(0)}${favorite.last_name?.charAt(0)}`}
                       </span>
                     )}
                   </div>
@@ -516,7 +586,7 @@ const FavoriteEntrepreneurs = () => {
                       onClick={() => handleViewProfile(favorite)}
                       title={t('favorites.viewProfile')}
                     >
-                      {favorite.first_name} {favorite.last_name}
+                      {favorite.company_name || `${favorite.first_name} ${favorite.last_name}`}
                     </h3>
                     <div className="fav-contractor-rating">
                       <Star size={12} fill="#f59e0b" stroke="#f59e0b" />
@@ -538,6 +608,47 @@ const FavoriteEntrepreneurs = () => {
                       <FileText size={14} />
                       <span className="fav-last-job-title">{favorite.last_job_title}</span>
                     </div>
+                  )}
+                </div>
+
+                {/* Category Tag */}
+                <div className="fav-category-section">
+                  {editingCategory === favorite.favorite_id ? (
+                    <div className="fav-category-edit">
+                      <select
+                        className="fav-category-select"
+                        defaultValue={favorite.category || ''}
+                        onChange={(e) => handleUpdateCategory(favorite.favorite_id, e.target.value || null)}
+                        autoFocus
+                        onBlur={() => setEditingCategory(null)}
+                      >
+                        <option value="">{t('favorites.noCategory') || 'No Category'}</option>
+                        <option value="Roofing">{t('favorites.catRoofing') || 'Roofing'}</option>
+                        <option value="Plumbing">{t('favorites.catPlumbing') || 'Plumbing'}</option>
+                        <option value="Electrical">{t('favorites.catElectrical') || 'Electrical'}</option>
+                        <option value="Carpentry">{t('favorites.catCarpentry') || 'Carpentry'}</option>
+                        <option value="Painting">{t('favorites.catPainting') || 'Painting'}</option>
+                        <option value="Flooring">{t('favorites.catFlooring') || 'Flooring'}</option>
+                        <option value="Landscaping">{t('favorites.catLandscaping') || 'Landscaping'}</option>
+                        <option value="Masonry">{t('favorites.catMasonry') || 'Masonry'}</option>
+                        <option value="HVAC">{t('favorites.catHVAC') || 'HVAC'}</option>
+                        <option value="Windows/Doors">{t('favorites.catWindowsDoors') || 'Windows/Doors'}</option>
+                        <option value="General Repair">{t('favorites.catGeneralRepair') || 'General Repair'}</option>
+                        <option value="Other">{t('favorites.catOther') || 'Other'}</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <button
+                      className="fav-category-tag"
+                      onClick={() => setEditingCategory(favorite.favorite_id)}
+                      title={t('favorites.changeCategory') || 'Change category'}
+                    >
+                      {favorite.category ? (
+                        <><span className="fav-cat-dot" />{favorite.category}</>
+                      ) : (
+                        <><Edit3 size={12} /> {t('favorites.addCategory') || 'Add Category'}</>
+                      )}
+                    </button>
                   )}
                 </div>
 

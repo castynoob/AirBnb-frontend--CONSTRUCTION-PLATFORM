@@ -99,7 +99,7 @@ const AddWorkModal = ({ isOpen, onClose, onSuccess, onOpenExcelUpload }) => {
       }
     } catch (error) {
       console.error('Error fetching properties:', error);
-      toast.error('Failed to load properties', {
+      toast.error(t('toasts.failedLoadProperties'), {
         duration: 4000,
         style: {
           borderRadius: '4px',
@@ -230,7 +230,7 @@ const AddWorkModal = ({ isOpen, onClose, onSuccess, onOpenExcelUpload }) => {
 
           if (!uploadRes.ok) {
             console.error('Image upload failed');
-            toast.error('Job created but image upload failed', {
+            toast.error(t('toasts.jobCreatedImageFail'), {
               duration: 4000,
               style: {
                 borderRadius: '4px',
@@ -277,7 +277,7 @@ const AddWorkModal = ({ isOpen, onClose, onSuccess, onOpenExcelUpload }) => {
 
       if (onSuccess) onSuccess(data.job);
 
-      toast.success('Job created successfully', {
+      toast.success(t('toasts.jobCreatedSuccess'), {
         duration: 5000,
         style: {
           borderRadius: '4px',
@@ -297,7 +297,7 @@ const AddWorkModal = ({ isOpen, onClose, onSuccess, onOpenExcelUpload }) => {
 
     } catch (error) {
       console.error('Error creating job:', error);
-      toast.error(error.message || 'Failed to create job', {
+      toast.error(t('common.failedCreateJob') || 'Failed to create job', {
         duration: 4000,
         style: {
           borderRadius: '4px',

@@ -50,7 +50,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
   const [properties, setProperties] = useState([]);
   const [isLoadingProperties, setIsLoadingProperties] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState({ stage: '', message: '' });
+  const [uploadProgress, setUploadProgress] = useState({ stage: '', message: '', percent: 0 });
 
   const categories = [
     { value: 'Roofing', key: 'roofing' },
@@ -126,7 +126,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
       }
     } catch (error) {
       console.error('Error fetching properties:', error);
-      toast.error('Failed to load properties');
+      toast.error(t('toasts.failedLoadProperties'));
     } finally {
       setIsLoadingProperties(false);
     }
@@ -152,7 +152,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
     );
 
     if (newImages.length !== files.length) {
-      toast.error('Some files were skipped (max 5MB per image)');
+      toast.error(t('toasts.imageSkipped'));
     }
 
     setImages(prev => [...prev, ...newImages].slice(0, 5)); // Max 5 images
@@ -174,13 +174,13 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
     ];
 
     if (!validTypes.includes(file.type)) {
-      toast.error('Please upload a valid Excel file (.xlsx, .xls, or .csv)');
+      toast.error(t('toasts.invalidExcelFile'));
       return;
     }
 
     // Validate file size (10MB max)
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('File size must be less than 10MB');
+      toast.error(t('toasts.fileTooLarge'));
       return;
     }
 
@@ -213,10 +213,10 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      toast.success('Template downloaded successfully');
+      toast.success(t('toasts.templateDownloaded'));
     } catch (error) {
       console.error('Error downloading template:', error);
-      toast.error('Failed to download template');
+      toast.error(t('toasts.templateDownloadFail'));
     }
   };
 
@@ -226,6 +226,11 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
     if (!formData.property_id) newErrors.property_id = 'Property is required';
     if (!formData.title.trim()) newErrors.title = 'Job title is required';
     if (!formData.category) newErrors.category = 'Category is required';
+    if (!formData.budget_min) newErrors.budget_min = 'Minimum budget is required';
+    if (!formData.budget_max) newErrors.budget_max = 'Maximum budget is required';
+    if (formData.budget_min && formData.budget_max && parseFloat(formData.budget_min) > parseFloat(formData.budget_max)) {
+      newErrors.budget_max = 'Max budget must be greater than min budget';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -235,7 +240,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
     e.preventDefault();
 
     if (!validateForm()) {
-      toast.error('Please fill in all required fields');
+      toast.error(t('toasts.fillRequiredFields'));
       return;
     }
 
@@ -301,7 +306,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
 
       setUploadProgress({ stage: 'complete', message: 'Job created successfully!' });
 
-      toast.success('Job created successfully!', {
+      toast.success(t('toasts.jobCreatedSuccess'), {
         duration: 3000,
         icon: '✅'
       });
@@ -313,7 +318,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
 
     } catch (error) {
       console.error('Error creating job:', error);
-      toast.error(error.message || 'Failed to create job');
+      toast.error(t('common.failedCreateJob') || 'Failed to create job');
       setUploadProgress({ stage: '', message: '' });
     } finally {
       setIsSubmitting(false);
@@ -324,17 +329,17 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
     e.preventDefault();
 
     if (!formData.property_id) {
-      toast.error('Please select a property');
+      toast.error(t('toasts.selectProperty'));
       return;
     }
 
     if (!excelFile) {
-      toast.error('Please select an Excel file');
+      toast.error(t('toasts.selectExcelFile'));
       return;
     }
 
     setIsSubmitting(true);
-    setUploadProgress({ stage: 'uploading', message: 'Uploading Excel file...' });
+    setUploadProgress({ stage: 'uploading', message: 'Uploading Excel file...', percent: 5 });
 
     try {
       const userProfile = JSON.parse(localStorage.getItem('userProfile'));
@@ -351,23 +356,80 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
         body: formDataUpload
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to upload Excel file');
+      // Read SSE stream for progress updates
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let finalResult = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop(); // Keep incomplete chunk
+
+        for (const part of parts) {
+          const line = part.trim();
+          if (!line.startsWith('data: ')) continue;
+
+          try {
+            const data = JSON.parse(line.slice(6));
+
+            if (data.stage === 'reading') {
+              setUploadProgress({
+                stage: 'reading',
+                message: `Found ${data.totalRows} rows (${data.totalBatches} batches)`,
+                percent: 10,
+              });
+            } else if (data.stage === 'extracting') {
+              const percent = data.totalBatches > 0
+                ? Math.round(10 + (data.currentBatch / data.totalBatches) * 75)
+                : 50;
+              setUploadProgress({
+                stage: 'extracting',
+                message: data.message,
+                percent,
+                jobsFound: data.jobsFound,
+                rowsProcessed: data.rowsProcessed,
+                totalRows: data.totalRows,
+              });
+            } else if (data.stage === 'saving') {
+              setUploadProgress({
+                stage: 'saving',
+                message: 'Saving inspection record...',
+                percent: 90,
+              });
+            } else if (data.stage === 'complete') {
+              finalResult = data.result;
+              setUploadProgress({
+                stage: 'complete',
+                message: `Found ${data.result.parsedData.successCount} jobs!`,
+                percent: 100,
+              });
+            } else if (data.stage === 'error') {
+              throw new Error(data.message);
+            }
+          } catch (parseErr) {
+            if (parseErr.message && !parseErr.message.includes('JSON')) {
+              throw parseErr;
+            }
+          }
+        }
       }
 
-      const result = await response.json();
+      if (!finalResult) {
+        throw new Error('No result received from server');
+      }
 
-      setUploadProgress({ stage: 'complete', message: `Found ${result.parsedData.successCount} jobs!` });
-
-      toast.success(`Successfully parsed ${result.parsedData.successCount} jobs from Excel`, {
+      toast.success(`Successfully parsed ${finalResult.parsedData.successCount} jobs from Excel`, {
         duration: 2000,
-        icon: '✅'
       });
 
       // Store parsed data and show preview modal
-      setParsedJobsData(result.parsedData);
-      setInspectionId(result.inspection.id);
+      setParsedJobsData(finalResult.parsedData);
+      setInspectionId(finalResult.inspection.id);
 
       setTimeout(() => {
         setShowPreviewModal(true);
@@ -375,8 +437,8 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
 
     } catch (error) {
       console.error('Error uploading Excel:', error);
-      toast.error(error.message || 'Failed to upload Excel file');
-      setUploadProgress({ stage: '', message: '' });
+      toast.error(t('common.failedUploadExcel') || 'Failed to upload Excel file');
+      setUploadProgress({ stage: '', message: '', percent: 0 });
     } finally {
       setIsSubmitting(false);
     }
@@ -387,7 +449,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
   return (
     <div className="modal-overlay-compact" onClick={onClose}>
       <div className="modal-content-compact" onClick={(e) => e.stopPropagation()}>
-        {/* Loading Overlay */}
+        {/* Loading Overlay with Progress */}
         {isSubmitting && (
           <div className="compact-loading-overlay">
             <div className="compact-loading-content">
@@ -396,7 +458,23 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
               ) : (
                 <Loader2 size={48} className="spinner-icon-compact" />
               )}
-              <h3>{uploadProgress.message}</h3>
+              <h3>{uploadProgress.message || 'Processing...'}</h3>
+              {uploadProgress.percent > 0 && (
+                <div className="compact-progress-bar-wrapper">
+                  <div className="compact-progress-bar">
+                    <div
+                      className={`compact-progress-fill ${uploadProgress.stage === 'complete' ? 'complete' : ''}`}
+                      style={{ width: `${uploadProgress.percent}%` }}
+                    />
+                  </div>
+                  <span className="compact-progress-percent">{uploadProgress.percent}%</span>
+                </div>
+              )}
+              {uploadProgress.jobsFound != null && (
+                <p className="compact-progress-detail">
+                  {uploadProgress.rowsProcessed}/{uploadProgress.totalRows} rows processed — {uploadProgress.jobsFound} jobs found
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -606,6 +684,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
                     disabled={isSubmitting}
                   />
                 </div>
+                {(errors.budget_min || errors.budget_max) && <span className="compact-error-text">{errors.budget_min || errors.budget_max}</span>}
                 <span className="compact-hint compact-hint-note">{t('addWorkModal.budgetVisibilityNote')}</span>
               </div>
 

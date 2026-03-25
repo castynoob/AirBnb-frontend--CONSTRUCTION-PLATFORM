@@ -14,6 +14,9 @@ import {
   ChevronRight,
   FileText,
   Maximize2,
+  Trash2,
+  AlertCircle,
+  FolderOpen,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
@@ -21,7 +24,7 @@ import "leaflet/dist/leaflet.css";
 import "../../styles/manager/repairdetails.css";
 import toast from "react-hot-toast";
 import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal";
-import { createContract, getContractByJob } from "../../utils/contractApi";
+import { createContract, getContractByJob, deleteJob, archiveJob } from "../../utils/contractApi";
 import { useLanguage } from "../../contexts/LanguageContext";
 
 // Custom marker icon for the map
@@ -40,7 +43,7 @@ const createPropertyIcon = () => {
   });
 };
 
-function RepairDetails({ isOpen, onClose, repair }) {
+function RepairDetails({ isOpen, onClose, repair, onJobDeleted }) {
   const { t } = useLanguage();
   const [favorites, setFavorites] = useState([]);
   const [bidders, setBidders] = useState([]);
@@ -53,7 +56,42 @@ function RepairDetails({ isOpen, onClose, repair }) {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [showFullscreenMap, setShowFullscreenMap] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeletingJob, setIsDeletingJob] = useState(false);
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
+  const [isArchivingJob, setIsArchivingJob] = useState(false);
 
+  const handleDeleteJob = async () => {
+    if (!repair?.id) return;
+    setIsDeletingJob(true);
+    try {
+      await deleteJob(repair.id);
+      showNotification(t('submissions.jobDeletedSuccess') || "Job deleted successfully.", "success");
+      if (onJobDeleted) onJobDeleted();
+      onClose();
+    } catch (error) {
+      showNotification(error.message || "Failed to delete job.", "error");
+    } finally {
+      setIsDeletingJob(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleArchiveJob = async () => {
+    if (!repair?.id) return;
+    setIsArchivingJob(true);
+    try {
+      await archiveJob(repair.id);
+      showNotification(t('submissions.jobArchivedSuccess') || "Job archived successfully.", "success");
+      if (onJobDeleted) onJobDeleted();
+      onClose();
+    } catch (error) {
+      showNotification(error.message || "Failed to archive job.", "error");
+    } finally {
+      setIsArchivingJob(false);
+      setShowArchiveConfirm(false);
+    }
+  };
 
   const showNotification = (message, type = "success") => {
     if (type === "success") {
@@ -306,7 +344,7 @@ function RepairDetails({ isOpen, onClose, repair }) {
       setShowBidModal(false);
 
       showNotification(
-        t('repairDetails.bidApprovedPaymentExternal') || "Bid approved! Please arrange payment with the contractor directly.",
+        t('repairDetails.bidApprovedPaymentExternal') || "Bid approved! A contract has been created with the contractor.",
         "success"
       );
 
@@ -552,51 +590,163 @@ function RepairDetails({ isOpen, onClose, repair }) {
                     .map((bidder, index) => (
                       <div
                         key={bidder.id}
-                        className={`rd-compact-bid-card ${index === 0 ? 'top' : ''}`}
-                        onClick={() => handleBidderClick(bidder)}
+                        className={`rd-bid-card-v2 ${index === 0 ? 'rd-bid-top' : ''}`}
                       >
-                        <div className="rd-bid-avatar">
-                          {bidder.company_name?.charAt(0) || 'C'}
-                        </div>
-                        <div className="rd-bid-main">
-                          <div
-                            className="rd-bid-name rd-bid-name-clickable"
-                            onClick={(e) => handleProfileClick(e, bidder)}
-                            title={t('repairDetails.viewProfile')}
-                          >
-                            {bidder.company_name}
+                        {/* Top row: avatar + name + amount */}
+                        <div className="rd-bid-row-main" onClick={() => handleBidderClick(bidder)}>
+                          <div className="rd-bid-avatar">
+                            {bidder.company_name?.charAt(0) || 'C'}
                           </div>
-                          <div className="rd-bid-meta">
-                            <Star size={10} fill="#facc15" stroke="#facc15" />
-                            <span>{Number(bidder.average_rating || 0).toFixed(1)}</span>
-                            <span className="rd-bid-reviews">({bidder.total_reviews || 0})</span>
-                            <MapPin size={10} />
+                          <div className="rd-bid-info">
+                            <div className="rd-bid-name">{bidder.company_name}</div>
+                            <div className="rd-bid-rating-inline">
+                              <Star size={11} fill="#facc15" stroke="#facc15" />
+                              <span>{Number(bidder.average_rating || 0).toFixed(1)}</span>
+                              <span className="rd-bid-reviews">({bidder.total_reviews || 0})</span>
+                            </div>
+                          </div>
+                          <div className="rd-bid-right">
+                            <div className="rd-bid-amount">${bidder.bid_amount.toLocaleString()}</div>
+                            <span className={`rd-bid-status ${bidder.bid_status || 'pending'}`}>
+                              {bidder.bid_status || t('repairDetails.pending')}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Bottom row: location + actions */}
+                        <div className="rd-bid-row-bottom">
+                          <div className="rd-bid-location">
+                            <MapPin size={11} />
                             <span>{bidder.address?.split(',')[0] || 'N/A'}</span>
                           </div>
+                          <div className="rd-bid-actions">
+                            <button
+                              className="rd-bid-fav"
+                              onClick={(e) => { e.stopPropagation(); toggleFavorite(bidder.company_name); }}
+                              title={t('repairDetails.favorite') || 'Favorite'}
+                            >
+                              <Heart
+                                size={14}
+                                fill={favorites.includes(bidder.company_name) ? "#ef4444" : "none"}
+                                stroke={favorites.includes(bidder.company_name) ? "#ef4444" : "#94a3b8"}
+                              />
+                            </button>
+                            <button
+                              className="rd-bid-view-btn"
+                              onClick={() => handleBidderClick(bidder)}
+                            >
+                              {t('repairDetails.viewBid') || 'View'} <ChevronRight size={14} />
+                            </button>
+                          </div>
                         </div>
-                        <div className="rd-bid-amount">${bidder.bid_amount.toLocaleString()}</div>
-                        <span className={`rd-bid-status ${bidder.bid_status || 'pending'}`}>
-                          {bidder.bid_status || t('repairDetails.pending')}
-                        </span>
-                        <button
-                          className="rd-bid-fav"
-                          onClick={(e) => { e.stopPropagation(); toggleFavorite(bidder.company_name); }}
-                        >
-                          <Heart
-                            size={14}
-                            fill={favorites.includes(bidder.company_name) ? "#ef4444" : "none"}
-                            stroke={favorites.includes(bidder.company_name) ? "#ef4444" : "#94a3b8"}
-                          />
-                        </button>
-                        <ChevronRight size={16} className="rd-bid-arrow" />
                       </div>
                     ))
                 )}
               </div>
             </div>
+
           </div>
+
+          {/* Footer with Delete/Archive button */}
+          {repair?.status !== 'ongoing' && (
+            <div className="rd-compact-footer">
+              {repair?.status === 'completed' ? (
+                <button
+                  className="rd-archive-btn"
+                  onClick={() => setShowArchiveConfirm(true)}
+                  disabled={isProcessing}
+                >
+                  <FolderOpen size={16} />
+                  {t('submissions.archiveJobBtn') || 'Archive Job'}
+                </button>
+              ) : (
+                <button
+                  className="rd-delete-btn"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={isProcessing}
+                >
+                  <Trash2 size={16} />
+                  {t('submissions.deleteJobBtn') || 'Delete Job'}
+                </button>
+              )}
+            </div>
+          )}
+
         </div>
       </div>
+
+      {/* Delete Job Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="rd-confirm-overlay" onClick={() => { setShowDeleteConfirm(false); }}>
+          <div className="rd-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="rd-confirm-icon" style={{ color: '#dc2626' }}>
+              <AlertCircle size={32} />
+            </div>
+            <h3>{t('submissions.deleteJobTitle') || 'Delete Job?'}</h3>
+            <p>{t('submissions.deleteJobMessage') || 'This will permanently delete this job and notify all bidders. This action cannot be undone.'}</p>
+            <div className="rd-confirm-actions">
+              <button
+                className="rd-confirm-cancel"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeletingJob}
+              >
+                {t('common.cancel') || 'Cancel'}
+              </button>
+              <button
+                className="rd-confirm-submit"
+                onClick={handleDeleteJob}
+                disabled={isDeletingJob}
+              >
+                {isDeletingJob ? (
+                  <>{t('submissions.deleting') || 'Deleting...'}</>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    {t('submissions.deleteJobBtn') || 'Delete Job'}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Archive Job Confirmation Modal */}
+      {showArchiveConfirm && (
+        <div className="rd-confirm-overlay" onClick={() => { setShowArchiveConfirm(false); }}>
+          <div className="rd-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="rd-confirm-icon" style={{ color: '#6366f1' }}>
+              <FolderOpen size={32} />
+            </div>
+            <h3>{t('submissions.archiveJobTitle') || 'Archive Job?'}</h3>
+            <p>{t('submissions.archiveJobMessage') || 'This will archive the completed job and remove it from your active dashboard. You can restore it later if needed.'}</p>
+            <div className="rd-confirm-actions">
+              <button
+                className="rd-confirm-cancel"
+                onClick={() => setShowArchiveConfirm(false)}
+                disabled={isArchivingJob}
+              >
+                {t('common.cancel') || 'Cancel'}
+              </button>
+              <button
+                className="rd-confirm-submit"
+                style={{ background: '#6366f1' }}
+                onClick={handleArchiveJob}
+                disabled={isArchivingJob}
+              >
+                {isArchivingJob ? (
+                  <>{t('submissions.archiving') || 'Archiving...'}</>
+                ) : (
+                  <>
+                    <FolderOpen size={16} />
+                    {t('submissions.archiveJobBtn') || 'Archive Job'}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bid Details Sub-Modal */}
       {showBidModal && selectedBidder && (

@@ -200,14 +200,16 @@ function Nav() {
               <li>
                 <NavLink
                   to={'/messages/'+role}
-                  className={({ isActive }) => (isActive ? "nav-link active" : "nav-link")}
+                  className={({ isActive }) => `nav-link${isActive ? ' active' : ''}${unreadCount > 0 ? ' has-unread' : ''}`}
                 >
                   <div className="nav-icon">
                     <MessageSquare size={20} />
                   </div>
                   <span className="nav-text">{t('nav.messages')}</span>
                   {unreadCount > 0 && (
-                    <span className="notification-badge">{unreadCount}</span>
+                    <span className="notification-badge">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
                   )}
                 </NavLink>
               </li>

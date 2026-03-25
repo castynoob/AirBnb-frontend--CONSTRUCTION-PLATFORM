@@ -1134,7 +1134,7 @@ export default function LandingPage() {
       });
       const data = await response.json();
       if (!response.ok) {
-        toast.error(data.message || "Failed to resend verification email", {
+        toast.error(data.message || t('toasts.verificationResendFail'), {
           duration: 4000,
           style: {
             borderRadius: '4px',
@@ -1149,7 +1149,7 @@ export default function LandingPage() {
         });
         return;
       }
-      toast.success("Verification email has been resent. Please check your inbox.", {
+      toast.success(t('toasts.verificationResent'), {
         duration: 5000,
         style: {
           borderRadius: '4px',
@@ -1164,7 +1164,7 @@ export default function LandingPage() {
       });
     } catch (error) {
       console.error("Resend verification error:", error);
-      toast.error("Failed to resend verification email. Please try again.", {
+      toast.error(t('toasts.verificationResendFail'), {
         duration: 4000,
         style: {
           borderRadius: '4px',

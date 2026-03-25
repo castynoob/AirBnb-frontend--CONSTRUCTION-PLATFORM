@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Building2, MapPin } from 'lucide-react';
+import { X, Building2, MapPin, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useLanguage } from '../../contexts/LanguageContext';
 import '../../styles/manager/addpropertymodal.css';
@@ -11,6 +11,10 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
   const mapRef = useRef(null);
   const markerRef = useRef(null);
   const [map, setMap] = useState(null);
+  const [addressSearch, setAddressSearch] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeoutRef = useRef(null);
 
   const [formData, setFormData] = useState({
     building_name: '',
@@ -20,8 +24,8 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
     postal_code: '',
     num_units: '',
     building_type: 'Apartment',
-    latitude: 14.5995,
-    longitude: 120.9842,
+    latitude: 45.5017,
+    longitude: -73.5673,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -160,14 +164,73 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
     }
   };
 
+  // Address search with Nominatim
+  const handleAddressSearch = (query) => {
+    setAddressSearch(query);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    if (!query.trim() || query.length < 3) {
+      setSearchResults([]);
+      return;
+    }
+    searchTimeoutRef.current = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=ca&limit=5&addressdetails=1`,
+          { headers: { 'User-Agent': 'INTERVOS Construction Platform' } }
+        );
+        const data = await res.json();
+        setSearchResults(data || []);
+      } catch {
+        setSearchResults([]);
+      }
+      setIsSearching(false);
+    }, 400);
+  };
+
+  const selectSearchResult = (result) => {
+    const lat = parseFloat(result.lat);
+    const lng = parseFloat(result.lon);
+    const addr = result.address || {};
+
+    const road = addr.road || '';
+    const houseNumber = addr.house_number || '';
+    const city = addr.city || addr.town || addr.village || addr.municipality || '';
+    const province = addr.state || addr.province || '';
+    const postalCode = addr.postcode || '';
+
+    let fullAddress = '';
+    if (houseNumber) fullAddress += houseNumber + ' ';
+    if (road) fullAddress += road;
+
+    setFormData(prev => ({
+      ...prev,
+      latitude: lat,
+      longitude: lng,
+      address: fullAddress.trim() || prev.address,
+      city: city || prev.city,
+      province: province || prev.province,
+      postal_code: postalCode || prev.postal_code,
+    }));
+
+    // Move map and marker
+    if (map) {
+      map.setView([lat, lng], 16);
+      if (markerRef.current) {
+        markerRef.current.setLatLng([lat, lng]);
+      }
+    }
+
+    setSearchResults([]);
+    setAddressSearch(result.display_name);
+  };
+
   const initializeMap = (lat, lng, L) => {
     if (!mapRef.current || map) return;
 
-    const mapInstance = L.map(mapRef.current).setView([lat, lng], 13);
+    const mapInstance = L.map(mapRef.current, { attributionControl: false }).setView([lat, lng], 13);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(mapInstance);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { subdomains: 'abcd' }).addTo(mapInstance);
 
     const marker = L.marker([lat, lng], { draggable: true }).addTo(mapInstance);
 
@@ -236,13 +299,13 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
         postal_code: '',
         num_units: '',
         building_type: 'Apartment',
-        latitude: 14.5995,
-        longitude: 120.9842,
+        latitude: 45.5017,
+        longitude: -73.5673,
       });
 
       if (onSuccess) onSuccess(data.property);
 
-      toast.success('Property added successfully', {
+      toast.success(t('toasts.propertyAddedSuccess'), {
         duration: 5000,
         style: {
           borderRadius: '4px',
@@ -261,7 +324,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
       console.error('Error creating property:', error);
       setError(error.message);
 
-      toast.error(error.message || 'Failed to add property', {
+      toast.error(t('common.failedAddProperty') || 'Failed to add property', {
         duration: 4000,
         style: {
           borderRadius: '4px',
@@ -314,11 +377,51 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
             </div>
           )}
 
-          {/* Building Name - Full Width */}
+          {/* Address Search - Primary Input */}
+          <div className="form-group" style={{ position: 'relative' }}>
+            <label className="form-label">
+              <Search size={14} />
+              {t('addPropertyModal.searchAddress') || 'Search Address'} <span className="required">*</span>
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                value={addressSearch}
+                onChange={(e) => handleAddressSearch(e.target.value)}
+                className="form-input"
+                placeholder={t('addPropertyModal.searchAddressPlaceholder') || 'Type an address (e.g. 123 Rue Saint-Denis, Montreal)'}
+                style={{ paddingRight: '2.5rem' }}
+              />
+              {isSearching && (
+                <div style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)' }}>
+                  <div style={{ width: 16, height: 16, border: '2px solid #e5e7eb', borderTopColor: '#00A5A9', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }} />
+                </div>
+              )}
+            </div>
+            {searchResults.length > 0 && (
+              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 50, background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.12)', maxHeight: '200px', overflowY: 'auto', marginTop: '4px' }}>
+                {searchResults.map((result, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => selectSearchResult(result)}
+                    style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', width: '100%', padding: '0.625rem 0.75rem', border: 'none', borderBottom: i < searchResults.length - 1 ? '1px solid #f3f4f6' : 'none', background: 'none', cursor: 'pointer', textAlign: 'left', fontSize: '0.8125rem', color: '#374151', transition: 'background 0.1s' }}
+                    onMouseEnter={e => e.target.style.background = '#f9fafb'}
+                    onMouseLeave={e => e.target.style.background = 'none'}
+                  >
+                    <MapPin size={14} style={{ color: '#00A5A9', flexShrink: 0, marginTop: '2px' }} />
+                    <span style={{ lineHeight: 1.4 }}>{result.display_name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Building Name - Optional */}
           <div className="form-group">
             <label htmlFor="building_name" className="form-label">
               <Building2 size={14} />
-              {t('addPropertyModal.buildingName')} <span className="required">*</span>
+              {t('addPropertyModal.buildingName')}
             </label>
             <input
               type="text"
@@ -328,7 +431,6 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
               onChange={handleChange}
               className="form-input"
               placeholder={t('addPropertyModal.buildingNamePlaceholder')}
-              required
             />
           </div>
 

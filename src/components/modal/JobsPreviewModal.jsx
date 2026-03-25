@@ -85,6 +85,20 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
       return;
     }
 
+    // Warn about jobs missing budget
+    const jobsWithoutBudget = jobs.filter(job => !job.budget_min || !job.budget_max || job.budget_min <= 0 || job.budget_max <= 0);
+    if (jobsWithoutBudget.length > 0) {
+      toast.error(`${jobsWithoutBudget.length} job(s) are missing a budget. Please add budget min and max to all jobs.`);
+      return;
+    }
+
+    // Validate budget_min <= budget_max
+    const invalidBudget = jobs.filter(job => parseFloat(job.budget_min) > parseFloat(job.budget_max));
+    if (invalidBudget.length > 0) {
+      toast.error(`${invalidBudget.length} job(s) have budget min greater than budget max. Please fix them.`);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -263,20 +277,36 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
                           />
                         </div>
 
-                        {/* Budget & Location */}
+                        {/* Budget Min & Max */}
                         <div className="preview-form-row">
                           <div className="preview-form-group">
-                            <label className="preview-label">{t('jobsPreview.budget')}</label>
+                            <label className="preview-label">{t('jobsPreview.budgetMin')} <span className="required">*</span></label>
                             <input
                               type="number"
-                              value={editedJob.budget || ''}
-                              onChange={(e) => handleEditChange('budget', parseFloat(e.target.value))}
+                              value={editedJob.budget_min ?? ''}
+                              onChange={(e) => handleEditChange('budget_min', e.target.value === '' ? null : parseFloat(e.target.value))}
                               className="preview-input"
                               placeholder="0.00"
                               min="0"
                               step="0.01"
                             />
                           </div>
+                          <div className="preview-form-group">
+                            <label className="preview-label">{t('jobsPreview.budgetMax')} <span className="required">*</span></label>
+                            <input
+                              type="number"
+                              value={editedJob.budget_max ?? ''}
+                              onChange={(e) => handleEditChange('budget_max', e.target.value === '' ? null : parseFloat(e.target.value))}
+                              className="preview-input"
+                              placeholder="0.00"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Location */}
+                        <div className="preview-form-row">
                           <div className="preview-form-group">
                             <label className="preview-label">{t('jobsPreview.location')}</label>
                             <input
@@ -350,10 +380,12 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
                             <span className="preview-detail-value">{job.description}</span>
                           </div>
                         )}
-                        {job.budget && (
+                        {(job.budget_min != null || job.budget_max != null) && (
                           <div className="preview-detail-row">
                             <span className="preview-detail-label">{t('jobsPreview.budget')}:</span>
-                            <span className="preview-detail-value">${job.budget}</span>
+                            <span className="preview-detail-value">
+                              ${job.budget_min ?? '—'} - ${job.budget_max ?? '—'}
+                            </span>
                           </div>
                         )}
                         {job.location && (

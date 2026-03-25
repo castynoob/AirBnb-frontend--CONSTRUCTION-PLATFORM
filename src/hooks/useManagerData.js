@@ -97,7 +97,7 @@ export const useManagerDashboard = () => {
               description: job.description,
               bids: bidCount,
               hasApprovedBid,
-              budget: `$${job.budget_min} - $${job.budget_max}`,
+              budget: (job.budget_min != null && job.budget_max != null) ? `$${job.budget_min} - $${job.budget_max}` : 'Budget to be defined',
               images: finalImages,
               data: {
                 mangerId: property.manager_id,
@@ -107,6 +107,7 @@ export const useManagerDashboard = () => {
               created_at: job.created_at,
               building_type: property.building_type,
               status: job.status,
+              jobCategory: job.category,
             }
           } catch {
             return null

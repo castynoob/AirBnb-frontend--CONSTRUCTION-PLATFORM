@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Building2, MapPin, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useLanguage } from '../../contexts/LanguageContext';
 import '../../styles/manager/addpropertymodal.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
+  const { t } = useLanguage();
   const mapRef = useRef(null);
   const markerRef = useRef(null);
   const [map, setMap] = useState(null);
@@ -18,8 +20,8 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
     postal_code: '',
     num_units: '',
     building_type: 'Apartment',
-    latitude: 14.5995,
-    longitude: 120.9842,
+    latitude: 45.5017,
+    longitude: -73.5673,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -50,8 +52,8 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
         postal_code: property.postal_code || '',
         num_units: property.num_units?.toString() || '',
         building_type: property.building_type || 'Apartment',
-        latitude: parseFloat(property.latitude) || 14.5995,
-        longitude: parseFloat(property.longitude) || 120.9842,
+        latitude: parseFloat(property.latitude) || 45.5017,
+        longitude: parseFloat(property.longitude) || -73.5673,
       });
     }
   }, [property, isOpen]);
@@ -86,14 +88,12 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
           return; // Map already initialized on this container
         }
 
-        const lat = parseFloat(property.latitude) || 14.5995;
-        const lng = parseFloat(property.longitude) || 120.9842;
+        const lat = parseFloat(property.latitude) || 45.5017;
+        const lng = parseFloat(property.longitude) || -73.5673;
 
-        mapInstance = L.map(mapRef.current).setView([lat, lng], 15);
+        mapInstance = L.map(mapRef.current, { attributionControl: false }).setView([lat, lng], 15);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-          attribution: ''
-        }).addTo(mapInstance);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { subdomains: 'abcd' }).addTo(mapInstance);
 
         const marker = L.marker([lat, lng], { draggable: true }).addTo(mapInstance);
 
@@ -220,7 +220,7 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
 
       if (onSuccess) onSuccess(data.property);
 
-      toast.success('Property updated successfully', {
+      toast.success(t('toasts.propertyUpdatedSuccess'), {
         duration: 5000,
         style: {
           borderRadius: '4px',
@@ -239,7 +239,7 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
       console.error('Error updating property:', error);
       setError(error.message);
 
-      toast.error(error.message || 'Failed to update property', {
+      toast.error(t('common.failedUpdateProperty') || 'Failed to update property', {
         duration: 4000,
         style: {
           borderRadius: '4px',

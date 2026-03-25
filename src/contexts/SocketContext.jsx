@@ -9,6 +9,18 @@ import io from "socket.io-client";
 import toast from 'react-hot-toast';
 import { useNotifications } from '../hooks/useNotifications';
 import { playNotificationSound } from '../utils/notificationSound';
+import translations from '../locales/translations';
+
+// Helper to get translated string without useLanguage hook (safe for context)
+const getT = (key) => {
+  const lang = localStorage.getItem('preferredLanguage') || 'fr';
+  const keys = key.split('.');
+  let value = translations[lang];
+  for (const k of keys) {
+    value = value?.[k];
+  }
+  return value || key;
+};
 
 // Public pages where notifications should NOT be shown (user is not truly "logged in" to the app)
 const PUBLIC_PAGES = ['/', '/landing', '/login', '/register', '/forgot-password', '/reset-password'];
@@ -169,7 +181,7 @@ export const SocketProvider = ({ children }) => {
           // Show a summary toast if there are multiple unread
           if (unreadNotifications.length > 3) {
             showDismissibleToast(
-              `You have ${unreadNotifications.length} unread notifications`,
+              getT('notifications.notificationCountPlural').replace('{{count}}', unreadNotifications.length),
               { icon: '🔔' }
             );
           } else {
@@ -177,14 +189,14 @@ export const SocketProvider = ({ children }) => {
             unreadNotifications.slice(0, 3).forEach((notif, index) => {
               setTimeout(() => {
                 const toastMap = {
-                  bid: { msg: `New bid from ${notif.bidder || 'A contractor'}`, icon: '📋' },
-                  message: { msg: `New message from ${notif.senderName || 'Someone'}`, icon: '💬' },
-                  started: { msg: `${notif.contractor || 'Contractor'} started work`, icon: '🔨' },
-                  completed: { msg: `${notif.contractor || 'Contractor'} completed work`, icon: '✅' },
-                  bid_approved: { msg: notif.content || `Your bid for "${notif.jobTitle}" has been approved!`, icon: '🎉', bg: '#059669', duration: 8000 },
-                  bid_declined: { msg: notif.content || `Your bid for "${notif.jobTitle}" was not selected.`, icon: '😔', bg: '#dc2626', duration: 8000 },
+                  bid: { msg: getT('notifications.newBid').replace('{{name}}', notif.bidder || getT('notifications.defaultContractor')), icon: '📋' },
+                  message: { msg: getT('notifications.messageFrom').replace('{{name}}', notif.senderName || getT('notifications.defaultSomeone')), icon: '💬' },
+                  started: { msg: getT('notifications.workStarted').replace('{{name}}', notif.contractor || getT('notifications.defaultContractor')), icon: '🔨' },
+                  completed: { msg: getT('notifications.workCompleted').replace('{{name}}', notif.contractor || getT('notifications.defaultContractor')), icon: '✅' },
+                  bid_approved: { msg: getT('notifications.bidApprovedBody').replace('{{job}}', notif.jobTitle || ''), icon: '🎉', bg: '#059669', duration: 8000 },
+                  bid_declined: { msg: getT('notifications.bidDeclinedBody').replace('{{job}}', notif.jobTitle || ''), icon: '😔', bg: '#dc2626', duration: 8000 },
                 };
-                const config = toastMap[notif.type] || { msg: 'New notification', icon: '🔔' };
+                const config = toastMap[notif.type] || { msg: getT('notifications.notification'), icon: '🔔' };
                 showDismissibleToast(config.msg, { icon: config.icon, bg: config.bg, duration: config.duration });
               }, index * 500);
             });
@@ -375,12 +387,12 @@ export const SocketProvider = ({ children }) => {
       playNotificationSound();
 
       // Show toast notification
-      showDismissibleToast(`New message from ${senderName}`, { icon: '💬' });
+      showDismissibleToast(getT('notifications.messageFrom').replace('{{name}}', senderName), { icon: '💬' });
 
       // Show desktop notification (if permission granted)
       if (showNotificationRef.current) {
         showNotificationRef.current(
-          `New message from ${senderName}`,
+          getT('notifications.messageFrom').replace('{{name}}', senderName),
           {
             body: messagePreview,
             tag: 'message-notification',
@@ -428,12 +440,12 @@ export const SocketProvider = ({ children }) => {
       playNotificationSound();
 
       // Show toast notification
-      showDismissibleToast(`New bid from ${bidderName}`, { icon: '📋' });
+      showDismissibleToast(getT('notifications.newBid').replace('{{name}}', bidderName), { icon: '📋' });
 
       // Show desktop notification
       if (showNotificationRef.current) {
         showNotificationRef.current(
-          `New Bid Received`,
+          getT('notifications.newBid').replace('{{name}}', bidderName),
           {
             body: `${bidderName} submitted a bid ${bidAmount ? `of ${bidAmount}` : ''} for ${jobTitle}`,
             tag: 'bid-notification',
@@ -475,12 +487,12 @@ export const SocketProvider = ({ children }) => {
       playNotificationSound();
 
       // Show toast notification
-      showDismissibleToast(`${contractorName} started work`, { icon: '🔨' });
+      showDismissibleToast(getT('notifications.workStarted').replace('{{name}}', contractorName), { icon: '🔨' });
 
       // Show desktop notification
       if (showNotificationRef.current) {
         showNotificationRef.current(
-          `Work Started`,
+          getT('notifications.workStarted').replace('{{name}}', contractorName),
           {
             body: `${contractorName} has started working on ${jobTitle}`,
             tag: 'job-started-notification',
@@ -522,12 +534,12 @@ export const SocketProvider = ({ children }) => {
       playNotificationSound();
 
       // Show toast notification
-      showDismissibleToast(`${contractorName} completed work`, { icon: '✅' });
+      showDismissibleToast(getT('notifications.workCompleted').replace('{{name}}', contractorName), { icon: '✅' });
 
       // Show desktop notification
       if (showNotificationRef.current) {
         showNotificationRef.current(
-          `Work Completed`,
+          getT('notifications.workCompleted').replace('{{name}}', contractorName),
           {
             body: `${contractorName} has completed ${jobTitle}`,
             tag: 'work-completed-notification',
@@ -571,14 +583,14 @@ export const SocketProvider = ({ children }) => {
 
       // Show toast notification with success styling
       showDismissibleToast(
-        data.message || `Your bid for "${jobTitle}" has been approved!`,
+        getT('notifications.bidApprovedBody').replace('{{job}}', jobTitle),
         { icon: '🎉', bg: '#059669', duration: 8000 }
       );
 
       // Show desktop notification
       if (showNotificationRef.current) {
         showNotificationRef.current(
-          `Bid Approved! 🎉`,
+          getT('notifications.bidApproved'),
           {
             body: data.message || `Your bid ${bidAmount ? `of ${bidAmount}` : ''} for ${jobTitle} has been approved!`,
             tag: 'bid-approved-notification',
@@ -622,14 +634,14 @@ export const SocketProvider = ({ children }) => {
 
       // Show toast notification with error styling
       showDismissibleToast(
-        data.message || `Your bid for "${jobTitle}" was not selected.`,
+        getT('notifications.bidDeclinedBody').replace('{{job}}', jobTitle),
         { icon: '😔', bg: '#dc2626', duration: 8000 }
       );
 
       // Show desktop notification
       if (showNotificationRef.current) {
         showNotificationRef.current(
-          `Bid Update`,
+          getT('notifications.bidDeclined'),
           {
             body: data.message || `Your bid for ${jobTitle} was not selected.`,
             tag: 'bid-declined-notification',
@@ -674,16 +686,16 @@ export const SocketProvider = ({ children }) => {
       // Show toast notification with success styling
       const amountFormatted = data.amount ? `$${Number(data.amount).toLocaleString()}` : 'Payment';
       showDismissibleToast(
-        `${amountFormatted} has been released to your account!`,
+        getT('notifications.payoutToast').replace('{{amount}}', amountFormatted),
         { icon: '💰', bg: '#059669', duration: 8000 }
       );
 
       // Show desktop notification
       if (showNotificationRef.current) {
         showNotificationRef.current(
-          `Payment Received! 💰`,
+          getT('notifications.payoutDesktop'),
           {
-            body: `${amountFormatted} has been released to your account!`,
+            body: getT('notifications.payoutToast').replace('{{amount}}', amountFormatted),
             tag: `payout-${data.contractId}`,
             requireInteraction: true,
           }
@@ -708,7 +720,7 @@ export const SocketProvider = ({ children }) => {
       if (checkIsPublicPage()) return;
       playNotificationSound();
       showDismissibleToast(
-        `${data.confirmerName} confirmed job completion`,
+        getT('notifications.completionConfirmed').replace('{{name}}', data.confirmerName),
         { icon: '✅' }
       );
     });
@@ -733,8 +745,68 @@ export const SocketProvider = ({ children }) => {
       if (checkIsPublicPage()) return;
       playNotificationSound();
       showDismissibleToast(
-        `Job confirmed! Leave a review for ${data.revieweeName}`,
+        getT('notifications.reviewInvitation').replace('{{name}}', data.revieweeName),
         { icon: '⭐', bg: '#059669', duration: 8000 }
+      );
+    });
+
+    // Bid approval cancelled by manager
+    newSocket.on("bid_approval_cancelled", (data) => {
+      console.log("Bid approval cancelled:", data);
+      setNotifications(prev => [{
+        id: `bid_cancelled_${Date.now()}`,
+        is_read: false,
+        timestamp: new Date().toISOString(),
+        type: 'bid_approval_cancelled',
+        jobId: data.jobId,
+        content: data.message,
+      }, ...prev]);
+
+      if (checkIsPublicPage()) return;
+      playNotificationSound();
+      showDismissibleToast(
+        data.message || getT('notifications.bidCancelled').replace('{{job}}', data.jobTitle || ''),
+        { icon: '⚠️', bg: '#d97706', duration: 8000 }
+      );
+    });
+
+    // Job deleted by manager
+    newSocket.on("job_deleted", (data) => {
+      console.log("Job deleted notification:", data);
+      setNotifications(prev => [{
+        id: `job_deleted_${Date.now()}`,
+        is_read: false,
+        timestamp: new Date().toISOString(),
+        type: 'job_deleted',
+        jobId: data.jobId,
+        content: data.message,
+      }, ...prev]);
+
+      if (checkIsPublicPage()) return;
+      playNotificationSound();
+      showDismissibleToast(
+        data.message || getT('notifications.jobDeleted').replace('{{job}}', data.jobTitle || ''),
+        { icon: '🗑️', bg: '#dc2626', duration: 8000 }
+      );
+    });
+
+    // Job reopened (bid restored after acceptance cancellation)
+    newSocket.on("job_reopened", (data) => {
+      console.log("Job reopened notification:", data);
+      setNotifications(prev => [{
+        id: `job_reopened_${Date.now()}`,
+        is_read: false,
+        timestamp: new Date().toISOString(),
+        type: 'job_reopened',
+        jobId: data.jobId,
+        content: data.message,
+      }, ...prev]);
+
+      if (checkIsPublicPage()) return;
+      playNotificationSound();
+      showDismissibleToast(
+        data.message || getT('notifications.jobReopened'),
+        { icon: '🔄', bg: '#2563eb', duration: 8000 }
       );
     });
 

@@ -439,7 +439,10 @@ const MessagesSupplier = () => {
 
   // Format time
   const formatTime = (timestamp) => {
-    const date = new Date(timestamp);
+    if (!timestamp) return '';
+    const raw = String(timestamp);
+    const utcTimestamp = raw.endsWith('Z') || raw.includes('+') ? raw : raw + 'Z';
+    const date = new Date(utcTimestamp);
     return date.toLocaleTimeString(language === 'fr' ? 'fr-FR' : 'en-US', { hour: '2-digit', minute: '2-digit' });
   };
 

@@ -3,7 +3,7 @@ import {
   Star, CheckCircle, Award, Briefcase, MapPin, Calendar, Mail, Phone, LogOut,
   MessageSquare, User, Upload, Camera, X, Crown, Check, Zap, Shield, Activity,
   DollarSign, FileText, ArrowUpCircle, AlertCircle, Lock, Eye, EyeOff, Key,
-  BarChart3, Menu, Edit, ChevronDown, ChevronUp, Clock, Building, Receipt, Unlock, Settings, Globe
+  BarChart3, Menu, Edit, ChevronDown, ChevronUp, Clock, Building, Receipt, Unlock, Settings, Globe, Bell
 } from 'lucide-react';
 import Nav from "../../components/Nav";
 import '../../styles/entrepreneur/profilepageentrepreneur-modern.css';
@@ -86,6 +86,7 @@ function ProfilePageEntrepreneur() {
   const [passwordSuccess, setPasswordSuccess] = useState('')
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [isSendingReset, setIsSendingReset] = useState(false)
+  const [emailNotifications, setEmailNotifications] = useState(true)
 
   // Billing states
   const [invoiceYear, setInvoiceYear] = useState(new Date().getFullYear())
@@ -147,6 +148,21 @@ function ProfilePageEntrepreneur() {
       const u = JSON.parse(uProfile)
       setUserProfile(u)
     }
+  }, [])
+
+  // Fetch email notification preference
+  useEffect(() => {
+    const fetchEmailPref = async () => {
+      try {
+        const token = JSON.parse(localStorage.getItem('userProfile'))?.token;
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/email-notifications`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) setEmailNotifications(data.email_notifications);
+      } catch {}
+    };
+    fetchEmailPref();
   }, [])
 
   // Show payment failed modal when subscription data loads with past_due status
@@ -649,7 +665,7 @@ function ProfilePageEntrepreneur() {
 
     } catch (error) {
       console.error('Error queuing promo code:', error)
-      toast.error(error.message || 'Failed to queue promo code')
+      toast.error(t('profileEntrepreneur.failedQueuePromo') || 'Failed to queue promo code')
     } finally {
       setIsQueueingPromo(false)
     }
@@ -693,7 +709,7 @@ function ProfilePageEntrepreneur() {
 
     } catch (error) {
       console.error('Error applying promo code now:', error)
-      toast.error(error.message || 'Failed to apply promo code')
+      toast.error(t('profileEntrepreneur.failedApplyPromo') || 'Failed to apply promo code')
     } finally {
       setIsApplyingPromoNow(false)
     }
@@ -742,6 +758,21 @@ function ProfilePageEntrepreneur() {
     const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#16a34a']
     return colors[Math.min(strength, 4)]
   }
+
+  const handleToggleEmailNotifications = async () => {
+    const newValue = !emailNotifications;
+    setEmailNotifications(newValue);
+    try {
+      const token = JSON.parse(localStorage.getItem('userProfile'))?.token;
+      await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/email-notifications`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email_notifications: newValue })
+      });
+    } catch {
+      setEmailNotifications(!newValue);
+    }
+  };
 
   const handleChangePassword = async (e) => {
     e.preventDefault()
@@ -1825,6 +1856,28 @@ function ProfilePageEntrepreneur() {
                           )}
                         </button>
                       ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Email Notification Settings */}
+                <div className="ep-settings-section">
+                  <div className="ep-settings-card">
+                    <div className="ep-settings-card-header">
+                      <div className="ep-settings-icon">
+                        <Bell size={20} />
+                      </div>
+                      <div className="ep-settings-info">
+                        <h3>{t('profileEntrepreneur.emailNotifications') || 'Email Notifications'}</h3>
+                        <p>{t('profileEntrepreneur.emailNotificationsDesc') || 'Receive email alerts when you get new messages while offline'}</p>
+                      </div>
+                      <button
+                        className={`mp-toggle ${emailNotifications ? 'active' : ''}`}
+                        onClick={handleToggleEmailNotifications}
+                        aria-label="Toggle email notifications"
+                      >
+                        <span className="mp-toggle-slider" />
+                      </button>
                     </div>
                   </div>
                 </div>

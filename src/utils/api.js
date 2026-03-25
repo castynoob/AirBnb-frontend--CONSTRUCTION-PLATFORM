@@ -221,6 +221,34 @@ export async function markConversationAsRead(conversationId) {
   });
 }
 
+/**
+ * Get archived conversations
+ * GET /api/conversations/archived
+ */
+export async function getArchivedConversations() {
+  return apiRequest('/api/conversations/archived');
+}
+
+/**
+ * Archive a conversation
+ * PUT /api/conversations/:conversationId/archive
+ */
+export async function archiveConversation(conversationId) {
+  return apiRequest(`/api/conversations/${conversationId}/archive`, {
+    method: 'PUT',
+  });
+}
+
+/**
+ * Unarchive a conversation
+ * PUT /api/conversations/:conversationId/unarchive
+ */
+export async function unarchiveConversation(conversationId) {
+  return apiRequest(`/api/conversations/${conversationId}/unarchive`, {
+    method: 'PUT',
+  });
+}
+
 // ============================================
 // MESSAGE ENDPOINTS
 // ============================================
@@ -398,6 +426,13 @@ export async function updateFavoriteNotes(favoriteId, notes) {
   });
 }
 
+export async function updateFavoriteCategory(favoriteId, category) {
+  return apiRequest(`/api/favorites/${favoriteId}/category`, {
+    method: 'PATCH',
+    body: JSON.stringify({ category }),
+  });
+}
+
 // ============================================
 // SUPPORT TICKET ENDPOINTS
 // ============================================
@@ -539,4 +574,5 @@ export default {
   getFavoriteCount,
   getEntrepreneurHistory,
   updateFavoriteNotes,
+  updateFavoriteCategory,
 };

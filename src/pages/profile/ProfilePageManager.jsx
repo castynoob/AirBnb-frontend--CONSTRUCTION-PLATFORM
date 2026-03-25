@@ -6,11 +6,14 @@ import {
   User, Mail, Shield, Home, Plus, MapPin, Calendar, X, LogOut,
   Package, Building2, ChevronRight, Briefcase, Phone, Camera,
   Lock, Eye, EyeOff, Key, Check, AlertCircle, BarChart3, Settings, Menu, Edit,
-  Star, MessageSquare, TrendingUp, Award, ThumbsUp, Globe
+  Star, MessageSquare, TrendingUp, Award, ThumbsUp, Globe, Bell, Wrench, FileText, DollarSign
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import EditManagerProfileModal from '../../components/modal/EditManagerProfileModal'
 import EditPropertyModal from '../../components/modal/EditPropertyModal'
+import MaintenanceLogModal from '../../components/modal/MaintenanceLogModal'
+import DocumentManager from '../../components/DocumentManager'
+import FinancialDashboard from '../../components/FinancialDashboard'
 import ManagerProfileSkeleton from '../../components/loading/ManagerProfileSkeleton'
 import { logout } from '../../utils/api'
 import { useLanguage } from '../../contexts/LanguageContext'
@@ -24,6 +27,7 @@ function ProfilePageManager() {
   const [user, setUser] = useState({})
   const [properties, setProperties] = useState([])
   const [selectedProperty, setSelectedProperty] = useState(null)
+  const [maintenanceLogProperty, setMaintenanceLogProperty] = useState(null)
   const navigate = useNavigate()
   const [uProfile, setUProfile] = useState({})
   const [isLoading, setIsLoading] = useState(true)
@@ -56,9 +60,22 @@ function ProfilePageManager() {
   const [passwordSuccess, setPasswordSuccess] = useState('')
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [isSendingReset, setIsSendingReset] = useState(false)
+  const [emailNotifications, setEmailNotifications] = useState(true)
 
   useEffect(() => {
     getProfileAndProperties()
+    // Fetch email notification preference
+    const fetchEmailPref = async () => {
+      try {
+        const token = JSON.parse(localStorage.getItem('userProfile'))?.token;
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/email-notifications`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) setEmailNotifications(data.email_notifications);
+      } catch {}
+    };
+    fetchEmailPref();
   }, [])
 
   const getProfileAndProperties = async () => {
@@ -205,6 +222,21 @@ function ProfilePageManager() {
     return { label: t('profileManager.strong'), color: '#22c55e' }
   }
 
+  const handleToggleEmailNotifications = async () => {
+    const newValue = !emailNotifications;
+    setEmailNotifications(newValue);
+    try {
+      const token = JSON.parse(localStorage.getItem('userProfile'))?.token;
+      await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/users/email-notifications`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email_notifications: newValue })
+      });
+    } catch {
+      setEmailNotifications(!newValue); // Revert on failure
+    }
+  };
+
   const handleChangePassword = async (e) => {
     e.preventDefault()
     setPasswordError('')
@@ -288,6 +320,8 @@ function ProfilePageManager() {
     { id: 'overview', label: t('profileManager.tabOverview'), icon: BarChart3 },
     { id: 'properties', label: t('profileManager.tabProperties'), icon: Building2, badge: properties.length },
     { id: 'reviews', label: t('profileManager.tabReviews'), icon: Star, badge: reviews.length > 0 ? reviews.length : undefined },
+    { id: 'documents', label: t('profileManager.tabDocuments') || 'Documents', icon: FileText },
+    { id: 'financial', label: t('profileManager.tabFinancial') || 'Financial', icon: DollarSign },
     { id: 'settings', label: t('profileManager.tabSettings'), icon: Settings },
   ]
 
@@ -561,6 +595,14 @@ function ProfilePageManager() {
                         <Package size={14} />
                         <span>{property.num_units} {property.num_units === 1 ? t('profileManager.unit') : t('profileManager.units')}</span>
                       </div>
+                      <button
+                        className="mp-maintenance-log-btn"
+                        onClick={(e) => { e.stopPropagation(); setMaintenanceLogProperty(property); }}
+                        title={t('profileManager.maintenanceLog') || 'Maintenance Log'}
+                      >
+                        <Wrench size={13} />
+                        <span>{t('profileManager.maintenanceLog') || 'Maintenance'}</span>
+                      </button>
                       <ChevronRight size={18} className="mp-property-arrow" />
                     </div>
                   </div>
@@ -752,6 +794,23 @@ function ProfilePageManager() {
           </div>
         )
 
+      case 'documents':
+        return (
+          <div className="mp-tab-content">
+            <DocumentManager
+              ownerId={userProfile?.id}
+              userRole="property_manager"
+            />
+          </div>
+        )
+
+      case 'financial':
+        return (
+          <div className="mp-tab-content">
+            <FinancialDashboard />
+          </div>
+        )
+
       case 'settings':
         return (
           <div className="mp-tab-content">
@@ -789,6 +848,28 @@ function ProfilePageManager() {
                       )}
                     </button>
                   ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Email Notification Settings */}
+            <div className="mp-settings-section">
+              <div className="mp-settings-card">
+                <div className="mp-settings-card-header">
+                  <div className="mp-settings-icon">
+                    <Bell size={20} />
+                  </div>
+                  <div className="mp-settings-info">
+                    <h3>{t('profileManager.emailNotifications') || 'Email Notifications'}</h3>
+                    <p>{t('profileManager.emailNotificationsDesc') || 'Receive email alerts when you get new messages while offline'}</p>
+                  </div>
+                  <button
+                    className={`mp-toggle ${emailNotifications ? 'active' : ''}`}
+                    onClick={handleToggleEmailNotifications}
+                    aria-label="Toggle email notifications"
+                  >
+                    <span className="mp-toggle-slider" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -1227,6 +1308,13 @@ function ProfilePageManager() {
             setIsEditingProperty(false)
           }}
           property={selectedProperty}
+        />
+      )}
+
+      {maintenanceLogProperty && (
+        <MaintenanceLogModal
+          property={maintenanceLogProperty}
+          onClose={() => setMaintenanceLogProperty(null)}
         />
       )}
     </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useState, useEffect, useRef } from "react"
-import { Wrench, Search, Plus, Megaphone, Building2, Bell, AlertTriangle, X, Check, Info } from "lucide-react"
+import { Wrench, Search, Plus, Megaphone, Building2, Bell, AlertTriangle, X, Check, Info, MoreHorizontal, Filter, ChevronDown } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import toast from "react-hot-toast"
 import "../../styles/manager/homepage.css"
@@ -116,6 +116,11 @@ function HomePage() {
   const [uProfile, setUProfile] = useState({})
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false)
   const [showAddPropertyModal, setShowAddPropertyModal] = useState(false)
+  const [showActionsMenu, setShowActionsMenu] = useState(false)
+  const [selectedProperty, setSelectedProperty] = useState('all')
+  const [selectedUrgency, setSelectedUrgency] = useState('all')
+  const [selectedJobCategory, setSelectedJobCategory] = useState('all')
+  const [openDropdown, setOpenDropdown] = useState(null) // 'property' | 'urgency' | 'category' | null
   const [showAddWorkModal, setShowAddWorkModal] = useState(false)
   const [showInspectionModal, setShowInspectionModal] = useState(false)
   const [selectedPropertyForInspection, setSelectedPropertyForInspection] = useState('')
@@ -300,7 +305,7 @@ ${uProfile?.name || t('urgentEmail.propertyManager')}`
                                 </p>
                                 <div style="display: flex; gap: 15px; margin-top: 10px;">
                                   <span style="color: #22c55e; font-size: 13px; font-weight: 600;">
-                                    💰 $${job.budget_min} - $${job.budget_max}
+                                    💰 ${(job.budget_min != null && job.budget_max != null) ? `$${job.budget_min} - $${job.budget_max}` : 'Budget to be defined'}
                                   </span>
                                   ${job.is_emergency ? `
                                   <span style="background-color: #ff4444; color: #ffffff; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">
@@ -446,10 +451,12 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
       repair?.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       repair?.category?.toLowerCase().includes(searchTerm.toLowerCase())
 
-    // Status filter
+    // Status filter — "all" hides completed jobs, use "completed" tab to see them
+    const repairStatus = repair?.status?.toLowerCase() || ''
     const matchesStatus =
-      statusFilter === "all" ||
-      repair?.status?.toLowerCase() === statusFilter.toLowerCase()
+      statusFilter === "all"
+        ? repairStatus !== "completed"
+        : repairStatus === statusFilter.toLowerCase()
 
     return matchesSearch && matchesStatus
   })
@@ -460,73 +467,49 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
       <div className="homepage">
         <Nav />
         <div className="main-container">
+          {/* Header skeleton */}
           <header className="pm-page-header">
             <div className="pm-header-left">
-              <div className="pm-header-title-group">
-                <h1>{t('homePage.title')}</h1>
-                <span className="pm-project-count">0 {t('homePage.activeJobs')}</span>
-              </div>
+              <h1>{t('homePage.title')}</h1>
+              <span className="pm-project-count">...</span>
             </div>
-            <div className="pm-header-actions">
-              <div className="pm-search-wrapper">
-                <Search size={18} className="pm-search-icon" />
-                <input
-                  type="text"
-                  placeholder={t('homePage.searchPlaceholder')}
-                  value=""
-                  className="pm-search-input"
-                  disabled
-                  readOnly
-                />
-              </div>
-
-              <div className="pm-action-buttons">
-                <button className="pm-btn pm-btn-secondary" disabled>
-                  <Wrench size={18} />
-                  <span>{t('homePage.urgent')}</span>
-                </button>
-                <button className="pm-btn pm-btn-secondary" disabled>
-                  <Megaphone size={18} />
-                  <span>{t('homePage.announcement')}</span>
-                </button>
-                <button className="pm-btn pm-btn-primary" disabled>
-                  <Plus size={18} />
-                  <span>{t('homePage.newJobs')}</span>
-                </button>
-                <button className="pm-btn pm-btn-primary pm-btn-property" disabled>
-                  <Building2 size={18} />
-                  <span>{t('homePage.addProperty')}</span>
-                </button>
-              </div>
-
-              <div className="pm-notification-wrapper">
-                <button className="pm-notification-btn" aria-label="Notifications" disabled>
-                  <Bell size={18} />
-                </button>
-              </div>
+            <div className="pm-header-right">
+              <div className="pm-skel-btn"><div className="pm-shimmer"></div></div>
+              <div className="pm-skel-btn pm-skel-sm"><div className="pm-shimmer"></div></div>
+              <div className="pm-skel-btn pm-skel-sm"><div className="pm-shimmer"></div></div>
             </div>
           </header>
 
-          <SummarySkeleton />
+          {/* Stats skeleton */}
+          <div className="pm-inline-stats">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="pm-stat-chip pm-skel-chip"><div className="pm-shimmer"></div></div>
+            ))}
+          </div>
 
-          <section className="hp-repairs-section">
-            <div className="hp-section-header">
-              <div className="hp-section-header-left">
-                <h2>{t('homePage.allRepairWork')}</h2>
-                <p className="hp-section-subtitle">{t('homePage.loadingRepairs')}</p>
-              </div>
-              <div className="hp-section-header-right">
-                <div className="pm-skeleton-filter">
-                  <div className="pm-shimmer"></div>
-                </div>
+          {/* Filter bar skeleton */}
+          <div className="pm-filter-bar">
+            <div className="pm-filter-bar-left">
+              <div className="pm-skel-search"><div className="pm-shimmer"></div></div>
+              <div className="pm-status-pills">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="pm-skel-pill"><div className="pm-shimmer"></div></div>
+                ))}
               </div>
             </div>
-            <div className="hp-repair-cards-grid">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <SkeletonCard key={i} />
+            <div className="pm-filter-bar-right">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="pm-skel-dropdown"><div className="pm-shimmer"></div></div>
               ))}
             </div>
-          </section>
+          </div>
+
+          {/* Card grid skeleton */}
+          <div className="hp-repair-cards-grid">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <SkeletonCard key={i} />
+            ))}
+          </div>
         </div>
       </div>
     )
@@ -547,117 +530,192 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
     <div className="homepage">
       <Nav />
       <div className="main-container">
+        {/* Compact Header */}
         <header className="pm-page-header">
           <div className="pm-header-left">
-            <div className="pm-header-title-group">
-              <h1>{t('homePage.title')}</h1>
-              <span className="pm-project-count">{properties.length} {t('homePage.activeJobs')}</span>
-            </div>
+            <h1>{t('homePage.title')}</h1>
+            <span className="pm-project-count">{properties.length} {t('homePage.activeJobs')}</span>
           </div>
-          <div className="pm-header-actions">
-            <div className="pm-search-wrapper">
-              <Search size={18} className="pm-search-icon" />
+          <div className="pm-header-right">
+            <button onClick={handleAddWork} className="pm-btn pm-btn-primary" title={t('homePage.newJobs')}>
+              <Plus size={16} />
+              <span>{t('homePage.newJobs')}</span>
+            </button>
+            <div className="pm-actions-dropdown-wrap">
+              <button className="pm-btn pm-btn-ghost" onClick={() => setShowActionsMenu(!showActionsMenu)} title={t('common.moreActions')}>
+                <MoreHorizontal size={18} />
+              </button>
+              {showActionsMenu && (
+                <>
+                  <div className="pm-actions-backdrop" onClick={() => setShowActionsMenu(false)} />
+                  <div className="pm-actions-dropdown">
+                    <button onClick={() => { handleOpenUrgentModal(); setShowActionsMenu(false) }}>
+                      <Wrench size={15} /> {t('homePage.urgent')}
+                    </button>
+                    <button onClick={() => { setShowAnnouncementModal(true); setShowActionsMenu(false) }}>
+                      <Megaphone size={15} /> {t('homePage.announcement')}
+                    </button>
+                    <button onClick={() => { setShowAddPropertyModal(true); setShowActionsMenu(false) }}>
+                      <Building2 size={15} /> {t('homePage.addProperty')}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+            <NotificationBell />
+          </div>
+        </header>
+
+        {/* Inline Stats */}
+        <div className="pm-inline-stats">
+          <div className="pm-stat-chip">
+            <Building2 size={14} />
+            <span className="pm-stat-val">{totalProperties}</span>
+            <span className="pm-stat-label">{t('homePage.properties') || 'Properties'}</span>
+          </div>
+          <div className="pm-stat-chip">
+            <Check size={14} />
+            <span className="pm-stat-val">{totalBidsApproved}</span>
+            <span className="pm-stat-label">{t('homePage.bidsApproved') || 'Approved'}</span>
+          </div>
+          <div className="pm-stat-chip">
+            <Wrench size={14} />
+            <span className="pm-stat-val">{totalJobs}</span>
+            <span className="pm-stat-label">{t('homePage.totalJobs') || 'Jobs'}</span>
+          </div>
+        </div>
+
+        {/* Combined Filter Bar */}
+        <div className="pm-filter-bar">
+          <div className="pm-filter-bar-left">
+            <div className="pm-search-compact">
+              <Search size={15} />
               <input
                 ref={searchInputRef}
                 type="text"
                 placeholder={t('homePage.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pm-search-input"
               />
             </div>
-
-            <div className="pm-action-buttons">
-              <button
-                onClick={handleOpenUrgentModal}
-                className="pm-btn pm-btn-secondary"
-                title={t('homePage.urgent')}
-              >
-                <Wrench size={18} />
-                <span>{t('homePage.urgent')}</span>
+            <div className="pm-status-pills">
+              <button className={`pm-pill ${statusFilter === 'all' ? 'active' : ''}`} onClick={() => setStatusFilter('all')}>
+                {t('homePage.filterAll') || 'All'} <span>{properties.filter(p => p?.status?.toLowerCase() !== 'completed').length}</span>
               </button>
-              <button
-                onClick={() => setShowAnnouncementModal(true)}
-                className="pm-btn pm-btn-secondary"
-                title={t('homePage.announcement')}
-              >
-                <Megaphone size={18} />
-                <span>{t('homePage.announcement')}</span>
+              <button className={`pm-pill ${statusFilter === 'open' ? 'active' : ''}`} onClick={() => setStatusFilter('open')}>
+                {t('homePage.filterOpen') || 'Open'} <span>{properties.filter(p => p?.status?.toLowerCase() === 'open').length}</span>
               </button>
-              <button
-                onClick={handleAddWork}
-                className="pm-btn pm-btn-primary"
-                title={t('homePage.newJobs')}
-              >
-                <Plus size={18} />
-                <span>{t('homePage.newJobs')}</span>
+              <button className={`pm-pill ${statusFilter === 'in_progress' ? 'active' : ''}`} onClick={() => setStatusFilter('in_progress')}>
+                {t('homePage.filterInProgress') || 'In Progress'} <span>{properties.filter(p => p?.status?.toLowerCase() === 'in_progress').length}</span>
               </button>
-              <button
-                onClick={() => setShowAddPropertyModal(true)}
-                className="pm-btn pm-btn-primary pm-btn-property"
-                title={t('homePage.addProperty')}
-              >
-                <Building2 size={18} />
-                <span>{t('homePage.addProperty')}</span>
+              <button className={`pm-pill ${statusFilter === 'completed' ? 'active' : ''}`} onClick={() => setStatusFilter('completed')}>
+                {t('homePage.filterCompleted') || 'Completed'} <span>{properties.filter(p => p?.status?.toLowerCase() === 'completed').length}</span>
               </button>
             </div>
-
-            <NotificationBell />
           </div>
-        </header>
-
-        <SummarySection
-          totalProperties={totalProperties}
-          totalBidsApproved={totalBidsApproved}
-          totalJobs={totalJobs}
-        />
-
-        {/* Status Filter */}
-        <div className="pm-status-filter-section">
-          <div className="pm-status-filter-label">{t('homePage.filterByStatus') || 'Filter by Status'}:</div>
-          <div className="pm-status-filter-buttons">
-            <button
-              className={`pm-status-filter-btn ${statusFilter === 'all' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('all')}
-            >
-              {t('homePage.filterAll') || 'All'}
-              <span className="pm-filter-count">{properties.length}</span>
-            </button>
-            <button
-              className={`pm-status-filter-btn ${statusFilter === 'open' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('open')}
-            >
-              {t('homePage.filterOpen') || 'Open'}
-              <span className="pm-filter-count">
-                {properties.filter(p => p?.status?.toLowerCase() === 'open').length}
-              </span>
-            </button>
-            <button
-              className={`pm-status-filter-btn ${statusFilter === 'in_progress' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('in_progress')}
-            >
-              {t('homePage.filterInProgress') || 'In Progress'}
-              <span className="pm-filter-count">
-                {properties.filter(p => p?.status?.toLowerCase() === 'in_progress').length}
-              </span>
-            </button>
-            <button
-              className={`pm-status-filter-btn ${statusFilter === 'completed' ? 'active' : ''}`}
-              onClick={() => setStatusFilter('completed')}
-            >
-              {t('homePage.filterCompleted') || 'Completed'}
-              <span className="pm-filter-count">
-                {properties.filter(p => p?.status?.toLowerCase() === 'completed').length}
-              </span>
-            </button>
+          <div className="pm-filter-bar-right">
+            {/* Property dropdown */}
+            <div className={`pm-custom-dropdown ${openDropdown === 'property' ? 'open' : ''}`}>
+              <button className="pm-custom-dropdown-trigger" onClick={() => setOpenDropdown(openDropdown === 'property' ? null : 'property')}>
+                <Building2 size={13} />
+                <span>{selectedProperty === 'all' ? t('repairList.allRepairWork') : selectedProperty}</span>
+                <ChevronDown size={13} className="pm-dd-chevron" />
+              </button>
+              {openDropdown === 'property' && (
+                <>
+                  <div className="pm-dd-backdrop" onClick={() => setOpenDropdown(null)} />
+                  <div className="pm-dd-menu">
+                    <div className={`pm-dd-option ${selectedProperty === 'all' ? 'active' : ''}`} onClick={() => { setSelectedProperty('all'); setOpenDropdown(null) }}>
+                      {t('repairList.allRepairWork')}
+                      {selectedProperty === 'all' && <Check size={14} />}
+                    </div>
+                    {[...new Set(filteredRepairs.map(r => r.property_name).filter(Boolean))].map(p => (
+                      <div key={p} className={`pm-dd-option ${selectedProperty === p ? 'active' : ''}`} onClick={() => { setSelectedProperty(p); setOpenDropdown(null) }}>
+                        {p}
+                        {selectedProperty === p && <Check size={14} />}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            {/* Urgency dropdown */}
+            <div className={`pm-custom-dropdown ${openDropdown === 'urgency' ? 'open' : ''}`}>
+              <button className="pm-custom-dropdown-trigger" onClick={() => setOpenDropdown(openDropdown === 'urgency' ? null : 'urgency')}>
+                <Filter size={13} />
+                <span>{selectedUrgency === 'all' ? t('repairList.allUrgency') : selectedUrgency}</span>
+                <ChevronDown size={13} className="pm-dd-chevron" />
+              </button>
+              {openDropdown === 'urgency' && (
+                <>
+                  <div className="pm-dd-backdrop" onClick={() => setOpenDropdown(null)} />
+                  <div className="pm-dd-menu">
+                    <div className={`pm-dd-option ${selectedUrgency === 'all' ? 'active' : ''}`} onClick={() => { setSelectedUrgency('all'); setOpenDropdown(null) }}>
+                      {t('repairList.allUrgency')}
+                      {selectedUrgency === 'all' && <Check size={14} />}
+                    </div>
+                    {[...new Set(filteredRepairs.map(r => r.urgency).filter(Boolean))].map(u => (
+                      <div key={u} className={`pm-dd-option ${selectedUrgency === u ? 'active' : ''}`} onClick={() => { setSelectedUrgency(u); setOpenDropdown(null) }}>
+                        {u}
+                        {selectedUrgency === u && <Check size={14} />}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            {/* Category dropdown */}
+            <div className={`pm-custom-dropdown ${openDropdown === 'category' ? 'open' : ''}`}>
+              <button className="pm-custom-dropdown-trigger" onClick={() => setOpenDropdown(openDropdown === 'category' ? null : 'category')}>
+                <Wrench size={13} />
+                <span>{selectedJobCategory === 'all' ? t('repairList.allCategories') : selectedJobCategory}</span>
+                <ChevronDown size={13} className="pm-dd-chevron" />
+              </button>
+              {openDropdown === 'category' && (
+                <>
+                  <div className="pm-dd-backdrop" onClick={() => setOpenDropdown(null)} />
+                  <div className="pm-dd-menu">
+                    <div className={`pm-dd-option ${selectedJobCategory === 'all' ? 'active' : ''}`} onClick={() => { setSelectedJobCategory('all'); setOpenDropdown(null) }}>
+                      {t('repairList.allCategories')}
+                      {selectedJobCategory === 'all' && <Check size={14} />}
+                    </div>
+                    {[...new Set(filteredRepairs.map(r => r.category).filter(Boolean))].map(c => (
+                      <div key={c} className={`pm-dd-option ${selectedJobCategory === c ? 'active' : ''}`} onClick={() => { setSelectedJobCategory(c); setOpenDropdown(null) }}>
+                        {c}
+                        {selectedJobCategory === c && <Check size={14} />}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
-        <RepairList repairs={filteredRepairs} handleRepairClicked={handleRepairClicked} />
+        <RepairList
+          repairs={filteredRepairs}
+          handleRepairClicked={handleRepairClicked}
+          hideFilters
+          externalFilters={{ selectedProperty, selectedUrgency, selectedJobCategory }}
+        />
 
         {filteredRepairs.length === 0 && (
-          <div className="pm-no-results-home">
-            <p>{t('homePage.noRepairsFound')}</p>
+          <div className="pm-empty-state">
+            <div className="pm-empty-icon">
+              <Wrench size={32} />
+            </div>
+            <h3>{t('homePage.noRepairsTitle') || 'No jobs found'}</h3>
+            <p>{t('homePage.noRepairsDesc') || 'There are no jobs matching your current filters.'}</p>
+            {(statusFilter !== 'all' || searchTerm || selectedProperty !== 'all' || selectedUrgency !== 'all' || selectedJobCategory !== 'all') && (
+              <button className="pm-empty-clear" onClick={() => { setStatusFilter('all'); setSearchTerm(''); setSelectedProperty('all'); setSelectedUrgency('all'); setSelectedJobCategory('all') }}>
+                <X size={14} /> {t('homePage.clearFilters') || 'Clear all filters'}
+              </button>
+            )}
+            {statusFilter === 'all' && !searchTerm && selectedProperty === 'all' && (
+              <button className="pm-empty-add" onClick={handleAddWork}>
+                <Plus size={15} /> {t('homePage.createFirstJob') || 'Create your first job'}
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -667,6 +725,7 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
         isOpen={selectedRepair !== null}
         onClose={() => setSelectedRepair(null)}
         repair={selectedRepair}
+        onJobDeleted={() => invalidateManager()}
       />
 
       {/* Add Announcement Modal */}
@@ -778,7 +837,7 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                           <span className="pm-urgent-job-meta">
                             <span className="pm-urgent-job-category">{job.category || t('common.general')}</span>
                             {job.is_emergency && <span className="pm-urgent-job-emergency">{t('common.emergency')}</span>}
-                            <span className="pm-urgent-job-budget">${job.budget_min} - ${job.budget_max}</span>
+                            <span className="pm-urgent-job-budget">{(job.budget_min != null && job.budget_max != null) ? `$${job.budget_min} - $${job.budget_max}` : 'Budget to be defined'}</span>
                           </span>
                         </div>
                       </label>

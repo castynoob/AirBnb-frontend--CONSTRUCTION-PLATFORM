@@ -4,6 +4,7 @@ import "../../styles/entrepreneur/entrepreneurjobs.css"
 import "../../styles/manager/submissions.css"
 import Nav from "../../components/Nav"
 import { useLanguage } from "../../contexts/LanguageContext"
+import { useSocket } from "../../contexts/SocketContext"
 import {
   Search,
   X,
@@ -24,8 +25,10 @@ import {
   ChevronRight,
   User,
   AlertCircle,
+  BarChart3,
 } from "lucide-react"
 import toast from "react-hot-toast"
+import JobProgressTracker from "../../components/JobProgressTracker"
 import PropertyManagerProfileModal from "../../components/modal/PropertyManagerProfileModal"
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet"
 import L from "leaflet"
@@ -42,6 +45,7 @@ L.Icon.Default.mergeOptions({
 function EntrepreneurJobs() {
   const { t, language } = useLanguage()
   const navigate = useNavigate()
+  const { socket } = useSocket()
   const [jobs, setJobs] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [activeStatus, setActiveStatus] = useState("accepted")
@@ -56,6 +60,7 @@ function EntrepreneurJobs() {
   const [reviewed, setReviewed] = useState(null)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [detailsJob, setDetailsJob] = useState(null)
+  const [progressJob, setProgressJob] = useState(null)
   const [isMapFullscreen, setIsMapFullscreen] = useState(false)
 
   // Property Manager Profile Modal states
@@ -63,24 +68,36 @@ function EntrepreneurJobs() {
   const [selectedManagerProfile, setSelectedManagerProfile] = useState(null)
   const [isLoadingManagerProfile, setIsLoadingManagerProfile] = useState(false)
 
-  const [reviewForm, setReviewForm] = useState({
-    rating: 5,
-    comment: "",
-  })
+  const [reviewForm, setReviewForm] = useState({ comment: "" })
+  const [categoryRatings, setCategoryRatings] = useState({ quality: 0, timeliness: 0, communication: 0, value: 0 })
   const [reviewImages, setReviewImages] = useState([])
   const [reviewImagePreviews, setReviewImagePreviews] = useState([])
+  const [reviewImageTypes, setReviewImageTypes] = useState([])
   const [isSubmittingReview, setIsSubmittingReview] = useState(false)
 
   // Confirm completion + review invitation
-  const [showConfirmCompletionModal, setShowConfirmCompletionModal] = useState(false)
-  const [confirmCompletionJob, setConfirmCompletionJob] = useState(null)
-  const [isConfirmingCompletion, setIsConfirmingCompletion] = useState(false)
   const [showReviewInvitation, setShowReviewInvitation] = useState(false)
   const [reviewInvitationJob, setReviewInvitationJob] = useState(null)
 
   useEffect(() => {
     fetchJobs()
   }, [])
+
+  // Listen for review invitation from PM confirming completion
+  useEffect(() => {
+    if (!socket) return
+    const handleReviewInvitation = (data) => {
+      setReviewInvitationJob({
+        id: data.jobId,
+        title: data.jobTitle,
+        contract: { id: data.contractId }
+      })
+      setShowReviewInvitation(true)
+      fetchJobs() // refresh job list
+    }
+    socket.on('review_invitation', handleReviewInvitation)
+    return () => socket.off('review_invitation', handleReviewInvitation)
+  }, [socket])
 
   const fetchJobs = async () => {
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
@@ -234,7 +251,7 @@ function EntrepreneurJobs() {
       if (!res.ok) throw new Error("Failed to complete job")
 
       // Step 2: Try to mark contract work as complete (if contract exists)
-      // This will notify the manager to review and release funds
+      // This will notify the manager to review and approve the work
       try {
         // First get the contract for this job
         const contractRes = await fetch(`${API_BASE_URL}/api/contracts/job/${selectedJob.id}`, {
@@ -272,54 +289,9 @@ function EntrepreneurJobs() {
       await fetchJobs()
     } catch (error) {
       console.error("Error completing job:", error)
-      toast.error("Failed to complete job. Please try again.")
+      toast.error(t('toasts.failedCompleteJob'))
     } finally {
       setIsConfirming(false)
-    }
-  }
-
-  // Handle confirm job completion (mutual confirmation)
-  const handleConfirmCompletion = async (job) => {
-    setIsConfirmingCompletion(true)
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-    const user = JSON.parse(localStorage.getItem("userProfile"))
-
-    try {
-      if (!job.contract?.id) {
-        toast.error("No contract found for this job.")
-        return
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/contracts/${job.contract.id}/confirm-completion`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to confirm')
-      }
-
-      const result = await response.json()
-
-      if (result.both_confirmed) {
-        toast.success(t('entrepreneurJobs.bothConfirmed') || "Both parties confirmed! Time to leave a review.")
-        setReviewInvitationJob(job)
-        setShowReviewInvitation(true)
-      } else {
-        toast.success(t('entrepreneurJobs.youConfirmedWaiting') || "Your confirmation recorded. Waiting for the property manager.")
-      }
-
-      await fetchJobs()
-    } catch (error) {
-      toast.error(error.message || "Failed to confirm completion")
-    } finally {
-      setIsConfirmingCompletion(false)
-      setShowConfirmCompletionModal(false)
-      setConfirmCompletionJob(null)
     }
   }
 
@@ -327,80 +299,75 @@ function EntrepreneurJobs() {
     const files = Array.from(e.target.files)
 
     if (files.length + reviewImages.length > 5) {
-      toast.error("You can only upload up to 5 images")
+      toast.error(t('toasts.maxImages'))
       return
     }
 
     setReviewImages((prev) => [...prev, ...files])
+    setReviewImageTypes((prev) => [...prev, ...files.map(() => 'general')])
 
-    // Create preview URLs
     const previews = files.map((file) => URL.createObjectURL(file))
     setReviewImagePreviews((prev) => [...prev, ...previews])
   }
 
   const removeReviewImage = (index) => {
     setReviewImages((prev) => prev.filter((_, i) => i !== index))
+    setReviewImageTypes((prev) => prev.filter((_, i) => i !== index))
     setReviewImagePreviews((prev) => {
-      // Revoke the URL to free memory
       URL.revokeObjectURL(prev[index])
       return prev.filter((_, i) => i !== index)
     })
   }
 
+  const updateImageType = (index, type) => {
+    setReviewImageTypes(prev => prev.map((t, i) => i === index ? type : t))
+  }
+
   const handleSubmitReview = async () => {
-    // Validation
-    if (!reviewForm.rating || reviewForm.rating < 1 || reviewForm.rating > 5) {
-      toast.error("Please provide a rating between 1 and 5 stars")
+    const cats = categoryRatings
+    if (!cats.quality || !cats.timeliness || !cats.communication || !cats.value) {
+      toast.error(t('entrepreneurJobs.allCategoriesRequired') || "Please rate all categories")
       return
     }
 
     if (!reviewForm.comment || !reviewForm.comment.trim()) {
-      toast.error("Please write a comment for your review")
+      toast.error(t('toasts.commentRequired'))
       return
     }
 
     if (reviewForm.comment.trim().length < 10) {
-      toast.error("Please write a more detailed review (at least 10 characters)")
+      toast.error(t('toasts.commentTooShort'))
       return
     }
+
+    const overallRating = Math.round((cats.quality + cats.timeliness + cats.communication + cats.value) / 4)
 
     try {
       setIsSubmittingReview(true)
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
       const user = JSON.parse(localStorage.getItem("userProfile"))
 
-      // Debug logging
-      console.log('🔍 Entrepreneur Review Submission Debug:')
-      console.log('- Selected Job:', selectedJob)
-      console.log('- Manager Profile ID:', selectedJob.manager_id)
-      console.log('- Manager User ID:', selectedJob.manager_user_id)
-
-      // ✅ FIXED: Use manager_user_id (user ID) instead of manager_id (profile ID)
       const managerUserId = selectedJob.manager_user_id || selectedJob.manager_id
+      if (!managerUserId) throw new Error('Cannot find manager user ID')
 
-      if (!managerUserId) {
-        throw new Error('Cannot find manager user ID')
-      }
-
-      console.log('💡 Using manager user ID:', managerUserId)
-
-      // ✅ Use FormData to support image uploads
       const formData = new FormData()
       formData.append("reviewed_user_id", managerUserId)
       formData.append("job_id", selectedJob.id)
-      formData.append("rating", reviewForm.rating)
+      formData.append("rating", overallRating)
       formData.append("comment", reviewForm.comment.trim())
+      formData.append("rating_quality", cats.quality)
+      formData.append("rating_timeliness", cats.timeliness)
+      formData.append("rating_communication", cats.communication)
+      formData.append("rating_value", cats.value)
 
-      // Append images
       reviewImages.forEach((image) => {
         formData.append("images", image)
       })
+      formData.append("image_types", JSON.stringify(reviewImageTypes))
 
       const res = await fetch(`${API_BASE_URL}/api/reviews`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
+        headers: { Authorization: `Bearer ${user.token}` },
         body: formData,
       })
 
@@ -410,22 +377,20 @@ function EntrepreneurJobs() {
       }
 
       const responseData = await res.json()
-      toast.success(responseData.message || "Review added successfully!")
+      toast.success(responseData.message || t('entrepreneurJobs.reviewSuccess') || "Review submitted!")
 
-      // Reset form
       setOpenReviewModal(false)
-      setReviewForm({ rating: 5, comment: "" })
+      setReviewForm({ comment: "" })
+      setCategoryRatings({ quality: 0, timeliness: 0, communication: 0, value: 0 })
       setReviewImages([])
-
-      // Clean up preview URLs
+      setReviewImageTypes([])
       reviewImagePreviews.forEach((url) => URL.revokeObjectURL(url))
       setReviewImagePreviews([])
 
-      // Refresh jobs
       await fetchJobs()
     } catch (error) {
       console.error("Error submitting review:", error)
-      toast.error(error.message || "Failed to submit review. Please try again.")
+      toast.error(t('common.failedSubmitReview') || "Failed to submit review.")
     } finally {
       setIsSubmittingReview(false)
     }
@@ -528,7 +493,7 @@ function EntrepreneurJobs() {
       setShowManagerModal(true)
     } catch (error) {
       console.error("Error fetching manager profile:", error)
-      toast.error("Failed to load manager profile")
+      toast.error(t('toasts.failedLoadManagerProfile'))
     } finally {
       setIsLoadingManagerProfile(false)
     }
@@ -753,12 +718,17 @@ function EntrepreneurJobs() {
                       <StatusIcon size={14} />
                       <span>{statusInfo.label}</span>
                     </div>
-                    {job.is_emergency && (
+                    {(job.urgency === 'Urgent' || job.is_emergency) ? (
                       <span className="ej-urgent-badge">
                         <AlertCircle size={12} />
                         {t('entrepreneurJobs.urgent')}
                       </span>
-                    )}
+                    ) : job.urgency === 'Planned' ? (
+                      <span className="ej-planned-badge">
+                        <Clock size={12} />
+                        {t('entrepreneurJobs.planned') || 'Planned'}
+                      </span>
+                    ) : null}
                   </div>
 
                   {/* Card Body */}
@@ -802,18 +772,22 @@ function EntrepreneurJobs() {
                     <div className="ej-secondary-actions">
                       <button
                         className="ej-icon-action"
-                        onClick={(e) => { e.stopPropagation(); handleViewDetails(job); }}
-                        title={t('entrepreneurJobs.viewDetails')}
-                      >
-                        <FileText size={16} />
-                      </button>
-                      <button
-                        className="ej-icon-action"
                         onClick={(e) => { e.stopPropagation(); handleChatManager(job); }}
                         title={t('entrepreneurJobs.messageManager')}
                       >
-                        <MessageSquare size={16} />
+                        <MessageSquare size={15} />
+                        <span>{t('entrepreneurJobs.chat') || 'Chat'}</span>
                       </button>
+                      {(job.status === "ongoing" || job.status === "completed") && (
+                        <button
+                          className="ej-icon-action"
+                          onClick={(e) => { e.stopPropagation(); setProgressJob(job); }}
+                          title={t('progress.trackProgress') || 'Track Progress'}
+                        >
+                          <BarChart3 size={15} />
+                          <span>{t('progress.trackProgress') || 'Progress'}</span>
+                        </button>
+                      )}
                     </div>
 
                     <div className="ej-primary-action">
@@ -841,37 +815,23 @@ function EntrepreneurJobs() {
 
                       {job.status === "completed" && (
                         <>
-                          {/* Confirm completion button (if not yet confirmed) */}
-                          {job.contract && !job.contract.contractor_completion_confirmed && (
-                            <button
-                              className="ej-btn ej-btn-complete"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setConfirmCompletionJob(job)
-                                setShowConfirmCompletionModal(true)
-                              }}
-                            >
-                              <CheckCircle size={16} />
-                              {t('entrepreneurJobs.confirmCompletion') || 'Confirm Completion'}
-                            </button>
-                          )}
-
                           {/* Awaiting manager confirmation */}
-                          {job.contract?.contractor_completion_confirmed && !job.contract?.mutual_confirmation_completed_at && (
+                          {job.contract && !job.contract?.mutual_confirmation_completed_at && (
                             <span className="ej-confirmation-status">
+                              <Clock size={14} />
                               {t('entrepreneurJobs.awaitingManagerConfirmation') || 'Awaiting manager confirmation'}
                             </span>
                           )}
 
-                          {/* Review button (after mutual confirmation or if no contract) */}
-                          {(!job.contract || job.contract?.mutual_confirmation_completed_at) && (
+                          {/* Review button (only after PM confirms completion) */}
+                          {job.contract?.mutual_confirmation_completed_at && (
                             <button
                               className="ej-btn ej-btn-review"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 setSelectedJob(job)
                                 if (job.review.length === 0) {
-                                  setReviewForm({ rating: 5, comment: "" })
+                                  setReviewForm({ comment: "" }); setCategoryRatings({ quality: 0, timeliness: 0, communication: 0, value: 0 })
                                   setOpenReviewModal(true)
                                 } else {
                                   getJobInformation(job)
@@ -902,127 +862,129 @@ function EntrepreneurJobs() {
           setReviewImages([])
         }}>
           <div className="rm-modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="rm-modal-header">
-              <div className="rm-header-content">
-                <h2 className="rm-modal-title">{t('entrepreneurJobs.leaveAReview')}</h2>
-                <p className="rm-modal-subtitle">{selectedJob?.title}</p>
-              </div>
-              <button
-                className="rm-close-btn"
-                onClick={() => {
-                  setOpenReviewModal(false)
-                  reviewImagePreviews.forEach((url) => URL.revokeObjectURL(url))
-                  setReviewImagePreviews([])
-                  setReviewImages([])
-                }}
-              >
-                <X size={20} />
-              </button>
-            </div>
+            {(() => {
+              const closeModal = () => {
+                setOpenReviewModal(false)
+                reviewImagePreviews.forEach((url) => URL.revokeObjectURL(url))
+                setReviewImagePreviews([])
+                setReviewImages([])
+                setReviewImageTypes([])
+                setCategoryRatings({ quality: 0, timeliness: 0, communication: 0, value: 0 })
+                setReviewForm({ comment: "" })
+              }
+              const cats = categoryRatings
+              const avgRating = (cats.quality && cats.timeliness && cats.communication && cats.value)
+                ? ((cats.quality + cats.timeliness + cats.communication + cats.value) / 4).toFixed(1) : '—'
+              const allRated = cats.quality && cats.timeliness && cats.communication && cats.value
 
-            <div className="rm-modal-body">
-              {/* Rating Section */}
-              <div className="rm-rating-section">
-                <label className="rm-section-label">{t('entrepreneurJobs.howWouldYouRate')}</label>
-                <div className="rm-stars-container">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      className={`rm-star-btn ${reviewForm.rating >= star ? 'rm-active' : ''}`}
-                      onClick={() => setReviewForm({ ...reviewForm, rating: star })}
-                    >
-                      ★
-                    </button>
-                  ))}
-                  <span className="rm-rating-text">{reviewForm.rating}/5</span>
-                </div>
-              </div>
-
-              {/* Comment Section */}
-              <div className="rm-comment-section">
-                <label className="rm-section-label">{t('entrepreneurJobs.shareExperience')}</label>
-                <textarea
-                  className="rm-textarea"
-                  placeholder={t('entrepreneurJobs.reviewPlaceholder')}
-                  value={reviewForm.comment}
-                  onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                  rows={5}
-                />
-                <div className="rm-char-count">
-                  {reviewForm.comment.length} {t('entrepreneurJobs.characters')} {reviewForm.comment.trim().length < 10 && t('entrepreneurJobs.minimumTen')}
-                </div>
-              </div>
-
-              {/* Image Upload Section */}
-              <div className="rm-image-section">
-                <label className="rm-section-label">{t('entrepreneurJobs.addPhotos')}</label>
-                <p className="rm-section-hint">{t('entrepreneurJobs.uploadPhotosHint')}</p>
-
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageSelect}
-                  className="rm-file-input"
-                  id="rm-review-images"
-                />
-                <label htmlFor="rm-review-images" className="rm-upload-btn">
-                  <FileText size={18} />
-                  <span>{t('entrepreneurJobs.chooseImages')}</span>
-                </label>
-
-                {reviewImagePreviews.length > 0 && (
-                  <div className="rm-image-grid">
-                    {reviewImagePreviews.map((preview, index) => (
-                      <div key={index} className="rm-image-item">
-                        <img src={preview} alt={`Preview ${index + 1}`} className="rm-image-preview" />
-                        <button
-                          type="button"
-                          className="rm-remove-btn"
-                          onClick={() => removeReviewImage(index)}
-                          title={t('entrepreneurJobs.removeImage')}
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
+              const CategoryStars = ({ label, value, onChange }) => (
+                <div className="rm-cat-row">
+                  <span className="rm-cat-label">{label}</span>
+                  <div className="rm-cat-stars">
+                    {[1, 2, 3, 4, 5].map(n => (
+                      <button key={n} type="button" className={`rm-cat-star ${value >= n ? 'rm-active' : ''}`} onClick={() => onChange(n)}>★</button>
                     ))}
                   </div>
-                )}
-              </div>
-            </div>
+                </div>
+              )
 
-            <div className="rm-modal-footer">
-              <button
-                className="rm-btn rm-btn-cancel"
-                onClick={() => {
-                  setOpenReviewModal(false)
-                  reviewImagePreviews.forEach((url) => URL.revokeObjectURL(url))
-                  setReviewImagePreviews([])
-                  setReviewImages([])
-                }}
-                disabled={isSubmittingReview}
-              >
-                {t('entrepreneurJobs.cancel')}
-              </button>
-              <button
-                className="rm-btn rm-btn-submit"
-                onClick={handleSubmitReview}
-                disabled={isSubmittingReview || !reviewForm.rating || !reviewForm.comment.trim() || reviewForm.comment.trim().length < 10}
-              >
-                {isSubmittingReview ? (
-                  <>
-                    <div className="rm-spinner"></div>
-                    <span>{t('entrepreneurJobs.submitting')}</span>
-                  </>
-                ) : (
-                  <>
-                    <Star size={16} />
-                    <span>{t('entrepreneurJobs.submitReview')}</span>
-                  </>
-                )}
-              </button>
-            </div>
+              return (
+                <>
+                  <div className="rm-modal-header">
+                    <div className="rm-header-content">
+                      <h2 className="rm-modal-title">{t('entrepreneurJobs.leaveAReview') || 'Leave a Review'}</h2>
+                      <p className="rm-modal-subtitle">{selectedJob?.title}</p>
+                    </div>
+                    <button className="rm-close-btn" onClick={closeModal}><X size={20} /></button>
+                  </div>
+
+                  <div className="rm-modal-body">
+                    {/* Category Ratings */}
+                    <div className="rm-rating-section">
+                      <label className="rm-section-label">{t('entrepreneurJobs.rateCategories') || 'Rate by Category'}</label>
+                      <CategoryStars label={t('entrepreneurJobs.categoryQuality') || 'Quality of Work'} value={cats.quality} onChange={v => setCategoryRatings(p => ({ ...p, quality: v }))} />
+                      <CategoryStars label={t('entrepreneurJobs.categoryTimeliness') || 'Timeliness'} value={cats.timeliness} onChange={v => setCategoryRatings(p => ({ ...p, timeliness: v }))} />
+                      <CategoryStars label={t('entrepreneurJobs.categoryCommunication') || 'Communication'} value={cats.communication} onChange={v => setCategoryRatings(p => ({ ...p, communication: v }))} />
+                      <CategoryStars label={t('entrepreneurJobs.categoryValue') || 'Value for Money'} value={cats.value} onChange={v => setCategoryRatings(p => ({ ...p, value: v }))} />
+
+                      {allRated && (
+                        <div className="rm-overall-rating">
+                          <Star size={18} fill="#f59e0b" stroke="#f59e0b" />
+                          <span className="rm-overall-value">{avgRating}</span>
+                          <span className="rm-overall-label">{t('entrepreneurJobs.overallRating') || 'Overall Rating'}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Comment */}
+                    <div className="rm-comment-section">
+                      <label className="rm-section-label">{t('entrepreneurJobs.shareExperience') || 'Share your experience'}</label>
+                      <textarea
+                        className="rm-textarea"
+                        placeholder={t('entrepreneurJobs.reviewPlaceholder') || 'Tell us about your experience...'}
+                        value={reviewForm.comment}
+                        onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                        rows={4}
+                      />
+                      <div className="rm-char-count">
+                        {reviewForm.comment.length} {t('entrepreneurJobs.characters') || 'characters'} {reviewForm.comment.trim().length < 10 && (t('entrepreneurJobs.minimumTen') || '(min 10)')}
+                      </div>
+                    </div>
+
+                    {/* Before/After Photos */}
+                    <div className="rm-image-section">
+                      <label className="rm-section-label">{t('entrepreneurJobs.addPhotos') || 'Add Photos'}</label>
+                      <p className="rm-section-hint">{t('entrepreneurJobs.beforeAfterHint') || 'Upload before and after photos to showcase the work (max 5)'}</p>
+
+                      <input type="file" accept="image/*" multiple onChange={handleImageSelect} className="rm-file-input" id="rm-review-images-ej" />
+                      <label htmlFor="rm-review-images-ej" className="rm-upload-btn">
+                        <FileText size={18} />
+                        <span>{t('entrepreneurJobs.chooseImages') || 'Choose Images'}</span>
+                      </label>
+
+                      {reviewImagePreviews.length > 0 && (
+                        <div className="rm-image-grid">
+                          {reviewImagePreviews.map((preview, index) => (
+                            <div key={index} className="rm-image-item">
+                              <img src={preview} alt={`Preview ${index + 1}`} className="rm-image-preview" />
+                              <select
+                                className="rm-image-type-select"
+                                value={reviewImageTypes[index] || 'general'}
+                                onChange={(e) => updateImageType(index, e.target.value)}
+                              >
+                                <option value="before">{t('entrepreneurJobs.photoBefore') || 'Before'}</option>
+                                <option value="after">{t('entrepreneurJobs.photoAfter') || 'After'}</option>
+                                <option value="general">{t('entrepreneurJobs.photoGeneral') || 'General'}</option>
+                              </select>
+                              <button type="button" className="rm-remove-btn" onClick={() => removeReviewImage(index)}>
+                                <X size={16} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rm-modal-footer">
+                    <button className="rm-btn rm-btn-cancel" onClick={closeModal} disabled={isSubmittingReview}>
+                      {t('entrepreneurJobs.cancel') || 'Cancel'}
+                    </button>
+                    <button
+                      className="rm-btn rm-btn-submit"
+                      onClick={handleSubmitReview}
+                      disabled={isSubmittingReview || !allRated || !reviewForm.comment.trim() || reviewForm.comment.trim().length < 10}
+                    >
+                      {isSubmittingReview ? (
+                        <><div className="rm-spinner"></div><span>{t('entrepreneurJobs.submitting') || 'Submitting...'}</span></>
+                      ) : (
+                        <><Star size={16} /><span>{t('entrepreneurJobs.submitReview') || 'Submit Review'}</span></>
+                      )}
+                    </button>
+                  </div>
+                </>
+              )
+            })()}
           </div>
         </div>
       )}
@@ -1498,37 +1460,23 @@ function EntrepreneurJobs() {
 
                 {detailsJob.status === "completed" && (
                   <>
-                    {/* Confirm completion button (if not yet confirmed) */}
-                    {detailsJob.contract && !detailsJob.contract.contractor_completion_confirmed && (
-                      <button
-                        className="ej-modal-action-btn ej-modal-complete"
-                        onClick={() => {
-                          setShowDetailsModal(false)
-                          setConfirmCompletionJob(detailsJob)
-                          setShowConfirmCompletionModal(true)
-                        }}
-                      >
-                        <CheckCircle size={16} />
-                        {t('entrepreneurJobs.confirmCompletion') || 'Confirm Completion'}
-                      </button>
-                    )}
-
                     {/* Awaiting manager confirmation */}
-                    {detailsJob.contract?.contractor_completion_confirmed && !detailsJob.contract?.mutual_confirmation_completed_at && (
+                    {detailsJob.contract && !detailsJob.contract?.mutual_confirmation_completed_at && (
                       <span className="ej-confirmation-status">
+                        <Clock size={14} />
                         {t('entrepreneurJobs.awaitingManagerConfirmation') || 'Awaiting manager confirmation'}
                       </span>
                     )}
 
-                    {/* Review button (only after mutual confirmation or if no contract) */}
-                    {(!detailsJob.contract || detailsJob.contract?.mutual_confirmation_completed_at) && (
+                    {/* Review button (only after PM confirms completion) */}
+                    {detailsJob.contract?.mutual_confirmation_completed_at && (
                       <button
                         className="ej-modal-action-btn ej-modal-review"
                         onClick={() => {
                           setShowDetailsModal(false)
                           setSelectedJob(detailsJob)
                           if (detailsJob.review && detailsJob.review.length === 0) {
-                            setReviewForm({ rating: 5, comment: "" })
+                            setReviewForm({ comment: "" }); setCategoryRatings({ quality: 0, timeliness: 0, communication: 0, value: 0 })
                             setOpenReviewModal(true)
                           } else {
                             getJobInformation(detailsJob)
@@ -1638,95 +1586,59 @@ function EntrepreneurJobs() {
         </div>
       )}
 
-      {/* Confirm Job Completion Modal */}
-      {showConfirmCompletionModal && confirmCompletionJob && (
-        <div className="rm-modal-overlay" onClick={() => { setShowConfirmCompletionModal(false); setConfirmCompletionJob(null); }}>
-          <div className="rm-modal-container" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
-            <div className="rm-modal-header">
-              <div className="rm-header-content">
-                <h2 className="rm-modal-title">{t('entrepreneurJobs.confirmCompletionTitle') || 'Confirm Job Completion'}</h2>
-                <p className="rm-modal-subtitle">{confirmCompletionJob.title}</p>
-              </div>
-              <button className="rm-close-btn" onClick={() => { setShowConfirmCompletionModal(false); setConfirmCompletionJob(null); }}>
-                <X size={20} />
-              </button>
-            </div>
-            <div className="rm-modal-body" style={{ textAlign: 'center', padding: '1.5rem' }}>
-              <CheckCircle size={48} style={{ color: '#059669', marginBottom: '1rem' }} />
-              <p style={{ color: '#374151', fontSize: '0.875rem', lineHeight: 1.6 }}>
-                {t('entrepreneurJobs.confirmCompletionMessage') || 'By confirming, you acknowledge that this job has been completed satisfactorily. Both you and the property manager must confirm before reviews can be exchanged.'}
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: '0.75rem', padding: '1rem 1.5rem', borderTop: '1px solid #e5e7eb' }}>
-              <button
-                className="ej-btn"
-                style={{ flex: 1, background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db' }}
-                onClick={() => { setShowConfirmCompletionModal(false); setConfirmCompletionJob(null); }}
-                disabled={isConfirmingCompletion}
-              >
-                {t('common.cancel') || 'Cancel'}
-              </button>
-              <button
-                className="ej-btn ej-btn-complete"
-                style={{ flex: 1 }}
-                onClick={() => handleConfirmCompletion(confirmCompletionJob)}
-                disabled={isConfirmingCompletion}
-              >
-                {isConfirmingCompletion ? (
-                  <>{t('entrepreneurJobs.confirming') || 'Confirming...'}</>
-                ) : (
-                  <>
-                    <CheckCircle size={16} />
-                    {t('entrepreneurJobs.confirmCompletionBtn') || 'Yes, Confirm'}
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Review Invitation Modal */}
       {showReviewInvitation && reviewInvitationJob && (
-        <div className="rm-modal-overlay" onClick={() => setShowReviewInvitation(false)}>
-          <div className="rm-modal-container" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px' }}>
-            <div className="rm-modal-header">
-              <div className="rm-header-content">
-                <h2 className="rm-modal-title">{t('entrepreneurJobs.reviewInvitationTitle') || 'Leave a Review'}</h2>
-                <p className="rm-modal-subtitle">{reviewInvitationJob.title}</p>
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10001, padding: '1rem' }}
+          onClick={() => setShowReviewInvitation(false)}
+        >
+          <div
+            style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 420, boxShadow: '0 20px 60px rgba(0,0,0,0.15)', overflow: 'hidden' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '1.25rem 1.5rem', borderBottom: '1px solid #e5e7eb' }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.0625rem', fontWeight: 700, color: '#111827' }}>{t('entrepreneurJobs.reviewInvitationTitle') || 'Leave a Review'}</h2>
+                <p style={{ margin: '0.25rem 0 0', fontSize: '0.8125rem', color: '#6b7280' }}>{reviewInvitationJob.title}</p>
               </div>
-              <button className="rm-close-btn" onClick={() => setShowReviewInvitation(false)}>
+              <button
+                style={{ background: 'none', border: 'none', padding: '0.25rem', cursor: 'pointer', color: '#9ca3af', borderRadius: 6 }}
+                onClick={() => setShowReviewInvitation(false)}
+              >
                 <X size={20} />
               </button>
             </div>
-            <div className="rm-modal-body" style={{ textAlign: 'center', padding: '1.5rem' }}>
-              <Star size={48} fill="#f59e0b" stroke="#f59e0b" style={{ marginBottom: '1rem' }} />
-              <p style={{ color: '#374151', fontSize: '0.875rem', lineHeight: 1.6 }}>
+            {/* Body */}
+            <div style={{ padding: '2rem 1.5rem', textAlign: 'center' }}>
+              <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#fffbeb', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1rem' }}>
+                <Star size={28} fill="#f59e0b" stroke="#f59e0b" />
+              </div>
+              <p style={{ color: '#374151', fontSize: '0.875rem', lineHeight: 1.7, margin: 0 }}>
                 {t('entrepreneurJobs.reviewInvitationMessage') || 'Both parties have confirmed the job is complete! Take a moment to rate your experience.'}
               </p>
             </div>
-            <div style={{ display: 'flex', gap: '0.75rem', padding: '1rem 1.5rem', borderTop: '1px solid #e5e7eb' }}>
+            {/* Footer */}
+            <div style={{ display: 'flex', gap: '0.75rem', padding: '1rem 1.5rem', borderTop: '1px solid #f3f4f6', background: '#f9fafb' }}>
               <button
-                className="ej-btn"
-                style={{ flex: 1, background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db' }}
+                style={{ flex: 1, padding: '0.625rem', background: '#fff', color: '#374151', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer' }}
                 onClick={() => setShowReviewInvitation(false)}
               >
                 {t('entrepreneurJobs.skipReview') || 'Maybe Later'}
               </button>
               <button
-                className="ej-btn ej-btn-review"
-                style={{ flex: 1 }}
+                style={{ flex: 1, padding: '0.625rem', background: '#0F223D', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.375rem' }}
                 onClick={() => {
                   setShowReviewInvitation(false)
                   setSelectedJob(reviewInvitationJob)
-                  setReviewForm({ rating: 5, comment: "" })
+                  setReviewForm({ comment: "" }); setCategoryRatings({ quality: 0, timeliness: 0, communication: 0, value: 0 })
                   setReviewImages([])
                   setReviewImagePreviews([])
                   setOpenReviewModal(true)
                 }}
               >
-                <Star size={16} />
-                {t('entrepreneurJobs.leaveReviewNow') || 'Leave Review Now'}
+                <Star size={15} />
+                <span>{t('entrepreneurJobs.leaveReviewNow') || 'Leave Review Now'}</span>
               </button>
             </div>
           </div>
@@ -1739,6 +1651,16 @@ function EntrepreneurJobs() {
         onClose={() => setShowManagerModal(false)}
         profile={selectedManagerProfile}
       />
+
+      {progressJob && (
+        <JobProgressTracker
+          jobId={progressJob.id}
+          contractId={progressJob.contract?.id}
+          userRole="entrepreneur"
+          isModal={true}
+          onClose={() => setProgressJob(null)}
+        />
+      )}
     </div>
   )
 }

@@ -18,14 +18,18 @@ import {
   DollarSign,
   MapPin,
   Briefcase,
-  Phone,
   Users,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 import { useSocket } from "../../contexts/SocketContext";
 import { useLanguage } from "../../contexts/LanguageContext";
 import {
   getMessages,
   markConversationAsRead,
+  archiveConversation,
+  unarchiveConversation,
+  getArchivedConversations,
 } from "../../utils/api";
 import toast from "react-hot-toast";
 import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal";
@@ -63,6 +67,9 @@ function MessagesNew() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const [archivedConversations, setArchivedConversations] = useState([]);
+  const [isLoadingArchived, setIsLoadingArchived] = useState(false);
 
   const currentUserId = localStorage.getItem("userId");
   const messagesEndRef = useRef(null);
@@ -82,7 +89,7 @@ function MessagesNew() {
 
   // Sync query cache → local state
   useEffect(() => {
-    if (cachedConversations.length > 0) setConversations(cachedConversations);
+    setConversations(cachedConversations);
   }, [cachedConversations]);
 
   useEffect(() => {
@@ -723,7 +730,11 @@ function MessagesNew() {
 
   // Format time
   const formatTime = (timestamp) => {
-    const date = new Date(timestamp);
+    if (!timestamp) return '';
+    // Ensure UTC interpretation — DB stores timestamp without timezone (UTC)
+    const raw = String(timestamp);
+    const utcTimestamp = raw.endsWith('Z') || raw.includes('+') ? raw : raw + 'Z';
+    const date = new Date(utcTimestamp);
     const now = new Date();
     const diff = now - date;
 
@@ -756,6 +767,60 @@ function MessagesNew() {
       : parts[0][0].toUpperCase();
   };
 
+  // Archive a conversation
+  const handleArchiveConversation = async (convId, e) => {
+    if (e) e.stopPropagation();
+    try {
+      // Optimistic: remove from list immediately
+      setConversations(prev => prev.filter(c => c.id !== convId));
+      if (selectedChat?.id === convId) setSelectedChat(null);
+
+      const res = await archiveConversation(convId);
+      if (res.success) {
+        toast.success(t('messages.conversationArchived'));
+        invalidateConversations();
+      }
+    } catch {
+      toast.error(t('messages.archiveFailed'));
+      invalidateConversations(); // Revert on failure
+    }
+  };
+
+  // Load archived conversations
+  const handleShowArchived = async () => {
+    if (showArchived) {
+      setShowArchived(false);
+      return;
+    }
+    setIsLoadingArchived(true);
+    try {
+      const res = await getArchivedConversations();
+      if (res.success) {
+        setArchivedConversations(res.conversations || []);
+      }
+    } catch {
+      toast.error(t('messages.loadArchivedFailed'));
+    } finally {
+      setIsLoadingArchived(false);
+      setShowArchived(true);
+    }
+  };
+
+  // Restore an archived conversation
+  const handleRestoreConversation = async (convId, e) => {
+    if (e) e.stopPropagation();
+    try {
+      const res = await unarchiveConversation(convId);
+      if (res.success) {
+        toast.success(t('messages.conversationRestored'));
+        setArchivedConversations(prev => prev.filter(c => c.id !== convId));
+        invalidateConversations();
+      }
+    } catch {
+      toast.error(t('messages.restoreFailed'));
+    }
+  };
+
   // Fetch entrepreneur profile and show modal
   const handleViewEntrepreneurProfile = async (userId) => {
     if (!userId || isLoadingProfile) return;
@@ -784,7 +849,7 @@ function MessagesNew() {
       setShowProfileModal(true);
     } catch (error) {
       console.error("Error fetching entrepreneur profile:", error);
-      toast.error("Failed to load profile");
+      toast.error(t('toasts.failedLoadProfile'));
     } finally {
       setIsLoadingProfile(false);
     }
@@ -882,13 +947,27 @@ function MessagesNew() {
                           {formatTime(conv.last_message_at)}
                         </span>
                       </div>
+                      {conv.job_title && (
+                        <span className="conversation-job-tag">
+                          {conv.job_title}
+                        </span>
+                      )}
                       <p className="conversation-preview">
                         {conv.last_message || t('messages.noMessagesYet')}
                       </p>
                     </div>
-                    {conv.unread_count > 0 && (
-                      <span className="conversation-unread">{conv.unread_count}</span>
-                    )}
+                    <div className="conversation-actions">
+                      {conv.unread_count > 0 && (
+                        <span className="conversation-unread">{conv.unread_count}</span>
+                      )}
+                      <button
+                        className="conversation-archive-btn"
+                        onClick={(e) => handleArchiveConversation(conv.id, e)}
+                        title={t('messages.archiveConversation')}
+                      >
+                        <Archive size={14} />
+                      </button>
+                    </div>
                   </div>
                 ))
               )
@@ -929,10 +1008,63 @@ function MessagesNew() {
               )
             )}
           </div>
+
+          {/* Archived Conversations Toggle */}
+          {activeTab === "dm" && (
+            <div className="archived-section">
+              <button className="archived-toggle-btn" onClick={handleShowArchived}>
+                <Archive size={14} />
+                <span>{t('messages.archivedChats')}</span>
+                {showArchived ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+
+              {showArchived && (
+                <div className="archived-list">
+                  {isLoadingArchived ? (
+                    <div className="archived-loading">
+                      <Loader2 size={16} className="spinning" />
+                      <span>{t('messages.loading')}</span>
+                    </div>
+                  ) : archivedConversations.length === 0 ? (
+                    <div className="archived-empty">
+                      {t('messages.noArchivedChats')}
+                    </div>
+                  ) : (
+                    archivedConversations.map((conv) => (
+                      <div key={conv.id} className="conversation-item archived">
+                        <div className="conversation-avatar">
+                          {getInitials(conv.other_user_name)}
+                        </div>
+                        <div className="conversation-info">
+                          <span className="conversation-name">{conv.other_user_name}</span>
+                          {conv.job_title && (
+                            <span className="conversation-job-tag">{conv.job_title}</span>
+                          )}
+                          <p className="conversation-preview">
+                            {conv.last_message || t('messages.noMessagesYet')}
+                          </p>
+                        </div>
+                        <button
+                          className="conversation-restore-btn"
+                          onClick={(e) => handleRestoreConversation(conv.id, e)}
+                          title={t('messages.restoreConversation')}
+                        >
+                          <ArchiveRestore size={14} />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* CHAT WINDOW */}
-        <div className={`messages-chat ${showMobileChat ? 'show-mobile' : ''}`}>
+        <div
+          className={`messages-chat ${showMobileChat ? 'show-mobile' : ''}`}
+          onClick={(e) => e.stopPropagation()}
+        >
           {!selectedChat && !selectedGroupChat ? (
             <div className="messages-chat-empty">
               <div className="messages-chat-empty-icon">
@@ -1053,134 +1185,118 @@ function MessagesNew() {
                     {selectedChat.other_user_name}
                   </h3>
                   <p className="chat-header-role">
-                    {selectedChat.company_name || formatUserRole(selectedChat.other_user_role)}
+                    {selectedChat.other_user_personal_name && selectedChat.company_name
+                      ? selectedChat.other_user_personal_name
+                      : formatUserRole(selectedChat.other_user_role)}
+                    {selectedChat.job_title && (
+                      <span className="chat-header-job"> — {selectedChat.job_title}</span>
+                    )}
                   </p>
                 </div>
-                <button className="chat-header-call-btn" title={t('messages.call')}>
-                  <Phone size={20} />
-                </button>
+
+                {/* Job Info Toggle Button */}
+                {selectedChat.job_id && (
+                  <button
+                    className="job-info-header-btn"
+                    onClick={() => setShowJobInfo(!showJobInfo)}
+                    title={t('messages.jobDetails')}
+                  >
+                    <Briefcase size={16} />
+                  </button>
+                )}
               </div>
 
-              {/* Job/Bid Information Dropdown */}
-              {selectedChat.job_id ? (
-                <div className="job-info-container">
-                  <button
-                    className="job-info-toggle"
-                    onClick={() => setShowJobInfo(!showJobInfo)}
-                  >
-                    <div className="job-info-preview">
-                      <Briefcase size={16} />
-                      <span className="job-info-title">
-                        {isLoadingJobInfo ? t('messages.loading') : (selectedChat.job_title || t('messages.jobDetails'))}
-                      </span>
-                      {selectedChat.bid_status && (
-                        <span className={`job-info-badge ${selectedChat.bid_status}`}>
-                          {selectedChat.bid_status}
-                        </span>
-                      )}
+              {/* Job/Bid Information Side Drawer */}
+              {showJobInfo && selectedChat.job_id && (
+                <>
+                  <div className="job-drawer-backdrop" onClick={() => setShowJobInfo(false)} />
+                  <div className="job-drawer">
+                    <div className="job-drawer-header">
+                      <h3>{t('messages.jobDetails')}</h3>
+                      <button className="job-drawer-close" onClick={() => setShowJobInfo(false)}>
+                        <X size={18} />
+                      </button>
                     </div>
-                    {showJobInfo ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                  </button>
 
-                  {showJobInfo && (
-                    <div className="job-info-details">
+                    <div className="job-drawer-body">
                       {isLoadingJobInfo ? (
                         <div className="job-info-loading">
                           <Loader2 size={20} className="spinning" />
                           <span>{t('messages.loadingJobDetails')}</span>
                         </div>
                       ) : (
-                      <>
-                      {/* Job Information */}
-                      <div className="job-info-section">
-                        <h4 className="job-info-section-title">{t('messages.jobDetails')}</h4>
-                        <div className="job-info-grid">
-                          {selectedChat.job_category && (
-                            <div className="job-info-item">
-                              <Briefcase size={14} />
-                              <span className="job-info-label">{t('messages.category')}</span>
-                              <span className="job-info-value">{selectedChat.job_category}</span>
-                            </div>
-                          )}
-                          {selectedChat.job_budget_min && selectedChat.job_budget_max && (
-                            <div className="job-info-item">
-                              <DollarSign size={14} />
-                              <span className="job-info-label">{t('messages.budget')}</span>
-                              <span className="job-info-value">
-                                ${selectedChat.job_budget_min} - ${selectedChat.job_budget_max}
+                        <>
+                          {/* Job title & status */}
+                          <div className="job-drawer-title-row">
+                            <h4 className="job-drawer-title">{selectedChat.job_title}</h4>
+                            {selectedChat.bid_status && (
+                              <span className={`job-info-badge ${selectedChat.bid_status}`}>
+                                {selectedChat.bid_status}
                               </span>
-                            </div>
-                          )}
-                          {selectedChat.job_due_date && (
-                            <div className="job-info-item">
-                              <Calendar size={14} />
-                              <span className="job-info-label">{t('messages.dueDate')}</span>
-                              <span className="job-info-value">
-                                {new Date(selectedChat.job_due_date).toLocaleDateString()}
-                              </span>
-                            </div>
-                          )}
-                          {(selectedChat.job_property_address || selectedChat.job_city) && (
-                            <div className="job-info-item">
-                              <MapPin size={14} />
-                              <span className="job-info-label">{t('messages.location')}</span>
-                              <span className="job-info-value">
-                                {selectedChat.job_property_address}
-                                {selectedChat.job_city && `, ${selectedChat.job_city}`}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        {selectedChat.job_description && (
-                          <div className="job-info-description">
-                            <p className="job-info-label">{t('messages.description')}</p>
-                            <p className="job-info-value">{selectedChat.job_description}</p>
+                            )}
                           </div>
-                        )}
-                      </div>
 
-                      {/* Bid Information */}
-                      {selectedChat.bid_id && (
-                        <div className="job-info-section">
-                          <h4 className="job-info-section-title">{t('messages.approvedBid')}</h4>
-                          <div className="job-info-grid">
-                            <div className="job-info-item">
-                              <DollarSign size={14} />
-                              <span className="job-info-label">{t('messages.bidAmount')}</span>
-                              <span className="job-info-value bid-amount">
-                                ${selectedChat.bid_amount}
-                              </span>
-                            </div>
-                            <div className="job-info-item">
-                              <Calendar size={14} />
-                              <span className="job-info-label">{t('messages.submitted')}</span>
-                              <span className="job-info-value">
-                                {new Date(selectedChat.bid_created_at).toLocaleDateString()}
-                              </span>
+                          {/* Job details */}
+                          <div className="job-drawer-section">
+                            <div className="job-drawer-items">
+                              {selectedChat.job_category && (
+                                <div className="job-drawer-item">
+                                  <Briefcase size={14} />
+                                  <span>{selectedChat.job_category}</span>
+                                </div>
+                              )}
+                              {selectedChat.job_budget_min && selectedChat.job_budget_max && (
+                                <div className="job-drawer-item">
+                                  <DollarSign size={14} />
+                                  <span>${selectedChat.job_budget_min} – ${selectedChat.job_budget_max}</span>
+                                </div>
+                              )}
+                              {selectedChat.job_due_date && (
+                                <div className="job-drawer-item">
+                                  <Calendar size={14} />
+                                  <span>{new Date(selectedChat.job_due_date).toLocaleDateString()}</span>
+                                </div>
+                              )}
+                              {(selectedChat.job_property_address || selectedChat.job_city) && (
+                                <div className="job-drawer-item">
+                                  <MapPin size={14} />
+                                  <span>
+                                    {selectedChat.job_property_address}
+                                    {selectedChat.job_city && `, ${selectedChat.job_city}`}
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
-                          {selectedChat.bid_message && (
-                            <div className="job-info-description">
-                              <p className="job-info-label">{t('messages.proposal')}</p>
-                              <p className="job-info-value">{selectedChat.bid_message}</p>
+
+                          {/* Description */}
+                          {selectedChat.job_description && (
+                            <div className="job-drawer-section">
+                              <p className="job-drawer-section-label">{t('messages.description')}</p>
+                              <p className="job-drawer-desc">{selectedChat.job_description}</p>
                             </div>
                           )}
-                        </div>
+
+                          {/* Bid info */}
+                          {selectedChat.bid_id && (
+                            <div className="job-drawer-bid">
+                              <p className="job-drawer-section-label">{t('messages.approvedBid')}</p>
+                              <div className="job-drawer-bid-row">
+                                <span className="job-drawer-bid-amount">${selectedChat.bid_amount}</span>
+                                <span className="job-drawer-bid-date">
+                                  {new Date(selectedChat.bid_created_at).toLocaleDateString()}
+                                </span>
+                              </div>
+                              {selectedChat.bid_message && (
+                                <p className="job-drawer-bid-msg">{selectedChat.bid_message}</p>
+                              )}
+                            </div>
+                          )}
+                        </>
                       )}
-                      </>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                selectedChat.other_user_role === 'entrepreneur' && (
-                  <div className="job-info-container job-info-none">
-                    <div className="job-info-message">
-                      <Briefcase size={16} />
-                      <span>{t('messages.generalConversation')}</span>
                     </div>
                   </div>
-                )
+                </>
               )}
 
               {/* Messages */}
@@ -1190,32 +1306,34 @@ function MessagesNew() {
                     key={msg.id}
                     className={`message-group ${msg.sender_id === currentUserId ? "sent" : "received"}`}
                   >
-                    <div className="message-bubble">
-                      {msg.content && <p className="message-text">{msg.content}</p>}
-                      {msg.image_url && (
-                        <img
-                          src={msg.image_url}
-                          alt="attachment"
-                          className="message-image"
-                          onClick={() => window.open(msg.image_url, "_blank")}
-                        />
-                      )}
-                      {msg.attachments && msg.attachments.length > 0 && (
-                        <div className="message-attachments">
-                          {msg.attachments.map((file, idx) => (
-                            <div
-                              key={idx}
-                              className="message-attachment"
-                              onClick={() => window.open(file.url, "_blank")}
-                            >
-                              <File size={16} />
-                              <span>{file.fileName}</span>
-                              <Download size={14} />
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                    {msg.content && (
+                      <div className="message-bubble">
+                        <p className="message-text">{msg.content}</p>
+                      </div>
+                    )}
+                    {msg.image_url && (
+                      <img
+                        src={msg.image_url}
+                        alt="attachment"
+                        className="message-image"
+                        onClick={() => window.open(msg.image_url, "_blank")}
+                      />
+                    )}
+                    {msg.attachments && msg.attachments.length > 0 && (
+                      <div className="message-attachments">
+                        {msg.attachments.map((file, idx) => (
+                          <div
+                            key={idx}
+                            className="message-attachment"
+                            onClick={() => window.open(file.url, "_blank")}
+                          >
+                            <File size={16} />
+                            <span>{file.fileName}</span>
+                            <Download size={14} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     <div className="message-time">{formatTime(msg.created_at)}</div>
                   </div>
                 ))}
