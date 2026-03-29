@@ -4,6 +4,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import toast from 'react-hot-toast';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const tx = (t, key, fb) => { const v = t(key); return v === key ? fb : v; };
 const PRIMARY = '#00A5A9';
 const DARK = '#0F223D';
 const SUCCESS = '#059669';
@@ -41,7 +42,7 @@ function FinancialDashboard() {
       if (!res.ok) throw new Error('Failed to fetch financial data');
       setData(await res.json());
     } catch (err) {
-      toast.error(t('financial.fetchError') || 'Could not load financial data');
+      toast.error(tx(t, 'financial.fetchError', 'Could not load financial data'));
       setData(null);
     } finally {
       setLoading(false);
@@ -107,8 +108,8 @@ function FinancialDashboard() {
   if (loading) {
     return (
       <div style={s.wrap}>
-        <div style={s.heading}>{t('financial.title') || 'Financial Dashboard'}</div>
-        <div style={s.sub}>{t('financial.loading') || 'Loading financial data...'}</div>
+        <div style={s.heading}>{tx(t, 'financial.title', 'Financial Dashboard')}</div>
+        <div style={s.sub}>{tx(t, 'financial.loading', 'Loading financial data...')}</div>
         <style>{`@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
         <div style={s.grid}>
           {[1,2,3,4,5].map(i => <div key={i} style={s.skeleton} />)}
@@ -122,10 +123,10 @@ function FinancialDashboard() {
   if (!data) {
     return (
       <div style={s.wrap}>
-        <div style={s.heading}>{t('financial.title') || 'Financial Dashboard'}</div>
+        <div style={s.heading}>{tx(t, 'financial.title', 'Financial Dashboard')}</div>
         <div style={s.empty}>
           <AlertCircle size={40} style={{ marginBottom: 12, color: '#cbd5e1' }} />
-          <div>{t('financial.noData') || 'No financial data available.'}</div>
+          <div>{tx(t, 'financial.noData', 'No financial data available.')}</div>
         </div>
       </div>
     );
@@ -133,8 +134,8 @@ function FinancialDashboard() {
 
   return (
     <div style={s.wrap}>
-      <div style={s.heading}>{t('financial.title') || 'Financial Dashboard'}</div>
-      <div style={s.sub}>{t('financial.subtitle') || 'Track expenses, budgets, and contractor performance'}</div>
+      <div style={s.heading}>{tx(t, 'financial.title', 'Financial Dashboard')}</div>
+      <div style={s.sub}>{tx(t, 'financial.subtitle', 'Track expenses, budgets, and contractor performance')}</div>
 
       {/* Controls */}
       <div style={s.controls}>
@@ -142,7 +143,7 @@ function FinancialDashboard() {
           {years.map(y => <option key={y} value={y}>{y}</option>)}
         </select>
         <select value={propertyFilter} onChange={e => setPropertyFilter(e.target.value)} style={s.select}>
-          <option value="">{t('financial.allProperties') || 'All Properties'}</option>
+          <option value="">{tx(t, 'financial.allProperties', 'All Properties')}</option>
           {(data.by_property || []).map(p => (
             <option key={p.property_id} value={p.property_id}>{p.building_name}</option>
           ))}
@@ -153,27 +154,27 @@ function FinancialDashboard() {
       <div style={s.grid}>
         <div style={s.card(SUCCESS)}>
           <div style={s.cardIcon(SUCCESS)}><DollarSign size={18} color={SUCCESS} /></div>
-          <div style={s.cardLabel}>{t('financial.totalSpent') || 'Total Spent'}</div>
+          <div style={s.cardLabel}>{tx(t, 'financial.totalSpent', 'Total Spent')}</div>
           <p style={s.cardVal(SUCCESS)}>{fmt(ov.total_spent)}</p>
         </div>
         <div style={s.card(PRIMARY)}>
           <div style={s.cardIcon(PRIMARY)}><FileText size={18} color={PRIMARY} /></div>
-          <div style={s.cardLabel}>{t('financial.totalJobs') || 'Total Jobs'}</div>
+          <div style={s.cardLabel}>{tx(t, 'financial.totalJobs', 'Total Jobs')}</div>
           <p style={s.cardVal(DARK)}>{ov.total_jobs || 0}</p>
         </div>
         <div style={s.card(WARNING)}>
           <div style={s.cardIcon(WARNING)}><TrendingUp size={18} color={WARNING} /></div>
-          <div style={s.cardLabel}>{t('financial.avgJobCost') || 'Avg Job Cost'}</div>
+          <div style={s.cardLabel}>{tx(t, 'financial.avgJobCost', 'Avg Job Cost')}</div>
           <p style={s.cardVal(DARK)}>{fmt(ov.avg_job_cost)}</p>
         </div>
         <div style={s.card('#6366f1')}>
           <div style={s.cardIcon('#6366f1')}><Briefcase size={18} color="#6366f1" /></div>
-          <div style={s.cardLabel}>{t('financial.activeContracts') || 'Active Contracts'}</div>
+          <div style={s.cardLabel}>{tx(t, 'financial.activeContracts', 'Active Contracts')}</div>
           <p style={s.cardVal(DARK)}>{ov.active_contracts || 0}</p>
         </div>
         <div style={s.card(PRIMARY)}>
           <div style={s.cardIcon(PRIMARY)}><TrendingUp size={18} color={PRIMARY} /></div>
-          <div style={s.cardLabel}>{t('financial.budgetUtilization') || 'Budget Utilization'}</div>
+          <div style={s.cardLabel}>{tx(t, 'financial.budgetUtilization', 'Budget Utilization')}</div>
           <p style={{ ...s.cardVal(utilPct > 100 ? DANGER : DARK), fontSize: 22 }}>{utilPct}%</p>
           <div style={{ height: 6, background: '#e2e8f0', borderRadius: 3, marginTop: 8, overflow: 'hidden' }}>
             <div style={{ width: `${Math.min(utilPct, 100)}%`, height: '100%', background: utilPct > 100 ? DANGER : PRIMARY, borderRadius: 3, transition: 'width 0.4s ease' }} />
@@ -183,7 +184,7 @@ function FinancialDashboard() {
 
       {/* Spending by Month */}
       <div style={s.section}>
-        <div style={s.sectionTitle}>{t('financial.monthlySpending') || 'Spending by Month'}</div>
+        <div style={s.sectionTitle}>{tx(t, 'financial.monthlySpending', 'Spending by Month')}</div>
         {monthlyData.map((m, i) => (
           <div key={i} style={s.barRow}>
             <div style={s.barLabel}>{m.label}</div>
@@ -197,8 +198,8 @@ function FinancialDashboard() {
 
       {/* Spending by Category */}
       <div style={s.section}>
-        <div style={s.sectionTitle}>{t('financial.categorySpending') || 'Spending by Category'}</div>
-        {sortedCategories.length === 0 && <div style={{ color: '#94a3b8', fontSize: 14 }}>{t('financial.noCategories') || 'No category data.'}</div>}
+        <div style={s.sectionTitle}>{tx(t, 'financial.categorySpending', 'Spending by Category')}</div>
+        {sortedCategories.length === 0 && <div style={{ color: '#94a3b8', fontSize: 14 }}>{tx(t, 'financial.noCategories', 'No category data.')}</div>}
         {sortedCategories.map((c, i) => {
           const color = CATEGORY_COLORS[c.category] || CATEGORY_COLORS.Other;
           return (
@@ -208,7 +209,7 @@ function FinancialDashboard() {
                 <div style={s.barFill((c.total_spent / maxCatSpent) * 100, color)} />
               </div>
               <div style={{ ...s.barAmt, width: 130 }}>
-                {fmt(c.total_spent)} <span style={{ color: '#94a3b8', fontWeight: 400 }}>({c.job_count} {t('financial.jobs') || 'jobs'})</span>
+                {fmt(c.total_spent)} <span style={{ color: '#94a3b8', fontWeight: 400 }}>({c.job_count} {tx(t, 'financial.jobs', 'jobs')})</span>
               </div>
             </div>
           );
@@ -217,7 +218,7 @@ function FinancialDashboard() {
 
       {/* Spending by Property */}
       <div style={s.section}>
-        <div style={s.sectionTitle}>{t('financial.propertySpending') || 'Spending by Property'}</div>
+        <div style={s.sectionTitle}>{tx(t, 'financial.propertySpending', 'Spending by Property')}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
           {(data.by_property || []).map((p, i) => {
             const pct = p.budget_planned ? Math.round((p.total_spent / p.budget_planned) * 100) : 0;
@@ -229,13 +230,13 @@ function FinancialDashboard() {
                 </div>
                 <div style={{ fontSize: 12, color: '#94a3b8' }}>{p.address}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginTop: 4 }}>
-                  <span>{t('financial.spent') || 'Spent'}: <b>{fmt(p.total_spent)}</b></span>
-                  <span>{t('financial.planned') || 'Planned'}: <b>{fmt(p.budget_planned)}</b></span>
+                  <span>{tx(t, 'financial.spent', 'Spent')}: <b>{fmt(p.total_spent)}</b></span>
+                  <span>{tx(t, 'financial.planned', 'Planned')}: <b>{fmt(p.budget_planned)}</b></span>
                 </div>
                 <div style={s.miniBar}>
                   <div style={{ width: `${Math.min(pct, 100)}%`, height: '100%', background: pct > 100 ? DANGER : PRIMARY, borderRadius: 4, transition: 'width 0.4s ease' }} />
                 </div>
-                <div style={{ fontSize: 12, color: '#64748b' }}>{p.job_count} {t('financial.jobs') || 'jobs'} &middot; {pct}% {t('financial.utilized') || 'utilized'}</div>
+                <div style={{ fontSize: 12, color: '#64748b' }}>{p.job_count} {tx(t, 'financial.jobs', 'jobs')} &middot; {pct}% {tx(t, 'financial.utilized', 'utilized')}</div>
               </div>
             );
           })}
@@ -244,22 +245,22 @@ function FinancialDashboard() {
 
       {/* Budget Comparison Table */}
       <div style={s.section}>
-        <div style={s.sectionTitle}>{t('financial.budgetComparison') || 'Budget Comparison'}</div>
+        <div style={s.sectionTitle}>{tx(t, 'financial.budgetComparison', 'Budget Comparison')}</div>
         <div style={{ overflowX: 'auto' }}>
           <table style={s.table}>
             <thead>
               <tr>
-                <th style={s.th}>{t('financial.jobTitle') || 'Job Title'}</th>
-                <th style={s.th}>{t('financial.category') || 'Category'}</th>
-                <th style={s.th}>{t('financial.budgetRange') || 'Budget Range'}</th>
-                <th style={s.th}>{t('financial.actualCost') || 'Actual Cost'}</th>
-                <th style={s.th}>{t('financial.variance') || 'Variance'}</th>
-                <th style={s.th}>{t('financial.status') || 'Status'}</th>
+                <th style={s.th}>{tx(t, 'financial.jobTitle', 'Job Title')}</th>
+                <th style={s.th}>{tx(t, 'financial.category', 'Category')}</th>
+                <th style={s.th}>{tx(t, 'financial.budgetRange', 'Budget Range')}</th>
+                <th style={s.th}>{tx(t, 'financial.actualCost', 'Actual Cost')}</th>
+                <th style={s.th}>{tx(t, 'financial.variance', 'Variance')}</th>
+                <th style={s.th}>{tx(t, 'financial.status', 'Status')}</th>
               </tr>
             </thead>
             <tbody>
               {sortedBudget.length === 0 && (
-                <tr><td colSpan={6} style={{ ...s.td, textAlign: 'center', color: '#94a3b8' }}>{t('financial.noJobs') || 'No job data.'}</td></tr>
+                <tr><td colSpan={6} style={{ ...s.td, textAlign: 'center', color: '#94a3b8' }}>{tx(t, 'financial.noJobs', 'No job data.')}</td></tr>
               )}
               {sortedBudget.map((j, i) => {
                 const mid = (j.budget_min + j.budget_max) / 2;
@@ -289,13 +290,13 @@ function FinancialDashboard() {
 
       {/* Top Contractors */}
       <div style={s.section}>
-        <div style={s.sectionTitle}>{t('financial.topContractors') || 'Top Contractors'}</div>
+        <div style={s.sectionTitle}>{tx(t, 'financial.topContractors', 'Top Contractors')}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
           {(data.top_contractors || []).map((c, i) => (
             <div key={i} style={{ ...s.propCard, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>{c.company_name}</div>
-                <div style={{ fontSize: 13, color: '#64748b' }}>{fmt(c.total_paid)} &middot; {c.job_count} {t('financial.jobs') || 'jobs'}</div>
+                <div style={{ fontSize: 13, color: '#64748b' }}>{fmt(c.total_paid)} &middot; {c.job_count} {tx(t, 'financial.jobs', 'jobs')}</div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                 {[1,2,3,4,5].map(s => (

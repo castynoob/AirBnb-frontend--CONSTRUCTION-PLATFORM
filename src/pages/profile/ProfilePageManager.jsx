@@ -597,7 +597,7 @@ function ProfilePageManager() {
                       </div>
                       <button
                         className="mp-maintenance-log-btn"
-                        onClick={(e) => { e.stopPropagation(); setMaintenanceLogProperty(property); }}
+                        onClick={(e) => { e.stopPropagation(); navigate(`/maintenance-log/${property.id}`); }}
                         title={t('profileManager.maintenanceLog') || 'Maintenance Log'}
                       >
                         <Wrench size={13} />
@@ -798,7 +798,7 @@ function ProfilePageManager() {
         return (
           <div className="mp-tab-content">
             <DocumentManager
-              ownerId={userProfile?.id}
+              ownerId={uProfile?.id || uProfile?.userId}
               userRole="property_manager"
             />
           </div>

@@ -1,820 +1,324 @@
-/* Add Work Form Page */
-.aw-add-work-page {
-  width: 100%;
-  min-height: 100vh;
-  display: flex;
-  font-family: "Inter", sans-serif;
-  background-color: var(--color-background-light);
-  color: var(--color-text-dark);
+/* Add Work Form — Page Layout */
+
+.awp-wrapper {
+  padding: 2rem 2.5rem 3rem;
 }
 
-/* Form Header */
-.aw-form-header {
+/* Two-column layout */
+.awp-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+.awp-col-left,
+.awp-col-right {
+  min-width: 0;
+}
+
+.awp-col-right {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.awp-col-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.awp-col-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0F223D;
+}
+.awp-col-header svg { color: #00A5A9; }
+
+.awp-excel-desc {
+  font-size: 0.8125rem;
+  color: #6b7280;
+  margin: 0 0 1rem;
+  line-height: 1.5;
+}
+
+.awp-excel-upload-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.awp-excel-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+  border: 2px dashed #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  text-align: center;
+  transition: border-color 0.15s;
+}
+.awp-excel-dropzone:hover { border-color: #00A5A9; }
+.awp-excel-dropzone svg { color: #9ca3af; }
+.awp-excel-dropzone p { margin: 0; font-size: 0.875rem; color: #374151; font-weight: 500; }
+.awp-excel-dropzone span { font-size: 0.75rem; color: #9ca3af; }
+
+.awp-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
   margin-bottom: 2rem;
 }
 
-.aw-form-header h1 {
-  font-size: 2rem;
-  font-weight: var(--font-weight-lg);
-  color: var(--color-primary);
-  margin: 0 0 0.5rem 0;
-}
-
-.aw-form-header p {
-  font-size: 0.9375rem;
-  color: var(--color-text-muted);
-  margin: 0;
-}
-
-.aw-back-btn {
+.awp-back-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.625rem 1rem;
-  background-color: var(--color-white);
-  border: 1px solid var(--color-border-divider);
+  padding: 0.5rem 1rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  color: var(--color-text-dark);
   font-size: 0.875rem;
-  font-weight: var(--font-weight-md);
+  font-weight: 500;
+  color: #374151;
   cursor: pointer;
-  transition: all 0.2s ease;
-  margin-bottom: 1.5rem;
+  transition: all 0.15s;
 }
+.awp-back-btn:hover { background: #f9fafb; border-color: #d1d5db; }
 
-.aw-back-btn:hover {
-  background-color: var(--color-background-light);
-  border-color: var(--color-secondary);
-  color: var(--color-secondary);
-}
-
-/* Form Container - Full Width */
-.aw-add-work-form {
-  width: 100%;
-  background-color: var(--color-white);
-  border-radius: 12px;
-  padding: 2.5rem;
-  border: 1px solid var(--color-border-divider);
-  box-shadow: 0 2px 8px rgba(15, 34, 61, 0.08);
-}
-
-/* Form Sections */
-.aw-form-section {
-  margin-bottom: 2.5rem;
-  padding-bottom: 2rem;
-  border-bottom: 1px solid var(--color-border-divider);
-}
-
-.aw-form-section:last-of-type {
-  border-bottom: none;
-  padding-bottom: 0;
-  margin-bottom: 0;
-}
-
-.aw-section-title {
-  font-size: 1.375rem;
-  font-weight: var(--font-weight-lg);
-  color: var(--color-text-dark);
-  margin: 0 0 1.5rem 0;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid var(--color-background-light);
-}
-
-/* Form Row - Responsive Grid */
-.aw-form-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-
-/* Form Group */
-.aw-form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.aw-form-group:last-child {
-  margin-bottom: 0;
-}
-
-.aw-form-group label {
+.awp-header-title {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.9375rem;
-  font-weight: var(--font-weight-md);
-  color: var(--color-text-dark);
 }
-
-.aw-form-group label svg {
-  color: var(--color-secondary);
-  flex-shrink: 0;
+.awp-header-title h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0F223D;
 }
+.awp-header-title svg { color: #00A5A9; }
 
-.aw-required {
-  color: var(--color-status-urgent);
-  font-weight: var(--font-weight-lg);
-}
+/* Method toggle — hidden on desktop, shown on mobile */
+.awp-method-toggle { display: none; }
 
-/* Form Inputs */
-.aw-form-group input,
-.aw-form-group select,
-.aw-form-group textarea {
-  padding: 0.875rem 1.125rem;
-  border: 1px solid var(--color-border-divider);
-  border-radius: 8px;
-  font-size: 0.9375rem;
-  color: var(--color-text-dark);
-  background-color: var(--color-white);
-  transition: all 0.2s ease;
-  font-family: "Inter", sans-serif;
-}
+/* Form */
+.awp-form { display: flex; flex-direction: column; gap: 1.25rem; }
 
-.aw-form-group input:focus,
-.aw-form-group select:focus,
-.aw-form-group textarea:focus {
-  outline: none;
-  border-color: var(--color-secondary);
-  box-shadow: 0 0 0 3px rgba(0, 165, 169, 0.1);
-}
+.awp-form-section { display: flex; flex-direction: column; gap: 0.375rem; }
 
-.aw-form-group input::placeholder,
-.aw-form-group textarea::placeholder {
-  color: var(--color-text-muted);
-}
-
-.aw-form-group textarea {
-  resize: vertical;
-  min-height: 140px;
-  line-height: 1.6;
-}
-
-.aw-form-group select {
-  cursor: pointer;
-}
-
-/* Error State */
-.aw-form-group input.aw-error,
-.aw-form-group textarea.aw-error {
-  border-color: var(--color-status-urgent);
-  background-color: rgba(231, 76, 60, 0.02);
-}
-
-.aw-error-message {
+.awp-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #374151;
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  font-size: 0.8125rem;
-  color: var(--color-status-urgent);
-  margin-top: 0.25rem;
 }
+.awp-label svg { color: #6b7280; }
 
-.aw-error-message svg {
-  flex-shrink: 0;
-}
+.awp-optional { font-weight: 400; color: #9ca3af; font-size: 0.75rem; }
+.awp-hint { font-size: 0.75rem; color: #9ca3af; margin: 0; }
 
-/* Upload Area */
-.aw-upload-area {
-  border: 2px dashed var(--color-border-divider);
-  border-radius: 12px;
-  padding: 3rem 2rem;
-  text-align: center;
-  background-color: var(--color-background-light);
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.aw-upload-area:hover {
-  border-color: var(--color-secondary);
-  background-color: rgba(0, 165, 169, 0.05);
-  transform: translateY(-2px);
-}
-
-.aw-upload-label {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  cursor: pointer;
-  color: var(--color-text-dark);
-}
-
-.aw-upload-label svg {
-  color: var(--color-secondary);
-}
-
-.aw-upload-label p {
-  font-size: 1.125rem;
-  font-weight: var(--font-weight-md);
-  margin: 0;
-  color: var(--color-text-dark);
-}
-
-.aw-upload-label span {
+.awp-input, .awp-select, .awp-textarea {
+  padding: 0.625rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
   font-size: 0.875rem;
-  color: var(--color-text-muted);
+  color: #111827;
+  background: #fff;
+  transition: border-color 0.15s;
+  font-family: inherit;
 }
-
-/* Image Preview Grid */
-.aw-image-preview-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1.25rem;
-  margin-top: 1.75rem;
-}
-
-.aw-image-preview-item {
-  position: relative;
-  aspect-ratio: 1;
-  border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid var(--color-border-divider);
-  transition: all 0.2s ease;
-}
-
-.aw-image-preview-item:hover {
-  transform: scale(1.02);
-  box-shadow: 0 4px 12px rgba(15, 34, 61, 0.12);
-}
-
-.aw-image-preview-item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.aw-remove-image-btn {
-  position: absolute;
-  top: 0.625rem;
-  right: 0.625rem;
-  background-color: var(--color-status-urgent);
-  color: var(--color-white);
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  padding: 0;
-  opacity: 0;
-}
-
-.aw-image-preview-item:hover .aw-remove-image-btn {
-  opacity: 1;
-}
-
-.aw-remove-image-btn:hover {
-  background-color: #c0392b;
-  transform: scale(1.15);
-}
-
-.aw-remove-image-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.aw-image-name {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0, 0, 0, 0.7);
-  color: white;
-  padding: 8px;
-  font-size: 11px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Form Actions */
-.aw-form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2.5rem;
-  padding-top: 2rem;
-  border-top: 2px solid var(--color-background-light);
-}
-
-.aw-cancel-btn,
-.aw-submit-btn {
-  padding: 1rem 2.5rem;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: var(--font-weight-md);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.aw-cancel-btn {
-  background-color: var(--color-white);
-  color: var(--color-text-dark);
-  border: 1px solid var(--color-border-divider);
-}
-
-.aw-cancel-btn:hover {
-  background-color: var(--color-background-light);
-  border-color: var(--color-text-muted);
-  transform: translateY(-1px);
-}
-
-.aw-submit-btn {
-  background-color: var(--color-secondary);
-  color: var(--color-white);
-}
-
-.aw-submit-btn:hover {
-  background-color: #008c8f;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 165, 169, 0.3);
-}
-
-.aw-submit-btn:disabled,
-.aw-cancel-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  background: #9ca3af;
-}
-
-/* Property Select Custom Styling */
-.aw-property-select {
-  position: relative;
-}
-
-.aw-select-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.aw-select-wrapper select {
-  width: 100%;
-  padding: 0.875rem 1.125rem;
-  padding-right: 2.5rem;
-  border: 1px solid var(--color-border-divider);
-  border-radius: 8px;
-  background-color: var(--color-white);
-  color: var(--color-text-dark);
-  font-size: 0.9375rem;
-  font-family: "Inter", sans-serif;
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  transition: all 0.2s ease;
-}
-
-.aw-select-wrapper select:hover {
-  border-color: var(--color-secondary);
-}
-
-.aw-select-wrapper select:focus {
+.awp-input:focus, .awp-select:focus, .awp-textarea:focus {
   outline: none;
-  border-color: var(--color-secondary);
-  box-shadow: 0 0 0 3px rgba(0, 165, 169, 0.15);
+  border-color: #00A5A9;
+  box-shadow: 0 0 0 3px rgba(0,165,169,0.1);
+}
+.awp-input.error, .awp-select.error, .awp-textarea.error {
+  border-color: #ef4444;
 }
 
-.aw-select-wrapper .aw-dropdown-icon {
-  position: absolute;
-  right: 1rem;
-  font-size: 1rem;
-  color: var(--color-text-muted);
-  pointer-events: none;
-  transition: color 0.2s ease;
-}
+.awp-textarea { resize: vertical; min-height: 100px; }
 
-.aw-select-wrapper select:focus + .aw-dropdown-icon {
-  color: var(--color-secondary);
-}
-
-.aw-header-buttons {
+.awp-error {
+  font-size: 0.75rem;
+  color: #ef4444;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 0.25rem;
 }
 
-.aw-upload-excel {
-  background-color: var(--color-secondary);
-  color: var(--color-white);
+.awp-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
 }
 
-/* Checkbox Group */
-.aw-checkbox-group {
+.awp-checkbox-label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.aw-checkbox-group input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
+  font-size: 0.8125rem;
+  color: #374151;
   cursor: pointer;
 }
-
-.aw-checkbox-group label {
-  cursor: pointer;
-  font-size: 0.9375rem;
-  color: var(--color-text-dark);
+.awp-checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #00A5A9;
 }
 
-/* Loading Overlay */
-.aw-loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+/* Images */
+.awp-image-upload { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.awp-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: #f9fafb;
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s;
+  width: fit-content;
+}
+.awp-upload-btn:hover { border-color: #00A5A9; color: #00A5A9; background: #f0fdfa; }
+
+.awp-image-grid {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.awp-image-preview {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+.awp-image-preview img { width: 100%; height: 100%; object-fit: cover; }
+
+.awp-image-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
-  animation: aw-fadeIn 0.3s ease-in-out;
+  cursor: pointer;
 }
 
-.aw-loading-content {
-  background: white;
-  padding: 40px;
-  border-radius: 16px;
-  text-align: center;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  max-width: 400px;
-  animation: aw-slideUp 0.4s ease-out;
-}
+/* Excel */
+.awp-excel-section { display: flex; flex-direction: column; gap: 1.25rem; }
 
-.aw-loading-spinner {
-  margin-bottom: 24px;
+.awp-excel-drop { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.awp-excel-preview {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  color: #166534;
 }
-
-.aw-spinner-icon {
-  animation: aw-spin 1s linear infinite;
-  color: #3b82f6;
-}
-
-.aw-success-icon {
-  color: #10b981;
-  animation: aw-scaleIn 0.4s ease-out;
-}
-
-.aw-loading-content h3 {
-  font-size: 20px;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 12px;
-}
-
-.aw-loading-content p {
-  font-size: 14px;
+.awp-excel-preview button {
+  margin-left: auto;
+  background: none;
+  border: none;
   color: #6b7280;
-  margin: 0;
+  cursor: pointer;
+}
+.awp-file-size { color: #9ca3af; font-size: 0.75rem; }
+
+/* Submit */
+.awp-submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #00A5A9;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-top: 0.5rem;
+}
+.awp-submit-btn:hover:not(:disabled) { background: #008b8f; }
+.awp-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Loading overlay */
+.awp-loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255,255,255,0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
 }
 
-/* Upload Label Disabled State */
-.aw-upload-label.aw-disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-/* Form Disabled State */
-.aw-add-work-form input:disabled,
-.aw-add-work-form select:disabled,
-.aw-add-work-form textarea:disabled {
-  background-color: #f3f4f6;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.aw-add-work-form button:disabled {
-  cursor: not-allowed;
-}
-
-/* Animations */
-@keyframes aw-fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes aw-slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes aw-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes aw-scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.5);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* Main Container */
-.aw-main-container {
-  flex: 1;
-  padding: 2rem 2.5rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  margin-left: 220px;
-}
-
-/* Loading State */
-.aw-loading {
-  width: 100%;
-  min-height: 100vh;
+.awp-loading-content {
+  text-align: center;
   display: flex;
   flex-direction: column;
-}
-
-/* Responsive Design */
-@media (max-width: 1400px) {
-  .aw-image-preview-grid {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  }
-}
-
-@media (max-width: 968px) {
-  .aw-add-work-page .aw-main-container {
-    margin-left: 80px;
-    padding: 1.5rem;
-  }
-
-  .aw-add-work-form {
-    padding: 2rem;
-  }
-
-  .aw-form-row {
-    grid-template-columns: 1fr;
-  }
-
-  .aw-image-preview-grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  }
-}
-
-@media (max-width: 768px) {
-  .aw-add-work-page .aw-main-container {
-    margin-left: 0;
-    padding: 1rem;
-    padding-bottom: 5rem;
-  }
-
-  .aw-add-work-form {
-    padding: 1.5rem;
-  }
-
-  .aw-section-title {
-    font-size: 1.125rem;
-  }
-
-  .aw-upload-area {
-    padding: 2rem 1rem;
-  }
-
-  .aw-form-actions {
-    flex-direction: column;
-  }
-
-  .aw-cancel-btn,
-  .aw-submit-btn {
-    width: 100%;
-  }
-
-  .aw-image-preview-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  }
-
-  .aw-loading-content {
-    margin: 20px;
-    padding: 30px 20px;
-  }
-  
-  .aw-loading-content h3 {
-    font-size: 18px;
-  }
-}
-
-@media (max-width: 480px) {
-  .aw-add-work-form {
-    padding: 1.25rem;
-  }
-
-  .aw-form-header h1 {
-    font-size: 1.5rem;
-  }
-
-  .aw-image-preview-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
-}
-
-/* ================================================ */
-/* Skeleton Loader Animation - Keep existing prefixes */
-@keyframes aws-skeleton-shimmer {
-  0% {
-    background-position: -200px 0;
-  }
-  100% {
-    background-position: calc(200px + 100%) 0;
-  }
-}
-
-.aws-skeleton,
-.aws-skeleton * {
-  animation: aws-skeleton-shimmer 1.6s infinite linear;
-  background: linear-gradient(
-    90deg,
-    rgba(240, 240, 240, 1) 25%,
-    rgba(250, 250, 250, 1) 50%,
-    rgba(240, 240, 240, 1) 75%
-  );
-  background-size: 200% 100%;
-  border-radius: 8px;
-}
-
-.aws-skeleton-header .aws-skeleton-btns {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
+  align-items: center;
   gap: 1rem;
 }
+.awp-loading-content h3 { margin: 0; color: #374151; font-size: 1rem; }
 
-.aws-skeleton-btn {
-  width: 160px;
-  height: 38px;
-  border-radius: 8px;
-}
+.awp-spinner { animation: awp-spin 1s linear infinite; color: #00A5A9; }
+@keyframes awp-spin { to { transform: rotate(360deg); } }
 
-.aws-skeleton-title {
-  width: 300px;
-  height: 28px;
-  margin-bottom: 0.5rem;
-}
-
-.aws-skeleton-subtitle {
+.awp-progress-bar {
   width: 200px;
-  height: 18px;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.awp-progress-fill {
+  height: 100%;
+  background: #00A5A9;
+  border-radius: 999px;
+  transition: width 0.3s ease;
 }
 
-.aws-skeleton-section-title {
-  width: 180px;
-  height: 22px;
-  margin-bottom: 1.5rem;
-}
-
-.aws-skeleton-input {
-  width: 100%;
-  height: 42px;
-  margin-bottom: 1.25rem;
-}
-
-.aws-skeleton-textarea {
-  width: 100%;
-  height: 100px;
-  margin-bottom: 1.25rem;
-}
-
-.aws-skeleton-upload {
-  width: 100%;
-  height: 180px;
-  border-radius: 12px;
-  margin-bottom: 1.25rem;
-}
-
-.aws-skeleton-btn-action {
-  width: 130px;
-  height: 44px;
-  border-radius: 8px;
-}
-
-.aws-form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.aws-form-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.25rem;
-}
-
-.aws-main-container {
-  flex: 1;
-  padding: 2rem 2.5rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  margin-left: 220px;
-}
-
-.aws-add-work-form {
-  padding: 2.5rem;
-  background: white;
-  border-radius: 12px;
-  border: 1px solid var(--color-border-divider);
-  box-shadow: 0 2px 8px rgba(15, 34, 61, 0.08);
+/* Responsive */
+@media (max-width: 968px) {
+  .awp-two-col { grid-template-columns: 1fr; }
+  .awp-col-right { position: static; }
 }
 
 @media (max-width: 768px) {
-  .aws-skeleton-btn {
-    width: 120px;
-    height: 36px;
-  }
-
-  .aws-skeleton-btn-action {
-    width: 100%;
-  }
-
-  .aws-form-actions {
-    flex-direction: column;
-  }
-}
-
-/* Standard Skeleton Classes (for compatibility) */
-.skeleton {
-  background: linear-gradient(
-    90deg,
-    #f2f2f2 25%,
-    #e6e6e6 50%,
-    #f2f2f2 75%
-  );
-  background-size: 200% 100%;
-  animation: skeleton-shimmer 1.5s infinite;
-  border-radius: 8px;
-}
-
-@keyframes skeleton-shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-.skeleton-button {
-  height: 40px;
-  border-radius: 8px;
-}
-
-.skeleton-title {
-  height: 32px;
-  border-radius: 8px;
-}
-
-.skeleton-line {
-  height: 16px;
-  border-radius: 4px;
-}
-
-.skeleton-input {
-  height: 48px;
-  border-radius: 8px;
-}
-
-.skeleton-textarea {
-  height: 120px;
-  border-radius: 8px;
-}
-
-.skeleton-upload-area {
-  height: 200px;
-  border-radius: 12px;
+  .awp-wrapper { padding: 1.25rem 1rem 2rem; }
+  .awp-header { flex-wrap: wrap; }
+  .awp-row { grid-template-columns: 1fr; }
+  .awp-header-title h1 { font-size: 1.25rem; }
 }

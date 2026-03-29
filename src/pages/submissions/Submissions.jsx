@@ -30,7 +30,7 @@ import {
   BarChart3,
 } from "lucide-react"
 import Nav from "../../components/Nav"
-import JobProgressTracker from "../../components/JobProgressTracker"
+// JobProgressTracker removed — progress now shown in job detail pages
 import SlideToConfirm from "../../components/SlideToConfirm"
 import "../../styles/manager/submissions.css"
 import { useNavigate } from "react-router-dom"
@@ -137,7 +137,6 @@ function SubmissionsPage() {
   // Bid comparison
   const [compareBids, setCompareBids] = useState(new Set())
   const [showCompareModal, setShowCompareModal] = useState(false)
-  const [progressSubmission, setProgressSubmission] = useState(null)
 
   // Archived jobs tab
   const [archivedJobs, setArchivedJobs] = useState([])
@@ -258,24 +257,24 @@ function SubmissionsPage() {
 
 
   const handleViewDetails = async (submission) => {
-    // Check if funds were already released for this job BEFORE showing the modal
-    // This prevents the slider from briefly appearing
-    if (submission.bid.status === "approved" && normalizeStatus(submission.job.status) === "completed") {
-      // Check if we already know it's released
-      if (!releasedJobIds.has(submission.job.id)) {
-        try {
-          const contractData = await getContractByJob(submission.job.id)
-          if (contractData.has_contract && contractData.contract?.payout_status === 'completed') {
-            setReleasedJobIds(prev => new Set([...prev, submission.job.id]))
-          }
-        } catch (err) {
-          console.log("Could not check contract status:", err)
-        }
-      }
-    }
+    // Navigate to the full-page bid details view
+    navigate(`/bid/${submission.bid.id}`)
 
-    setSelectedSubmission(submission)
-    setShowDetailsModal(true)
+    // Legacy modal code kept below for reference:
+    // if (submission.bid.status === "approved" && normalizeStatus(submission.job.status) === "completed") {
+    //   if (!releasedJobIds.has(submission.job.id)) {
+    //     try {
+    //       const contractData = await getContractByJob(submission.job.id)
+    //       if (contractData.has_contract && contractData.contract?.payout_status === 'completed') {
+    //         setReleasedJobIds(prev => new Set([...prev, submission.job.id]))
+    //       }
+    //     } catch (err) {
+    //       console.log("Could not check contract status:", err)
+    //     }
+    //   }
+    // }
+    // setSelectedSubmission(submission)
+    // setShowDetailsModal(true)
   }
 
   const clearFilters = () => {
@@ -2071,8 +2070,7 @@ function SubmissionsPage() {
 
                   {/* Contractor Row */}
                   <div
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 1rem', marginBottom: '8px', cursor: 'pointer', background: 'none' }}
-                    onClick={(e) => handleViewProfile(e, submission)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 1rem', marginBottom: '8px', background: 'none' }}
                   >
                     <div style={{ width: 32, height: 32, minWidth: 32, borderRadius: 7, background: 'linear-gradient(135deg, #0F223D, #1a3a5c)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.75rem', flexShrink: 0 }}>
                       {(submission.entrepreneur_profile.company_name || submission.user?.first_name || '?')[0].toUpperCase()}
@@ -2106,12 +2104,6 @@ function SubmissionsPage() {
                         <button className="subs-chat-btn" onClick={(e) => { e.stopPropagation(); handleChat(submission); }}>
                           <MessageCircle size={16} />
                           <span>{t('submissions.chat') || 'Chat'}</span>
-                        </button>
-                      )}
-                      {(submission.job.status === "ongoing" || submission.job.status === "completed") && submission.contract && (
-                        <button className="subs-chat-btn" onClick={(e) => { e.stopPropagation(); setProgressSubmission(submission); }}>
-                          <BarChart3 size={16} />
-                          <span>{t('progress.trackProgress') || 'Progress'}</span>
                         </button>
                       )}
                       {submission.job.status === "completed" && submission.contract?.mutual_confirmation_completed_at && (
@@ -2523,15 +2515,6 @@ function SubmissionsPage() {
         profile={selectedProfile}
       />
 
-      {progressSubmission && (
-        <JobProgressTracker
-          jobId={progressSubmission.job.id}
-          contractId={progressSubmission.contract?.id}
-          userRole="property_manager"
-          isModal={true}
-          onClose={() => setProgressSubmission(null)}
-        />
-      )}
     </div>
   )
 }

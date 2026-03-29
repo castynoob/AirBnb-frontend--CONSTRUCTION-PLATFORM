@@ -32,6 +32,9 @@ import '../../styles/manager/favoriteentrepreneurs.css';
 import toast from 'react-hot-toast';
 import EntrepreneurProfileModal from '../../components/modal/EntrepreneurProfileModal';
 
+// Helper: returns fallback if t() returns the key itself
+const tx = (t, key, fallback) => { const v = t(key); return v === key ? fallback : v; };
+
 const FavoriteEntrepreneurs = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -646,7 +649,7 @@ const FavoriteEntrepreneurs = () => {
                       {favorite.category ? (
                         <><span className="fav-cat-dot" />{favorite.category}</>
                       ) : (
-                        <><Edit3 size={12} /> {t('favorites.addCategory') || 'Add Category'}</>
+                        <><Edit3 size={12} /> {tx(t, 'favorites.addCategory', 'Add Category')}</>
                       )}
                     </button>
                   )}

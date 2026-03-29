@@ -28,7 +28,7 @@ import {
   BarChart3,
 } from "lucide-react"
 import toast from "react-hot-toast"
-import JobProgressTracker from "../../components/JobProgressTracker"
+// JobProgressTracker removed — progress now shown in job detail page
 import PropertyManagerProfileModal from "../../components/modal/PropertyManagerProfileModal"
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet"
 import L from "leaflet"
@@ -60,7 +60,6 @@ function EntrepreneurJobs() {
   const [reviewed, setReviewed] = useState(null)
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [detailsJob, setDetailsJob] = useState(null)
-  const [progressJob, setProgressJob] = useState(null)
   const [isMapFullscreen, setIsMapFullscreen] = useState(false)
 
   // Property Manager Profile Modal states
@@ -711,7 +710,7 @@ function EntrepreneurJobs() {
               const ContractIcon = contractInfo.icon
 
               return (
-                <div className="ej-project-card" key={job.id} onClick={() => handleViewDetails(job)}>
+                <div className="ej-project-card" key={job.id} onClick={() => navigate(`/entrepreneur-job/${job.id}`)}>
                   {/* Card Header */}
                   <div className="ej-card-header">
                     <div className={`ej-status-badge ${statusInfo.class}`}>
@@ -739,20 +738,7 @@ function EntrepreneurJobs() {
                       <span className="ej-category-tag">{getCategoryLabel(job.category)}</span>
                     </div>
 
-                    {/* Contract Status */}
-                    <div className={`ej-contract-card ${contractInfo.class}`}>
-                      <div className="ej-contract-icon">
-                        <ContractIcon size={18} />
-                      </div>
-                      <div className="ej-contract-info">
-                        <span className="ej-contract-label">{contractInfo.label}</span>
-                        {job.contract && (
-                          <span className="ej-contract-value">{formatCurrency(job.contract.contract_amount || job.bid_amount || 0)}</span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Meta Info */}
+                    {/* Meta Info — above contract */}
                     <div className="ej-meta-row">
                       <div className="ej-meta-item">
                         <Calendar size={14} />
@@ -764,6 +750,19 @@ function EntrepreneurJobs() {
                           <span>{formatCurrency(job.budget_min)} - {formatCurrency(job.budget_max)}</span>
                         </div>
                       )}
+                    </div>
+
+                    {/* Contract Status */}
+                    <div className={`ej-contract-card ${contractInfo.class}`}>
+                      <div className="ej-contract-icon">
+                        <ContractIcon size={18} />
+                      </div>
+                      <div className="ej-contract-info">
+                        <span className="ej-contract-label">{contractInfo.label}</span>
+                        {job.contract && (
+                          <span className="ej-contract-value">{formatCurrency(job.contract.contract_amount || job.bid_amount || 0)}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -778,16 +777,6 @@ function EntrepreneurJobs() {
                         <MessageSquare size={15} />
                         <span>{t('entrepreneurJobs.chat') || 'Chat'}</span>
                       </button>
-                      {(job.status === "ongoing" || job.status === "completed") && (
-                        <button
-                          className="ej-icon-action"
-                          onClick={(e) => { e.stopPropagation(); setProgressJob(job); }}
-                          title={t('progress.trackProgress') || 'Track Progress'}
-                        >
-                          <BarChart3 size={15} />
-                          <span>{t('progress.trackProgress') || 'Progress'}</span>
-                        </button>
-                      )}
                     </div>
 
                     <div className="ej-primary-action">
@@ -1652,15 +1641,6 @@ function EntrepreneurJobs() {
         profile={selectedManagerProfile}
       />
 
-      {progressJob && (
-        <JobProgressTracker
-          jobId={progressJob.id}
-          contractId={progressJob.contract?.id}
-          userRole="entrepreneur"
-          isModal={true}
-          onClose={() => setProgressJob(null)}
-        />
-      )}
     </div>
   )
 }

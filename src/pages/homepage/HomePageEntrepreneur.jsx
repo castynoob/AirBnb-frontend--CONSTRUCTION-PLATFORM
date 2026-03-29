@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useRef, useEffect, useCallback } from "react"
+import { useNavigate } from "react-router-dom"
 import { useQueryClient } from '@tanstack/react-query'
 import { useProperties, useJobs, useBids } from '../../hooks/useEntrepreneurData'
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from "react-leaflet"
@@ -198,6 +199,7 @@ const SkeletonJobCard = () => (
 
 function HomePageEntrepreneur() {
   const { t, language } = useLanguage()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   // TanStack Query hooks — cached data, instant on revisit
@@ -708,7 +710,7 @@ function HomePageEntrepreneur() {
     setSelectedJob(job)
     setBidAmount("")
     setBidMessage("")
-    setBidModalOpen(true)
+    navigate(`/bid-submit/${job.id}`)
   }
 
   const handleCloseSubscriptionModal = () => {

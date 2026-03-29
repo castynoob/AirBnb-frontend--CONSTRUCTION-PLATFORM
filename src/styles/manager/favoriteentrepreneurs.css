@@ -469,11 +469,12 @@
 .fav-card {
   background: #ffffff;
   border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
   transition: all 0.2s ease;
   overflow: hidden;
+  cursor: pointer;
 }
 
 .fav-card:hover {

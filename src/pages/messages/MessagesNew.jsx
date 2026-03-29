@@ -58,6 +58,7 @@ function MessagesNew() {
   const [isSending, setIsSending] = useState(false);
   const [uploadedImage, setUploadedImage] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [viewingImage, setViewingImage] = useState(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [showMobileChat, setShowMobileChat] = useState(false);
@@ -1316,7 +1317,7 @@ function MessagesNew() {
                         src={msg.image_url}
                         alt="attachment"
                         className="message-image"
-                        onClick={() => window.open(msg.image_url, "_blank")}
+                        onClick={() => setViewingImage(msg.image_url)}
                       />
                     )}
                     {msg.attachments && msg.attachments.length > 0 && (
@@ -1325,7 +1326,10 @@ function MessagesNew() {
                           <div
                             key={idx}
                             className="message-attachment"
-                            onClick={() => window.open(file.url, "_blank")}
+                            onClick={() => {
+                              const isImage = file.type?.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.fileName || file.url);
+                              if (isImage) { setViewingImage(file.url); } else { window.open(file.url, "_blank"); }
+                            }}
                           >
                             <File size={16} />
                             <span>{file.fileName}</span>
@@ -1453,6 +1457,47 @@ function MessagesNew() {
         onClose={() => setShowProfileModal(false)}
         profile={selectedProfile}
       />
+
+      {/* Image Viewer Lightbox */}
+      {viewingImage && (
+        <div
+          onClick={() => setViewingImage(null)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 10002, cursor: 'zoom-out', padding: '1.5rem',
+          }}
+        >
+          <img
+            src={viewingImage}
+            alt=""
+            style={{ maxWidth: '92vw', maxHeight: '92vh', objectFit: 'contain', borderRadius: 6 }}
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            onClick={() => setViewingImage(null)}
+            style={{
+              position: 'absolute', top: 16, right: 16,
+              background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff',
+              width: 40, height: 40, borderRadius: '50%', fontSize: 18,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              backdropFilter: 'blur(4px)',
+            }}
+          >✕</button>
+          <a
+            href={viewingImage}
+            download
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'absolute', bottom: 20, right: 20,
+              background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff',
+              padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+              textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6,
+              backdropFilter: 'blur(4px)',
+            }}
+          >↓ Download</a>
+        </div>
+      )}
     </div>
   );
 }

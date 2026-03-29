@@ -310,8 +310,8 @@ function RepairList({ repairs, handleRepairClicked, hideFilters, externalFilters
 
       <div className="hp-repair-cards-grid">
         {paginatedRepairs.map((repair) => {
-          const workTypeImg = getWorkTypeImage(repair.apartment);
-          console.log(`Repair ${repair.id} - Title: ${repair.apartment} - Using image:`, workTypeImg);
+          const uploadedImg = repair.job_image || (repair.images && repair.images[0] !== '/defaultjobs.png' ? repair.images[0] : null);
+          const workTypeImg = uploadedImg || getWorkTypeImage(repair.apartment);
           return (
           <div
             className={`hp-repair-card-modern ${repair.status?.toLowerCase() === 'completed' ? 'hp-card-completed' : ''}`}

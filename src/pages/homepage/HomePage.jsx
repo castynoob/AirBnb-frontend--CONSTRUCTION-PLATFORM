@@ -9,10 +9,10 @@ import Nav from "../../components/Nav"
 import { useLanguage } from "../../contexts/LanguageContext"
 import RepairList from "../../components/RepairList"
 import SummarySection from "../../components/SummarySection"
-import RepairDetails from "../works/RepairDetails"
+// RepairDetails modal replaced by JobDetailsPage (/job/:jobId)
 import AddAnnouncementModal from "../../components/modal/AddAnnouncementModal"
 import AddPropertyModal from "../../components/modal/AddPropertyModal"
-import AddWorkModalCompact from "../../components/modal/AddWorkModalCompact"
+// AddWorkModalCompact replaced by page navigation to /addwork/property_manager
 import InspectionReportUploadModal from "../../components/InspectionReportUploadModal"
 import NotificationBell from "../../components/NotificationBell"
 import { useManagerDashboard, useInvalidateManagerData } from '../../hooks/useManagerData'
@@ -121,7 +121,7 @@ function HomePage() {
   const [selectedUrgency, setSelectedUrgency] = useState('all')
   const [selectedJobCategory, setSelectedJobCategory] = useState('all')
   const [openDropdown, setOpenDropdown] = useState(null) // 'property' | 'urgency' | 'category' | null
-  const [showAddWorkModal, setShowAddWorkModal] = useState(false)
+  // showAddWorkModal removed — navigates to /addwork/property_manager
   const [showInspectionModal, setShowInspectionModal] = useState(false)
   const [selectedPropertyForInspection, setSelectedPropertyForInspection] = useState('')
 
@@ -137,7 +137,6 @@ function HomePage() {
     }
   }, [])
 
-  const [selectedRepair, setSelectedRepair] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [searchExpanded, setSearchExpanded] = useState(false)
   const [statusFilter, setStatusFilter] = useState("all")
@@ -420,12 +419,14 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
   };
 
   const handleAddWork = () => {
-    setShowAddWorkModal(true)
+    navigate('/add-work/property_manager')
   }
 
   const handleRepairClicked = useCallback((repair) => {
-    setSelectedRepair(repair)
-  }, [])
+    // Navigate to dedicated job details page
+    const jobId = repair.data?.jobId || repair.id
+    navigate(`/job/${jobId}`)
+  }, [navigate])
 
   const handleSearchFocus = () => {
     setSearchExpanded(true)
@@ -555,7 +556,7 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                     <button onClick={() => { setShowAnnouncementModal(true); setShowActionsMenu(false) }}>
                       <Megaphone size={15} /> {t('homePage.announcement')}
                     </button>
-                    <button onClick={() => { setShowAddPropertyModal(true); setShowActionsMenu(false) }}>
+                    <button onClick={() => { navigate('/add-property/property_manager'); setShowActionsMenu(false) }}>
                       <Building2 size={15} /> {t('homePage.addProperty')}
                     </button>
                   </div>
@@ -720,14 +721,6 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
         )}
       </div>
 
-      {/* Repair Details Modal */}
-      <RepairDetails
-        isOpen={selectedRepair !== null}
-        onClose={() => setSelectedRepair(null)}
-        repair={selectedRepair}
-        onJobDeleted={() => invalidateManager()}
-      />
-
       {/* Add Announcement Modal */}
       <AddAnnouncementModal
         isOpen={showAnnouncementModal}
@@ -750,23 +743,11 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
         }}
       />
 
-      {/* Add Work Modal - Compact Version */}
-      <AddWorkModalCompact
-        isOpen={showAddWorkModal}
-        onClose={() => setShowAddWorkModal(false)}
-        onSuccess={(result) => {
-          setShowAddWorkModal(false);
-          // Refetch data to show new job(s)
-          invalidateManager();
-        }}
-      />
-
       {/* Inspection Report Upload Modal */}
       <InspectionReportUploadModal
         isOpen={showInspectionModal}
         onClose={() => {
           setShowInspectionModal(false);
-          setShowAddWorkModal(true);
         }}
         onSubmit={(createdJobs) => {
           console.log('Jobs created from inspection:', createdJobs);

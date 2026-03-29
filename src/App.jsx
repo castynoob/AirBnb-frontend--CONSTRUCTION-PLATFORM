@@ -20,13 +20,18 @@ import Messages from "./pages/messages/MessagesNew";
 import Submissions from "./pages/submissions/Submissions";
 import FavoriteEntrepreneurs from "./pages/favorites/FavoriteEntrepreneurs";
 import AddWorkForm from "./pages/works/AddWorkForm";
+import AddPropertyPage from "./pages/works/AddPropertyPage";
+import MaintenanceLogPage from "./pages/works/MaintenanceLogPage";
 import ProfilePageManager from "./pages/profile/ProfilePageManager";
 import HomePageEntrepreneur from "./pages/homepage/HomePageEntrepreneur";
 import MessagesEntrepreneur from "./pages/messages/MessagesEntrepreneurNew";
 import SubmittedBids from "./pages/submissions/SubmittedBids";
-import AddPropertyPage from "./pages/profile/AddPropertyPage";
 import ProfilePageEntrepreneur from "./pages/profile/ProfilePageEntrepreneur";
 import EntrepreneurJobs from "./pages/works/EntrepreneurJobs";
+import EntrepreneurJobDetailsPage from "./pages/works/EntrepreneurJobDetailsPage";
+import JobDetailsPage from "./pages/works/JobDetailsPage";
+import BidSubmissionPage from "./pages/works/BidSubmissionPage";
+import BidDetailsPage from "./pages/submissions/BidDetailsPage";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
 // SUPPLIER TEMPORARILY DISABLED — uncomment to re-enable
@@ -150,6 +155,14 @@ function ProtectedRoutes() {
     <Routes>
       {/* Property Manager protected routes */}
       <Route
+        path="/bid/:bidId"
+        element={<ProtectedRoute element={<BidDetailsPage />} />}
+      />
+      <Route
+        path="/job/:jobId"
+        element={<ProtectedRoute element={<JobDetailsPage />} />}
+      />
+      <Route
         path="/homepage/property_manager"
         element={<ProtectedRoute element={<HomePage />} />}
       />
@@ -168,6 +181,14 @@ function ProtectedRoutes() {
       <Route
         path="/add-work/property_manager"
         element={<ProtectedRoute element={<AddWorkForm />} />}
+      />
+      <Route
+        path="/add-property/property_manager"
+        element={<ProtectedRoute element={<AddPropertyPage />} />}
+      />
+      <Route
+        path="/maintenance-log/:propertyId"
+        element={<ProtectedRoute element={<MaintenanceLogPage />} />}
       />
       <Route
         path="/profile/property_manager"
@@ -198,6 +219,14 @@ function ProtectedRoutes() {
       <Route
         path="/jobs/entrepreneur"
         element={<ProtectedRoute element={<EntrepreneurJobs />} />}
+      />
+      <Route
+        path="/entrepreneur-job/:jobId"
+        element={<ProtectedRoute element={<EntrepreneurJobDetailsPage />} />}
+      />
+      <Route
+        path="/bid-submit/:jobId"
+        element={<ProtectedRoute element={<BidSubmissionPage />} />}
       />
       {/* SUPPLIER TEMPORARILY DISABLED — uncomment to re-enable */}
       {/* <Route
