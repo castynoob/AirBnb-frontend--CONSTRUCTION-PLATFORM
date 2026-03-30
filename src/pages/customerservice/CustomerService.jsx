@@ -601,7 +601,7 @@ function CustomerService() {
         </div>
       )}
 
-      {/* New Ticket Modal */}
+      {/* New Ticket Modals */}
       {showTicketModal && (
         <div className="cs-modal-overlay" onClick={() => { setShowTicketModal(false); setTicketSuccess(false); }}>
           <div className="cs-modal" onClick={(e) => e.stopPropagation()}>
