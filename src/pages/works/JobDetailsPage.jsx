@@ -38,10 +38,12 @@ import {
 } from "../../utils/contractApi";
 import { useLanguage } from "../../contexts/LanguageContext";
 
-const formatStageName = (name) => {
+const stageKeyMap = { not_started: 'notStarted', mobilization: 'mobilization', in_progress: 'inProgress', inspection: 'inspection', completed: 'completed' };
+const formatStageName = (name, t) => {
   if (!name) return '';
-  const map = { not_started: 'Not Started', mobilization: 'Mobilization & Planning', in_progress: 'In Progress', inspection: 'Inspection & Review', completed: 'Project Completed' };
-  return map[name] || name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const key = stageKeyMap[name];
+  if (key && t) { const v = t(`progress.${key}`); return v !== `progress.${key}` ? v : name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()); }
+  return name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 };
 
 // Custom marker icon for the map
@@ -932,7 +934,7 @@ function JobDetailsPage() {
             <div className="jdp-card" style={{ marginBottom: 16 }}>
               <div className="jdp-card-header">
                 <CheckCircle size={16} />
-                <h3>Job Progress</h3>
+                <h3>{t('progress.title') !== 'progress.title' ? t('progress.title') : 'Job Progress'}</h3>
               </div>
               <div className="jdp-card-body">
                 <div style={{ position: 'relative', paddingLeft: 28 }}>
@@ -958,7 +960,7 @@ function JobDetailsPage() {
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span style={{ fontWeight: 600, fontSize: '0.8125rem', color: isDone ? '#059669' : isActive ? '#00A5A9' : '#374151' }}>
-                              {formatStageName(stage.stage || stage.title) || `Stage ${i + 1}`}
+                              {formatStageName(stage.stage || stage.title, t) || `Stage ${i + 1}`}
                             </span>
                             <span style={{
                               fontSize: '0.625rem', fontWeight: 600, padding: '2px 6px', borderRadius: 4,
@@ -966,7 +968,7 @@ function JobDetailsPage() {
                               color: isDone ? '#047857' : isActive ? '#0d9488' : '#9ca3af',
                               textTransform: 'uppercase',
                             }}>
-                              {isDone ? 'Done' : isActive ? 'Active' : 'Pending'}
+                              {isDone ? (t('progress.statusCompleted') !== 'progress.statusCompleted' ? t('progress.statusCompleted') : 'Done') : isActive ? (t('progress.statusInProgress') !== 'progress.statusInProgress' ? t('progress.statusInProgress') : 'Active') : (t('progress.statusPending') !== 'progress.statusPending' ? t('progress.statusPending') : 'Pending')}
                             </span>
                           </div>
                           {stage.notes && <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '4px 0 0', lineHeight: 1.4 }}>{stage.notes}</p>}

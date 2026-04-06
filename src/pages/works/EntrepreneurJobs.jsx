@@ -548,13 +548,20 @@ function EntrepreneurJobs() {
     const status = contract.status
     switch (status) {
       case "active":
+      case "approved":
         return { class: "status-active", icon: CheckCircle, label: t('entrepreneurJobs.contractActive') || 'Contract Active', description: t('entrepreneurJobs.readyToStart') || 'Ready to start work' }
+      case "pending_payment":
+      case "pending":
+        return { class: "status-pending", icon: Clock, label: t('entrepreneurJobs.contractPending') || 'Pending Payment', description: t('entrepreneurJobs.awaitingPayment') || 'Awaiting payment processing' }
       case "work_completed":
         return { class: "status-review", icon: AlertCircle, label: t('entrepreneurJobs.awaitingApproval') || 'Awaiting Approval', description: t('entrepreneurJobs.workMarkedComplete') || 'Work marked complete, awaiting manager approval' }
       case "completed":
         return { class: "status-completed", icon: CheckCircle, label: t('entrepreneurJobs.contractCompleted') || 'Completed', description: t('entrepreneurJobs.workApproved') || 'Work approved by manager' }
+      case "cancelled":
+      case "canceled":
+        return { class: "status-cancelled", icon: AlertCircle, label: t('entrepreneurJobs.contractCancelled') || 'Cancelled', description: t('entrepreneurJobs.contractWasCancelled') || 'Contract was cancelled' }
       default:
-        return { class: "status-unknown", icon: Clock, label: t('entrepreneurJobs.unknown') || 'Unknown', description: t('entrepreneurJobs.contractStatusUnknown') || 'Contract status unknown' }
+        return { class: "status-active", icon: CheckCircle, label: status ? status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ') : 'Active', description: '' }
     }
   }
 

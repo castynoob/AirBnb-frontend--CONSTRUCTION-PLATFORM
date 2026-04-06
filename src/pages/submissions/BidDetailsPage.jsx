@@ -435,7 +435,7 @@ export default function BidDetailsPage() {
                         {normalizeStatus(job.status).toUpperCase()}
                       </span>
                       <span style={s.bidStatusText}>
-                        {tx(t, "submissions.bidStatus", "Bid:")} {bidStatus}
+                        {tx(t, "submissions.bidStatus", "Bid:")} {tx(t, `submissions.${bidStatus}`, bidStatus)}
                       </span>
                     </div>
                   </div>
@@ -451,15 +451,16 @@ export default function BidDetailsPage() {
                 <div style={s.card}>
                   <h3 style={s.cardTitle}>
                     <CheckCircle size={18} color="#00A5A9" />
-                    Job Progress
+                    {tx(t, "progress.title", "Job Progress")}
                   </h3>
                   <div style={{ position: 'relative', paddingLeft: 28 }}>
                     <div style={{ position: 'absolute', left: 11, top: 4, bottom: 4, width: 2, background: '#e5e7eb', zIndex: 0 }} />
                     {jobProgress.map((stage, i) => {
                       const isDone = stage.completed || stage.status === 'completed';
                       const isActive = stage.status === 'in_progress';
-                      const stageNames = { not_started: 'Not Started', mobilization: 'Mobilization & Planning', in_progress: 'In Progress', inspection: 'Inspection & Review', completed: 'Project Completed' };
-                      const name = stageNames[stage.stage] || (stage.stage || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || `Stage ${i + 1}`;
+                      const stageKeyMap = { not_started: 'notStarted', mobilization: 'mobilization', in_progress: 'inProgress', inspection: 'inspection', completed: 'completed' };
+                      const stageKey = stageKeyMap[stage.stage];
+                      const name = stageKey ? tx(t, `progress.${stageKey}`, (stage.stage || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())) : ((stage.stage || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || `Stage ${i + 1}`);
                       return (
                         <div key={i} style={{ position: 'relative', paddingBottom: i < jobProgress.length - 1 ? 20 : 0 }}>
                           <div style={{
@@ -483,7 +484,7 @@ export default function BidDetailsPage() {
                                 background: isDone ? '#d1fae5' : isActive ? '#ccfbf1' : '#f3f4f6',
                                 color: isDone ? '#047857' : isActive ? '#0d9488' : '#9ca3af',
                                 textTransform: 'uppercase',
-                              }}>{isDone ? 'Done' : isActive ? 'Active' : 'Pending'}</span>
+                              }}>{isDone ? tx(t, 'progress.statusCompleted', 'Done') : isActive ? tx(t, 'progress.statusInProgress', 'Active') : tx(t, 'progress.statusPending', 'Pending')}</span>
                             </div>
                             {stage.notes && <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '4px 0 0' }}>{stage.notes}</p>}
                             {(stage.actual_start || stage.actual_end) && (
@@ -1153,15 +1154,16 @@ const s = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    gap: 16,
+    gap: 12,
     flexWrap: "wrap",
   },
   jobTitle: {
-    fontSize: 22,
+    fontSize: "clamp(1rem, 3vw, 1.375rem)",
     fontWeight: 800,
     color: "#0F223D",
     margin: 0,
     marginBottom: 10,
+    wordBreak: "break-word",
   },
   headerMeta: {
     display: "flex",
@@ -1195,9 +1197,10 @@ const s = {
     fontWeight: 500,
   },
   bidAmountValue: {
-    fontSize: 28,
+    fontSize: "clamp(1.25rem, 4vw, 1.75rem)",
     fontWeight: 800,
     color: "#00A5A9",
+    whiteSpace: "nowrap",
   },
 
   // Info grid

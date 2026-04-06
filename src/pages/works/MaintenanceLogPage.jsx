@@ -68,13 +68,13 @@ const MaintenanceLogPage = () => {
       <Nav />
       <div className="main-container" style={{ flex: 1, background: '#f8fafc', padding: '1.5rem 2rem', overflowY: 'auto' }}>
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-          <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', border: '1px solid #e5e7eb', borderRadius: '8px', background: '#fff', color: '#374151', fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+          <button onClick={() => navigate(-1)} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 0.75rem', border: '1px solid #e5e7eb', borderRadius: '8px', background: '#fff', color: '#374151', fontSize: '0.8125rem', fontWeight: 500, cursor: 'pointer' }}>
             <ArrowLeft size={16} /> {tx(t, 'common.back', 'Back')}
           </button>
-          <Wrench size={22} style={{ color: '#00A5A9' }} />
-          <div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0F223D', margin: 0 }}>
+          <Wrench size={20} style={{ color: '#00A5A9' }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0F223D', margin: 0 }}>
               {tx(t, 'profileManager.maintenanceLog', 'Maintenance Log')}
             </h1>
             {(propName || propCity) && (
@@ -288,6 +288,10 @@ const MaintenanceLogPage = () => {
       <style>{`
         @media (max-width: 768px) {
           div[style*="grid-template-columns: repeat(4"] { grid-template-columns: repeat(2, 1fr) !important; }
+          div[style*="grid-template-columns: '1fr 1fr'"] { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 480px) {
+          div[style*="grid-template-columns: repeat(4"] { grid-template-columns: 1fr 1fr !important; gap: 0.5rem !important; }
         }
       `}</style>
     </div>

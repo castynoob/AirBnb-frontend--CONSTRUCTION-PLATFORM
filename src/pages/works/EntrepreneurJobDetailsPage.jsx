@@ -22,10 +22,17 @@ L.Icon.Default.mergeOptions({
 const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 const getToken = () => JSON.parse(localStorage.getItem("userProfile"))?.token;
 const tx = (t, key, fb) => { const v = t(key); return v === key ? fb : v; };
-const formatStageName = (name) => {
+const stageKeyMap = { not_started: 'notStarted', mobilization: 'mobilization', in_progress: 'inProgress', inspection: 'inspection', completed: 'completed' };
+const statusKeyMap = { completed: 'statusCompleted', in_progress: 'statusInProgress', pending: 'statusPending', validated: 'statusValidated' };
+const formatStageName = (name, t) => {
   if (!name) return '';
-  const map = { not_started: 'Not Started', mobilization: 'Mobilization & Planning', in_progress: 'In Progress', inspection: 'Inspection & Review', completed: 'Project Completed' };
-  return map[name] || name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const key = stageKeyMap[name];
+  if (key && t) return tx(t, `progress.${key}`, name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
+  return name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+};
+const formatStageStatus = (status, t) => {
+  const key = statusKeyMap[status] || statusKeyMap['pending'];
+  return t ? tx(t, `progress.${key}`, status || 'Pending') : (status || 'Pending');
 };
 
 const statusColors = { accepted: "#059669", ongoing: "#2563eb", completed: "#7c3aed" };
@@ -382,7 +389,7 @@ function EntrepreneurJobDetailsPage() {
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span style={{ fontWeight: 600, fontSize: '0.875rem', color: isDone ? '#059669' : isActive ? '#00A5A9' : '#374151' }}>
-                              {formatStageName(stage.stage || stage.title || stage.name) || `Stage ${i + 1}`}
+                              {formatStageName(stage.stage || stage.title || stage.name, t) || `Stage ${i + 1}`}
                             </span>
                             <span style={{
                               fontSize: '0.6875rem', fontWeight: 600, padding: '2px 8px', borderRadius: 4,
@@ -390,7 +397,7 @@ function EntrepreneurJobDetailsPage() {
                               color: isDone ? '#047857' : isActive ? '#0d9488' : '#9ca3af',
                               textTransform: 'uppercase', letterSpacing: '0.03em',
                             }}>
-                              {isDone ? 'Completed' : isActive ? 'In Progress' : 'Pending'}
+                              {formatStageStatus(isDone ? 'completed' : isActive ? 'in_progress' : 'pending', t)}
                             </span>
                           </div>
                           {stage.notes && (
@@ -423,12 +430,12 @@ function EntrepreneurJobDetailsPage() {
                                         headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ status: 'in_progress' })
                                       });
-                                      toast.success(`${formatStageName(stage.stage)} started`);
+                                      toast.success(`${formatStageName(stage.stage, t)} started`);
                                       await loadData();
                                     } catch { toast.error('Failed to update stage'); }
                                   }}
                                 >
-                                  <PlayCircle size={13} /> Start
+                                  <PlayCircle size={13} /> {tx(t, 'progress.start', 'Start')}
                                 </button>
                               )}
                               {isActive && (
@@ -441,12 +448,12 @@ function EntrepreneurJobDetailsPage() {
                                         headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ status: 'completed' })
                                       });
-                                      toast.success(`${formatStageName(stage.stage)} completed`);
+                                      toast.success(`${formatStageName(stage.stage, t)} completed`);
                                       await loadData();
                                     } catch { toast.error('Failed to update stage'); }
                                   }}
                                 >
-                                  <CheckCircle size={13} /> Complete
+                                  <CheckCircle size={13} /> {tx(t, 'progress.markComplete', 'Complete')}
                                 </button>
                               )}
                             </div>
@@ -462,7 +469,7 @@ function EntrepreneurJobDetailsPage() {
             {/* Initialize Progress — for ongoing jobs without progress */}
             {(job.status === "ongoing" || job.status === "completed") && (!progress || progress.length === 0) && (
               <div style={s.card}>
-                <h2 style={s.cardTitle}><CheckCircle size={18} /> Job Progress</h2>
+                <h2 style={s.cardTitle}><CheckCircle size={18} /> {tx(t, 'progress.title', 'Job Progress')}</h2>
                 <p style={{ fontSize: '0.8125rem', color: '#6b7280', margin: '0 0 12px' }}>No progress stages initialized yet. Initialize to track your project milestones.</p>
                 <button
                   style={{ ...s.actionBtn, background: '#00A5A9' }}
@@ -474,7 +481,7 @@ function EntrepreneurJobDetailsPage() {
                     } catch { toast.error("Failed to initialize progress"); }
                   }}
                 >
-                  <CheckCircle size={17} /> Initialize Progress
+                  <CheckCircle size={17} /> {tx(t, 'progress.initProgress', 'Initialize Progress')}
                 </button>
               </div>
             )}
