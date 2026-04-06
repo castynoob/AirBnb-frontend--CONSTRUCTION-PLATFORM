@@ -338,9 +338,9 @@ function RepairList({ repairs, handleRepairClicked, hideFilters, externalFilters
               />
               <span
                 className={`hp-category-badge ${
-                  repair.category.includes("Urgent")
+                  (repair.category === "Urgent" || repair.category === "High" || repair.is_emergency)
                     ? "hp-urgent"
-                    : repair.category.includes("Next")
+                    : (repair.category === "Planned" || repair.category === "Medium" || repair.category === "Low")
                     ? "hp-warning"
                     : "hp-info"
                 }`}

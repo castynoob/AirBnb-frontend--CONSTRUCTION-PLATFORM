@@ -87,9 +87,9 @@ const FavoriteEntrepreneurs = () => {
 
   // Tabs configuration
   const tabs = [
-    { id: 'all', label: t('favorites.allFavorites') || 'All Favorites', icon: Heart },
-    { id: 'approved', label: t('favorites.approved') || 'Approved', icon: CheckCircle },
-    { id: 'pending', label: t('favorites.pending') || 'Pending', icon: Clock },
+    { id: 'all', label: tx(t, 'favorites.allFavorites', 'All Favorites'), icon: Heart },
+    { id: 'approved', label: tx(t, 'favorites.approved', 'Approved'), icon: CheckCircle },
+    { id: 'pending', label: tx(t, 'favorites.pending', 'Pending'), icon: Clock },
   ];
 
   // Filtered favorites based on tab and search
@@ -421,7 +421,7 @@ const FavoriteEntrepreneurs = () => {
               className={`fav-cat-pill ${categoryFilter === 'all' ? 'active' : ''}`}
               onClick={() => setCategoryFilter('all')}
             >
-              {t('favorites.allCategories') || 'All'}
+              {tx(t, 'favorites.allCategories', 'All Categories')}
             </button>
             {categories.map(cat => (
               <button
@@ -440,7 +440,7 @@ const FavoriteEntrepreneurs = () => {
                 className={`fav-cat-pill ${categoryFilter === 'uncategorized' ? 'active' : ''}`}
                 onClick={() => setCategoryFilter('uncategorized')}
               >
-                {t('favorites.uncategorized') || 'Uncategorized'}
+                {tx(t, 'favorites.uncategorized', 'Uncategorized')}
                 <span className="fav-cat-pill-count">
                   {favorites.filter(f => !f.category).length}
                 </span>
@@ -614,8 +614,17 @@ const FavoriteEntrepreneurs = () => {
                   )}
                 </div>
 
-                {/* Category Tag */}
+                {/* Specializations + Category */}
                 <div className="fav-category-section">
+                  {/* Contractor's specializations */}
+                  {favorite.specializations && favorite.specializations.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', marginBottom: '0.5rem' }}>
+                      {favorite.specializations.map((spec, si) => (
+                        <span key={si} style={{ fontSize: '0.6875rem', padding: '2px 8px', background: '#f3f4f6', color: '#6b7280', borderRadius: '4px', fontWeight: 500 }}>{spec}</span>
+                      ))}
+                    </div>
+                  )}
+                  {/* PM's category label */}
                   {editingCategory === favorite.favorite_id ? (
                     <div className="fav-category-edit">
                       <select
@@ -625,26 +634,26 @@ const FavoriteEntrepreneurs = () => {
                         autoFocus
                         onBlur={() => setEditingCategory(null)}
                       >
-                        <option value="">{t('favorites.noCategory') || 'No Category'}</option>
-                        <option value="Roofing">{t('favorites.catRoofing') || 'Roofing'}</option>
-                        <option value="Plumbing">{t('favorites.catPlumbing') || 'Plumbing'}</option>
-                        <option value="Electrical">{t('favorites.catElectrical') || 'Electrical'}</option>
-                        <option value="Carpentry">{t('favorites.catCarpentry') || 'Carpentry'}</option>
-                        <option value="Painting">{t('favorites.catPainting') || 'Painting'}</option>
-                        <option value="Flooring">{t('favorites.catFlooring') || 'Flooring'}</option>
-                        <option value="Landscaping">{t('favorites.catLandscaping') || 'Landscaping'}</option>
-                        <option value="Masonry">{t('favorites.catMasonry') || 'Masonry'}</option>
-                        <option value="HVAC">{t('favorites.catHVAC') || 'HVAC'}</option>
-                        <option value="Windows/Doors">{t('favorites.catWindowsDoors') || 'Windows/Doors'}</option>
-                        <option value="General Repair">{t('favorites.catGeneralRepair') || 'General Repair'}</option>
-                        <option value="Other">{t('favorites.catOther') || 'Other'}</option>
+                        <option value="">{tx(t, 'favorites.noCategory', 'No Category')}</option>
+                        <option value="Roofing">{tx(t, 'favorites.catRoofing', 'Roofing')}</option>
+                        <option value="Plumbing">{tx(t, 'favorites.catPlumbing', 'Plumbing')}</option>
+                        <option value="Electrical">{tx(t, 'favorites.catElectrical', 'Electrical')}</option>
+                        <option value="Carpentry">{tx(t, 'favorites.catCarpentry', 'Carpentry')}</option>
+                        <option value="Painting">{tx(t, 'favorites.catPainting', 'Painting')}</option>
+                        <option value="Flooring">{tx(t, 'favorites.catFlooring', 'Flooring')}</option>
+                        <option value="Landscaping">{tx(t, 'favorites.catLandscaping', 'Landscaping')}</option>
+                        <option value="Masonry">{tx(t, 'favorites.catMasonry', 'Masonry')}</option>
+                        <option value="HVAC">{tx(t, 'favorites.catHVAC', 'HVAC')}</option>
+                        <option value="Windows/Doors">{tx(t, 'favorites.catWindowsDoors', 'Windows/Doors')}</option>
+                        <option value="General Repair">{tx(t, 'favorites.catGeneralRepair', 'General Repair')}</option>
+                        <option value="Other">{tx(t, 'favorites.catOther', 'Other')}</option>
                       </select>
                     </div>
                   ) : (
                     <button
                       className="fav-category-tag"
                       onClick={() => setEditingCategory(favorite.favorite_id)}
-                      title={t('favorites.changeCategory') || 'Change category'}
+                      title={tx(t, 'favorites.changeCategory', 'Change category')}
                     >
                       {favorite.category ? (
                         <><span className="fav-cat-dot" />{favorite.category}</>

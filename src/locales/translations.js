@@ -949,6 +949,8 @@ const translations = {
       catWindowsDoors: 'Windows/Doors',
       catGeneralRepair: 'General Repair',
       catOther: 'Other',
+      allCategories: 'All Categories',
+      uncategorized: 'Uncategorized',
       // Tabs
       allFavorites: 'All Favorites',
       approved: 'Approved',
@@ -4598,6 +4600,8 @@ const translations = {
       catWindowsDoors: 'Fenêtres/Portes',
       catGeneralRepair: 'Réparation générale',
       catOther: 'Autre',
+      allCategories: 'Toutes les catégories',
+      uncategorized: 'Non catégorisé',
       // Tabs
       allFavorites: 'Tous les Favoris',
       approved: 'Approuvés',
