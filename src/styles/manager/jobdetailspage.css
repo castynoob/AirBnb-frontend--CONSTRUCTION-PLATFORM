@@ -681,6 +681,159 @@
   background: #008b8f;
 }
 
+/* ==================== CONTRACTOR INVOICE CARD ==================== */
+.jdp-invoice-card {
+  background: #f0fbfb;
+  border: 1px solid #cffafe;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-top: 1rem;
+}
+
+.jdp-invoice-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.jdp-invoice-header h3 {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #0F223D;
+  flex: 1;
+}
+
+.jdp-invoice-header svg {
+  color: #00A5A9;
+}
+
+.jdp-invoice-when {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.jdp-invoice-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.jdp-invoice-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8125rem;
+  color: #4b5563;
+}
+
+.jdp-invoice-row strong {
+  color: #0F223D;
+  font-weight: 600;
+}
+
+.jdp-invoice-total {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #cffafe;
+  font-size: 0.9375rem;
+}
+
+.jdp-invoice-total strong {
+  color: #00A5A9;
+  font-weight: 700;
+}
+
+.jdp-invoice-notes {
+  margin: 0.75rem 0 0;
+  padding: 0.5rem 0.75rem;
+  background: #ffffff;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  color: #4b5563;
+  font-style: italic;
+}
+
+.jdp-invoice-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.875rem;
+  background: #ffffff;
+  border: 1px solid #00A5A9;
+  border-radius: 8px;
+  color: #00A5A9;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.jdp-invoice-download:hover {
+  background: #ecfeff;
+}
+
+/* ==================== COMPLETION NOTES CARD ==================== */
+.jdp-notes-card {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-top: 0.75rem;
+}
+
+.jdp-notes-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.jdp-notes-header h3 {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #0F223D;
+}
+
+.jdp-notes-header svg {
+  color: #d97706;
+}
+
+.jdp-notes-entry {
+  padding: 0.625rem 0;
+  border-top: 1px dashed #fde68a;
+}
+
+.jdp-notes-entry:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+.jdp-notes-author {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #92400e;
+  margin-bottom: 0.25rem;
+  letter-spacing: 0.2px;
+}
+
+.jdp-notes-when {
+  font-weight: 400;
+  color: #b45309;
+}
+
+.jdp-notes-body {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #0F223D;
+  white-space: pre-wrap;
+}
+
 /* ==================== FOOTER ACTIONS ==================== */
 .jdp-footer-actions {
   display: flex;
@@ -717,6 +870,18 @@
 .jdp-delete-btn:hover:not(:disabled) {
   background: #fef2f2;
   border-color: #f87171;
+}
+
+.jdp-edit-btn {
+  color: #0F223D;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+}
+
+.jdp-edit-btn:hover:not(:disabled) {
+  background: #f0fbfb;
+  border-color: #00A5A9;
+  color: #00A5A9;
 }
 
 .jdp-archive-btn {

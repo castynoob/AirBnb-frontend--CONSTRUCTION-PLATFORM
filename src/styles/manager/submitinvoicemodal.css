@@ -1,0 +1,48 @@
+/* Modal corner-radius overrides for any modal that uses the announcement-* shell.
+   The base addannouncementmodal.css ships with `border-radius: 0` (deliberate sharp
+   edges for the announcement modal). Adding `.rounded-modal` (or its `.si-modal`
+   alias) to the overlay element opts that one modal into 12-16 px corners so it
+   matches EditPropertyModal / EditManagerProfileModal etc.
+
+   Scoped — does not affect modals that don't add the wrapper class. */
+
+.rounded-modal .announcement-content,
+.si-modal .announcement-content {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.rounded-modal .announcement-header,
+.si-modal .announcement-header {
+  border-radius: 16px 16px 0 0;
+}
+
+.rounded-modal .form-input,
+.rounded-modal .form-select,
+.rounded-modal .form-textarea,
+.si-modal .form-input,
+.si-modal .form-select,
+.si-modal .form-textarea {
+  border-radius: 8px !important;
+}
+
+.rounded-modal .announcement-btn,
+.si-modal .announcement-btn {
+  border-radius: 8px !important;
+}
+
+.rounded-modal .error-message-box,
+.si-modal .error-message-box {
+  border-radius: 8px !important;
+}
+
+@media (max-width: 640px) {
+  .rounded-modal .announcement-content,
+  .si-modal .announcement-content {
+    border-radius: 12px;
+  }
+  .rounded-modal .announcement-header,
+  .si-modal .announcement-header {
+    border-radius: 12px 12px 0 0;
+  }
+}

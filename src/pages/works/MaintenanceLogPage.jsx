@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Wrench, Calendar, DollarSign, User, Star, FileText, ChevronDown, ChevronUp, Clock, CheckCircle, AlertCircle, Building2, Image } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { translateStatus, translateCategory } from '../../utils/translateEnums';
 import Nav from '../../components/Nav';
 
 const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -89,7 +90,7 @@ const MaintenanceLogPage = () => {
         {loading && (
           <div style={{ textAlign: 'center', padding: '4rem' }}>
             <div style={{ width: 40, height: 40, border: '3px solid #e5e7eb', borderTopColor: '#00A5A9', borderRadius: '50%', animation: 'spin 0.7s linear infinite', margin: '0 auto 1rem' }} />
-            <p style={{ color: '#9ca3af' }}>Loading...</p>
+            <p style={{ color: '#9ca3af' }}>{tx(t, 'common.loading', 'Loading...')}</p>
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           </div>
         )}
@@ -144,7 +145,14 @@ const MaintenanceLogPage = () => {
             {activeTab === 'jobs' && (
               <>
                 <div style={{ display: 'flex', gap: '0.375rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                  {['all', 'open', 'ongoing', 'completed'].map(s => (
+                  {['all', 'open', 'ongoing', 'completed'].map(s => {
+                    const labelMap = {
+                      all: `${tx(t, 'maintenanceLog.statusAll', 'All')} (${data.jobs.length})`,
+                      open: tx(t, 'maintenanceLog.statusOpen', 'Open'),
+                      ongoing: tx(t, 'maintenanceLog.statusOngoing', 'Ongoing'),
+                      completed: tx(t, 'maintenanceLog.statusCompleted', 'Completed'),
+                    };
+                    return (
                     <button key={s} onClick={() => setStatusFilter(s)}
                       style={{
                         padding: '0.35rem 0.875rem', border: '1px solid', borderRadius: '7px', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
@@ -152,16 +160,17 @@ const MaintenanceLogPage = () => {
                         color: statusFilter === s ? '#fff' : '#6b7280',
                         borderColor: statusFilter === s ? '#0F223D' : '#e5e7eb',
                       }}>
-                      {s === 'all' ? `All (${data.jobs.length})` : s.charAt(0).toUpperCase() + s.slice(1)}
+                      {labelMap[s]}
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   {filteredJobs.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '3rem', background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
                       <FileText size={32} style={{ color: '#d1d5db', margin: '0 auto 0.5rem', display: 'block' }} />
-                      <p style={{ color: '#9ca3af' }}>No jobs found</p>
+                      <p style={{ color: '#9ca3af' }}>{tx(t, 'maintenanceLog.noJobsFound', 'No jobs found')}</p>
                     </div>
                   ) : filteredJobs.map(job => {
                     const sc = getStatusColor(job.status);
@@ -174,11 +183,11 @@ const MaintenanceLogPage = () => {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
                               <span style={{ fontWeight: 600, fontSize: '0.9375rem', color: '#111827' }}>{job.title}</span>
                               <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '0.6875rem', fontWeight: 600, background: sc.bg, color: sc.color, border: `1px solid ${sc.border}` }}>
-                                {job.status.toUpperCase()}
+                                {translateStatus(t, job.status, { uppercase: true })}
                               </span>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.8125rem', color: '#9ca3af' }}>
-                              {job.category && <span>{job.category}</span>}
+                              {job.category && <span>{translateCategory(t, job.category)}</span>}
                               <span>{formatDate(job.created_at)}</span>
                               {job.contract_amount && <span style={{ color: '#059669', fontWeight: 600 }}>{formatCurrency(job.contract_amount)}</span>}
                             </div>
@@ -190,22 +199,22 @@ const MaintenanceLogPage = () => {
                           <div style={{ borderTop: '1px solid #f3f4f6', padding: '1.25rem', background: '#fafbfc' }}>
                             {job.description && <p style={{ fontSize: '0.875rem', color: '#4b5563', lineHeight: 1.6, marginBottom: '1rem' }}>{job.description}</p>}
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem 2rem', fontSize: '0.875rem' }}>
-                              <div><span style={{ color: '#9ca3af', fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Urgency</span><div style={{ fontWeight: 500, color: '#374151' }}>{job.urgency || '—'}</div></div>
-                              <div><span style={{ color: '#9ca3af', fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Due Date</span><div style={{ fontWeight: 500, color: '#374151' }}>{formatDate(job.due_date)}</div></div>
-                              <div><span style={{ color: '#9ca3af', fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Budget</span><div style={{ fontWeight: 500, color: '#374151' }}>{formatCurrency(job.budget_min)} – {formatCurrency(job.budget_max)}</div></div>
-                              <div><span style={{ color: '#9ca3af', fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Duration</span><div style={{ fontWeight: 500, color: '#374151' }}>{job.estimated_duration_days ? `${job.estimated_duration_days} days` : '—'}</div></div>
+                              <div><span style={{ color: '#9ca3af', fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{tx(t, 'maintenanceLog.urgency', 'Urgency')}</span><div style={{ fontWeight: 500, color: '#374151' }}>{job.urgency || '—'}</div></div>
+                              <div><span style={{ color: '#9ca3af', fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{tx(t, 'maintenanceLog.dueDate', 'Due Date')}</span><div style={{ fontWeight: 500, color: '#374151' }}>{formatDate(job.due_date)}</div></div>
+                              <div><span style={{ color: '#9ca3af', fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{tx(t, 'maintenanceLog.budget', 'Budget')}</span><div style={{ fontWeight: 500, color: '#374151' }}>{formatCurrency(job.budget_min)} – {formatCurrency(job.budget_max)}</div></div>
+                              <div><span style={{ color: '#9ca3af', fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{tx(t, 'maintenanceLog.duration', 'Duration')}</span><div style={{ fontWeight: 500, color: '#374151' }}>{job.estimated_duration_days ? `${job.estimated_duration_days} ${tx(t, 'maintenanceLog.days', 'days')}` : '—'}</div></div>
                             </div>
 
                             {job.company_name && (
                               <div style={{ marginTop: '1rem', padding: '0.75rem', background: '#fff', borderRadius: '10px', border: '1px solid #e5e7eb' }}>
-                                <div style={{ fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9ca3af', marginBottom: '0.5rem' }}>Contractor</div>
+                                <div style={{ fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9ca3af', marginBottom: '0.5rem' }}>{tx(t, 'maintenanceLog.contractor', 'Contractor')}</div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
                                   <div style={{ width: 32, height: 32, borderRadius: '8px', background: '#0F223D', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8125rem', fontWeight: 700, flexShrink: 0 }}>
                                     {(job.company_name || '?')[0].toUpperCase()}
                                   </div>
                                   <div style={{ flex: 1 }}>
                                     <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#111827' }}>{job.company_name}</div>
-                                    {job.license_number && <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>License: {job.license_number}</div>}
+                                    {job.license_number && <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{tx(t, 'maintenanceLog.license', 'License')}: {job.license_number}</div>}
                                   </div>
                                   {job.contract_amount && <div style={{ fontSize: '1rem', fontWeight: 700, color: '#059669' }}>{formatCurrency(job.contract_amount)}</div>}
                                 </div>
@@ -214,21 +223,21 @@ const MaintenanceLogPage = () => {
 
                             {(job.contract_created_at || job.work_started_at || job.work_completed_at) && (
                               <div style={{ marginTop: '0.75rem', display: 'flex', gap: '1rem', fontSize: '0.8125rem', color: '#6b7280', flexWrap: 'wrap' }}>
-                                {job.contract_created_at && <span>Contract: {formatDate(job.contract_created_at)}</span>}
-                                {job.work_started_at && <span>Started: {formatDate(job.work_started_at)}</span>}
-                                {job.work_completed_at && <span>Completed: {formatDate(job.work_completed_at)}</span>}
+                                {job.contract_created_at && <span>{tx(t, 'maintenanceLog.contract', 'Contract')}: {formatDate(job.contract_created_at)}</span>}
+                                {job.work_started_at && <span>{tx(t, 'maintenanceLog.started', 'Started')}: {formatDate(job.work_started_at)}</span>}
+                                {job.work_completed_at && <span>{tx(t, 'maintenanceLog.completed', 'Completed')}: {formatDate(job.work_completed_at)}</span>}
                               </div>
                             )}
 
                             {job.reviews && job.reviews.length > 0 && (
                               <div style={{ marginTop: '0.75rem' }}>
-                                <div style={{ fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9ca3af', marginBottom: '0.375rem' }}>Reviews</div>
+                                <div style={{ fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.04em', color: '#9ca3af', marginBottom: '0.375rem' }}>{tx(t, 'maintenanceLog.reviews', 'Reviews')}</div>
                                 {job.reviews.map((r, i) => (
                                   <div key={i} style={{ padding: '0.625rem 0.75rem', background: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb', marginBottom: '0.375rem' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', marginBottom: '0.25rem' }}>
                                       {[1,2,3,4,5].map(s => <Star key={s} size={13} fill={s <= r.rating ? '#f59e0b' : 'none'} stroke={s <= r.rating ? '#f59e0b' : '#d1d5db'} />)}
                                       <span style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#374151', marginLeft: '0.25rem' }}>{r.rating}/5</span>
-                                      <span style={{ fontSize: '0.75rem', color: '#9ca3af', marginLeft: 'auto' }}>{r.reviewer_role === 'property_manager' ? 'By you' : 'By contractor'}</span>
+                                      <span style={{ fontSize: '0.75rem', color: '#9ca3af', marginLeft: 'auto' }}>{r.reviewer_role === 'property_manager' ? tx(t, 'maintenanceLog.byYou', 'By you') : tx(t, 'maintenanceLog.byContractor', 'By contractor')}</span>
                                     </div>
                                     {r.comment && <p style={{ margin: 0, fontSize: '0.875rem', color: '#4b5563', fontStyle: 'italic' }}>"{r.comment}"</p>}
                                   </div>
@@ -250,7 +259,7 @@ const MaintenanceLogPage = () => {
                 {(data.contractors || []).length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '3rem', background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb' }}>
                     <User size={32} style={{ color: '#d1d5db', margin: '0 auto 0.5rem', display: 'block' }} />
-                    <p style={{ color: '#9ca3af' }}>No contractors yet</p>
+                    <p style={{ color: '#9ca3af' }}>{tx(t, 'maintenanceLog.noContractors', 'No contractors yet')}</p>
                   </div>
                 ) : data.contractors.map((c, i) => (
                   <div key={i} style={{ background: '#fff', borderRadius: '12px', border: '1px solid #e5e7eb', padding: '1.25rem' }}>
@@ -265,15 +274,15 @@ const MaintenanceLogPage = () => {
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #f3f4f6' }}>
                       <div>
-                        <div style={{ fontSize: '0.6875rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Jobs Done</div>
+                        <div style={{ fontSize: '0.6875rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{tx(t, 'maintenanceLog.jobsDone', 'Jobs Done')}</div>
                         <div style={{ fontSize: '1.125rem', fontWeight: 700, color: '#111827' }}>{c.jobs_count}</div>
                       </div>
                       <div>
-                        <div style={{ fontSize: '0.6875rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total Spent</div>
+                        <div style={{ fontSize: '0.6875rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{tx(t, 'maintenanceLog.totalSpent', 'Total Spent')}</div>
                         <div style={{ fontSize: '1.125rem', fontWeight: 700, color: '#059669' }}>{formatCurrency(c.total_spent)}</div>
                       </div>
                       <div>
-                        <div style={{ fontSize: '0.6875rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Specialties</div>
+                        <div style={{ fontSize: '0.6875rem', color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{tx(t, 'maintenanceLog.specialties', 'Specialties')}</div>
                         <div style={{ fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>{c.specializations?.length ? c.specializations.join(', ') : '—'}</div>
                       </div>
                     </div>

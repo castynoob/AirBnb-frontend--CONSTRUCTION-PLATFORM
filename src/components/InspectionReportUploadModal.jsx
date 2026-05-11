@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/manager/inspectionreportupload.css';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit, propertyId }) {
+  const { t } = useLanguage();
   const [file, setFile] = useState(null);
   const [extractedData, setExtractedData] = useState(null);
   const [inspectionId, setInspectionId] = useState(null);
@@ -14,17 +16,17 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
 
   // Field label mappings for better display
   const fieldLabels = {
-    title: 'Title / Work Description',
-    description: 'Description',
-    category: 'Category',
-    urgency: 'Urgency / Priority',
-    budget: 'Budget',
-    location: 'Location / Unit',
-    dueDate: 'Due Date / Year',
-    notes: 'Notes / Details',
-    component: 'Component',
-    uniformatCode: 'Uniformat Code',
-    typeOfWork: 'Type of Work',
+    title: t('inspectionUpload.field_title') || 'Title / Work Description',
+    description: t('inspectionUpload.field_description') || 'Description',
+    category: t('inspectionUpload.field_category') || 'Category',
+    urgency: t('inspectionUpload.field_urgency') || 'Urgency / Priority',
+    budget: t('inspectionUpload.field_budget') || 'Budget',
+    location: t('inspectionUpload.field_location') || 'Location / Unit',
+    dueDate: t('inspectionUpload.field_dueDate') || 'Due Date / Year',
+    notes: t('inspectionUpload.field_notes') || 'Notes / Details',
+    component: t('inspectionUpload.field_component') || 'Component',
+    uniformatCode: t('inspectionUpload.field_uniformatCode') || 'Uniformat Code',
+    typeOfWork: t('inspectionUpload.field_typeOfWork') || 'Type of Work',
   };
 
   // Function to get friendly label for field
@@ -343,9 +345,11 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
         <button className="uir-close-btn" onClick={handleClose}>×</button>
 
         <div className="uir-modal-header">
-          <h2>Upload Inspection Report</h2>
+          <h2>{t('inspectionUpload.title') || 'Upload Inspection Report'}</h2>
           <p className="uir-subtitle">
-            {!propertyId ? 'Select a property and upload' : 'Upload'} an Excel file containing inspection data, then review and verify the information
+            {!propertyId
+              ? (t('inspectionUpload.subtitleSelectAndUpload') || 'Select a property and upload an Excel file containing inspection data, then review and verify the information')
+              : (t('inspectionUpload.subtitleUpload') || 'Upload an Excel file containing inspection data, then review and verify the information')}
           </p>
         </div>
 
@@ -354,11 +358,11 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
             {/* Property Selection - only show if propertyId not passed from parent */}
             {!propertyId && (
               <div className="uir-property-selection-section">
-                <h3>Step 1: Select Property</h3>
+                <h3>{t('inspectionUpload.step1') || 'Step 1: Select Property'}</h3>
                 {isLoadingProperties ? (
                   <div className="uir-loading-message">
                     <div className="uir-spinner"></div>
-                    <span>Loading properties...</span>
+                    <span>{t('inspectionUpload.loadingProperties') || 'Loading properties...'}</span>
                   </div>
                 ) : (
                   <div className="uir-form-group">
@@ -366,7 +370,7 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
                       <svg className="uir-property-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                       </svg>
-                      Select Property <span className="uir-required">*</span>
+                      {t('inspectionUpload.selectProperty') || 'Select Property'} <span className="uir-required">*</span>
                     </label>
                     <select
                       id="property-select"
@@ -377,7 +381,7 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
                       }}
                       className="uir-property-dropdown"
                     >
-                      <option value="">-- Choose a Property --</option>
+                      <option value="">{t('inspectionUpload.chooseProperty') || '-- Choose a Property --'}</option>
                       {properties.map((property) => (
                         <option key={property.id} value={property.id}>
                           {property.building_name} - {property.address}
@@ -389,7 +393,7 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
               </div>
             )}
 
-            <h3>{!propertyId ? 'Step 2: Upload Excel File' : 'Upload Excel File'}</h3>
+            <h3>{!propertyId ? (t('inspectionUpload.step2') || 'Step 2: Upload Excel File') : (t('inspectionUpload.uploadExcelFile') || 'Upload Excel File')}</h3>
             <div className="uir-upload-area">
               <input
                 type="file"
@@ -403,9 +407,9 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                 </svg>
                 <span className="uir-upload-text">
-                  {file ? file.name : 'Click to upload or drag and drop'}
+                  {file ? file.name : (t('inspectionUpload.clickToUpload') || 'Click to upload or drag and drop')}
                 </span>
-                <span className="uir-upload-hint">Excel files (.xlsx, .xls, .csv)</span>
+                <span className="uir-upload-hint">{t('inspectionUpload.excelFilesHint') || 'Excel files (.xlsx, .xls, .csv)'}</span>
               </label>
             </div>
 
@@ -418,18 +422,18 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
                   <div>{error}</div>
                   {error.includes('Could not find "Title"') && (
                     <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #fcc' }}>
-                      <strong>Quick Fix:</strong>
+                      <strong>{t('inspectionUpload.quickFix') || 'Quick Fix:'}</strong>
                       <ol style={{ marginTop: '8px', paddingLeft: '20px', fontSize: '14px' }}>
-                        <li>Open your Excel file</li>
-                        <li>Add a header row at the top (if missing)</li>
-                        <li>Name one column as:
+                        <li>{t('inspectionUpload.quickFix1') || 'Open your Excel file'}</li>
+                        <li>{t('inspectionUpload.quickFix2') || 'Add a header row at the top (if missing)'}</li>
+                        <li>{t('inspectionUpload.quickFix3') || 'Name one column as:'}
                           <ul style={{ marginLeft: '20px', marginTop: '4px' }}>
-                            <li>"Title" or "Titre" (for work description)</li>
-                            <li>Or use any accepted name: "Job Title", "Task", "Tâche"</li>
+                            <li>{t('inspectionUpload.quickFix3a') || '"Title" or "Titre" (for work description)'}</li>
+                            <li>{t('inspectionUpload.quickFix3b') || 'Or use any accepted name: "Job Title", "Task", "Tâche"'}</li>
                           </ul>
                         </li>
-                        <li>Keep your other columns in French or English - both work!</li>
-                        <li>Save and upload again</li>
+                        <li>{t('inspectionUpload.quickFix4') || 'Keep your other columns in French or English - both work!'}</li>
+                        <li>{t('inspectionUpload.quickFix5') || 'Save and upload again'}</li>
                       </ol>
                       <button
                         onClick={handleDownloadTemplate}
@@ -445,7 +449,7 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
                           fontWeight: '600'
                         }}
                       >
-                        Download Template Example
+                        {t('inspectionUpload.downloadTemplateExample') || 'Download Template Example'}
                       </button>
                     </div>
                   )}
@@ -456,30 +460,30 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
             {isProcessing && (
               <div className="uir-processing-message">
                 <div className="uir-spinner"></div>
-                <span>Processing Excel file...</span>
+                <span>{t('inspectionUpload.processing') || 'Processing Excel file...'}</span>
               </div>
             )}
 
             <div className="uir-instructions">
               <div className="uir-instructions-header">
-                <h3>Inspection Report Format Guidelines</h3>
+                <h3>{t('inspectionUpload.formatGuidelines') || 'Inspection Report Format Guidelines'}</h3>
                 <button className="uir-template-download-btn" onClick={handleDownloadTemplate}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  Download Template
+                  {t('inspectionUpload.downloadTemplate') || 'Download Template'}
                 </button>
               </div>
               <ul>
-                <li><strong>✓ No translation needed!</strong> Keep your original French/English column names - the system automatically translates them</li>
-                <li><strong>Supported formats:</strong> Standard inspection reports, maintenance plans, Uniformat-coded reports</li>
-                <li><strong>Required column (at least ONE):</strong>
+                <li><strong>{t('inspectionUpload.noTranslationLabel') || '✓ No translation needed!'}</strong> {t('inspectionUpload.noTranslationDesc') || 'Keep your original French/English column names - the system automatically translates them'}</li>
+                <li><strong>{t('inspectionUpload.supportedFormatsLabel') || 'Supported formats:'}</strong> {t('inspectionUpload.supportedFormatsDesc') || 'Standard inspection reports, maintenance plans, Uniformat-coded reports'}</li>
+                <li><strong>{t('inspectionUpload.requiredColumnLabel') || 'Required column (at least ONE):'}</strong>
                   <ul style={{ marginTop: '8px', marginLeft: '20px', fontSize: '13px' }}>
-                    <li>🇬🇧 English: "Title", "Job Title", "Task"</li>
-                    <li>🇫🇷 French: "Titre", "Tâche"</li>
+                    <li>🇬🇧 {t('inspectionUpload.requiredEnglish') || 'English: "Title", "Job Title", "Task"'}</li>
+                    <li>🇫🇷 {t('inspectionUpload.requiredFrench') || 'French: "Titre", "Tâche"'}</li>
                   </ul>
                 </li>
-                <li><strong>Optional columns recognized:</strong>
+                <li><strong>{t('inspectionUpload.optionalColumnsLabel') || 'Optional columns recognized:'}</strong>
                   <ul style={{ marginTop: '8px', marginLeft: '20px', fontSize: '13px' }}>
                     <li>Description / Détails</li>
                     <li>Component / Composant / Élément</li>
@@ -490,9 +494,9 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
                     <li>Due Date / Date / Échéance</li>
                   </ul>
                 </li>
-                <li><strong>Auto-detection:</strong> Categories from Uniformat codes (D50=Electrical, B20=Masonry, D20=Plumbing, etc.)</li>
-                <li><strong>Budget:</strong> Supports single budget or min/max range</li>
-                <li>First row must contain column headers</li>
+                <li><strong>{t('inspectionUpload.autoDetectionLabel') || 'Auto-detection:'}</strong> {t('inspectionUpload.autoDetectionDesc') || 'Categories from Uniformat codes (D50=Electrical, B20=Masonry, D20=Plumbing, etc.)'}</li>
+                <li><strong>{t('inspectionUpload.budgetLabel') || 'Budget:'}</strong> {t('inspectionUpload.budgetDesc') || 'Supports single budget or min/max range'}</li>
+                <li>{t('inspectionUpload.firstRowHeaders') || 'First row must contain column headers'}</li>
               </ul>
             </div>
           </div>
@@ -500,14 +504,14 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
           <div className="uir-review-section">
             <div className="uir-review-header">
               <div className="uir-review-info">
-                <h3>Review & Verify Data</h3>
-                <p>{Object.keys(editableData).length} items extracted from {file?.name}</p>
+                <h3>{t('inspectionUpload.reviewVerify') || 'Review & Verify Data'}</h3>
+                <p>{(t('inspectionUpload.itemsExtracted') || '{{count}} items extracted from {{filename}}').replace('{{count}}', Object.keys(editableData).length).replace('{{filename}}', file?.name || '')}</p>
               </div>
               <button className="uir-reset-btn" onClick={handleReset}>
                 <svg className="uir-reset-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                Upload Different File
+                {t('inspectionUpload.uploadDifferentFile') || 'Upload Different File'}
               </button>
             </div>
 
@@ -524,11 +528,11 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
               <table className="uir-data-table">
                 <thead>
                   <tr>
-                    <th>Row</th>
+                    <th>{t('inspectionUpload.row') || 'Row'}</th>
                     {extractedData[0] && Object.keys(extractedData[0]).map((key) => (
                       <th key={key}>{getFieldLabel(key)}</th>
                     ))}
-                    <th>Actions</th>
+                    <th>{t('inspectionUpload.actions') || 'Actions'}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -568,7 +572,7 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
                           <button
                             className="uir-delete-btn"
                             onClick={() => handleRemoveRow(rowIndex)}
-                            title="Remove this row"
+                            title={t('inspectionUpload.removeRow') || 'Remove this row'}
                           >
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -584,13 +588,13 @@ export default function InspectionReportUploadModal({ isOpen, onClose, onSubmit,
 
             <div className="uir-modal-actions">
               <button className="uir-cancel-btn" onClick={handleClose}>
-                Cancel
+                {t('common.cancel') || 'Cancel'}
               </button>
               <button className="uir-submit-btn" onClick={handleSubmit}>
                 <svg className="uir-submit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Submit Inspection Report
+                {t('inspectionUpload.submitInspectionReport') || 'Submit Inspection Report'}
               </button>
             </div>
           </div>

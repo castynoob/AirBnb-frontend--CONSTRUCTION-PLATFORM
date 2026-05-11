@@ -390,7 +390,7 @@ function SupplierList() {
       }
     } catch (error) {
       console.error('Error submitting request:', error);
-      toast.error(`Failed to submit request: ${error.message}`);
+      toast.error(t('toasts.failedSubmitRequest').replace('{{error}}', error.message));
     } finally {
       setIsSubmitting(false);
     }

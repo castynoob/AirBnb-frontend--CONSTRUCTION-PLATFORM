@@ -217,7 +217,7 @@ const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="type" className="form-label">
-                Type <span className="required">*</span>
+                {t('announcementModal.type') || 'Type'} <span className="required">*</span>
               </label>
               <select
                 id="type"
@@ -227,16 +227,16 @@ const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
                 className="form-select"
                 required
               >
-                <option value="Notice">Notice</option>
-                <option value="Maintenance">Maintenance</option>
-                <option value="Event">Event</option>
-                <option value="Emergency">Emergency</option>
+                <option value="Notice">{t('announcementModal.typeNotice') || 'Notice'}</option>
+                <option value="Maintenance">{t('announcementModal.typeMaintenance') || 'Maintenance'}</option>
+                <option value="Event">{t('announcementModal.typeEvent') || 'Event'}</option>
+                <option value="Emergency">{t('announcementModal.typeEmergency') || 'Emergency'}</option>
               </select>
             </div>
 
             <div className="form-group">
               <label htmlFor="priority" className="form-label">
-                Priority <span className="required">*</span>
+                {t('announcementModal.priority') || 'Priority'} <span className="required">*</span>
               </label>
               <select
                 id="priority"
@@ -246,10 +246,10 @@ const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
                 className="form-select"
                 required
               >
-                <option value="low">Low</option>
-                <option value="normal">Normal</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
+                <option value="low">{t('announcementModal.priorityLow') || 'Low'}</option>
+                <option value="normal">{t('announcementModal.priorityNormal') || 'Normal'}</option>
+                <option value="high">{t('announcementModal.priorityHigh') || 'High'}</option>
+                <option value="urgent">{t('announcementModal.priorityUrgent') || 'Urgent'}</option>
               </select>
             </div>
           </div>
@@ -257,7 +257,7 @@ const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
           {/* Content */}
           <div className="form-group">
             <label htmlFor="content" className="form-label">
-              Content <span className="required">*</span>
+              {t('announcementModal.content') || 'Content'} <span className="required">*</span>
             </label>
             <textarea
               id="content"
@@ -265,7 +265,7 @@ const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
               value={formData.content}
               onChange={handleChange}
               className="form-textarea"
-              placeholder="Enter announcement details..."
+              placeholder={t('announcementModal.contentPlaceholder') || 'Enter announcement details...'}
               rows={6}
               required
             />
@@ -281,7 +281,7 @@ const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
                 onChange={handleChange}
                 className="form-checkbox"
               />
-              <span>Pin this announcement to the top</span>
+              <span>{t('announcementModal.pinAnnouncement') || 'Pin this announcement to the top'}</span>
             </label>
           </div>
 
@@ -293,14 +293,16 @@ const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
               className="announcement-btn announcement-btn-secondary"
               disabled={isSubmitting}
             >
-              Cancel
+              {t('common.cancel') || 'Cancel'}
             </button>
             <button
               type="submit"
               className="announcement-btn announcement-btn-primary"
               disabled={isSubmitting || properties.length === 0 || isLoadingProperties}
             >
-              {isSubmitting ? 'Creating...' : 'Create Announcement'}
+              {isSubmitting
+                ? (t('announcementModal.creating') || 'Creating...')
+                : (t('announcementModal.createAnnouncement') || 'Create Announcement')}
             </button>
           </div>
         </form>

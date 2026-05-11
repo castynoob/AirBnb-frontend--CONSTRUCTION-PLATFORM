@@ -275,11 +275,11 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
           <div className="property-title-wrapper">
             <Building2 size={20} className="property-icon" />
             <div>
-              <h2>Edit Property</h2>
-              <p className="property-subtitle">Update property information</p>
+              <h2>{t('editPropertyModal.title') || 'Edit Property'}</h2>
+              <p className="property-subtitle">{t('editPropertyModal.subtitle') || 'Update property information'}</p>
             </div>
           </div>
-          <button className="property-close-btn" onClick={onClose} aria-label="Close">
+          <button className="property-close-btn" onClick={onClose} aria-label={t('common.close') || 'Close'}>
             <X size={20} />
           </button>
         </div>
@@ -296,7 +296,7 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
           <div className="form-group">
             <label htmlFor="building_name" className="form-label">
               <Building2 size={14} />
-              Building Name <span className="required">*</span>
+              {t('editPropertyModal.buildingName') || 'Building Name'} <span className="required">*</span>
             </label>
             <input
               type="text"
@@ -305,7 +305,7 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
               value={formData.building_name}
               onChange={handleChange}
               className="form-input"
-              placeholder="e.g., Sunrise Apartments, Oak Tower, etc."
+              placeholder={t('editPropertyModal.buildingNamePlaceholder') || 'e.g., Sunrise Apartments, Oak Tower, etc.'}
               required
             />
           </div>
@@ -314,10 +314,10 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
           <div className="property-map-section-large">
             <h4 className="map-section-title">
               <MapPin size={18} />
-              Property Location
+              {t('editPropertyModal.propertyLocation') || 'Property Location'}
             </h4>
             <p className="map-instruction">
-              Click on the map or drag the marker to update the location. Address fields will auto-fill.
+              {t('editPropertyModal.mapInstruction') || 'Click on the map or drag the marker to update the location. Address fields will auto-fill.'}
             </p>
             <div ref={mapRef} className="property-map-container-large" />
 
@@ -325,15 +325,15 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
             <div className="coordinates-display">
               <h4 className="coordinates-title">
                 <MapPin size={16} />
-                Current Coordinates
+                {t('editPropertyModal.currentCoordinates') || 'Current Coordinates'}
               </h4>
               <div className="coordinates-row">
                 <div className="coordinate-item">
-                  <span className="coordinate-label">Latitude:</span>
+                  <span className="coordinate-label">{t('editPropertyModal.latitude') || 'Latitude'}:</span>
                   <span className="coordinate-value">{formData.latitude.toFixed(6)}</span>
                 </div>
                 <div className="coordinate-item">
-                  <span className="coordinate-label">Longitude:</span>
+                  <span className="coordinate-label">{t('editPropertyModal.longitude') || 'Longitude'}:</span>
                   <span className="coordinate-value">{formData.longitude.toFixed(6)}</span>
                 </div>
               </div>
@@ -342,14 +342,14 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
 
           {/* Address Fields Section */}
           <div className="address-section">
-            <h4 className="section-title">Address Information</h4>
-            <p className="section-description">Edit the address details or update via the map above.</p>
+            <h4 className="section-title">{t('editPropertyModal.addressInformation') || 'Address Information'}</h4>
+            <p className="section-description">{t('editPropertyModal.addressDescription') || 'Edit the address details or update via the map above.'}</p>
 
             <div className="property-form-grid">
               {/* Address */}
               <div className="form-group">
                 <label htmlFor="address" className="form-label">
-                  Street Address <span className="required">*</span>
+                  {t('editPropertyModal.streetAddress') || 'Street Address'} <span className="required">*</span>
                 </label>
                 <input
                   type="text"
@@ -358,7 +358,7 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
                   value={formData.address}
                   onChange={handleChange}
                   className="form-input"
-                  placeholder="Street address"
+                  placeholder={t('editPropertyModal.streetAddressPlaceholder') || 'Street address'}
                   required
                 />
               </div>
@@ -367,7 +367,7 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
               <div className="form-row">
                 <div className="form-group">
                   <label htmlFor="city" className="form-label">
-                    City <span className="required">*</span>
+                    {t('editPropertyModal.city') || 'City'} <span className="required">*</span>
                   </label>
                   <input
                     type="text"
@@ -376,14 +376,14 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
                     value={formData.city}
                     onChange={handleChange}
                     className="form-input"
-                    placeholder="City"
+                    placeholder={t('editPropertyModal.cityPlaceholder') || 'City'}
                     required
                   />
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="province" className="form-label">
-                    Province/State <span className="required">*</span>
+                    {t('editPropertyModal.provinceState') || 'Province/State'} <span className="required">*</span>
                   </label>
                   <input
                     type="text"
@@ -392,7 +392,7 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
                     value={formData.province}
                     onChange={handleChange}
                     className="form-input"
-                    placeholder="Province/State"
+                    placeholder={t('editPropertyModal.provinceStatePlaceholder') || 'Province/State'}
                   />
                 </div>
               </div>
@@ -400,7 +400,7 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
               {/* Postal Code */}
               <div className="form-group">
                 <label htmlFor="postal_code" className="form-label">
-                  Postal/Zip Code
+                  {t('editPropertyModal.postalZipCode') || 'Postal/Zip Code'}
                 </label>
                 <input
                   type="text"
@@ -409,7 +409,7 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
                   value={formData.postal_code}
                   onChange={handleChange}
                   className="form-input"
-                  placeholder="Postal code"
+                  placeholder={t('editPropertyModal.postalCodePlaceholder') || 'Postal code'}
                 />
               </div>
             </div>
@@ -417,12 +417,12 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
 
           {/* Building Details Section */}
           <div className="building-details-section">
-            <h4 className="section-title">Building Details</h4>
+            <h4 className="section-title">{t('editPropertyModal.buildingDetails') || 'Building Details'}</h4>
 
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="building_type" className="form-label">
-                  Building Type <span className="required">*</span>
+                  {t('editPropertyModal.buildingType') || 'Building Type'} <span className="required">*</span>
                 </label>
                 <select
                   id="building_type"
@@ -442,7 +442,7 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
 
               <div className="form-group">
                 <label htmlFor="num_units" className="form-label">
-                  Number of Units <span className="required">*</span>
+                  {t('editPropertyModal.numberOfUnits') || 'Number of Units'} <span className="required">*</span>
                 </label>
                 <input
                   type="number"
@@ -451,7 +451,7 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
                   value={formData.num_units}
                   onChange={handleChange}
                   className="form-input"
-                  placeholder="e.g., 24"
+                  placeholder={t('editPropertyModal.numUnitsPlaceholder') || 'e.g., 24'}
                   min="1"
                   required
                 />
@@ -467,7 +467,7 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
               className="property-btn property-btn-secondary"
               disabled={isSubmitting}
             >
-              Cancel
+              {t('common.cancel') || 'Cancel'}
             </button>
             <button
               type="submit"
@@ -475,11 +475,11 @@ const EditPropertyModal = ({ isOpen, onClose, onSuccess, property }) => {
               disabled={isSubmitting}
             >
               {isSubmitting ? (
-                'Saving...'
+                t('editPropertyModal.saving') || 'Saving...'
               ) : (
                 <>
                   <Save size={16} />
-                  Save Changes
+                  {t('editPropertyModal.saveChanges') || 'Save Changes'}
                 </>
               )}
             </button>

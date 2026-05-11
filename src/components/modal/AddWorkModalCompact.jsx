@@ -306,10 +306,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
 
       setUploadProgress({ stage: 'complete', message: 'Job created successfully!' });
 
-      toast.success(t('toasts.jobCreatedSuccess'), {
-        duration: 3000,
-        icon: '✅'
-      });
+      toast.success(t('toasts.jobCreatedSuccess'));
 
       setTimeout(() => {
         onSuccess && onSuccess();
@@ -423,9 +420,7 @@ const AddWorkModalCompact = ({ isOpen, onClose, onSuccess }) => {
         throw new Error('No result received from server');
       }
 
-      toast.success(`Successfully parsed ${finalResult.parsedData.successCount} jobs from Excel`, {
-        duration: 2000,
-      });
+      toast.success(t('toasts.parsedJobsFromExcel').replace('{{count}}', finalResult.parsedData.successCount));
 
       // Store parsed data and show preview modal
       setParsedJobsData(finalResult.parsedData);

@@ -37,7 +37,10 @@ function NotificationBell() {
       case 'started':
         return <Hammer size={18} className="notif-icon notif-icon-started" />;
       case 'completed':
+      case 'work_completed':
         return <CheckCircle size={18} className="notif-icon notif-icon-completed" />;
+      case 'review_invitation':
+        return <CheckCircle size={18} className="notif-icon notif-icon-approved" />;
       default:
         return <Bell size={18} className="notif-icon" />;
     }
@@ -57,6 +60,10 @@ function NotificationBell() {
         return t('notifications.workStarted').replace('{{name}}', notif.contractor || t('notifications.defaultContractor'));
       case 'completed':
         return t('notifications.workCompleted').replace('{{name}}', notif.contractor || t('notifications.defaultContractor'));
+      case 'work_completed':
+        return t('notifications.workMarkedCompleteTitle');
+      case 'review_invitation':
+        return t('notifications.reviewInvitationTitle');
       default:
         return t('notifications.notification');
     }
@@ -81,6 +88,12 @@ function NotificationBell() {
         return t('notifications.workStartedBody').replace('{{job}}', notif.jobTitle || notif.workTitle || '');
       case 'completed':
         return t('notifications.workCompletedBody').replace('{{job}}', notif.workTitle || notif.jobTitle || '');
+      case 'work_completed':
+        return t('notifications.workMarkedCompleteBody').replace('{{job}}', notif.jobTitle || notif.workTitle || '');
+      case 'review_invitation':
+        return t('notifications.reviewInvitationBody')
+          .replace('{{job}}', notif.jobTitle || notif.workTitle || '')
+          .replace('{{name}}', notif.contractor || notif.senderName || t('notifications.defaultContractor'));
       default:
         return notif.content || '';
     }
@@ -111,6 +124,8 @@ function NotificationBell() {
         break;
       case 'started':
       case 'completed':
+      case 'work_completed':
+      case 'review_invitation':
         if (role === 'entrepreneur') {
           navigate(`/jobs/${role}`);
         } else {

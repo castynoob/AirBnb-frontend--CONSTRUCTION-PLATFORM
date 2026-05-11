@@ -24,6 +24,7 @@ import "leaflet/dist/leaflet.css";
 import toast from "react-hot-toast";
 import Nav from "../../components/Nav";
 import { useLanguage } from "../../contexts/LanguageContext";
+import { translateCategory } from "../../utils/translateEnums";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
@@ -301,7 +302,7 @@ export default function BidSubmissionPage() {
                 </h3>
                 <div style={s.infoGrid}>
                   {job.category && (
-                    <InfoRow icon={<Tag size={14} />} label={tx(t, "bid.category", "Category")} value={job.category} />
+                    <InfoRow icon={<Tag size={14} />} label={tx(t, "bid.category", "Category")} value={translateCategory(t, job.category)} />
                   )}
                   <InfoRow
                     icon={<AlertCircle size={14} />}
@@ -512,7 +513,7 @@ export default function BidSubmissionPage() {
                 <div style={s.miniRow}>
                   {job.category && (
                     <span style={s.miniChip}>
-                      <Tag size={12} /> {job.category}
+                      <Tag size={12} /> {translateCategory(t, job.category)}
                     </span>
                   )}
                   <Badge label={urgency} color={uc.color} bg={uc.bg} />

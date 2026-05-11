@@ -68,6 +68,8 @@ export default function DocumentManager({ ownerId, jobId, propertyId, userRole, 
   const [uploading, setUploading] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [editingDoc, setEditingDoc] = useState(null);
+  const [deletingDoc, setDeletingDoc] = useState(null);
+  const [isDeletingDoc, setIsDeletingDoc] = useState(false);
   const [userJobs, setUserJobs] = useState([]);
   const [userProperties, setUserProperties] = useState([]);
 
@@ -217,8 +219,14 @@ export default function DocumentManager({ ownerId, jobId, propertyId, userRole, 
   };
 
   // ── Delete ──────────────────────────────────────────────────────────────
-  const handleDelete = async (id) => {
-    if (!window.confirm(tx(t, 'documents.confirmDelete', 'Delete this document?'))) return;
+  const handleDelete = (doc) => {
+    setDeletingDoc(doc);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingDoc) return;
+    const id = deletingDoc._id || deletingDoc.id;
+    setIsDeletingDoc(true);
     try {
       const res = await fetch(`${API_BASE}/api/documents/${id}`, {
         method: 'DELETE',
@@ -226,10 +234,13 @@ export default function DocumentManager({ ownerId, jobId, propertyId, userRole, 
       });
       if (!res.ok) throw new Error('Delete failed');
       toast.success(tx(t, 'documents.deleteSuccess', 'Document deleted'));
+      setDeletingDoc(null);
       fetchDocuments();
     } catch (err) {
       console.error(err);
       toast.error(tx(t, 'documents.deleteError', 'Delete failed'));
+    } finally {
+      setIsDeletingDoc(false);
     }
   };
 
@@ -348,7 +359,7 @@ export default function DocumentManager({ ownerId, jobId, propertyId, userRole, 
           <button style={s.iconBtn('#6b7280')} title={tx(t, 'documents.edit', 'Edit')} onClick={() => setEditingDoc({ ...doc })}>
             <Pencil size={16} />
           </button>
-          <button style={s.iconBtn('#dc2626')} title={tx(t, 'documents.delete', 'Delete')} onClick={() => handleDelete(doc._id)}>
+          <button style={s.iconBtn('#dc2626')} title={tx(t, 'documents.delete', 'Delete')} onClick={() => handleDelete(doc)}>
             <Trash2 size={16} />
           </button>
         </div>
@@ -532,6 +543,51 @@ export default function DocumentManager({ ownerId, jobId, propertyId, userRole, 
 
       {/* Edit modal */}
       {editingDoc && <DocForm isEdit={true} />}
+
+      {/* Delete confirm modal */}
+      {deletingDoc && (
+        <div
+          style={s.modalOverlay}
+          onClick={(e) => { if (e.target === e.currentTarget && !isDeletingDoc) setDeletingDoc(null); }}
+        >
+          <div style={{ ...s.modalBox, maxWidth: 420 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Trash2 size={20} color="#dc2626" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#0F223D' }}>
+                  {tx(t, 'documents.deleteConfirmTitle', 'Delete this document?')}
+                </div>
+              </div>
+            </div>
+            <p style={{ fontSize: 14, color: '#4b5563', lineHeight: 1.5, margin: '0 0 8px' }}>
+              {tx(t, 'documents.deleteConfirmMessage', 'This action cannot be undone. The document will be permanently removed.')}
+            </p>
+            {deletingDoc.title && (
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#0F223D', padding: '8px 12px', background: '#f8fafc', borderRadius: 6, border: '1px solid #e5e7eb', marginBottom: 16, wordBreak: 'break-word' }}>
+                {deletingDoc.title}
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                style={{ ...s.cancelBtn, marginTop: 0, flex: 1 }}
+                onClick={() => setDeletingDoc(null)}
+                disabled={isDeletingDoc}
+              >
+                {tx(t, 'documents.cancel', 'Cancel')}
+              </button>
+              <button
+                style={{ background: isDeletingDoc ? '#fca5a5' : '#dc2626', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 20px', fontWeight: 600, fontSize: 14, cursor: isDeletingDoc ? 'not-allowed' : 'pointer', flex: 1 }}
+                onClick={confirmDelete}
+                disabled={isDeletingDoc}
+              >
+                {isDeletingDoc ? tx(t, 'documents.deleting', 'Deleting...') : tx(t, 'documents.delete', 'Delete')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 

@@ -62,6 +62,16 @@ function ProfilePageManager() {
   const [isSendingReset, setIsSendingReset] = useState(false)
   const [emailNotifications, setEmailNotifications] = useState(true)
 
+  // Inline personal/business info edit
+  const [isEditingInfo, setIsEditingInfo] = useState(false)
+  const [infoForm, setInfoForm] = useState({
+    first_name: '', last_name: '', phone: '',
+    company_name: '', address: ''
+  })
+  const [infoSaving, setInfoSaving] = useState(false)
+  const [infoError, setInfoError] = useState('')
+  const [infoSuccess, setInfoSuccess] = useState('')
+
   useEffect(() => {
     getProfileAndProperties()
     // Fetch email notification preference
@@ -197,6 +207,57 @@ function ProfilePageManager() {
   const handleSaveProfile = async () => {
     await getProfileAndProperties()
     setIsEditingProfile(false)
+  }
+
+  const startEditingInfo = () => {
+    setInfoForm({
+      first_name: uProfile?.profile?.first_name || '',
+      last_name: uProfile?.profile?.last_name || '',
+      phone: uProfile?.profile?.phone || '',
+      company_name: uProfile?.profile?.company_name || '',
+      address: uProfile?.profile?.address || '',
+    })
+    setInfoError('')
+    setInfoSuccess('')
+    setIsEditingInfo(true)
+  }
+
+  const cancelEditingInfo = () => {
+    setIsEditingInfo(false)
+    setInfoError('')
+  }
+
+  const handleInfoChange = (e) => {
+    const { name, value } = e.target
+    setInfoForm(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleSaveInfo = async () => {
+    if (!infoForm.first_name.trim() || !infoForm.last_name.trim()) {
+      setInfoError(t('profileManager.nameRequired') || 'First and last name are required')
+      return
+    }
+    setInfoSaving(true)
+    setInfoError('')
+    try {
+      const token = JSON.parse(localStorage.getItem('userProfile'))?.token
+      const res = await fetch(`${API_BASE_URL}/api/users/manager/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(infoForm),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Failed to update profile')
+
+      setInfoSuccess(t('profileManager.infoUpdated') || 'Profile updated')
+      setIsEditingInfo(false)
+      await getProfileAndProperties()
+      setTimeout(() => setInfoSuccess(''), 3000)
+    } catch (err) {
+      setInfoError(err.message)
+    } finally {
+      setInfoSaving(false)
+    }
   }
 
   const totalUnits = properties.reduce((sum, prop) => sum + (prop.num_units || 0), 0)
@@ -380,7 +441,48 @@ function ProfilePageManager() {
 
             {/* Info Grid */}
             <div className="mp-info-section">
-              <h4 className="mp-info-section-title">{t('profileManager.personalDetails')}</h4>
+              <div className="mp-info-section-header">
+                <h4 className="mp-info-section-title">{t('profileManager.personalDetails')}</h4>
+                {!isEditingInfo ? (
+                  <button className="mp-btn mp-btn-outline mp-btn-sm" onClick={startEditingInfo}>
+                    <Edit size={14} />
+                    {t('profileManager.editInformation') || 'Edit Information'}
+                  </button>
+                ) : (
+                  <div className="mp-info-edit-actions">
+                    <button
+                      className="mp-btn mp-btn-outline mp-btn-sm"
+                      onClick={cancelEditingInfo}
+                      disabled={infoSaving}
+                    >
+                      <X size={14} />
+                      {t('common.cancel') || 'Cancel'}
+                    </button>
+                    <button
+                      className="mp-btn mp-btn-primary mp-btn-sm"
+                      onClick={handleSaveInfo}
+                      disabled={infoSaving}
+                    >
+                      <Check size={14} />
+                      {infoSaving ? (t('editJobModal.saving') || 'Saving...') : (t('editJobModal.saveChanges') || 'Save Changes')}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {infoError && (
+                <div className="mp-info-feedback mp-info-feedback-error">
+                  <AlertCircle size={14} />
+                  <span>{infoError}</span>
+                </div>
+              )}
+              {infoSuccess && !isEditingInfo && (
+                <div className="mp-info-feedback mp-info-feedback-success">
+                  <Check size={14} />
+                  <span>{infoSuccess}</span>
+                </div>
+              )}
+
               <div className="mp-info-grid-modern">
                 <div className="mp-info-item-modern">
                   <div className="mp-info-icon-modern">
@@ -388,7 +490,18 @@ function ProfilePageManager() {
                   </div>
                   <div className="mp-info-details">
                     <label>{t('profileManager.firstName')}</label>
-                    <span>{uProfile?.profile?.first_name || '—'}</span>
+                    {isEditingInfo ? (
+                      <input
+                        type="text"
+                        name="first_name"
+                        value={infoForm.first_name}
+                        onChange={handleInfoChange}
+                        className="mp-info-input"
+                        disabled={infoSaving}
+                      />
+                    ) : (
+                      <span>{uProfile?.profile?.first_name || '—'}</span>
+                    )}
                   </div>
                 </div>
 
@@ -398,7 +511,18 @@ function ProfilePageManager() {
                   </div>
                   <div className="mp-info-details">
                     <label>{t('profileManager.lastName')}</label>
-                    <span>{uProfile?.profile?.last_name || '—'}</span>
+                    {isEditingInfo ? (
+                      <input
+                        type="text"
+                        name="last_name"
+                        value={infoForm.last_name}
+                        onChange={handleInfoChange}
+                        className="mp-info-input"
+                        disabled={infoSaving}
+                      />
+                    ) : (
+                      <span>{uProfile?.profile?.last_name || '—'}</span>
+                    )}
                   </div>
                 </div>
 
@@ -409,6 +533,9 @@ function ProfilePageManager() {
                   <div className="mp-info-details">
                     <label>{t('profileManager.emailAddress')}</label>
                     <span>{uProfile?.profile?.email || user?.email || '—'}</span>
+                    {isEditingInfo && (
+                      <small className="mp-info-hint">{t('profileManager.emailLockedNote') || 'Email cannot be changed here'}</small>
+                    )}
                   </div>
                 </div>
 
@@ -418,7 +545,19 @@ function ProfilePageManager() {
                   </div>
                   <div className="mp-info-details">
                     <label>{t('profileManager.phoneNumber')}</label>
-                    <span>{uProfile?.profile?.phone || '—'}</span>
+                    {isEditingInfo ? (
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={infoForm.phone}
+                        onChange={handleInfoChange}
+                        className="mp-info-input"
+                        disabled={infoSaving}
+                        placeholder="(514) 555-0123"
+                      />
+                    ) : (
+                      <span>{uProfile?.profile?.phone || '—'}</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -433,7 +572,18 @@ function ProfilePageManager() {
                   </div>
                   <div className="mp-info-details">
                     <label>{t('profileManager.companyName')}</label>
-                    <span>{uProfile?.profile?.company_name || '—'}</span>
+                    {isEditingInfo ? (
+                      <input
+                        type="text"
+                        name="company_name"
+                        value={infoForm.company_name}
+                        onChange={handleInfoChange}
+                        className="mp-info-input"
+                        disabled={infoSaving}
+                      />
+                    ) : (
+                      <span>{uProfile?.profile?.company_name || '—'}</span>
+                    )}
                   </div>
                 </div>
 
@@ -443,7 +593,18 @@ function ProfilePageManager() {
                   </div>
                   <div className="mp-info-details">
                     <label>{t('profileManager.address')}</label>
-                    <span>{uProfile?.profile?.address || '—'}</span>
+                    {isEditingInfo ? (
+                      <input
+                        type="text"
+                        name="address"
+                        value={infoForm.address}
+                        onChange={handleInfoChange}
+                        className="mp-info-input"
+                        disabled={infoSaving}
+                      />
+                    ) : (
+                      <span>{uProfile?.profile?.address || '—'}</span>
+                    )}
                   </div>
                 </div>
 
@@ -474,11 +635,6 @@ function ProfilePageManager() {
                   </div>
                 </div>
               </div>
-            </div>
-
-            <div className="mp-info-note">
-              <Settings size={16} />
-              <span>{t('profileManager.updateProfileNote')}</span>
             </div>
           </div>
         )

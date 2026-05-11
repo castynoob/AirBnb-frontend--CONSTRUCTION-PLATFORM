@@ -31,31 +31,50 @@ const checkIsPublicPage = () => {
   return PUBLIC_PAGES.some(page => pathname === page || pathname.startsWith(page + '/'));
 };
 
-// Dismissible toast helper - shows a toast with a close (X) button
-const showDismissibleToast = (message, { icon = '🔔', bg = '#333', ...options } = {}) => {
+// Dismissible toast helper - shows a toast with a close (X) button.
+// Legacy `icon` and `bg` args are accepted for backwards-compatibility but the icon
+// is no longer rendered; `bg` is mapped to a left-border accent color so all toasts
+// share the same white-card style as the global Toaster config.
+const showDismissibleToast = (message, { icon: _icon, bg, ...options } = {}) => {
+  const accentColor = bg === '#059669' ? '#059669'
+    : bg === '#dc2626' ? '#dc2626'
+    : bg === '#d97706' ? '#d97706'
+    : bg === '#2563eb' ? '#2563eb'
+    : '#00A5A9';
+
   toast(
     (t) => (
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
-        <span style={{ fontSize: '18px', flexShrink: 0 }}>{icon}</span>
-        <span style={{ flex: 1 }}>{message}</span>
+        <span style={{ flex: 1, color: '#0F223D', fontSize: '0.875rem', fontWeight: 500, lineHeight: 1.4 }}>{message}</span>
         <button
           onClick={() => toast.dismiss(t.id)}
           style={{
-            background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)',
-            cursor: 'pointer', padding: '2px 4px', fontSize: '16px', flexShrink: 0,
+            background: 'none', border: 'none', color: '#9ca3af',
+            cursor: 'pointer', padding: '2px 4px', fontSize: '18px', flexShrink: 0,
             lineHeight: 1,
           }}
+          aria-label="Dismiss"
         >
-          ✕
+          ×
         </button>
       </div>
     ),
     {
       duration: options.duration || 5000,
       style: {
+        background: '#ffffff',
+        color: '#0F223D',
+        fontSize: '0.875rem',
+        fontWeight: 500,
+        lineHeight: 1.4,
+        padding: '12px 16px',
+        minWidth: '320px',
+        maxWidth: '320px',
+        minHeight: '56px',
         borderRadius: '10px',
-        background: bg,
-        color: '#fff',
+        border: '1px solid #e5e7eb',
+        borderLeft: `4px solid ${accentColor}`,
+        boxShadow: '0 4px 12px rgba(15, 34, 61, 0.08), 0 1px 3px rgba(15, 34, 61, 0.06)',
         ...options.style,
       },
     }

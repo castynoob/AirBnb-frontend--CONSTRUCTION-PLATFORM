@@ -9,6 +9,8 @@ import Nav from "../../components/Nav"
 import { useLanguage } from "../../contexts/LanguageContext"
 import toast from "react-hot-toast"
 import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal"
+import { confirmCompletion as confirmCompletionApi } from "../../utils/contractApi"
+import { translateStatus as translateStatusEnum, translateUrgency as translateUrgencyEnum, translateCategory as translateCategoryEnum } from "../../utils/translateEnums"
 
 // Helper: returns fallback if t() returns the key itself
 const tx = (t, key, fallback) => {
@@ -59,15 +61,19 @@ function statusColor(status) {
   return map[normalizeStatus(status)] || "#6b7280"
 }
 
+const translateUrgency = (t, value) => translateUrgencyEnum(t, value)
+const translateCategory = (t, value) => translateCategoryEnum(t, value)
+
 function formatCurrency(v) {
   const n = parseFloat(v)
   if (isNaN(n)) return "$0.00"
   return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
-function formatDate(d) {
+function formatDate(d, language = "en") {
   if (!d) return "N/A"
-  return new Date(d).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+  const locale = language === "fr" ? "fr-FR" : "en-US"
+  return new Date(d).toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" })
 }
 
 function getInitial(name) {
@@ -79,7 +85,9 @@ function getInitial(name) {
 export default function BidDetailsPage() {
   const { bidId } = useParams()
   const navigate = useNavigate()
-  const { t } = useLanguage()
+  const { t, language } = useLanguage()
+  const fd = (d) => formatDate(d, language)
+  const locale = language === "fr" ? "fr-FR" : "en-US"
 
   const [submission, setSubmission] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -91,6 +99,8 @@ export default function BidDetailsPage() {
   const [jobProgress, setJobProgress] = useState([])
   const [isMobile, setIsMobile] = useState(window.innerWidth < 900)
   const [confirmAction, setConfirmAction] = useState(null) // { title, message, onConfirm, color }
+  const [showCompletionNoteModal, setShowCompletionNoteModal] = useState(false)
+  const [completionNote, setCompletionNote] = useState("")
   const [showReviewModal, setShowReviewModal] = useState(false)
   const [reviewRatings, setReviewRatings] = useState({ quality: 0, timeliness: 0, communication: 0, value: 0 })
   const [reviewComment, setReviewComment] = useState("")
@@ -303,27 +313,27 @@ export default function BidDetailsPage() {
 
   const handleConfirmCompletion = async () => {
     if (isProcessing) return
+    if (!completionNote.trim()) {
+      toast.error(tx(t, "submissions.completionNoteRequired", "Please add a note before confirming."))
+      return
+    }
     setIsProcessing(true)
     try {
-      // Get contract for this job
       const cRes = await fetch(`${API_BASE}/api/contracts/job/${submission.job.id}`, {
         headers: authHeaders(),
       })
       const cData = await cRes.json()
-      if (!cData.has_contract || !cData.contract) throw new Error("No contract found")
-
-      const res = await fetch(`${API_BASE}/api/contracts/${cData.contract.id}/confirm-completion`, {
-        method: "POST",
-        headers: authHeaders(),
-      })
-      if (!res.ok) {
-        const d = await res.json()
-        throw new Error(d.message || "Failed to confirm completion")
+      if (!cData.has_contract || !cData.contract) {
+        throw new Error(tx(t, "submissions.noContractFound", "No contract found for this job."))
       }
-      toast.success(tx(t, "submissions.jobCompletionConfirmed", "Completion confirmed!"))
+
+      await confirmCompletionApi(cData.contract.id, completionNote.trim())
+      toast.success(tx(t, "submissions.completionConfirmedSuccess", "Work completion confirmed successfully"))
+      setShowCompletionNoteModal(false)
+      setCompletionNote("")
       fetchData()
     } catch (err) {
-      toast.error(err.message || "Failed to confirm completion")
+      toast.error(err.message || tx(t, "submissions.completionFailed", "Failed to confirm completion."))
     } finally {
       setIsProcessing(false)
     }
@@ -337,7 +347,7 @@ export default function BidDetailsPage() {
       })
       if (!res.ok) throw new Error("Failed to toggle favorite")
       setIsFavorite((p) => !p)
-      toast.success(isFavorite ? "Removed from favorites" : "Added to favorites")
+      toast.success(isFavorite ? tx(t, "submissions.removedFromFavorites", "Removed from favorites") : tx(t, "submissions.addedToFavorites", "Added to favorites"))
     } catch (err) {
       toast.error(err.message)
     }
@@ -432,7 +442,7 @@ export default function BidDetailsPage() {
                           border: `1px solid ${statusColor(job.status)}30`,
                         }}
                       >
-                        {normalizeStatus(job.status).toUpperCase()}
+                        {translateStatusEnum(t, job.status, { uppercase: true })}
                       </span>
                       <span style={s.bidStatusText}>
                         {tx(t, "submissions.bidStatus", "Bid:")} {tx(t, `submissions.${bidStatus}`, bidStatus)}
@@ -489,8 +499,8 @@ export default function BidDetailsPage() {
                             {stage.notes && <p style={{ fontSize: '0.75rem', color: '#6b7280', margin: '4px 0 0' }}>{stage.notes}</p>}
                             {(stage.actual_start || stage.actual_end) && (
                               <div style={{ display: 'flex', gap: 12, marginTop: 4, fontSize: '0.7rem', color: '#9ca3af' }}>
-                                {stage.actual_start && <span>Started: {new Date(stage.actual_start).toLocaleDateString()}</span>}
-                                {stage.actual_end && <span>Ended: {new Date(stage.actual_end).toLocaleDateString()}</span>}
+                                {stage.actual_start && <span>{tx(t, 'submissions.started', 'Started')}: {new Date(stage.actual_start).toLocaleDateString(locale)}</span>}
+                                {stage.actual_end && <span>{tx(t, 'submissions.ended', 'Ended')}: {new Date(stage.actual_end).toLocaleDateString(locale)}</span>}
                               </div>
                             )}
                           </div>
@@ -508,9 +518,9 @@ export default function BidDetailsPage() {
                   {tx(t, "submissions.jobInformation", "Job Information")}
                 </h3>
                 <div style={s.infoGrid}>
-                  <InfoRow icon={<Tag size={15} />} label={tx(t, "submissions.category", "Category")} value={job.category} />
-                  <InfoRow icon={<AlertCircle size={15} />} label={tx(t, "submissions.urgency", "Urgency")} value={job.urgency} />
-                  <InfoRow icon={<Calendar size={15} />} label={tx(t, "submissions.dueDate", "Due Date")} value={formatDate(job.due_date)} />
+                  <InfoRow icon={<Tag size={15} />} label={tx(t, "submissions.category", "Category")} value={translateCategory(t, job.category)} />
+                  <InfoRow icon={<AlertCircle size={15} />} label={tx(t, "submissions.urgency", "Urgency")} value={translateUrgency(t, job.urgency)} />
+                  <InfoRow icon={<Calendar size={15} />} label={tx(t, "submissions.dueDate", "Due Date")} value={fd(job.due_date)} />
                   <InfoRow icon={<Clock size={15} />} label={tx(t, "submissions.duration", "Duration")} value={`${job.estimated_duration_days || "N/A"} ${tx(t, "submissions.days", "days")}`} />
                   <InfoRow
                     icon={<DollarSign size={15} />}
@@ -651,12 +661,7 @@ export default function BidDetailsPage() {
                   {jobStatus === "completed" && !managerConfirmed && hasContract && (
                     <button
                       style={{ ...s.actionBtn, ...s.confirmBtn }}
-                      onClick={() => setConfirmAction({
-                        title: tx(t, "submissions.confirmCompletionTitle", "Confirm Job Completion?"),
-                        message: tx(t, "submissions.confirmCompletionMsg", "By confirming, you acknowledge that the job has been completed satisfactorily. This will allow both parties to leave reviews."),
-                        onConfirm: handleConfirmCompletion,
-                        color: "#059669"
-                      })}
+                      onClick={() => { setCompletionNote(""); setShowCompletionNoteModal(true); }}
                       disabled={isProcessing}
                     >
                       <CheckCircle size={16} />
@@ -690,6 +695,48 @@ export default function BidDetailsPage() {
 
             {/* ═══════════ RIGHT COLUMN ═══════════ */}
             <div style={s.rightCol}>
+              {/* Completion Notes — visible after either party records a note */}
+              {submission.contract && (submission.contract.manager_completion_note || submission.contract.contractor_completion_note) && (
+                <div style={{ ...s.card, border: '1px solid #fde68a', background: '#fffbeb' }}>
+                  <h3 style={s.cardTitle}>
+                    <FileText size={18} color="#d97706" />
+                    {tx(t, "completionNotes.title", "Completion Notes")}
+                  </h3>
+                  {submission.contract.manager_completion_note && (
+                    <div style={{ paddingBottom: submission.contract.contractor_completion_note ? 10 : 0 }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#92400e', marginBottom: 4, letterSpacing: 0.2 }}>
+                        {tx(t, "completionNotes.fromYouPM", "From you (property manager)")}
+                        {submission.contract.manager_confirmed_at && (
+                          <span style={{ fontWeight: 400, color: '#b45309' }}>
+                            {' · '}
+                            {new Date(submission.contract.manager_confirmed_at).toLocaleDateString(locale)}
+                          </span>
+                        )}
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.875rem', color: '#0F223D', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                        {submission.contract.manager_completion_note}
+                      </p>
+                    </div>
+                  )}
+                  {submission.contract.contractor_completion_note && (
+                    <div style={{ paddingTop: submission.contract.manager_completion_note ? 10 : 0, borderTop: submission.contract.manager_completion_note ? '1px dashed #fde68a' : 'none' }}>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#92400e', marginBottom: 4, letterSpacing: 0.2 }}>
+                        {tx(t, "completionNotes.fromContractor", "From the contractor")}
+                        {submission.contract.contractor_confirmed_at && (
+                          <span style={{ fontWeight: 400, color: '#b45309' }}>
+                            {' · '}
+                            {new Date(submission.contract.contractor_confirmed_at).toLocaleDateString(locale)}
+                          </span>
+                        )}
+                      </div>
+                      <p style={{ margin: 0, fontSize: '0.875rem', color: '#0F223D', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                        {submission.contract.contractor_completion_note}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Review from Contractor (received review) */}
               {submission.received_review && (
                 <div style={{ ...s.card, border: '1px solid #fde68a', background: '#fffbeb' }}>
@@ -730,7 +777,7 @@ export default function BidDetailsPage() {
                     </div>
                   )}
                   <p style={{ fontSize: '0.7rem', color: '#b45309', marginTop: 8, textAlign: 'center' }}>
-                    {new Date(submission.received_review.created_at).toLocaleDateString()}
+                    {new Date(submission.received_review.created_at).toLocaleDateString(locale)}
                   </p>
                 </div>
               )}
@@ -797,7 +844,7 @@ export default function BidDetailsPage() {
                 </h3>
                 <div style={s.infoGrid}>
                   <InfoRow icon={<DollarSign size={15} />} label={tx(t, "submissions.amount", "Amount")} value={formatCurrency(bid.amount)} />
-                  <InfoRow icon={<Calendar size={15} />} label={tx(t, "submissions.submitted", "Submitted")} value={formatDate(bid.created_at)} />
+                  <InfoRow icon={<Calendar size={15} />} label={tx(t, "submissions.submitted", "Submitted")} value={fd(bid.created_at)} />
                   <InfoRow icon={<Clock size={15} />} label={tx(t, "submissions.timeline", "Timeline")} value={`${job.estimated_duration_days || "N/A"} ${tx(t, "submissions.days", "days")}`} />
                 </div>
                 {bid.message && (
@@ -836,6 +883,70 @@ export default function BidDetailsPage() {
             </div>
           </div>
         </div>
+
+        {/* Confirm Job Completion Modal — note required */}
+        {showCompletionNoteModal && (
+          <div
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10001, padding: '1rem' }}
+            onClick={() => { if (!isProcessing) { setShowCompletionNoteModal(false); setCompletionNote(""); } }}
+          >
+            <div
+              style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.15)', overflow: 'hidden' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ padding: '1.5rem 1.5rem 1rem' }}>
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#00A5A915', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+                  <CheckCircle size={24} color="#00A5A9" />
+                </div>
+                <h3 style={{ textAlign: 'center', fontSize: '1.125rem', fontWeight: 700, color: '#0F223D', margin: '0 0 0.5rem' }}>
+                  {tx(t, "submissions.confirmCompletionTitle", "Confirm Job Completion")}
+                </h3>
+                <p style={{ textAlign: 'center', fontSize: '0.875rem', color: '#64748b', lineHeight: 1.6, margin: '0 0 1rem' }}>
+                  {tx(t, "submissions.confirmCompletionMessage", "By confirming, you acknowledge that this job has been completed satisfactorily.")}
+                </p>
+
+                <label htmlFor="bdp-completion-note" style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#0F223D', marginBottom: 6 }}>
+                  {tx(t, "submissions.completionNoteLabel", "Completion note")}
+                  <span style={{ color: '#dc2626', marginLeft: 4 }}>*</span>
+                </label>
+                <textarea
+                  id="bdp-completion-note"
+                  value={completionNote}
+                  onChange={(e) => setCompletionNote(e.target.value)}
+                  placeholder={tx(t, "submissions.completionNotePlaceholder", "Briefly describe how the work was completed (required).")}
+                  rows={4}
+                  disabled={isProcessing}
+                  style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.875rem', color: '#0F223D', fontFamily: 'inherit', resize: 'vertical', minHeight: 80, boxSizing: 'border-box' }}
+                  required
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem', padding: '0 1.5rem 1.5rem', justifyContent: 'center' }}>
+                <button
+                  onClick={() => { setShowCompletionNoteModal(false); setCompletionNote(""); }}
+                  disabled={isProcessing}
+                  style={{ flex: 1, padding: '0.625rem', border: '1px solid #e5e7eb', borderRadius: 8, background: '#fff', color: '#374151', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  {tx(t, "common.cancel", "Cancel")}
+                </button>
+                <button
+                  onClick={handleConfirmCompletion}
+                  disabled={isProcessing || !completionNote.trim()}
+                  style={{
+                    flex: 1, padding: '0.625rem', border: 'none', borderRadius: 8, background: '#00A5A9', color: '#fff', fontSize: '0.875rem', fontWeight: 600,
+                    cursor: (isProcessing || !completionNote.trim()) ? 'not-allowed' : 'pointer',
+                    opacity: (isProcessing || !completionNote.trim()) ? 0.6 : 1,
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  }}
+                >
+                  <CheckCircle size={16} />
+                  {isProcessing
+                    ? tx(t, "submissions.confirming", "Confirming...")
+                    : tx(t, "submissions.confirmCompletionBtn", "Yes, Confirm Completion")}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Confirmation Modal */}
         {confirmAction && (
@@ -877,7 +988,7 @@ export default function BidDetailsPage() {
             { key: 'value', label: 'Value for Money' },
           ];
           const allRated = Object.values(reviewRatings).every(v => v > 0);
-          const canSubmit = allRated && reviewComment.length >= 10 && !isSubmittingReview;
+          const canSubmit = allRated && !isSubmittingReview;
           const rev = submission.review;
 
           return (
@@ -932,12 +1043,12 @@ export default function BidDetailsPage() {
                       {/* Comment */}
                       {rev.comment && (
                         <div style={{ background: '#f9fafb', borderRadius: 10, padding: 14 }}>
-                          <p style={{ fontSize: '0.8125rem', color: '#6b7280', margin: '0 0 4px', fontWeight: 600 }}>Comment</p>
+                          <p style={{ fontSize: '0.8125rem', color: '#6b7280', margin: '0 0 4px', fontWeight: 600 }}>{tx(t, 'submissions.comment', 'Comment')}</p>
                           <p style={{ fontSize: '0.875rem', color: '#374151', margin: 0, lineHeight: 1.6, fontStyle: 'italic' }}>"{rev.comment}"</p>
                         </div>
                       )}
                       <p style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: 12, textAlign: 'center' }}>
-                        Reviewed on {new Date(rev.created_at).toLocaleDateString()}
+                        {tx(t, 'submissions.reviewedOn', 'Reviewed on')} {new Date(rev.created_at).toLocaleDateString(locale)}
                       </p>
                     </div>
                   ) : (
@@ -984,8 +1095,8 @@ export default function BidDetailsPage() {
                         rows={4}
                         style={{ width: '100%', padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: '0.875rem', resize: 'vertical', boxSizing: 'border-box', outline: 'none' }}
                       />
-                      <p style={{ fontSize: '0.75rem', color: reviewComment.length >= 10 ? '#059669' : '#9ca3af', margin: '4px 0 0' }}>
-                        {reviewComment.length} characters (minimum 10)
+                      <p style={{ fontSize: '0.75rem', color: '#9ca3af', margin: '4px 0 0' }}>
+                        {reviewComment.length} characters
                       </p>
 
                       {/* Photo upload */}
@@ -1026,7 +1137,7 @@ export default function BidDetailsPage() {
                           fd.append("reviewee_id", ep.user_id);
                           fd.append("job_id", submission.job.id);
                           fd.append("rating", overallRating);
-                          fd.append("comment", reviewComment);
+                          fd.append("comment", (reviewComment || "").trim());
                           fd.append("rating_quality", reviewRatings.quality);
                           fd.append("rating_timeliness", reviewRatings.timeliness);
                           fd.append("rating_communication", reviewRatings.communication);
@@ -1038,12 +1149,12 @@ export default function BidDetailsPage() {
                             body: fd,
                           });
                           if (!res.ok) { const d = await res.json(); throw new Error(d.message || "Failed"); }
-                          toast.success("Review submitted!");
+                          toast.success(t("toasts.reviewSubmitted"));
                           setShowReviewModal(false);
                           setReviewImages([]);
                           fetchData();
                         } catch (err) {
-                          toast.error(err.message || "Failed to submit review");
+                          toast.error(err.message || t("toasts.failedSubmitReview"));
                         } finally {
                           setIsSubmittingReview(false);
                         }

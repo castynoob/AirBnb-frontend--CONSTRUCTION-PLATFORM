@@ -4,12 +4,15 @@ import {
   ArrowLeft, FileText, Calendar, DollarSign, Clock, Star, Building2,
   PlayCircle, CheckCircle, MessageSquare, MapPin, User, AlertCircle,
   ChevronRight, X, Image as ImageIcon, Briefcase, Award, Shield,
+  Receipt, Edit3,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import Nav from "../../components/Nav";
+import SubmitInvoiceModal from "../../components/modal/SubmitInvoiceModal";
 import { useLanguage } from "../../contexts/LanguageContext";
+import { translateStatus, translateCategory, translateUrgency, translatePropertyType } from "../../utils/translateEnums";
 import toast from "react-hot-toast";
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -59,6 +62,7 @@ function EntrepreneurJobDetailsPage() {
   const [confirmAction, setConfirmAction] = useState(null);
 
   // Review modal
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [categoryRatings, setCategoryRatings] = useState({ quality: 0, timeliness: 0, communication: 0, value: 0 });
   const [reviewComment, setReviewComment] = useState("");
@@ -91,7 +95,7 @@ function EntrepreneurJobDetailsPage() {
       setReviews([...ownReviews, ...receivedReviews]);
     } catch (err) {
       console.error("Load error:", err);
-      toast.error("Failed to load job details");
+      toast.error(tx(t, "toasts.failedLoadJobDetails", "Failed to load job details"));
     }
     setLoading(false);
   };
@@ -113,29 +117,51 @@ function EntrepreneurJobDetailsPage() {
       } catch {}
       toast.success(tx(t, "entrepreneurJobs.projectStarted", "Project started!"));
       await loadData();
-    } catch { toast.error("Failed to start project"); }
+    } catch { toast.error(tx(t, "toasts.failedStartProject", "Failed to start project")); }
     setIsConfirming(false);
     setConfirmAction(null);
   };
 
   const handleCompleteProject = async () => {
+    // Frontend gate — should be unreachable since the button is hidden until invoice is submitted,
+    // but defends against stale UI state.
+    if (contract?.id && !contract.invoice_submitted_at) {
+      toast.error(tx(t, "submitInvoice.requiredBeforeComplete", "Submit your invoice before marking the work complete."));
+      setConfirmAction(null);
+      return;
+    }
     setIsConfirming(true);
     try {
-      const res = await fetch(`${API}/api/jobs/${jobId}`, { method: "PUT", headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" }, body: JSON.stringify({ status: "completed" }) });
-      if (!res.ok) throw new Error("Failed");
+      // Hit the contract endpoint FIRST so the backend gate (invoice required) can refuse cleanly
+      // without leaving jobs.status flipped to 'completed' on a contract that wouldn't accept it.
       if (contract?.id) {
-        await fetch(`${API}/api/contracts/${contract.id}/complete`, { method: "POST", headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" } }).catch(() => {});
+        const cRes = await fetch(`${API}/api/contracts/${contract.id}/complete`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" },
+        });
+        if (!cRes.ok) {
+          const body = await cRes.json().catch(() => ({}));
+          throw new Error(body.message || body.error || "Failed to mark contract complete");
+        }
       }
+      const res = await fetch(`${API}/api/jobs/${jobId}`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "completed" }),
+      });
+      if (!res.ok) throw new Error("Failed");
       toast.success(tx(t, "entrepreneurJobs.projectCompleted", "Project marked complete!"));
       await loadData();
-    } catch { toast.error("Failed to complete project"); }
+    } catch (err) {
+      toast.error(err.message || tx(t, "toasts.failedCompleteProject", "Failed to complete project"));
+    }
     setIsConfirming(false);
     setConfirmAction(null);
   };
 
   const handleChatManager = () => {
     const managerId = job.manager_user_id;
-    if (!managerId) { toast.error("Cannot find manager"); return; }
+    if (!managerId) { toast.error(tx(t, "toasts.cannotFindManager", "Cannot find manager")); return; }
     localStorage.setItem("targetReceiverId", managerId);
     localStorage.setItem("targetReceiverName", job.manager_name || job.manager_company || "Property Manager");
     if (job.id) localStorage.setItem("targetJobId", job.id);
@@ -144,7 +170,7 @@ function EntrepreneurJobDetailsPage() {
 
   const handleImageSelect = (e) => {
     const files = Array.from(e.target.files);
-    if (files.length + reviewImages.length > 5) { toast.error("Max 5 images"); return; }
+    if (files.length + reviewImages.length > 5) { toast.error(tx(t, "toasts.maxImages", "You can only upload up to 5 images")); return; }
     setReviewImages((p) => [...p, ...files]);
     setReviewImageTypes((p) => [...p, ...files.map(() => "general")]);
     setReviewPreviews((p) => [...p, ...files.map((f) => URL.createObjectURL(f))]);
@@ -159,8 +185,7 @@ function EntrepreneurJobDetailsPage() {
 
   const handleSubmitReview = async () => {
     const c = categoryRatings;
-    if (!c.quality || !c.timeliness || !c.communication || !c.value) { toast.error("Please rate all categories"); return; }
-    if (!reviewComment.trim() || reviewComment.trim().length < 10) { toast.error("Comment must be at least 10 characters"); return; }
+    if (!c.quality || !c.timeliness || !c.communication || !c.value) { toast.error(tx(t, "toasts.rateAllCategories", "Please rate all categories")); return; }
     setIsSubmitting(true);
     try {
       const managerUserId = job.manager_user_id || job.manager_id;
@@ -168,7 +193,7 @@ function EntrepreneurJobDetailsPage() {
       formData.append("reviewed_user_id", managerUserId);
       formData.append("job_id", job.id);
       formData.append("rating", Math.round((c.quality + c.timeliness + c.communication + c.value) / 4));
-      formData.append("comment", reviewComment.trim());
+      formData.append("comment", (reviewComment || "").trim());
       formData.append("rating_quality", c.quality);
       formData.append("rating_timeliness", c.timeliness);
       formData.append("rating_communication", c.communication);
@@ -177,7 +202,7 @@ function EntrepreneurJobDetailsPage() {
       formData.append("image_types", JSON.stringify(reviewImageTypes));
       const res = await fetch(`${API}/api/reviews`, { method: "POST", headers: { Authorization: `Bearer ${getToken()}` }, body: formData });
       if (!res.ok) throw new Error((await res.json()).message || "Failed");
-      toast.success("Review submitted!");
+      toast.success(tx(t, "toasts.reviewSubmitted", "Review submitted!"));
       setShowReviewModal(false);
       setReviewComment(""); setCategoryRatings({ quality: 0, timeliness: 0, communication: 0, value: 0 });
       reviewPreviews.forEach((u) => URL.revokeObjectURL(u));
@@ -241,7 +266,7 @@ function EntrepreneurJobDetailsPage() {
           <div style={s.headerInfo}>
             <h1 style={s.title}>{job.title}</h1>
             <div style={s.headerMeta}>
-              <span style={{ ...s.statusBadge, background: statusColors[job.status] || "#6b7280" }}>{job.status?.toUpperCase()}</span>
+              <span style={{ ...s.statusBadge, background: statusColors[job.status] || "#6b7280" }}>{translateStatus(t, job.status, { uppercase: true })}</span>
               <span style={s.contractAmt}>{formatCurrency(contractAmount)}</span>
             </div>
           </div>
@@ -256,7 +281,7 @@ function EntrepreneurJobDetailsPage() {
               <h2 style={s.cardTitle}><FileText size={18} /> {tx(t, "entrepreneurJobs.projectInformation", "Project Information")}</h2>
               <div style={s.infoGrid}>
                 <div style={s.infoItem}><span style={s.infoLabel}>{tx(t, "entrepreneurJobs.titleLabel", "Title")}</span><span style={s.infoValue}>{job.title}</span></div>
-                <div style={s.infoItem}><span style={s.infoLabel}>{tx(t, "entrepreneurJobs.category", "Category")}</span><span style={s.infoValue}>{job.category}</span></div>
+                <div style={s.infoItem}><span style={s.infoLabel}>{tx(t, "entrepreneurJobs.category", "Category")}</span><span style={s.infoValue}>{translateCategory(t, job.category)}</span></div>
               </div>
               {job.description && <div style={{ marginTop: 12 }}><span style={s.infoLabel}>{tx(t, "entrepreneurJobs.description", "Description")}</span><p style={s.desc}>{job.description}</p></div>}
             </div>
@@ -266,9 +291,9 @@ function EntrepreneurJobDetailsPage() {
               <h2 style={s.cardTitle}><Calendar size={18} /> {tx(t, "entrepreneurJobs.timelineBudget", "Timeline & Budget")}</h2>
               <div style={s.infoGrid}>
                 <div style={s.infoItem}><span style={s.infoLabel}><Calendar size={13} /> {tx(t, "entrepreneurJobs.dueDate", "Due Date")}</span><span style={s.infoValue}>{formatDate(job.due_date)}</span></div>
-                {job.estimated_duration_days && <div style={s.infoItem}><span style={s.infoLabel}><Clock size={13} /> {tx(t, "entrepreneurJobs.estimatedDuration", "Est. Duration")}</span><span style={s.infoValue}>{job.estimated_duration_days} days</span></div>}
+                {job.estimated_duration_days && <div style={s.infoItem}><span style={s.infoLabel}><Clock size={13} /> {tx(t, "entrepreneurJobs.estimatedDuration", "Est. Duration")}</span><span style={s.infoValue}>{job.estimated_duration_days} {tx(t, "maintenanceLog.days", "days")}</span></div>}
                 {job.budget_min && job.budget_max && <div style={s.infoItem}><span style={s.infoLabel}><DollarSign size={13} /> {tx(t, "entrepreneurJobs.budgetRange", "Budget Range")}</span><span style={s.infoValue}>{formatCurrency(job.budget_min)} - {formatCurrency(job.budget_max)}</span></div>}
-                {job.urgency && <div style={s.infoItem}><span style={s.infoLabel}>{tx(t, "entrepreneurJobs.urgencyLabel", "Urgency")}</span><span style={{ ...s.urgencyBadge, background: job.urgency === "Urgent" ? "#fef2f2" : "#f0fdf4", color: job.urgency === "Urgent" ? "#dc2626" : "#16a34a" }}>{job.urgency}</span></div>}
+                {job.urgency && <div style={s.infoItem}><span style={s.infoLabel}>{tx(t, "entrepreneurJobs.urgencyLabel", "Urgency")}</span><span style={{ ...s.urgencyBadge, background: job.urgency === "Urgent" ? "#fef2f2" : "#f0fdf4", color: job.urgency === "Urgent" ? "#dc2626" : "#16a34a" }}>{translateUrgency(t, job.urgency)}</span></div>}
               </div>
             </div>
 
@@ -290,10 +315,10 @@ function EntrepreneurJobDetailsPage() {
               <div style={s.card}>
                 <h2 style={s.cardTitle}><Building2 size={18} /> {tx(t, "entrepreneurJobs.propertyInformation", "Property Information")}</h2>
                 <div style={s.infoGrid}>
-                  {job.property_name && <div style={s.infoItem}><span style={s.infoLabel}>Name</span><span style={s.infoValue}>{job.property_name}</span></div>}
-                  {job.property_address && <div style={s.infoItem}><span style={s.infoLabel}>Address</span><span style={s.infoValue}>{job.property_address}</span></div>}
-                  {(job.property_city || job.property_province) && <div style={s.infoItem}><span style={s.infoLabel}>City</span><span style={s.infoValue}>{[job.property_city, job.property_province].filter(Boolean).join(", ")}</span></div>}
-                  {job.property_type && <div style={s.infoItem}><span style={s.infoLabel}>Type</span><span style={s.infoValue}>{job.property_type}</span></div>}
+                  {job.property_name && <div style={s.infoItem}><span style={s.infoLabel}>{tx(t, "properties.name", "Name")}</span><span style={s.infoValue}>{job.property_name}</span></div>}
+                  {job.property_address && <div style={s.infoItem}><span style={s.infoLabel}>{tx(t, "properties.address", "Address")}</span><span style={s.infoValue}>{job.property_address}</span></div>}
+                  {(job.property_city || job.property_province) && <div style={s.infoItem}><span style={s.infoLabel}>{tx(t, "properties.city", "City")}</span><span style={s.infoValue}>{[job.property_city, job.property_province].filter(Boolean).join(", ")}</span></div>}
+                  {job.property_type && <div style={s.infoItem}><span style={s.infoLabel}>{tx(t, "properties.type", "Type")}</span><span style={s.infoValue}>{translatePropertyType(t, job.property_type)}</span></div>}
                 </div>
               </div>
             )}
@@ -309,9 +334,9 @@ function EntrepreneurJobDetailsPage() {
                     {job.manager_name && job.manager_company && <div style={s.managerSub}>{job.manager_name}</div>}
                     <div style={s.managerStats}>
                       {job.manager_avg_rating && <span style={s.managerStat}><Star size={13} fill="#f59e0b" stroke="#f59e0b" /> {Number(job.manager_avg_rating).toFixed(1)} ({job.manager_review_count || 0})</span>}
-                      {job.manager_total_jobs && <span style={s.managerStat}><Briefcase size={13} /> {job.manager_completed_jobs || 0}/{job.manager_total_jobs} jobs</span>}
+                      {job.manager_total_jobs && <span style={s.managerStat}><Briefcase size={13} /> {job.manager_completed_jobs || 0}/{job.manager_total_jobs} {tx(t, "entrepreneurJobs.jobs", "jobs")}</span>}
                       {job.manager_experience && <span style={s.managerStat}><Award size={13} /> {job.manager_experience}</span>}
-                      {job.manager_joined && <span style={s.managerStat}><Shield size={13} /> Since {new Date(job.manager_joined).getFullYear()}</span>}
+                      {job.manager_joined && <span style={s.managerStat}><Shield size={13} /> {tx(t, "entrepreneurJobs.since", "Since")} {new Date(job.manager_joined).getFullYear()}</span>}
                     </div>
                   </div>
                 </div>
@@ -341,10 +366,10 @@ function EntrepreneurJobDetailsPage() {
               <h2 style={s.cardTitle}><FileText size={18} /> {tx(t, "entrepreneurJobs.contractStatus", "Contract Status")}</h2>
               {contract ? (
                 <>
-                  <div style={s.contractRow}><span style={s.contractLabel}>Amount</span><span style={s.contractValue}>{formatCurrency(contractAmount)}</span></div>
-                  <div style={s.contractRow}><span style={s.contractLabel}>Status</span><span style={{ ...s.statusBadgeSm, background: contract.status === "completed" ? "#7c3aed" : contract.status === "active" ? "#059669" : "#2563eb" }}>{contract.status}</span></div>
-                  {contract.approved_at && <div style={s.contractRow}><span style={s.contractLabel}>Work Started</span><span style={s.contractVal2}>{formatDate(contract.approved_at)}</span></div>}
-                  {contract.completed_at && <div style={s.contractRow}><span style={s.contractLabel}>Work Completed</span><span style={s.contractVal2}>{formatDate(contract.completed_at)}</span></div>}
+                  <div style={s.contractRow}><span style={s.contractLabel}>{tx(t, "entrepreneurJobs.amount", "Amount")}</span><span style={s.contractValue}>{formatCurrency(contractAmount)}</span></div>
+                  <div style={s.contractRow}><span style={s.contractLabel}>{tx(t, "entrepreneurJobs.status", "Status")}</span><span style={{ ...s.statusBadgeSm, background: contract.status === "completed" ? "#7c3aed" : contract.status === "active" ? "#059669" : "#2563eb" }}>{translateStatus(t, contract.status)}</span></div>
+                  {contract.approved_at && <div style={s.contractRow}><span style={s.contractLabel}>{tx(t, "entrepreneurJobs.workStarted", "Work Started")}</span><span style={s.contractVal2}>{formatDate(contract.approved_at)}</span></div>}
+                  {contract.completed_at && <div style={s.contractRow}><span style={s.contractLabel}>{tx(t, "entrepreneurJobs.workCompleted", "Work Completed")}</span><span style={s.contractVal2}>{formatDate(contract.completed_at)}</span></div>}
                 </>
               ) : (
                 <div style={s.emptyNote}><AlertCircle size={16} color="#f59e0b" /> Awaiting contract creation</div>
@@ -430,9 +455,9 @@ function EntrepreneurJobDetailsPage() {
                                         headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ status: 'in_progress' })
                                       });
-                                      toast.success(`${formatStageName(stage.stage, t)} started`);
+                                      toast.success(tx(t, 'toasts.stageStarted', '{{stage}} started').replace('{{stage}}', formatStageName(stage.stage, t)));
                                       await loadData();
-                                    } catch { toast.error('Failed to update stage'); }
+                                    } catch { toast.error(tx(t, 'toasts.failedUpdateStage', 'Failed to update stage')); }
                                   }}
                                 >
                                   <PlayCircle size={13} /> {tx(t, 'progress.start', 'Start')}
@@ -448,9 +473,9 @@ function EntrepreneurJobDetailsPage() {
                                         headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ status: 'completed' })
                                       });
-                                      toast.success(`${formatStageName(stage.stage, t)} completed`);
+                                      toast.success(tx(t, 'toasts.stageCompleted', '{{stage}} completed').replace('{{stage}}', formatStageName(stage.stage, t)));
                                       await loadData();
-                                    } catch { toast.error('Failed to update stage'); }
+                                    } catch { toast.error(tx(t, 'toasts.failedUpdateStage', 'Failed to update stage')); }
                                   }}
                                 >
                                   <CheckCircle size={13} /> {tx(t, 'progress.markComplete', 'Complete')}
@@ -476,9 +501,9 @@ function EntrepreneurJobDetailsPage() {
                   onClick={async () => {
                     try {
                       await fetch(`${API}/api/progress/${jobId}/init`, { method: "POST", headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" } });
-                      toast.success("Progress initialized!");
+                      toast.success(tx(t, "toasts.progressInitialized", "Progress initialized!"));
                       await loadData();
-                    } catch { toast.error("Failed to initialize progress"); }
+                    } catch { toast.error(tx(t, "toasts.failedInitProgress", "Failed to initialize progress")); }
                   }}
                 >
                   <CheckCircle size={17} /> {tx(t, 'progress.initProgress', 'Initialize Progress')}
@@ -497,10 +522,38 @@ function EntrepreneurJobDetailsPage() {
                     <PlayCircle size={17} /> {tx(t, "entrepreneurJobs.startProject", "Start Project")}
                   </button>
                 )}
-                {job.status === "ongoing" && (
-                  <button style={{ ...s.actionBtn, background: "#2563eb" }} disabled={isConfirming} onClick={() => setConfirmAction("done")}>
-                    <CheckCircle size={17} /> {tx(t, "entrepreneurJobs.markComplete", "Mark as Completed")}
+                {job.status === "ongoing" && contract && !contract.invoice_submitted_at && (
+                  <button
+                    style={{ ...s.actionBtn, background: "#0F223D" }}
+                    disabled={isConfirming}
+                    onClick={() => setShowInvoiceModal(true)}
+                  >
+                    <Receipt size={17} /> {tx(t, "submitInvoice.submit", "Submit Invoice")}
                   </button>
+                )}
+                {job.status === "ongoing" && contract && contract.invoice_submitted_at && (
+                  <>
+                    <button
+                      style={{ ...s.actionBtn, background: "#2563eb" }}
+                      disabled={isConfirming}
+                      onClick={() => setConfirmAction("done")}
+                    >
+                      <CheckCircle size={17} /> {tx(t, "entrepreneurJobs.markComplete", "Mark as Completed")}
+                    </button>
+                    <button
+                      type="button"
+                      style={{ ...s.actionBtn, background: "transparent", color: "#0F223D", border: "1px solid #d1d5db" }}
+                      disabled={isConfirming}
+                      onClick={() => setShowInvoiceModal(true)}
+                    >
+                      <Edit3 size={15} /> {tx(t, "submitInvoice.edit", "Edit Invoice")}
+                    </button>
+                  </>
+                )}
+                {job.status === "ongoing" && !contract && (
+                  <div style={s.emptyNote}>
+                    <AlertCircle size={14} /> {tx(t, "entrepreneurJobs.noContractYet", "Waiting for contract")}
+                  </div>
                 )}
                 <button style={{ ...s.actionBtn, background: "#0F223D" }} onClick={handleChatManager}>
                   <MessageSquare size={17} /> {tx(t, "entrepreneurJobs.chatWithManager", "Chat with Manager")}
@@ -516,6 +569,48 @@ function EntrepreneurJobDetailsPage() {
                 )}
               </div>
             </div>
+
+            {/* Completion Notes — what each party recorded when confirming */}
+            {contract && (contract.manager_completion_note || contract.contractor_completion_note) && (
+              <div style={{ ...s.card, border: '1px solid #fde68a', background: '#fffbeb' }}>
+                <h2 style={s.cardTitle}>
+                  <FileText size={18} style={{ color: '#d97706' }} />
+                  {tx(t, "completionNotes.title", "Completion Notes")}
+                </h2>
+                {contract.manager_completion_note && (
+                  <div style={{ paddingBottom: contract.contractor_completion_note ? 10 : 0 }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#92400e', marginBottom: 4, letterSpacing: 0.2 }}>
+                      {tx(t, "completionNotes.fromManagerLabel", "From the property manager")}
+                      {contract.manager_confirmed_at && (
+                        <span style={{ fontWeight: 400, color: '#b45309' }}>
+                          {' · '}
+                          {new Date(contract.manager_confirmed_at).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.875rem', color: '#0F223D', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                      {contract.manager_completion_note}
+                    </p>
+                  </div>
+                )}
+                {contract.contractor_completion_note && (
+                  <div style={{ paddingTop: contract.manager_completion_note ? 10 : 0, borderTop: contract.manager_completion_note ? '1px dashed #fde68a' : 'none' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: '#92400e', marginBottom: 4, letterSpacing: 0.2 }}>
+                      {tx(t, "completionNotes.fromYou", "From you")}
+                      {contract.contractor_confirmed_at && (
+                        <span style={{ fontWeight: 400, color: '#b45309' }}>
+                          {' · '}
+                          {new Date(contract.contractor_confirmed_at).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                    <p style={{ margin: 0, fontSize: '0.875rem', color: '#0F223D', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                      {contract.contractor_completion_note}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Your Review */}
             {myReview && (
@@ -598,6 +693,15 @@ function EntrepreneurJobDetailsPage() {
         </div>
       )}
 
+      {/* Submit / Edit Invoice Modal */}
+      <SubmitInvoiceModal
+        isOpen={showInvoiceModal}
+        onClose={() => setShowInvoiceModal(false)}
+        contract={contract}
+        jobTitle={job?.title}
+        onSubmitted={loadData}
+      />
+
       {/* Review Modal */}
       {showReviewModal && (
         <div style={s.overlay} onClick={() => setShowReviewModal(false)}>
@@ -622,7 +726,7 @@ function EntrepreneurJobDetailsPage() {
               <div style={{ marginTop: 16 }}>
                 <label style={s.sectionLabel}>{tx(t, "entrepreneurJobs.shareExperience", "Share your experience")}</label>
                 <textarea style={s.textarea} rows={4} value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} placeholder="Tell us about your experience..." />
-                <div style={{ fontSize: "0.75rem", color: reviewComment.trim().length < 10 ? "#ef4444" : "#9ca3af", marginTop: 4 }}>{reviewComment.length} chars {reviewComment.trim().length < 10 && "(min 10)"}</div>
+                <div style={{ fontSize: "0.75rem", color: "#9ca3af", marginTop: 4 }}>{reviewComment.length} chars</div>
               </div>
               <div style={{ marginTop: 16 }}>
                 <label style={s.sectionLabel}>{tx(t, "entrepreneurJobs.addPhotos", "Add Photos (optional)")}</label>
@@ -642,8 +746,8 @@ function EntrepreneurJobDetailsPage() {
             </div>
             <div style={s.modalFooter}>
               <button style={s.cancelBtn} onClick={() => setShowReviewModal(false)} disabled={isSubmitting}>Cancel</button>
-              <button style={{ ...s.confirmBtn, background: "#f59e0b", opacity: (!categoryRatings.quality || !categoryRatings.timeliness || !categoryRatings.communication || !categoryRatings.value || reviewComment.trim().length < 10) ? 0.5 : 1 }}
-                onClick={handleSubmitReview} disabled={isSubmitting || !categoryRatings.quality || !categoryRatings.timeliness || !categoryRatings.communication || !categoryRatings.value || reviewComment.trim().length < 10}>
+              <button style={{ ...s.confirmBtn, background: "#f59e0b", opacity: (!categoryRatings.quality || !categoryRatings.timeliness || !categoryRatings.communication || !categoryRatings.value) ? 0.5 : 1 }}
+                onClick={handleSubmitReview} disabled={isSubmitting || !categoryRatings.quality || !categoryRatings.timeliness || !categoryRatings.communication || !categoryRatings.value}>
                 {isSubmitting ? "Submitting..." : "Submit Review"}
               </button>
             </div>

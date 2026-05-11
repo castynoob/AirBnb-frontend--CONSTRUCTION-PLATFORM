@@ -4,6 +4,7 @@ import "../../styles/entrepreneur/entrepreneurjobs.css"
 import "../../styles/manager/submissions.css"
 import Nav from "../../components/Nav"
 import { useLanguage } from "../../contexts/LanguageContext"
+import { translateUrgency } from "../../utils/translateEnums"
 import { useSocket } from "../../contexts/SocketContext"
 import {
   Search,
@@ -208,7 +209,6 @@ function EntrepreneurJobs() {
 
   const handleConfirmAction = () => {
     if (modalType === "start") startJob()
-    else if (modalType === "done") completeJob()
     closeModal()
   }
 
@@ -229,69 +229,6 @@ function EntrepreneurJobs() {
     if (!res.ok) throw new Error("Failed to start job")
     await fetchJobs()
     setIsConfirming(false)
-  }
-
-  const completeJob = async () => {
-    setIsConfirming(true)
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-    const user = JSON.parse(localStorage.getItem("userProfile"))
-
-    try {
-      // Step 1: Update job status to completed
-      const res = await fetch(`${API_BASE_URL}/api/jobs/${selectedJob.id}`, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: "completed" }),
-      })
-
-      if (!res.ok) throw new Error("Failed to complete job")
-
-      // Step 2: Try to mark contract work as complete (if contract exists)
-      // This will notify the manager to review and approve the work
-      try {
-        // First get the contract for this job
-        const contractRes = await fetch(`${API_BASE_URL}/api/contracts/job/${selectedJob.id}`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
-        })
-
-        if (contractRes.ok) {
-          const contractData = await contractRes.json()
-
-          if (contractData.contract && contractData.contract.id) {
-            // Mark work as complete on the contract
-            const completeRes = await fetch(`${API_BASE_URL}/api/contracts/${contractData.contract.id}/complete`, {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${user.token}`,
-                "Content-Type": "application/json",
-              },
-            })
-
-            if (completeRes.ok) {
-              console.log("Contract work marked complete, manager notified")
-            } else {
-              console.warn("Could not mark contract complete, but job status updated")
-            }
-          }
-        }
-      } catch (contractErr) {
-        // Contract notification is optional - job completion still succeeded
-        console.warn("Could not notify contract system:", contractErr)
-      }
-
-      await fetchJobs()
-    } catch (error) {
-      console.error("Error completing job:", error)
-      toast.error(t('toasts.failedCompleteJob'))
-    } finally {
-      setIsConfirming(false)
-    }
   }
 
   const handleImageSelect = (e) => {
@@ -329,16 +266,6 @@ function EntrepreneurJobs() {
       return
     }
 
-    if (!reviewForm.comment || !reviewForm.comment.trim()) {
-      toast.error(t('toasts.commentRequired'))
-      return
-    }
-
-    if (reviewForm.comment.trim().length < 10) {
-      toast.error(t('toasts.commentTooShort'))
-      return
-    }
-
     const overallRating = Math.round((cats.quality + cats.timeliness + cats.communication + cats.value) / 4)
 
     try {
@@ -353,7 +280,7 @@ function EntrepreneurJobs() {
       formData.append("reviewed_user_id", managerUserId)
       formData.append("job_id", selectedJob.id)
       formData.append("rating", overallRating)
-      formData.append("comment", reviewForm.comment.trim())
+      formData.append("comment", (reviewForm.comment || "").trim())
       formData.append("rating_quality", cats.quality)
       formData.append("rating_timeliness", cats.timeliness)
       formData.append("rating_communication", cats.communication)
@@ -799,16 +726,6 @@ function EntrepreneurJobs() {
                         </button>
                       )}
 
-                      {job.status === "ongoing" && (
-                        <button
-                          className="ej-btn ej-btn-complete"
-                          onClick={(e) => { e.stopPropagation(); openModal(job, "done"); }}
-                        >
-                          <CheckCircle size={16} />
-                          {t('entrepreneurJobs.markComplete')}
-                        </button>
-                      )}
-
                       {job.status === "completed" && (
                         <>
                           {/* Awaiting manager confirmation */}
@@ -923,7 +840,7 @@ function EntrepreneurJobs() {
                         rows={4}
                       />
                       <div className="rm-char-count">
-                        {reviewForm.comment.length} {t('entrepreneurJobs.characters') || 'characters'} {reviewForm.comment.trim().length < 10 && (t('entrepreneurJobs.minimumTen') || '(min 10)')}
+                        {reviewForm.comment.length} {t('entrepreneurJobs.characters') || 'characters'}
                       </div>
                     </div>
 
@@ -969,7 +886,7 @@ function EntrepreneurJobs() {
                     <button
                       className="rm-btn rm-btn-submit"
                       onClick={handleSubmitReview}
-                      disabled={isSubmittingReview || !allRated || !reviewForm.comment.trim() || reviewForm.comment.trim().length < 10}
+                      disabled={isSubmittingReview || !allRated}
                     >
                       {isSubmittingReview ? (
                         <><div className="rm-spinner"></div><span>{t('entrepreneurJobs.submitting') || 'Submitting...'}</span></>
@@ -992,7 +909,6 @@ function EntrepreneurJobs() {
             <div className="bid-modal-header">
               <h2>
                 {modalType === "start" && t('entrepreneurJobs.startProjectQuestion')}
-                {modalType === "done" && t('entrepreneurJobs.markCompleteQuestion')}
               </h2>
               <button className="bid-modal-close" onClick={closeModal}>
                 <X size={24} />
@@ -1190,7 +1106,7 @@ function EntrepreneurJobs() {
                   {detailsJob.urgency && (
                     <div className="bid-info-item">
                       <label>{t('entrepreneurJobs.urgencyLabel')}</label>
-                      <p>{detailsJob.urgency}</p>
+                      <p>{translateUrgency(t, detailsJob.urgency)}</p>
                     </div>
                   )}
                 </div>
@@ -1438,19 +1354,6 @@ function EntrepreneurJobs() {
                   >
                     <PlayCircle size={16} />
                     {t('entrepreneurJobs.startProject')}
-                  </button>
-                )}
-
-                {detailsJob.status === "ongoing" && (
-                  <button
-                    className="ej-modal-action-btn ej-modal-complete"
-                    onClick={() => {
-                      setShowDetailsModal(false)
-                      openModal(detailsJob, "done")
-                    }}
-                  >
-                    <CheckCircle size={16} />
-                    {t('entrepreneurJobs.markComplete')}
                   </button>
                 )}
 

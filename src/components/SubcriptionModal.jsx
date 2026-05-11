@@ -21,10 +21,10 @@ export default function SubscriptionModal({token, refresher, onClose, showCloseB
   const features = [
     { name: t('subscriptionModal.browseJobs'), noSub: false, starter: true, basic: true, premium: true },
     { name: t('subscriptionModal.viewJobDetails'), noSub: false, starter: true, basic: true, premium: true },
-    { name: t('subscriptionModal.submitBids'), noSub: false, starter: '15 max', basic: t('subscriptionModal.max30'), premium: t('subscriptionModal.unlimited') },
+    { name: t('subscriptionModal.submitBids'), noSub: false, starter: t('subscriptionModal.max15'), basic: t('subscriptionModal.max30'), premium: t('subscriptionModal.unlimited') },
     { name: t('subscriptionModal.unlockBudget'), noSub: false, starter: true, basic: true, premium: true },
     { name: t('subscriptionModal.messageApproved'), noSub: false, starter: true, basic: true, premium: true },
-    { name: t('subscriptionModal.projectBudgetLimit'), noSub: false, starter: '$2,500 max', basic: t('subscriptionModal.unlimited'), premium: t('subscriptionModal.unlimited') },
+    { name: t('subscriptionModal.projectBudgetLimit'), noSub: false, starter: t('subscriptionModal.budget2500Max'), basic: t('subscriptionModal.unlimited'), premium: t('subscriptionModal.unlimited') },
     { name: t('subscriptionModal.prioritySupportFeature'), noSub: false, starter: false, basic: false, premium: true },
   ];
 

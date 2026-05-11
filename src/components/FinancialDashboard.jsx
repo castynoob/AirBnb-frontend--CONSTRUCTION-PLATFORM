@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { DollarSign, FileText, TrendingUp, Briefcase, ChevronDown, Building2, Star, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { translateStatus, translateCategory } from '../utils/translateEnums';
 import toast from 'react-hot-toast';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -204,7 +205,7 @@ function FinancialDashboard() {
           const color = CATEGORY_COLORS[c.category] || CATEGORY_COLORS.Other;
           return (
             <div key={i} style={s.barRow}>
-              <div style={{ ...s.barLabel, width: 90, textAlign: 'left' }}>{c.category}</div>
+              <div style={{ ...s.barLabel, width: 90, textAlign: 'left' }}>{translateCategory(t, c.category)}</div>
               <div style={s.barTrack}>
                 <div style={s.barFill((c.total_spent / maxCatSpent) * 100, color)} />
               </div>
@@ -269,7 +270,7 @@ function FinancialDashboard() {
                 return (
                   <tr key={i}>
                     <td style={{ ...s.td, fontWeight: 500 }}>{j.title}</td>
-                    <td style={s.td}>{j.category}</td>
+                    <td style={s.td}>{translateCategory(t, j.category)}</td>
                     <td style={s.td}>{fmt(j.budget_min)} - {fmt(j.budget_max)}</td>
                     <td style={{ ...s.td, fontWeight: 600 }}>{fmt(j.actual_cost)}</td>
                     <td style={{ ...s.td, color: over ? DANGER : SUCCESS, fontWeight: 600 }}>
@@ -277,7 +278,7 @@ function FinancialDashboard() {
                     </td>
                     <td style={s.td}>
                       <span style={s.badge(j.status === 'completed' ? SUCCESS : WARNING)}>
-                        {j.status}
+                        {translateStatus(t, j.status)}
                       </span>
                     </td>
                   </tr>

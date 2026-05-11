@@ -21,13 +21,21 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
   }, [parsedData]);
 
   const categories = [
-    'Roofing', 'Plumbing', 'Electrical', 'Painting', 'HVAC',
-    'Flooring', 'Carpentry', 'Masonry', 'Landscaping', 'Other'
+    { value: 'Roofing', key: 'cat_roofing' },
+    { value: 'Plumbing', key: 'cat_plumbing' },
+    { value: 'Electrical', key: 'cat_electrical' },
+    { value: 'Painting', key: 'cat_painting' },
+    { value: 'HVAC', key: 'cat_hvac' },
+    { value: 'Flooring', key: 'cat_flooring' },
+    { value: 'Carpentry', key: 'cat_carpentry' },
+    { value: 'Masonry', key: 'cat_masonry' },
+    { value: 'Landscaping', key: 'cat_landscaping' },
+    { value: 'Other', key: 'cat_other' },
   ];
 
   const urgencyLevels = [
-    'Urgent',
-    'Planned',
+    { value: 'Urgent', key: 'urg_urgent' },
+    { value: 'Planned', key: 'urg_planned' },
   ];
 
   const startEditing = (index) => {
@@ -88,14 +96,14 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
     // Warn about jobs missing budget
     const jobsWithoutBudget = jobs.filter(job => !job.budget_min || !job.budget_max || job.budget_min <= 0 || job.budget_max <= 0);
     if (jobsWithoutBudget.length > 0) {
-      toast.error(`${jobsWithoutBudget.length} job(s) are missing a budget. Please add budget min and max to all jobs.`);
+      toast.error(t('toasts.jobsMissingBudget').replace('{{count}}', jobsWithoutBudget.length));
       return;
     }
 
     // Validate budget_min <= budget_max
     const invalidBudget = jobs.filter(job => parseFloat(job.budget_min) > parseFloat(job.budget_max));
     if (invalidBudget.length > 0) {
-      toast.error(`${invalidBudget.length} job(s) have budget min greater than budget max. Please fix them.`);
+      toast.error(t('toasts.jobsBudgetMinGreater').replace('{{count}}', invalidBudget.length));
       return;
     }
 
@@ -120,10 +128,7 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
 
       const result = await response.json();
 
-      toast.success(t('jobsPreview.successfullyCreated', { count: result.jobs.length }), {
-        duration: 3000,
-        icon: '✅'
-      });
+      toast.success(t('jobsPreview.successfullyCreated', { count: result.jobs.length }));
 
       setTimeout(() => {
         onSuccess && onSuccess(result.jobs);
@@ -247,7 +252,9 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
                               className="preview-select"
                             >
                               {categories.map(cat => (
-                                <option key={cat} value={cat}>{cat}</option>
+                                <option key={cat.value} value={cat.value}>
+                                  {t(`addWorkModal.${cat.key}`) || cat.value}
+                                </option>
                               ))}
                             </select>
                           </div>
@@ -259,7 +266,9 @@ const JobsPreviewModal = ({ isOpen, onClose, parsedData, inspectionId, onSuccess
                               className="preview-select"
                             >
                               {urgencyLevels.map(level => (
-                                <option key={level} value={level}>{level}</option>
+                                <option key={level.value} value={level.value}>
+                                  {t(`addWorkModal.${level.key}`) || level.value}
+                                </option>
                               ))}
                             </select>
                           </div>

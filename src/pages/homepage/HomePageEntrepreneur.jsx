@@ -1829,7 +1829,7 @@ function HomePageEntrepreneur() {
                                     <span className="eh-detail-value">
                                       {
                                         (job.budget_min == null || job.budget_max == null) ?
-                                        'Budget to be defined' :
+                                        (t('entrepreneurHome.budgetToBeDefined') || 'Budget to be defined') :
                                         job.budgetData.unlocked?
                                       `$${Number.parseFloat(job.budget_min).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} -
                                        $${Number.parseFloat(job.budget_max).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` :
@@ -1847,7 +1847,11 @@ function HomePageEntrepreneur() {
                                   <Clock size={16} />
                                   <div>
                                     <span className="eh-detail-label">{t('entrepreneurHome.duration')}</span>
-                                    <span className="eh-detail-value">{job.estimated_duration_days} {t('entrepreneurHome.days')}</span>
+                                    <span className="eh-detail-value">
+                                      {job.estimated_duration_days != null && Number(job.estimated_duration_days) > 0
+                                        ? `${job.estimated_duration_days} ${t('entrepreneurHome.days')}`
+                                        : '—'}
+                                    </span>
                                   </div>
                                 </div>
                                 <div className="eh-detail-item">
@@ -2306,7 +2310,7 @@ function HomePageEntrepreneur() {
                                   <span className="eh-detail-value">
                                     {
                                         (job.budget_min == null || job.budget_max == null) ?
-                                        'Budget to be defined' :
+                                        (t('entrepreneurHome.budgetToBeDefined') || 'Budget to be defined') :
                                         job.budgetData.unlocked?
                                       `$${Number.parseFloat(job.budget_min).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} -
                                        $${Number.parseFloat(job.budget_max).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` :
@@ -2324,7 +2328,11 @@ function HomePageEntrepreneur() {
                                 <Clock size={16} />
                                 <div>
                                   <span className="eh-detail-label">{t('entrepreneurHome.duration')}</span>
-                                  <span className="eh-detail-value">{job.estimated_duration_days} {t('entrepreneurHome.days')}</span>
+                                  <span className="eh-detail-value">
+                                    {job.estimated_duration_days != null && Number(job.estimated_duration_days) > 0
+                                      ? `${job.estimated_duration_days} ${t('entrepreneurHome.days')}`
+                                      : '—'}
+                                  </span>
                                 </div>
                               </div>
                               <div className="eh-detail-item">

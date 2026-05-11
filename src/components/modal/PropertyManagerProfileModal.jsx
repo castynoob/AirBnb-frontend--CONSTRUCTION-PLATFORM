@@ -18,10 +18,12 @@ import {
   Loader2,
 } from "lucide-react";
 import "../../styles/modal/propertymanagerprofilemodal.css";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState("account");
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
@@ -78,13 +80,21 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
   if (!isOpen || !profile) return null;
 
   const tabs = [
-    { id: "account", label: "Account", icon: User },
-    { id: "performance", label: "Performance", icon: TrendingUp },
-    { id: "reviews", label: "Reviews", icon: MessageSquare, badge: reviews.length > 0 ? reviews.length : undefined },
-    { id: "personal", label: "Personal Details", icon: Shield },
-    { id: "properties", label: "Properties", icon: Home },
-    { id: "business", label: "Business Info", icon: Building2 },
+    { id: "account", label: t('profileModal.tab_account') || "Account", icon: User },
+    { id: "performance", label: t('profileModal.tab_performance') || "Performance", icon: TrendingUp },
+    { id: "reviews", label: t('profileModal.tab_reviews') || "Reviews", icon: MessageSquare, badge: reviews.length > 0 ? reviews.length : undefined },
+    { id: "personal", label: t('profileModal.tab_personal') || "Personal Details", icon: Shield },
+    { id: "properties", label: t('profileModal.tab_properties') || "Properties", icon: Home },
+    { id: "business", label: t('profileModal.tab_business') || "Business Info", icon: Building2 },
   ];
+
+  // Helper for "X reviews" with proper pluralization
+  const reviewsLabel = (n) => {
+    const count = Number(n) || 0;
+    return count === 1
+      ? (t('profileModal.reviewsCountOne') || '{{count}} review').replace('{{count}}', count)
+      : (t('profileModal.reviewsCountMany') || '{{count}} reviews').replace('{{count}}', count);
+  };
 
   const renderStars = (rating) => {
     const stars = [];
@@ -124,11 +134,11 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
               </div>
               <div className="pmpm-profile-info">
                 <h3>{profile.company_name || `${profile.first_name || ''} ${profile.last_name || ''}`}</h3>
-                <p className="pmpm-profile-role">Property Manager</p>
+                <p className="pmpm-profile-role">{t('profileModal.propertyManager') || 'Property Manager'}</p>
                 <div className="pmpm-rating-display">
                   {renderStars(profile.average_rating || 0)}
                   <span className="pmpm-rating-text">
-                    {Number(profile.average_rating || 0).toFixed(1)} ({profile.total_reviews || 0} reviews)
+                    {Number(profile.average_rating || 0).toFixed(1)} ({reviewsLabel(profile.total_reviews)})
                   </span>
                 </div>
               </div>
@@ -140,11 +150,11 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
                   <User size={18} />
                 </div>
                 <div className="pmpm-info-details">
-                  <span className="pmpm-info-label">Full Name</span>
+                  <span className="pmpm-info-label">{t('profileModal.fullName') || 'Full Name'}</span>
                   <span className="pmpm-info-value">
                     {profile.first_name && profile.last_name
                       ? `${profile.first_name} ${profile.middle_name || ''} ${profile.last_name}`.trim()
-                      : "Not provided"}
+                      : (t('profileModal.notProvided') || 'Not provided')}
                   </span>
                 </div>
               </div>
@@ -154,11 +164,11 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
                   <Calendar size={18} />
                 </div>
                 <div className="pmpm-info-details">
-                  <span className="pmpm-info-label">Years of Experience</span>
+                  <span className="pmpm-info-label">{t('profileModal.yearsOfExperience') || 'Years of Experience'}</span>
                   <span className="pmpm-info-value">
                     {profile.years_experience
-                      ? `${profile.years_experience} years`
-                      : "Not specified"}
+                      ? `${profile.years_experience} ${t('profileModal.years') || 'years'}`
+                      : (t('profileModal.notSpecified') || 'Not specified')}
                   </span>
                 </div>
               </div>
@@ -168,9 +178,9 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
                   <Briefcase size={18} />
                 </div>
                 <div className="pmpm-info-details">
-                  <span className="pmpm-info-label">Expertise Area</span>
+                  <span className="pmpm-info-label">{t('profileModal.expertiseArea') || 'Expertise Area'}</span>
                   <span className="pmpm-info-value">
-                    {profile.expertise_area || "Not specified"}
+                    {profile.expertise_area || (t('profileModal.notSpecified') || 'Not specified')}
                   </span>
                 </div>
               </div>
@@ -180,8 +190,8 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
                   <CheckCircle size={18} />
                 </div>
                 <div className="pmpm-info-details">
-                  <span className="pmpm-info-label">Status</span>
-                  <span className="pmpm-info-value pmpm-status-active">Active</span>
+                  <span className="pmpm-info-label">{t('profile.statusLabel') || 'Status'}</span>
+                  <span className="pmpm-info-value pmpm-status-active">{t('profile.statusActive') || 'Active'}</span>
                 </div>
               </div>
             </div>
@@ -200,7 +210,7 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
                   {renderStars(profile.average_rating || 0)}
                 </div>
                 <span className="pmpm-rating-count">
-                  Based on {profile.total_reviews || 0} reviews
+                  {(t('profileModal.basedOnReviews') || 'Based on {{count}} reviews').replace('{{count}}', profile.total_reviews || 0)}
                 </span>
               </div>
             </div>
@@ -208,25 +218,24 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
             <div className="pmpm-stats-grid">
               <div className="pmpm-stat-card">
                 <div className="pmpm-stat-value">{profile.total_reviews || 0}</div>
-                <div className="pmpm-stat-label">Total Reviews</div>
+                <div className="pmpm-stat-label">{t('profileModal.totalReviews') || 'Total Reviews'}</div>
               </div>
               <div className="pmpm-stat-card">
                 <div className="pmpm-stat-value">
                   {profile.years_experience || 0}
                 </div>
-                <div className="pmpm-stat-label">Years Experience</div>
+                <div className="pmpm-stat-label">{t('profileModal.yearsExperience') || 'Years Experience'}</div>
               </div>
               <div className="pmpm-stat-card">
                 <div className="pmpm-stat-value">{profile.total_properties || 0}</div>
-                <div className="pmpm-stat-label">Properties Managed</div>
+                <div className="pmpm-stat-label">{t('profileModal.propertiesManaged') || 'Properties Managed'}</div>
               </div>
             </div>
 
             <div className="pmpm-performance-note">
               <Award size={18} />
               <p>
-                This property manager maintains a professional track record
-                in managing properties and working with contractors.
+                {t('profileModal.pmTrackRecord') || 'This property manager maintains a professional track record in managing properties and working with contractors.'}
               </p>
             </div>
           </div>
@@ -237,13 +246,13 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
           <div className="pmpm-tab-content">
             <div className="pmpm-section-header">
               <MessageSquare size={20} />
-              <h4>Reviews from Contractors</h4>
+              <h4>{t('profileModal.reviewsFromContractors') || 'Reviews from Contractors'}</h4>
             </div>
 
             {reviewsLoading ? (
               <div className="pmpm-reviews-loading">
                 <Loader2 size={24} className="pmpm-spinner" />
-                <span>Loading reviews...</span>
+                <span>{t('profileModal.loadingReviews') || 'Loading reviews...'}</span>
               </div>
             ) : reviews.length > 0 ? (
               <>
@@ -257,7 +266,7 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
                       {renderStars(reviewStats.averageRating)}
                     </div>
                     <span className="pmpm-reviews-count">
-                      {reviewStats.totalReviews} review{reviewStats.totalReviews !== 1 ? 's' : ''}
+                      {reviewsLabel(reviewStats.totalReviews)}
                     </span>
                   </div>
                   <div className="pmpm-rating-bars">
@@ -299,11 +308,11 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
                           )}
                         </div>
                         <div className="pmpm-review-meta">
-                          <h5>{review.reviewer?.company_name || 'Anonymous'}</h5>
+                          <h5>{review.reviewer?.company_name || (t('profileModal.anonymous') || 'Anonymous')}</h5>
                           <div className="pmpm-review-rating">
                             {renderStars(review.rating)}
                             <span className="pmpm-review-date">
-                              {new Date(review.created_at).toLocaleDateString('en-US', {
+                              {new Date(review.created_at).toLocaleDateString(language === 'fr' ? 'fr-CA' : 'en-US', {
                                 year: 'numeric',
                                 month: 'short',
                                 day: 'numeric'
@@ -328,8 +337,8 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
             ) : (
               <div className="pmpm-reviews-empty">
                 <MessageSquare size={40} />
-                <h4>No Reviews Yet</h4>
-                <p>This property manager hasn't received any reviews from contractors yet.</p>
+                <h4>{t('profileModal.noReviewsYet') || 'No Reviews Yet'}</h4>
+                <p>{t('profileModal.pmNoReviewsDesc') || "This property manager hasn't received any reviews from contractors yet."}</p>
               </div>
             )}
           </div>
@@ -340,7 +349,7 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
           <div className="pmpm-tab-content">
             <div className="pmpm-section-header">
               <Shield size={20} />
-              <h4>Personal Information</h4>
+              <h4>{t('profileModal.personalInformation') || 'Personal Information'}</h4>
             </div>
 
             <div className="pmpm-personal-list">
@@ -349,11 +358,11 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
                   <User size={18} />
                 </div>
                 <div className="pmpm-personal-details">
-                  <span className="pmpm-personal-label">Full Name</span>
+                  <span className="pmpm-personal-label">{t('profileModal.fullName') || 'Full Name'}</span>
                   <span className="pmpm-personal-value">
                     {profile.first_name && profile.last_name
                       ? `${profile.first_name} ${profile.middle_name || ''} ${profile.last_name}`.trim()
-                      : "Not provided"}
+                      : (t('profileModal.notProvided') || 'Not provided')}
                   </span>
                 </div>
               </div>
@@ -363,9 +372,9 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
                   <Mail size={18} />
                 </div>
                 <div className="pmpm-personal-details">
-                  <span className="pmpm-personal-label">Email Address</span>
+                  <span className="pmpm-personal-label">{t('profileModal.emailAddress') || 'Email Address'}</span>
                   <span className="pmpm-personal-value">
-                    {profile.email || "Not provided"}
+                    {profile.email || (t('profileModal.notProvided') || 'Not provided')}
                   </span>
                 </div>
               </div>
@@ -375,9 +384,9 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
                   <Phone size={18} />
                 </div>
                 <div className="pmpm-personal-details">
-                  <span className="pmpm-personal-label">Phone Number</span>
+                  <span className="pmpm-personal-label">{t('profileModal.phoneNumber') || 'Phone Number'}</span>
                   <span className="pmpm-personal-value">
-                    {profile.phone || "Not provided"}
+                    {profile.phone || (t('profileModal.notProvided') || 'Not provided')}
                   </span>
                 </div>
               </div>
@@ -387,11 +396,11 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
                   <MapPin size={18} />
                 </div>
                 <div className="pmpm-personal-details">
-                  <span className="pmpm-personal-label">Location</span>
+                  <span className="pmpm-personal-label">{t('profileModal.location') || 'Location'}</span>
                   <span className="pmpm-personal-value">
                     {profile.city && profile.province
                       ? `${profile.city}, ${profile.province}`
-                      : profile.address || "Not provided"}
+                      : profile.address || (t('profileModal.notProvided') || 'Not provided')}
                   </span>
                 </div>
               </div>
@@ -404,7 +413,7 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
           <div className="pmpm-tab-content">
             <div className="pmpm-section-header">
               <Home size={20} />
-              <h4>Properties Overview</h4>
+              <h4>{t('profileModal.propertiesOverview') || 'Properties Overview'}</h4>
             </div>
 
             <div className="pmpm-properties-summary">
@@ -416,7 +425,7 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
                   <span className="pmpm-property-stat-value">
                     {profile.total_properties || 0}
                   </span>
-                  <span className="pmpm-property-stat-label">Total Properties</span>
+                  <span className="pmpm-property-stat-label">{t('profileModal.totalProperties') || 'Total Properties'}</span>
                 </div>
               </div>
 
@@ -428,14 +437,14 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
                   <span className="pmpm-property-stat-value">
                     {profile.years_experience || 0}+
                   </span>
-                  <span className="pmpm-property-stat-label">Years Managing</span>
+                  <span className="pmpm-property-stat-label">{t('profileModal.yearsManaging') || 'Years Managing'}</span>
                 </div>
               </div>
             </div>
 
             {profile.expertise_area && (
               <div className="pmpm-expertise-section">
-                <h5>Primary Expertise</h5>
+                <h5>{t('profileModal.primaryExpertise') || 'Primary Expertise'}</h5>
                 <div className="pmpm-expertise-badge">
                   <Briefcase size={14} />
                   <span>{profile.expertise_area}</span>
@@ -446,8 +455,9 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
             <div className="pmpm-properties-note">
               <Home size={18} />
               <p>
-                This property manager oversees {profile.total_properties || 0} properties
-                and has {profile.years_experience || 0} years of experience in property management.
+                {(t('profileModal.pmOversees') || 'This property manager oversees {{props}} properties and has {{yrs}} years of experience in property management.')
+                  .replace('{{props}}', profile.total_properties || 0)
+                  .replace('{{yrs}}', profile.years_experience || 0)}
               </p>
             </div>
           </div>
@@ -458,7 +468,7 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
           <div className="pmpm-tab-content">
             <div className="pmpm-section-header">
               <Building2 size={20} />
-              <h4>Business Information</h4>
+              <h4>{t('profileModal.businessInformation') || 'Business Information'}</h4>
             </div>
 
             <div className="pmpm-business-details">
@@ -472,8 +482,8 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
                     )}
                   </div>
                   <div className="pmpm-business-name-section">
-                    <h3>{profile.company_name || "Property Management Company"}</h3>
-                    <span className="pmpm-business-type">Property Management</span>
+                    <h3>{profile.company_name || (t('profileModal.pmCompanyFallback') || 'Property Management Company')}</h3>
+                    <span className="pmpm-business-type">{t('profileModal.propertyManagement') || 'Property Management'}</span>
                   </div>
                 </div>
 
@@ -481,42 +491,42 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
                   <div className="pmpm-business-info-row">
                     <span className="pmpm-business-info-label">
                       <Briefcase size={14} />
-                      Expertise Area
+                      {t('profileModal.expertiseArea') || 'Expertise Area'}
                     </span>
                     <span className="pmpm-business-info-value">
-                      {profile.expertise_area || "General Property Management"}
+                      {profile.expertise_area || (t('profileModal.generalPropertyManagement') || 'General Property Management')}
                     </span>
                   </div>
 
                   <div className="pmpm-business-info-row">
                     <span className="pmpm-business-info-label">
                       <Home size={14} />
-                      Properties Managed
+                      {t('profileModal.propertiesManaged') || 'Properties Managed'}
                     </span>
                     <span className="pmpm-business-info-value">
-                      {profile.total_properties || 0} properties
+                      {(t('profileModal.propertiesCount') || '{{count}} properties').replace('{{count}}', profile.total_properties || 0)}
                     </span>
                   </div>
 
                   <div className="pmpm-business-info-row">
                     <span className="pmpm-business-info-label">
                       <Calendar size={14} />
-                      Years in Business
+                      {t('profileModal.yearsInBusiness') || 'Years in Business'}
                     </span>
                     <span className="pmpm-business-info-value">
                       {profile.years_experience
-                        ? `${profile.years_experience} years`
-                        : "Not specified"}
+                        ? `${profile.years_experience} ${t('profileModal.years') || 'years'}`
+                        : (t('profileModal.notSpecified') || 'Not specified')}
                     </span>
                   </div>
 
                   <div className="pmpm-business-info-row">
                     <span className="pmpm-business-info-label">
                       <MapPin size={14} />
-                      Business Address
+                      {t('profileModal.businessAddress') || 'Business Address'}
                     </span>
                     <span className="pmpm-business-info-value">
-                      {profile.address || "Not provided"}
+                      {profile.address || (t('profileModal.notProvided') || 'Not provided')}
                     </span>
                   </div>
                 </div>
@@ -544,11 +554,11 @@ const PropertyManagerProfileModal = ({ isOpen, onClose, profile }) => {
               )}
             </div>
             <div className="pmpm-header-info">
-              <h2>{profile.company_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || "Property Manager"}</h2>
+              <h2>{profile.company_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || (t('profileModal.propertyManager') || 'Property Manager')}</h2>
               <div className="pmpm-header-meta">
                 <Star size={12} fill="#facc15" stroke="#facc15" />
                 <span>
-                  {Number(profile.average_rating || 0).toFixed(1)} ({profile.total_reviews || 0} reviews)
+                  {Number(profile.average_rating || 0).toFixed(1)} ({reviewsLabel(profile.total_reviews)})
                 </span>
               </div>
             </div>

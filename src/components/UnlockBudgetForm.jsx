@@ -8,9 +8,11 @@ import {
 import "../styles/entrepreneur/budgetunlock.css";
 import logoLight from "../assets/logo-light.png";
 import { stripePromise } from "../utils/stripeConfig";
+import { useLanguage } from "../contexts/LanguageContext";
 
 // Closing/Loading Screen Component
 const ClosingScreen = () => {
+  const { t } = useLanguage();
   return (
     <div className="ub-overlay ub-closing-overlay">
       <div className="ub-closing-content">
@@ -20,8 +22,8 @@ const ClosingScreen = () => {
             <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
-        <h3 className="ub-closing-title">Budget Unlocked!</h3>
-        <p className="ub-closing-text">Refreshing job details...</p>
+        <h3 className="ub-closing-title">{t('unlockBudget.unlocked') || 'Budget Unlocked!'}</h3>
+        <p className="ub-closing-text">{t('unlockBudget.refreshing') || 'Refreshing job details...'}</p>
       </div>
     </div>
   );
@@ -29,6 +31,7 @@ const ClosingScreen = () => {
 
 // Success/Thank You Modal Component
 const ThankYouModal = ({ onClose }) => {
+  const { t } = useLanguage();
   return (
     <div className="ub-overlay" onClick={onClose}>
       <div className="ub-success-modal" onClick={(e) => e.stopPropagation()}>
@@ -62,9 +65,9 @@ const ThankYouModal = ({ onClose }) => {
           </div>
 
           {/* Welcome Message */}
-          <h2 className="ub-success-title">Budget Unlocked!</h2>
+          <h2 className="ub-success-title">{t('unlockBudget.unlocked') || 'Budget Unlocked!'}</h2>
           <p className="ub-success-subtitle">
-            You now have access to the full budget details for this job. Use this information wisely to craft a winning bid!
+            {t('unlockBudget.unlockedSubtitle') || 'You now have access to the full budget details for this job. Use this information wisely to craft a winning bid!'}
           </p>
 
           {/* Info Notice */}
@@ -73,13 +76,13 @@ const ThankYouModal = ({ onClose }) => {
               <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="2"/>
               <path d="M12 16V12M12 8H12.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
             </svg>
-            <span>Receipt sent to your email</span>
+            <span>{t('unlockBudget.receiptSent') || 'Receipt sent to your email'}</span>
           </div>
         </div>
 
         {/* Right Column - Benefits & CTA */}
         <div className="ub-success-right">
-          <h3 className="ub-benefits-title">What You've Unlocked</h3>
+          <h3 className="ub-benefits-title">{t('unlockBudget.whatYouveUnlocked') || "What You've Unlocked"}</h3>
 
           <div className="ub-success-benefits">
             <div className="ub-benefit-item">
@@ -89,8 +92,8 @@ const ThankYouModal = ({ onClose }) => {
                 </svg>
               </div>
               <div className="ub-benefit-content">
-                <strong>Full Budget Visibility</strong>
-                <span>See the exact min and max budget range</span>
+                <strong>{t('unlockBudget.benefit1Title') || 'Full Budget Visibility'}</strong>
+                <span>{t('unlockBudget.benefit1Desc') || 'See the exact min and max budget range'}</span>
               </div>
             </div>
 
@@ -101,8 +104,8 @@ const ThankYouModal = ({ onClose }) => {
                 </svg>
               </div>
               <div className="ub-benefit-content">
-                <strong>Competitive Advantage</strong>
-                <span>Craft bids that align with client expectations</span>
+                <strong>{t('unlockBudget.benefit2Title') || 'Competitive Advantage'}</strong>
+                <span>{t('unlockBudget.benefit2DescAlt') || 'Craft bids that align with client expectations'}</span>
               </div>
             </div>
 
@@ -113,14 +116,14 @@ const ThankYouModal = ({ onClose }) => {
                 </svg>
               </div>
               <div className="ub-benefit-content">
-                <strong>Permanent Access</strong>
-                <span>Budget info remains unlocked for this job</span>
+                <strong>{t('unlockBudget.benefit3Title') || 'Permanent Access'}</strong>
+                <span>{t('unlockBudget.benefit3Desc') || 'Budget info remains unlocked for this job'}</span>
               </div>
             </div>
           </div>
 
           <button className="ub-success-btn" onClick={onClose}>
-            <span>View Job Budget</span>
+            <span>{t('unlockBudget.viewBudget') || 'View Job Budget'}</span>
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -132,12 +135,15 @@ const ThankYouModal = ({ onClose }) => {
 };
 
 const SUBTOTAL = 19.99;
-const TAX_RATE = 0.05;
-const TAX_LABEL = "GST/HST";
-const TAX_AMOUNT = parseFloat((SUBTOTAL * TAX_RATE).toFixed(2)); // 1.00
-const TOTAL = parseFloat((SUBTOTAL + TAX_AMOUNT).toFixed(2)); // 20.99
+// Quebec sales taxes — GST (TPS) 5% + QST (TVQ) 9.975%, both on the pre-tax amount.
+const GST_RATE = 0.05;
+const QST_RATE = 0.09975;
+const GST_AMOUNT = parseFloat((SUBTOTAL * GST_RATE).toFixed(2)); // 1.00
+const QST_AMOUNT = parseFloat((SUBTOTAL * QST_RATE).toFixed(2)); // 1.99
+const TOTAL = parseFloat((SUBTOTAL + GST_AMOUNT + QST_AMOUNT).toFixed(2)); // 22.98
 
 const UnlockBudgetForm = ({ jobId, token, handleBudgetModal }) => {
+  const { t } = useLanguage();
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
@@ -194,7 +200,7 @@ const UnlockBudgetForm = ({ jobId, token, handleBudgetModal }) => {
         setMessage(data.error || data.message);
       }
     } catch (err) {
-      setMessage("Payment failed. Try again later.");
+      setMessage(t('unlockBudget.paymentFailed') || 'Payment failed. Try again later.');
     }
 
     setLoading(false);
@@ -245,8 +251,8 @@ const UnlockBudgetForm = ({ jobId, token, handleBudgetModal }) => {
             </div>
 
             {/* Title */}
-            <h2 className="ub-left-title">Unlock Budget</h2>
-            <p className="ub-left-subtitle">Gain the competitive edge with full budget visibility</p>
+            <h2 className="ub-left-title">{t('unlockBudget.title') || 'Unlock Budget'}</h2>
+            <p className="ub-left-subtitle">{t('unlockBudget.subtitle') || 'Gain the competitive edge with full budget visibility'}</p>
 
             {/* Benefits List */}
             <div className="ub-left-benefits">
@@ -257,8 +263,8 @@ const UnlockBudgetForm = ({ jobId, token, handleBudgetModal }) => {
                   </svg>
                 </div>
                 <div className="ub-left-benefit-text">
-                  <strong>Full Budget Visibility</strong>
-                  <span>See the exact min and max budget range</span>
+                  <strong>{t('unlockBudget.benefit1Title') || 'Full Budget Visibility'}</strong>
+                  <span>{t('unlockBudget.benefit1Desc') || 'See the exact min and max budget range'}</span>
                 </div>
               </div>
 
@@ -269,8 +275,8 @@ const UnlockBudgetForm = ({ jobId, token, handleBudgetModal }) => {
                   </svg>
                 </div>
                 <div className="ub-left-benefit-text">
-                  <strong>Competitive Advantage</strong>
-                  <span>Craft bids that align with expectations</span>
+                  <strong>{t('unlockBudget.benefit2Title') || 'Competitive Advantage'}</strong>
+                  <span>{t('unlockBudget.benefit2Desc') || 'Craft bids that align with expectations'}</span>
                 </div>
               </div>
 
@@ -281,8 +287,8 @@ const UnlockBudgetForm = ({ jobId, token, handleBudgetModal }) => {
                   </svg>
                 </div>
                 <div className="ub-left-benefit-text">
-                  <strong>Permanent Access</strong>
-                  <span>Budget info remains unlocked for this job</span>
+                  <strong>{t('unlockBudget.benefit3Title') || 'Permanent Access'}</strong>
+                  <span>{t('unlockBudget.benefit3Desc') || 'Budget info remains unlocked for this job'}</span>
                 </div>
               </div>
             </div>
@@ -290,31 +296,35 @@ const UnlockBudgetForm = ({ jobId, token, handleBudgetModal }) => {
 
           {/* Right Column - Checkout */}
           <div className="ub-right-column">
-            <h3 className="ub-right-title">Complete Payment</h3>
-            <p className="ub-right-subtitle">One-time payment for this job</p>
+            <h3 className="ub-right-title">{t('unlockBudget.completePayment') || 'Complete Payment'}</h3>
+            <p className="ub-right-subtitle">{t('unlockBudget.oneTimePayment') || 'One-time payment for this job'}</p>
 
             {/* Payment Summary */}
             <div className="ub-summary">
               <div className="ub-summary-header">
-                <span>Payment Summary</span>
+                <span>{t('unlockBudget.paymentSummary') || 'Payment Summary'}</span>
               </div>
               <div className="ub-summary-row">
-                <span>Budget Unlock Fee</span>
+                <span>{t('unlockBudget.budgetUnlockFee') || 'Budget Unlock Fee'}</span>
                 <strong>${SUBTOTAL.toFixed(2)}</strong>
               </div>
               <div className="ub-summary-row ub-tax-row">
-                <span>Tax ({TAX_LABEL} {TAX_RATE * 100}%)</span>
-                <strong>${TAX_AMOUNT.toFixed(2)}</strong>
+                <span>GST ({(GST_RATE * 100).toFixed(0)}%)</span>
+                <strong>${GST_AMOUNT.toFixed(2)}</strong>
+              </div>
+              <div className="ub-summary-row ub-tax-row">
+                <span>QST ({(QST_RATE * 100).toFixed(3)}%)</span>
+                <strong>${QST_AMOUNT.toFixed(2)}</strong>
               </div>
               <div className="ub-summary-total">
-                <span>Total</span>
+                <span>{t('unlockBudget.total') || 'Total'}</span>
                 <strong>${TOTAL.toFixed(2)}</strong>
               </div>
             </div>
 
             {/* Payment Form */}
             <form onSubmit={handleSubmit} className="ub-form">
-              <label className="ub-card-label">Card Details</label>
+              <label className="ub-card-label">{t('unlockBudget.cardDetails') || 'Card Details'}</label>
               <div className="ub-card-wrapper">
                 <CardElement
                   options={{
@@ -349,14 +359,14 @@ const UnlockBudgetForm = ({ jobId, token, handleBudgetModal }) => {
                 {loading ? (
                   <>
                     <div className="ub-btn-spinner"></div>
-                    <span>Processing...</span>
+                    <span>{t('unlockBudget.processing') || 'Processing...'}</span>
                   </>
                 ) : (
                   <>
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M12 15V17M6 21H18C19.1046 21 20 20.1046 20 19V13C20 11.8954 19.1046 11 18 11H6C4.89543 11 4 11.8954 4 13V19C4 20.1046 4.89543 21 6 21ZM16 11V7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7V11H16Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                     </svg>
-                    <span>Unlock Budget — ${TOTAL.toFixed(2)}</span>
+                    <span>{(t('unlockBudget.title') || 'Unlock Budget')} — ${TOTAL.toFixed(2)}</span>
                   </>
                 )}
               </button>
@@ -370,18 +380,18 @@ const UnlockBudgetForm = ({ jobId, token, handleBudgetModal }) => {
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 22C12 22 20 18 20 12V5L12 2L4 5V12C4 18 12 22 12 22Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            <span>Secure</span>
+            <span>{t('unlockBudget.secure') || 'Secure'}</span>
           </div>
           <div className="ub-security-divider"></div>
           <div className="ub-security-item">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            <span>Verified</span>
+            <span>{t('unlockBudget.verified') || 'Verified'}</span>
           </div>
           <div className="ub-security-divider"></div>
           <div className="ub-stripe-badge">
-            Powered by <strong>Stripe</strong>
+            {t('unlockBudget.poweredBy') || 'Powered by'} <strong>Stripe</strong>
           </div>
         </div>
       </div>
@@ -390,8 +400,9 @@ const UnlockBudgetForm = ({ jobId, token, handleBudgetModal }) => {
 };
 
 export default function UnlockBudgetModal({ jobId, token, handleBudgetModal }) {
+  const { language } = useLanguage();
   return (
-    <Elements stripe={stripePromise}>
+    <Elements stripe={stripePromise} options={{ locale: language === 'fr' ? 'fr' : 'en' }}>
       <UnlockBudgetForm
         jobId={jobId}
         token={token}

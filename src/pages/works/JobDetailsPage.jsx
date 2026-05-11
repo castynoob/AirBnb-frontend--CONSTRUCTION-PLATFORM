@@ -16,12 +16,15 @@ import {
   FileText,
   Maximize2,
   Trash2,
+  Edit3,
   AlertCircle,
   FolderOpen,
   CheckCircle,
   CheckCircle2,
   Tag,
   Timer,
+  Receipt,
+  Download,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
@@ -30,13 +33,16 @@ import "../../styles/manager/jobdetailspage.css";
 import toast from "react-hot-toast";
 import Nav from "../../components/Nav";
 import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal";
+import EditJobModal from "../../components/modal/EditJobModal";
 import {
   createContract,
   getContractByJob,
   deleteJob,
   archiveJob,
+  confirmCompletion,
 } from "../../utils/contractApi";
 import { useLanguage } from "../../contexts/LanguageContext";
+import { translateCategory, translateUrgency } from "../../utils/translateEnums";
 
 const stageKeyMap = { not_started: 'notStarted', mobilization: 'mobilization', in_progress: 'inProgress', inspection: 'inspection', completed: 'completed' };
 const formatStageName = (name, t) => {
@@ -93,12 +99,17 @@ function JobDetailsPage() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState(null);
 
+  // Edit modal
+  const [showEditModal, setShowEditModal] = useState(false);
+
   // Delete / Archive / Confirm
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeletingJob, setIsDeletingJob] = useState(false);
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [isArchivingJob, setIsArchivingJob] = useState(false);
   const [isConfirmingCompletion, setIsConfirmingCompletion] = useState(false);
+  const [showConfirmCompletionModal, setShowConfirmCompletionModal] = useState(false);
+  const [completionNote, setCompletionNote] = useState("");
 
   // Contract
   const [contract, setContract] = useState(null);
@@ -488,33 +499,49 @@ function JobDetailsPage() {
   };
 
   // ==================== CONFIRM COMPLETION ====================
+  // Routes through the contract endpoint (which records the mandatory note,
+  // sets manager_completion_confirmed, and triggers mutual confirmation +
+  // review invitations). Previously this PUT'd jobs.status directly, which
+  // bypassed the contract entirely.
   const handleConfirmCompletion = async () => {
-    if (!jobId) return;
+    if (!contract?.id) {
+      showNotification(
+        t("submissions.noContractFound") || "No contract found for this job.",
+        "error"
+      );
+      return;
+    }
+    if (!completionNote.trim()) {
+      showNotification(
+        t("submissions.completionNoteRequired") || "Please add a note before confirming.",
+        "error"
+      );
+      return;
+    }
     setIsConfirmingCompletion(true);
     try {
-      const headers = getAuthHeaders();
-      const response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`, {
-        method: "PUT",
-        headers: {
-          ...headers,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ status: "completed" }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to confirm completion");
-      }
-
+      await confirmCompletion(contract.id, completionNote.trim());
       setJob((prev) => (prev ? { ...prev, status: "completed" } : prev));
+      setContract((prev) =>
+        prev
+          ? {
+              ...prev,
+              manager_completion_confirmed: true,
+              contractor_completion_confirmed: true,
+              manager_completion_note: completionNote.trim(),
+              mutual_confirmation_completed_at: new Date().toISOString(),
+            }
+          : prev
+      );
       showNotification(
-        t("submissions.jobCompletedSuccess") ||
-          "Job completion confirmed successfully.",
+        t("submissions.completionConfirmedSuccess") || "Work completion confirmed successfully",
         "success"
       );
+      setShowConfirmCompletionModal(false);
+      setCompletionNote("");
     } catch (error) {
       showNotification(
-        error.message || "Failed to confirm completion.",
+        error.message || (t("submissions.completionFailed") || "Failed to confirm completion."),
         "error"
       );
     } finally {
@@ -690,7 +717,7 @@ function JobDetailsPage() {
                       <span className="jdp-info-label">
                         {t("repairDetails.category") || "Category"}
                       </span>
-                      <span className="jdp-info-value">{job.category}</span>
+                      <span className="jdp-info-value">{translateCategory(t, job.category)}</span>
                     </div>
                   )}
 
@@ -700,7 +727,7 @@ function JobDetailsPage() {
                       <span className="jdp-info-label">
                         {t("repairDetails.urgency") || "Urgency"}
                       </span>
-                      <span className="jdp-info-value">{job.urgency}</span>
+                      <span className="jdp-info-value">{translateUrgency(t, job.urgency)}</span>
                     </div>
                   )}
 
@@ -883,9 +910,102 @@ function JobDetailsPage() {
             </div>
           </div>
 
+          {/* Contractor Invoice — visible once submitted, before manager confirms completion */}
+          {contract && contract.invoice_submitted_at && (
+            <div className="jdp-invoice-card">
+              <div className="jdp-invoice-header">
+                <Receipt size={16} />
+                <h3>{t("invoice.cardTitle") || "Contractor's Invoice"}</h3>
+                <span className="jdp-invoice-when">
+                  {new Date(contract.invoice_submitted_at).toLocaleDateString()}
+                </span>
+              </div>
+              <div className="jdp-invoice-rows">
+                <div className="jdp-invoice-row">
+                  <span>{t("invoice.subtotal") || "Subtotal"}</span>
+                  <strong>${Number(contract.invoice_subtotal || 0).toFixed(2)}</strong>
+                </div>
+                <div className="jdp-invoice-row">
+                  <span>GST (5%)</span>
+                  <strong>${Number(contract.invoice_gst || 0).toFixed(2)}</strong>
+                </div>
+                <div className="jdp-invoice-row">
+                  <span>QST (9.975%)</span>
+                  <strong>${Number(contract.invoice_qst || 0).toFixed(2)}</strong>
+                </div>
+                <div className="jdp-invoice-row jdp-invoice-total">
+                  <span>{t("invoice.total") || "Total"}</span>
+                  <strong>${Number(contract.invoice_total || 0).toFixed(2)}</strong>
+                </div>
+              </div>
+              {contract.invoice_notes && (
+                <p className="jdp-invoice-notes">{contract.invoice_notes}</p>
+              )}
+              {contract.invoice_file_url && (
+                <a
+                  className="jdp-invoice-download"
+                  href={contract.invoice_file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Download size={14} />
+                  {contract.invoice_file_name || (t("invoice.download") || "Download invoice")}
+                </a>
+              )}
+            </div>
+          )}
+
+          {/* Completion Notes — visible after either party records a note */}
+          {contract && (contract.manager_completion_note || contract.contractor_completion_note) && (
+            <div className="jdp-notes-card">
+              <div className="jdp-notes-header">
+                <FileText size={16} />
+                <h3>{t("completionNotes.title") || "Completion Notes"}</h3>
+              </div>
+              {contract.manager_completion_note && (
+                <div className="jdp-notes-entry">
+                  <div className="jdp-notes-author">
+                    {t("completionNotes.fromManager") || "From you (property manager)"}
+                    {contract.manager_confirmed_at && (
+                      <span className="jdp-notes-when">
+                        · {new Date(contract.manager_confirmed_at).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                  <p className="jdp-notes-body">{contract.manager_completion_note}</p>
+                </div>
+              )}
+              {contract.contractor_completion_note && (
+                <div className="jdp-notes-entry">
+                  <div className="jdp-notes-author">
+                    {t("completionNotes.fromContractor") || "From the contractor"}
+                    {contract.contractor_confirmed_at && (
+                      <span className="jdp-notes-when">
+                        · {new Date(contract.contractor_confirmed_at).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                  <p className="jdp-notes-body">{contract.contractor_completion_note}</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Footer Actions — inside left panel */}
           {/* Footer Actions based on job status */}
           <div className="jdp-footer-actions">
+            {/* Edit — only for open jobs (before any contractor is hired) */}
+            {(job.status === "Open" || job.status === "open") && (
+              <button
+                className="jdp-action-btn jdp-edit-btn"
+                onClick={() => setShowEditModal(true)}
+                disabled={isProcessing}
+              >
+                <Edit3 size={16} />
+                {t("editJobModal.editJobBtn") || "Edit Job"}
+              </button>
+            )}
+
             {/* Delete — only for open jobs (no accepted/ongoing/completed) */}
             {(job.status === "Open" || job.status === "open") && (
               <button
@@ -902,12 +1022,12 @@ function JobDetailsPage() {
             {job.status === "completed" && contract && !contract.manager_completion_confirmed && (
               <button
                 className="jdp-action-btn jdp-confirm-btn"
-                onClick={handleConfirmCompletion}
+                onClick={() => { setCompletionNote(""); setShowConfirmCompletionModal(true); }}
                 disabled={isConfirmingCompletion}
               >
                 <CheckCircle2 size={16} />
                 {isConfirmingCompletion
-                  ? "Confirming..."
+                  ? (t("submissions.confirming") || "Confirming...")
                   : t("submissions.confirmCompletion") || "Confirm Completion"}
               </button>
             )}
@@ -1362,6 +1482,87 @@ function JobDetailsPage() {
         onClose={() => setShowProfileModal(false)}
         profile={selectedProfile}
       />
+
+      {/* Edit Job Modal */}
+      <EditJobModal
+        isOpen={showEditModal}
+        job={job}
+        onClose={() => setShowEditModal(false)}
+        onSaved={(updated) => setJob((prev) => ({ ...prev, ...updated }))}
+      />
+
+      {/* Confirm Completion Modal */}
+      {showConfirmCompletionModal && (
+        <div
+          onClick={() => { if (!isConfirmingCompletion) { setShowConfirmCompletionModal(false); setCompletionNote(""); } }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 10002, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: 16, padding: '1.5rem', width: '100%', maxWidth: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+              <CheckCircle2 size={28} style={{ color: '#00A5A9' }} />
+              <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: '#0F223D' }}>
+                {t('submissions.confirmCompletionTitle') || 'Confirm Job Completion'}
+              </h3>
+            </div>
+            <p style={{ fontSize: '0.875rem', color: '#4b5563', lineHeight: 1.5, marginBottom: '1rem' }}>
+              {t('submissions.confirmCompletionMessage') || 'By confirming, you acknowledge that this job has been completed satisfactorily.'}
+            </p>
+
+            <label htmlFor="jdp-completion-note" style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, color: '#0F223D', marginBottom: 6 }}>
+              {t('submissions.completionNoteLabel') || 'Completion note'}
+              <span style={{ color: '#dc2626', marginLeft: 4 }}>*</span>
+            </label>
+            <textarea
+              id="jdp-completion-note"
+              value={completionNote}
+              onChange={(e) => setCompletionNote(e.target.value)}
+              placeholder={t('submissions.completionNotePlaceholder') || 'Briefly describe how the work was completed (required).'}
+              rows={4}
+              disabled={isConfirmingCompletion}
+              style={{ width: '100%', padding: '0.625rem 0.75rem', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.875rem', color: '#0F223D', fontFamily: 'inherit', resize: 'vertical', minHeight: 80, boxSizing: 'border-box' }}
+              required
+            />
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: '1rem' }}>
+              <button
+                type="button"
+                onClick={() => { setShowConfirmCompletionModal(false); setCompletionNote(""); }}
+                disabled={isConfirmingCompletion}
+                style={{ padding: '0.625rem 1rem', background: '#fff', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.875rem', fontWeight: 600, color: '#374151', cursor: 'pointer' }}
+              >
+                {t('common.cancel') || 'Cancel'}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCompletion}
+                disabled={isConfirmingCompletion || !completionNote.trim()}
+                style={{
+                  padding: '0.625rem 1rem',
+                  background: '#00A5A9',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: 8,
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                  cursor: isConfirmingCompletion || !completionNote.trim() ? 'not-allowed' : 'pointer',
+                  opacity: isConfirmingCompletion || !completionNote.trim() ? 0.6 : 1,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                <CheckCircle2 size={16} />
+                {isConfirmingCompletion
+                  ? (t('submissions.confirming') || 'Confirming...')
+                  : (t('submissions.confirmCompletionBtn') || 'Yes, Confirm Completion')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Image Viewer */}
       {viewingImage && (

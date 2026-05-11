@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Wrench, Calendar, DollarSign, User, Star, FileText, ChevronDown, ChevronUp, Clock, CheckCircle, AlertCircle, Building2, MapPin, Image } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { translateStatus, translateCategory } from '../../utils/translateEnums';
 
 const MaintenanceLogModal = ({ property, onClose }) => {
   const { t } = useLanguage();
@@ -166,11 +167,11 @@ const MaintenanceLogModal = ({ property, onClose }) => {
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
                                 <span style={{ fontWeight: 600, fontSize: '0.875rem', color: '#111827' }}>{job.title}</span>
                                 <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '0.6875rem', fontWeight: 600, background: sc.bg, color: sc.color, border: `1px solid ${sc.border}` }}>
-                                  {job.status.toUpperCase()}
+                                  {translateStatus(t, job.status, { uppercase: true })}
                                 </span>
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.75rem', color: '#9ca3af' }}>
-                                {job.category && <span>{job.category}</span>}
+                                {job.category && <span>{translateCategory(t, job.category)}</span>}
                                 <span>{formatDate(job.created_at)}</span>
                                 {job.contract_amount && <span style={{ color: '#059669', fontWeight: 600 }}>{formatCurrency(job.contract_amount)}</span>}
                               </div>

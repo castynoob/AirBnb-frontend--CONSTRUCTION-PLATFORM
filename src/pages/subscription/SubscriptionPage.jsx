@@ -6,8 +6,10 @@ import '../../styles/entrepreneur/subscriptionpage.css';
 import '../../styles/entrepreneur/profilepageentrepreneur.css';
 import SubscriptionModal from '../../components/SubcriptionModal';
 import UpdatePaymentMethodModal from '../../components/UpdatePaymentMethodModal';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 function SubscriptionPage() {
+  const { t } = useLanguage();
   const [userProfile, setUserProfile] = useState({
     id: 101,
     role: 'entrepreneur',
@@ -134,17 +136,17 @@ function SubscriptionPage() {
       name: 'Starter',
       price: 89,
       period: 'month',
-      description: 'For small businesses',
-      restriction: 'Projects under $2,500 only',
+      description: t('subscriptionPage.starterDescription') || 'For small businesses',
+      restriction: t('subscriptionPage.starterRestriction') || 'Projects under $2,500 only',
       features: [
-        { text: 'Browse construction jobs', included: true },
-        { text: 'View job details & specs', included: true },
-        { text: 'Submit bids', included: true, limit: '15 per month' },
-        { text: 'Unlock project budgets', included: true },
-        { text: 'Message on approved projects', included: true },
-        { text: 'Priority support', included: false },
-        { text: 'Advanced analytics', included: false },
-        { text: 'Custom branding', included: false }
+        { text: t('subscriptionPage.feat_browseJobs') || 'Browse construction jobs', included: true },
+        { text: t('subscriptionPage.feat_viewJobDetails') || 'View job details & specs', included: true },
+        { text: t('subscriptionPage.feat_submitBids') || 'Submit bids', included: true, limit: t('subscriptionPage.limit_15perMonth') || '15 per month' },
+        { text: t('subscriptionPage.feat_unlockBudgets') || 'Unlock project budgets', included: true },
+        { text: t('subscriptionPage.feat_messageProjects') || 'Message on approved projects', included: true },
+        { text: t('subscriptionPage.feat_prioritySupport') || 'Priority support', included: false },
+        { text: t('subscriptionPage.feat_advancedAnalytics') || 'Advanced analytics', included: false },
+        { text: t('subscriptionPage.feat_customBranding') || 'Custom branding', included: false }
       ],
       popular: false
     },
@@ -152,16 +154,16 @@ function SubscriptionPage() {
       name: 'Basic',
       price: 250,
       period: 'month',
-      description: 'Perfect for getting started',
+      description: t('subscriptionPage.basicDescription') || 'Perfect for getting started',
       features: [
-        { text: 'Browse construction jobs', included: true },
-        { text: 'View job details & specs', included: true },
-        { text: 'Submit bids', included: true, limit: '30 per month' },
-        { text: 'Unlock project budgets', included: true },
-        { text: 'Message on approved projects', included: true },
-        { text: 'Priority support', included: false },
-        { text: 'Advanced analytics', included: false },
-        { text: 'Custom branding', included: false }
+        { text: t('subscriptionPage.feat_browseJobs') || 'Browse construction jobs', included: true },
+        { text: t('subscriptionPage.feat_viewJobDetails') || 'View job details & specs', included: true },
+        { text: t('subscriptionPage.feat_submitBids') || 'Submit bids', included: true, limit: t('subscriptionPage.limit_30perMonth') || '30 per month' },
+        { text: t('subscriptionPage.feat_unlockBudgets') || 'Unlock project budgets', included: true },
+        { text: t('subscriptionPage.feat_messageProjects') || 'Message on approved projects', included: true },
+        { text: t('subscriptionPage.feat_prioritySupport') || 'Priority support', included: false },
+        { text: t('subscriptionPage.feat_advancedAnalytics') || 'Advanced analytics', included: false },
+        { text: t('subscriptionPage.feat_customBranding') || 'Custom branding', included: false }
       ],
       popular: false
     },
@@ -169,16 +171,16 @@ function SubscriptionPage() {
       name: 'Premium',
       price: 429,
       period: 'month',
-      description: 'Best for professionals',
+      description: t('subscriptionPage.premiumDescription') || 'Best for professionals',
       features: [
-        { text: 'Browse construction jobs', included: true },
-        { text: 'View job details & specs', included: true },
-        { text: 'Submit bids', included: true, limit: 'Unlimited' },
-        { text: 'Unlock project budgets', included: true },
-        { text: 'Message on approved projects', included: true },
-        { text: 'Priority support', included: true },
-        { text: 'Advanced analytics', included: true },
-        { text: 'Custom branding', included: true }
+        { text: t('subscriptionPage.feat_browseJobs') || 'Browse construction jobs', included: true },
+        { text: t('subscriptionPage.feat_viewJobDetails') || 'View job details & specs', included: true },
+        { text: t('subscriptionPage.feat_submitBids') || 'Submit bids', included: true, limit: t('subscriptionPage.unlimited') || 'Unlimited' },
+        { text: t('subscriptionPage.feat_unlockBudgets') || 'Unlock project budgets', included: true },
+        { text: t('subscriptionPage.feat_messageProjects') || 'Message on approved projects', included: true },
+        { text: t('subscriptionPage.feat_prioritySupport') || 'Priority support', included: true },
+        { text: t('subscriptionPage.feat_advancedAnalytics') || 'Advanced analytics', included: true },
+        { text: t('subscriptionPage.feat_customBranding') || 'Custom branding', included: true }
       ],
       popular: true
     }
@@ -202,8 +204,8 @@ function SubscriptionPage() {
           <div className="header-brand">
             <img src={logo} alt="Intervos Logo" className="header-logo" />
             <div className="header-text">
-              <h1 className="dashboard-title">Subscription Management</h1>
-              <p className="dashboard-subtitle">Intervos Construction Bidding Platform</p>
+              <h1 className="dashboard-title">{t('subscriptionPage.pageTitle') || 'Subscription Management'}</h1>
+              <p className="dashboard-subtitle">{t('subscriptionPage.pageSubtitle') || 'Intervos Construction Bidding Platform'}</p>
             </div>
           </div>
         </div>
@@ -215,16 +217,16 @@ function SubscriptionPage() {
               <div className="no-sub-icon">
                 <Crown size={48} />
               </div>
-              <h3 className="no-sub-title">No Active Subscription</h3>
+              <h3 className="no-sub-title">{t('subscriptionPage.noActiveSubscription') || 'No Active Subscription'}</h3>
               <p className="no-sub-description">
-                Subscribe to unlock powerful features like submitting bids, unlocking project budgets, and messaging on approved projects.
+                {t('subscriptionPage.subscribeDescription') || 'Subscribe to unlock powerful features like submitting bids, unlocking project budgets, and messaging on approved projects.'}
               </p>
               <button
                 className="subscribe-now-btn"
                 onClick={() => setShowPlansModal(true)}
               >
                 <Crown size={18} />
-                View Subscription Plans
+                {t('subscriptionPage.viewPlans') || 'View Subscription Plans'}
               </button>
             </div>
 
@@ -235,8 +237,8 @@ function SubscriptionPage() {
                   <Crown size={24} />
                 </div>
                 <div className="section-text">
-                  <h2 className="section-title">Feature Comparison</h2>
-                  <p className="section-subtitle">See what you can unlock with a subscription</p>
+                  <h2 className="section-title">{t('subscriptionPage.featureComparison') || 'Feature Comparison'}</h2>
+                  <p className="section-subtitle">{t('subscriptionPage.featureComparisonShort') || 'See what you can unlock with a subscription'}</p>
                 </div>
               </div>
 
@@ -244,70 +246,70 @@ function SubscriptionPage() {
                 <table className="comparison-table">
                   <thead>
                     <tr>
-                      <th className="feature-col">Feature</th>
-                      <th className="tier-col">No Subscription</th>
-                      <th className="tier-col">Starter Plan</th>
-                      <th className="tier-col">Basic Plan</th>
-                      <th className="tier-col premium-col">Premium Plan</th>
+                      <th className="feature-col">{t('subscriptionPage.feature') || 'Feature'}</th>
+                      <th className="tier-col">{t('subscriptionPage.noSubscription') || 'No Subscription'}</th>
+                      <th className="tier-col">{t('subscriptionPage.starterPlan') || 'Starter Plan'}</th>
+                      <th className="tier-col">{t('subscriptionPage.basicPlan') || 'Basic Plan'}</th>
+                      <th className="tier-col premium-col">{t('subscriptionPage.premiumPlan') || 'Premium Plan'}</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr>
-                      <td className="feature-name">Browse construction jobs</td>
+                      <td className="feature-name">{t('subscriptionPage.feat_browseJobs') || 'Browse construction jobs'}</td>
                       <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                       <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                       <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                       <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                     </tr>
                     <tr>
-                      <td className="feature-name">View job details & specs</td>
+                      <td className="feature-name">{t('subscriptionPage.feat_viewJobDetails') || 'View job details & specs'}</td>
                       <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                       <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                       <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                       <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                     </tr>
                     <tr>
-                      <td className="feature-name">Submit bids</td>
+                      <td className="feature-name">{t('subscriptionPage.feat_submitBids') || 'Submit bids'}</td>
                       <td className="tier-cell"><X className="icon-no" size={20} /></td>
                       <td className="tier-cell">
                         <Check className="icon-yes" size={20} />
-                        <span className="feature-note">(15 max)</span>
+                        <span className="feature-note">{t('subscriptionPage.note_15max') || '(15 max)'}</span>
                       </td>
                       <td className="tier-cell">
                         <Check className="icon-yes" size={20} />
-                        <span className="feature-note">(30 max)</span>
+                        <span className="feature-note">{t('subscriptionPage.note_30max') || '(30 max)'}</span>
                       </td>
                       <td className="tier-cell premium-cell">
                         <Check className="icon-yes" size={20} />
-                        <span className="feature-note">(unlimited)</span>
+                        <span className="feature-note">{t('subscriptionPage.note_unlimited') || '(unlimited)'}</span>
                       </td>
                     </tr>
                     <tr>
-                      <td className="feature-name">Project budget limit</td>
+                      <td className="feature-name">{t('subscriptionPage.feat_projectBudgetLimit') || 'Project budget limit'}</td>
                       <td className="tier-cell"><X className="icon-no" size={20} /></td>
                       <td className="tier-cell">
                         <Check className="icon-yes" size={20} />
-                        <span className="feature-note">(under $2,500)</span>
+                        <span className="feature-note">{t('subscriptionPage.note_under2500') || '(under $2,500)'}</span>
                       </td>
                       <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                       <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                     </tr>
                     <tr>
-                      <td className="feature-name">Unlock project budgets</td>
+                      <td className="feature-name">{t('subscriptionPage.feat_unlockBudgets') || 'Unlock project budgets'}</td>
                       <td className="tier-cell"><X className="icon-no" size={20} /></td>
                       <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                       <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                       <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                     </tr>
                     <tr>
-                      <td className="feature-name">Message on approved projects</td>
+                      <td className="feature-name">{t('subscriptionPage.feat_messageProjects') || 'Message on approved projects'}</td>
                       <td className="tier-cell"><X className="icon-no" size={20} /></td>
                       <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                       <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                       <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                     </tr>
                     <tr>
-                      <td className="feature-name">Priority support</td>
+                      <td className="feature-name">{t('subscriptionPage.feat_prioritySupport') || 'Priority support'}</td>
                       <td className="tier-cell"><X className="icon-no" size={20} /></td>
                       <td className="tier-cell"><X className="icon-no" size={20} /></td>
                       <td className="tier-cell"><X className="icon-no" size={20} /></td>
@@ -329,14 +331,14 @@ function SubscriptionPage() {
               </div>
               <div className="banner-info">
                 <div className="banner-header">
-                  <h3 className="banner-title past-due">Payment Failed</h3>
-                  <div className="past-due-badge">Action Required</div>
+                  <h3 className="banner-title past-due">{t('subscriptionPage.paymentFailed') || 'Payment Failed'}</h3>
+                  <div className="past-due-badge">{t('subscriptionPage.actionRequired') || 'Action Required'}</div>
                 </div>
                 <p className="banner-text">
-                  Your subscription payment could not be processed. Please update your payment method to restore full access.
+                  {t('subscriptionPage.paymentFailedMsg') || 'Your subscription payment could not be processed. Please update your payment method to restore full access.'}
                 </p>
                 <p className="banner-subtext past-due">
-                  Your access may be limited until payment is resolved.
+                  {t('subscriptionPage.accessLimitedMsg') || 'Your access may be limited until payment is resolved.'}
                 </p>
               </div>
               <button
@@ -344,7 +346,7 @@ function SubscriptionPage() {
                 onClick={() => setShowUpdatePaymentModal(true)}
               >
                 <CreditCard size={18} />
-                Update Payment Method
+                {t('subscriptionPage.updatePaymentMethod') || 'Update Payment Method'}
               </button>
             </div>
           </div>
@@ -359,14 +361,14 @@ function SubscriptionPage() {
               </div>
               <div className="banner-info">
                 <div className="banner-header">
-                  <h3 className="banner-title past-due">Free Trial Has Ended</h3>
-                  <div className="past-due-badge">Action Required</div>
+                  <h3 className="banner-title past-due">{t('subscriptionPage.trialEnded') || 'Free Trial Has Ended'}</h3>
+                  <div className="past-due-badge">{t('subscriptionPage.actionRequired') || 'Action Required'}</div>
                 </div>
                 <p className="banner-text">
-                  Your 14-day free trial ended on {formatDate(subscription.trial_end)}. Your card on file will be charged automatically to continue your subscription.
+                  {(t('subscriptionPage.trialEndedMsg') || 'Your 14-day free trial ended on {{date}}. Your card on file will be charged automatically to continue your subscription.').replace('{{date}}', formatDate(subscription.trial_end))}
                 </p>
                 <p className="banner-subtext past-due">
-                  If your payment method cannot be charged, please update it below to avoid losing access.
+                  {t('subscriptionPage.trialEndedSubtext') || 'If your payment method cannot be charged, please update it below to avoid losing access.'}
                 </p>
               </div>
               <button
@@ -374,7 +376,7 @@ function SubscriptionPage() {
                 onClick={() => setShowUpdatePaymentModal(true)}
               >
                 <CreditCard size={18} />
-                Update Payment Method
+                {t('subscriptionPage.updatePaymentMethod') || 'Update Payment Method'}
               </button>
             </div>
           </div>
@@ -389,14 +391,14 @@ function SubscriptionPage() {
               </div>
               <div className="banner-info">
                 <div className="banner-header">
-                  <h3 className="banner-title">Premium Trial Active</h3>
-                  <div className="trial-badge">Trial Period</div>
+                  <h3 className="banner-title">{t('subscriptionPage.premiumTrialActive') || 'Premium Trial Active'}</h3>
+                  <div className="trial-badge">{t('subscriptionPage.trialPeriod') || 'Trial Period'}</div>
                 </div>
                 <p className="banner-text">
-                  {trialInfo.daysRemaining} {trialInfo.daysRemaining === 1 ? 'day' : 'days'}, {trialInfo.hoursRemaining} {trialInfo.hoursRemaining === 1 ? 'hour' : 'hours'}, {trialInfo.minutesRemaining} {trialInfo.minutesRemaining === 1 ? 'minute' : 'minutes'} remaining
+                  {trialInfo.daysRemaining} {trialInfo.daysRemaining === 1 ? (t('subscriptionPage.day') || 'day') : (t('subscriptionPage.days') || 'days')}, {trialInfo.hoursRemaining} {trialInfo.hoursRemaining === 1 ? (t('subscriptionPage.hour') || 'hour') : (t('subscriptionPage.hours') || 'hours')}, {trialInfo.minutesRemaining} {trialInfo.minutesRemaining === 1 ? (t('subscriptionPage.minute') || 'minute') : (t('subscriptionPage.minutes') || 'minutes')} {t('subscriptionPage.remaining') || 'remaining'}
                 </p>
                 <p className="banner-subtext">
-                  Trial ends on {formatDate(subscription.trial_end)}. Your card will be charged automatically after the trial ends.
+                  {(t('subscriptionPage.trialEndsOn') || 'Trial ends on {{date}}. Your card will be charged automatically after the trial ends.').replace('{{date}}', formatDate(subscription.trial_end))}
                 </p>
                 <div className="trial-progress-bar">
                   <div
@@ -405,12 +407,15 @@ function SubscriptionPage() {
                   ></div>
                 </div>
                 <div className="trial-progress-label">
-                  {trialInfo.daysRemaining} of {trialInfo.totalDays} days remaining ({Math.round(trialInfo.percentage)}%)
+                  {(t('subscriptionPage.daysOfTotalRemaining') || '{{remaining}} of {{total}} days remaining ({{pct}}%)')
+                    .replace('{{remaining}}', trialInfo.daysRemaining)
+                    .replace('{{total}}', trialInfo.totalDays)
+                    .replace('{{pct}}', Math.round(trialInfo.percentage))}
                 </div>
               </div>
               <div className="trial-countdown">
                 <div className="countdown-number">{trialInfo.daysRemaining}</div>
-                <div className="countdown-label">Days Left</div>
+                <div className="countdown-label">{t('subscriptionPage.daysLeft') || 'Days Left'}</div>
                 {trialInfo.hoursRemaining > 0 && (
                   <>
                     <div className="countdown-hours">{trialInfo.hoursRemaining}h {trialInfo.minutesRemaining}m</div>
@@ -433,15 +438,15 @@ function SubscriptionPage() {
                   </div>
                   <div className="status-indicator active">
                     <span className="status-dot"></span>
-                    Active
+                    {t('subscriptionPage.active') || 'Active'}
                   </div>
                 </div>
-                <h2 className="plan-name">{currentPlan.name} Plan</h2>
+                <h2 className="plan-name">{currentPlan.name} {t('subscriptionPage.planSuffix') || 'Plan'}</h2>
                 <p className="plan-desc">{currentPlan.description}</p>
                 <div className="plan-price">
                   <span className="price-symbol">$</span>
                   <span className="price-value">{currentPlan.price}</span>
-                  <span className="price-period">/month</span>
+                  <span className="price-period">{t('subscriptionPage.perMonth') || '/month'}</span>
                 </div>
               </div>
 
@@ -451,28 +456,28 @@ function SubscriptionPage() {
                   <div className="card-icon">
                     <Calendar size={24} />
                   </div>
-                  <h3 className="card-title">Billing Cycle</h3>
+                  <h3 className="card-title">{t('subscriptionPage.billingCycle') || 'Billing Cycle'}</h3>
                 </div>
                 <div className="timeline-content">
                   <div className="timeline-dates">
                     <div className="date-item">
-                      <span className="date-label">Started</span>
+                      <span className="date-label">{t('subscriptionPage.started') || 'Started'}</span>
                       <span className="date-value">{formatDate(subscription.current_period_start || subscription.start_date || subscription.created_at)}</span>
                     </div>
                     <div className="date-item">
-                      <span className="date-label">Next Billing</span>
+                      <span className="date-label">{t('subscriptionPage.nextBilling') || 'Next Billing'}</span>
                       <span className="date-value">{formatDate(subscription.current_period_end)}</span>
                     </div>
                   </div>
                   <div className="timeline-progress">
                     <div className="progress-bar-container">
-                      <div 
+                      <div
                         className="progress-bar-fill"
                         style={{ width: `${subscriptionProgress?.percentage || 0}%` }}
                       ></div>
                     </div>
                     <div className="progress-info">
-                      <span className="progress-text">{subscriptionProgress?.daysRemaining} days until renewal</span>
+                      <span className="progress-text">{subscriptionProgress?.daysRemaining} {t('subscriptionPage.daysUntilRenewal') || 'days until renewal'}</span>
                       <span className="progress-percentage">{Math.round(subscriptionProgress?.percentage || 0)}%</span>
                     </div>
                   </div>
@@ -482,7 +487,7 @@ function SubscriptionPage() {
 
             {/* Features Grid */}
             <div className="features-section">
-              <h3 className="features-title">Active Features</h3>
+              <h3 className="features-title">{t('subscriptionPage.activeFeatures') || 'Active Features'}</h3>
               <div className="features-grid">
                 {currentPlan.features.filter(f => f.included).map((feature, idx) => (
                   <div key={idx} className="feature-card">
@@ -505,8 +510,8 @@ function SubscriptionPage() {
               <Activity size={24} />
             </div>
             <div className="section-text">
-              <h2 className="section-title">Usage Analytics</h2>
-              <p className="section-subtitle">Monitor your monthly bidding activity</p>
+              <h2 className="section-title">{t('subscriptionPage.usageAnalytics') || 'Usage Analytics'}</h2>
+              <p className="section-subtitle">{t('subscriptionPage.usageAnalyticsSubtitle') || 'Monitor your monthly bidding activity'}</p>
             </div>
           </div>
 
@@ -516,7 +521,7 @@ function SubscriptionPage() {
                 <div className="stat-icon bids">
                   <FileText size={22} />
                 </div>
-                <span className="stat-label">Bids Submitted</span>
+                <span className="stat-label">{t('subscriptionPage.bidsSubmitted') || 'Bids Submitted'}</span>
               </div>
               <div className="stat-value subsval">
                 {subscription?.bids?.used}
@@ -539,7 +544,7 @@ function SubscriptionPage() {
                 <div className="stat-icon remaining">
                   <Zap size={22} />
                 </div>
-                <span className="stat-label">Remaining Bids</span>
+                <span className="stat-label">{t('subscriptionPage.remainingBids') || 'Remaining Bids'}</span>
               </div>
               <div className="stat-value accent subsval">
                 {subscription?.bids?.remaining === 'unlimited' 
@@ -553,9 +558,9 @@ function SubscriptionPage() {
                 <div className="stat-icon budget">
                   <DollarSign size={22} />
                 </div>
-                <span className="stat-label">Budget Unlocks</span>
+                <span className="stat-label">{t('subscriptionPage.budgetUnlocks') || 'Budget Unlocks'}</span>
               </div>
-              <div className="stat-value subsval">Unlimited</div>
+              <div className="stat-value subsval">{t('subscriptionPage.unlimited') || 'Unlimited'}</div>
             </div>
 
             <div className="stat-card subs">
@@ -563,9 +568,9 @@ function SubscriptionPage() {
                 <div className="stat-icon messages">
                   <MessageSquare size={22} />
                 </div>
-                <span className="stat-label">Active Chats</span>
+                <span className="stat-label">{t('subscriptionPage.activeChats') || 'Active Chats'}</span>
               </div>
-              <div className="stat-value subsval">Unlimited</div>
+              <div className="stat-value subsval">{t('subscriptionPage.unlimited') || 'Unlimited'}</div>
             </div>
           </div>
         </div>
@@ -577,8 +582,8 @@ function SubscriptionPage() {
               <Crown size={24} />
             </div>
             <div className="section-text">
-              <h2 className="section-title">Feature Comparison</h2>
-              <p className="section-subtitle">Compare all features across subscription tiers</p>
+              <h2 className="section-title">{t('subscriptionPage.featureComparison') || 'Feature Comparison'}</h2>
+              <p className="section-subtitle">{t('subscriptionPage.featureComparisonAll') || 'Compare all features across subscription tiers'}</p>
             </div>
           </div>
 
@@ -586,19 +591,19 @@ function SubscriptionPage() {
             <table className="comparison-table">
               <thead>
                 <tr>
-                  <th className="feature-col">Feature</th>
-                  <th className="tier-col">No Subscription</th>
-                  <th className="tier-col">Trial (Starter)</th>
-                  <th className="tier-col">Trial (Basic)</th>
-                  <th className="tier-col premium-col">Trial (Premium)</th>
-                  <th className="tier-col">Active Starter</th>
-                  <th className="tier-col">Active Basic</th>
-                  <th className="tier-col premium-col">Active Premium</th>
+                  <th className="feature-col">{t('subscriptionPage.feature') || 'Feature'}</th>
+                  <th className="tier-col">{t('subscriptionPage.noSubscription') || 'No Subscription'}</th>
+                  <th className="tier-col">{t('subscriptionPage.trialStarter') || 'Trial (Starter)'}</th>
+                  <th className="tier-col">{t('subscriptionPage.trialBasic') || 'Trial (Basic)'}</th>
+                  <th className="tier-col premium-col">{t('subscriptionPage.trialPremium') || 'Trial (Premium)'}</th>
+                  <th className="tier-col">{t('subscriptionPage.activeStarter') || 'Active Starter'}</th>
+                  <th className="tier-col">{t('subscriptionPage.activeBasic') || 'Active Basic'}</th>
+                  <th className="tier-col premium-col">{t('subscriptionPage.activePremium') || 'Active Premium'}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td className="feature-name">Browse construction jobs</td>
+                  <td className="feature-name">{t('subscriptionPage.feat_browseJobs') || 'Browse construction jobs'}</td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
@@ -608,7 +613,7 @@ function SubscriptionPage() {
                   <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                 </tr>
                 <tr>
-                  <td className="feature-name">View job details & specs</td>
+                  <td className="feature-name">{t('subscriptionPage.feat_viewJobDetails') || 'View job details & specs'}</td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
@@ -618,51 +623,51 @@ function SubscriptionPage() {
                   <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                 </tr>
                 <tr>
-                  <td className="feature-name">Submit bids</td>
+                  <td className="feature-name">{t('subscriptionPage.feat_submitBids') || 'Submit bids'}</td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell">
                     <Check className="icon-yes" size={20} />
-                    <span className="feature-note">(15 max)</span>
+                    <span className="feature-note">{t('subscriptionPage.note_15max') || '(15 max)'}</span>
                   </td>
                   <td className="tier-cell">
                     <Check className="icon-yes" size={20} />
-                    <span className="feature-note">(30 max)</span>
+                    <span className="feature-note">{t('subscriptionPage.note_30max') || '(30 max)'}</span>
                   </td>
                   <td className="tier-cell premium-cell">
                     <Check className="icon-yes" size={20} />
-                    <span className="feature-note">(unlimited)</span>
+                    <span className="feature-note">{t('subscriptionPage.note_unlimited') || '(unlimited)'}</span>
                   </td>
                   <td className="tier-cell">
                     <Check className="icon-yes" size={20} />
-                    <span className="feature-note">(15 max)</span>
+                    <span className="feature-note">{t('subscriptionPage.note_15max') || '(15 max)'}</span>
                   </td>
                   <td className="tier-cell">
                     <Check className="icon-yes" size={20} />
-                    <span className="feature-note">(30 max)</span>
+                    <span className="feature-note">{t('subscriptionPage.note_30max') || '(30 max)'}</span>
                   </td>
                   <td className="tier-cell premium-cell">
                     <Check className="icon-yes" size={20} />
-                    <span className="feature-note">(unlimited)</span>
+                    <span className="feature-note">{t('subscriptionPage.note_unlimited') || '(unlimited)'}</span>
                   </td>
                 </tr>
                 <tr>
-                  <td className="feature-name">Project budget limit</td>
+                  <td className="feature-name">{t('subscriptionPage.feat_projectBudgetLimit') || 'Project budget limit'}</td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell">
                     <Check className="icon-yes" size={20} />
-                    <span className="feature-note">(under $2,500)</span>
+                    <span className="feature-note">{t('subscriptionPage.note_under2500') || '(under $2,500)'}</span>
                   </td>
                   <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell">
                     <Check className="icon-yes" size={20} />
-                    <span className="feature-note">(under $2,500)</span>
+                    <span className="feature-note">{t('subscriptionPage.note_under2500') || '(under $2,500)'}</span>
                   </td>
                   <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                 </tr>
                 <tr>
-                  <td className="feature-name">Unlock project budgets</td>
+                  <td className="feature-name">{t('subscriptionPage.feat_unlockBudgets') || 'Unlock project budgets'}</td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
@@ -672,7 +677,7 @@ function SubscriptionPage() {
                   <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                 </tr>
                 <tr>
-                  <td className="feature-name">Message on approved projects</td>
+                  <td className="feature-name">{t('subscriptionPage.feat_messageProjects') || 'Message on approved projects'}</td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
@@ -682,7 +687,7 @@ function SubscriptionPage() {
                   <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                 </tr>
                 <tr>
-                  <td className="feature-name">Priority support</td>
+                  <td className="feature-name">{t('subscriptionPage.feat_prioritySupport') || 'Priority support'}</td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
@@ -692,7 +697,7 @@ function SubscriptionPage() {
                   <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                 </tr>
                 <tr>
-                  <td className="feature-name">Advanced analytics</td>
+                  <td className="feature-name">{t('subscriptionPage.feat_advancedAnalytics') || 'Advanced analytics'}</td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>
                   <td className="tier-cell"><X className="icon-no" size={20} /></td>

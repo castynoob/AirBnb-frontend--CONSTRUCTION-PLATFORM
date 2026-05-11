@@ -188,7 +188,7 @@ function EditManagerProfileModal({ userProfile, onClose, onSave }) {
         <div className="mpm-form">
           {/* Profile Picture Section */}
           <div className="mpm-image-section">
-            <label>Profile Picture</label>
+            <label>{t('editManagerModal.profilePicture') || 'Profile Picture'}</label>
             <div className="mpm-image-container">
               <div className="mpm-image-preview">
                 {imagePreview ? (
@@ -217,7 +217,9 @@ function EditManagerProfileModal({ userProfile, onClose, onSave }) {
                   disabled={isUploading}
                 >
                   <Camera size={16} />
-                  {imagePreview ? 'Change Photo' : 'Upload Photo'}
+                  {imagePreview
+                    ? (t('editManagerModal.changePhoto') || 'Change Photo')
+                    : (t('editManagerModal.uploadPhoto') || 'Upload Photo')}
                 </button>
                 
                 {imageFile && (
@@ -227,7 +229,9 @@ function EditManagerProfileModal({ userProfile, onClose, onSave }) {
                     onClick={handleImageUpload}
                     disabled={isUploading}
                   >
-                    {isUploading ? 'Uploading...' : 'Save New Photo'}
+                    {isUploading
+                      ? (t('editManagerModal.uploading') || 'Uploading...')
+                      : (t('editManagerModal.saveNewPhoto') || 'Save New Photo')}
                   </button>
                 )}
                 
@@ -239,7 +243,7 @@ function EditManagerProfileModal({ userProfile, onClose, onSave }) {
                     disabled={isUploading}
                   >
                     <Trash2 size={16} />
-                    Remove Photo
+                    {t('editManagerModal.removePhoto') || 'Remove Photo'}
                   </button>
                 )}
               </div>
@@ -260,32 +264,29 @@ function EditManagerProfileModal({ userProfile, onClose, onSave }) {
 
           {/* Profile Information - Display Only */}
           <div className="mpm-info-section">
-            <h3>Profile Information</h3>
+            <h3>{t('editManagerModal.profileInformation') || 'Profile Information'}</h3>
             <div className="mpm-info-grid">
               <div className="mpm-info-item">
-                <label>Name</label>
+                <label>{t('editManagerModal.name') || 'Name'}</label>
                 <p>{profileData.first_name} {profileData.last_name}</p>
               </div>
               <div className="mpm-info-item">
-                <label>Email</label>
+                <label>{t('editManagerModal.email') || 'Email'}</label>
                 <p>{profileData.email}</p>
               </div>
               {profileData.company_name && (
                 <div className="mpm-info-item">
-                  <label>Company</label>
+                  <label>{t('editManagerModal.company') || 'Company'}</label>
                   <p>{profileData.company_name}</p>
                 </div>
               )}
               {profileData.address && (
                 <div className="mpm-info-item">
-                  <label>Address</label>
+                  <label>{t('editManagerModal.address') || 'Address'}</label>
                   <p>{profileData.address}</p>
                 </div>
               )}
             </div>
-            <p className="mpm-info-note">
-              To update your profile information, please contact support.
-            </p>
           </div>
 
           <div className="mpm-actions">
@@ -295,7 +296,7 @@ function EditManagerProfileModal({ userProfile, onClose, onSave }) {
               onClick={handleClose}
               disabled={isUploading}
             >
-              Close
+              {t('common.close') || 'Close'}
             </button>
           </div>
         </div>

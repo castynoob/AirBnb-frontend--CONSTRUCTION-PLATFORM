@@ -28,6 +28,8 @@ import {
   Columns3,
   Check,
   BarChart3,
+  Receipt,
+  Download,
 } from "lucide-react"
 import Nav from "../../components/Nav"
 // JobProgressTracker removed — progress now shown in job detail pages
@@ -122,6 +124,7 @@ function SubmissionsPage() {
   // Confirm completion + review invitation
   const [showConfirmCompletionModal, setShowConfirmCompletionModal] = useState(false)
   const [confirmCompletionJobId, setConfirmCompletionJobId] = useState(null)
+  const [completionNote, setCompletionNote] = useState('')
 
   // Delete job + cancel bid approval
   const [showDeleteJobConfirm, setShowDeleteJobConfirm] = useState(false)
@@ -486,19 +489,29 @@ function SubmissionsPage() {
     }
   }
 
-  // Handle confirm job completion (mutual confirmation)
-  const handleConfirmCompletion = async (jobId) => {
+  // Handle confirm job completion (mutual confirmation). The note is mandatory.
+  const handleConfirmCompletion = async (jobId, note) => {
+    if (!note || !note.trim()) {
+      showNotification(
+        t('submissions.completionNoteRequired') || 'Please add a note before confirming.',
+        'error'
+      )
+      return
+    }
     setIsProcessing(true)
     try {
       const contractData = await getContractByJob(jobId)
       if (!contractData.has_contract || !contractData.contract) {
-        showNotification("No contract found for this job.", "error")
+        showNotification(t('submissions.noContractFound') || 'No contract found for this job.', 'error')
         return
       }
 
-      await confirmCompletion(contractData.contract.id)
+      await confirmCompletion(contractData.contract.id, note.trim())
 
-      showNotification(t('submissions.jobCompletionConfirmed') || "Job completion confirmed! Leave a review.", "success")
+      showNotification(
+        t('submissions.completionConfirmedSuccess') || 'Work completion confirmed successfully',
+        'success'
+      )
 
       // Close details modal first
       setShowDetailsModal(false)
@@ -526,11 +539,12 @@ function SubmissionsPage() {
 
       invalidateSubmissions()
     } catch (error) {
-      showNotification(error.message || "Failed to confirm completion", "error")
+      showNotification(error.message || (t('submissions.completionFailed') || 'Failed to confirm completion.'), 'error')
     } finally {
       setIsProcessing(false)
       setShowConfirmCompletionModal(false)
       setConfirmCompletionJobId(null)
+      setCompletionNote('')
     }
   }
 
@@ -769,16 +783,6 @@ function SubmissionsPage() {
       return
     }
 
-    if (!comment || !comment.trim()) {
-      showNotification(t('toasts.commentRequired') || "Please write a comment for your review", "error")
-      return
-    }
-
-    if (comment.trim().length < 10) {
-      showNotification(t('toasts.commentTooShort') || "Please write a more detailed review (at least 10 characters)", "error")
-      return
-    }
-
     // Calculate overall rating as average of categories
     const overallRating = Math.round((cats.quality + cats.timeliness + cats.communication + cats.value) / 4)
 
@@ -798,7 +802,7 @@ function SubmissionsPage() {
       formData.append('reviewed_user_id', entrepreneurUserId)
       formData.append('job_id', selectedSubmission.job.id)
       formData.append('rating', overallRating)
-      formData.append('comment', comment.trim())
+      formData.append('comment', (comment || '').trim())
       formData.append('rating_quality', cats.quality)
       formData.append('rating_timeliness', cats.timeliness)
       formData.append('rating_communication', cats.communication)
@@ -1412,7 +1416,7 @@ function SubmissionsPage() {
                       onBlur={(e) => { e.target.style.borderColor = '#e5e7eb'; e.target.style.boxShadow = 'none'; e.target.style.background = '#f9fafb' }}
                     />
                     <div style={S.charCount}>
-                      {comment.length} {t('submissions.characters') || 'characters'} {comment.trim().length < 10 && `(${t('submissions.minimum') || 'min'} 10)`}
+                      {comment.length} {t('submissions.characters') || 'characters'}
                     </div>
                   </div>
 
@@ -1453,9 +1457,9 @@ function SubmissionsPage() {
                     {t('common.cancel') || 'Cancel'}
                   </button>
                   <button
-                    style={S.submitBtn(isProcessing || !allRated || !comment.trim() || comment.trim().length < 10)}
+                    style={S.submitBtn(isProcessing || !allRated)}
                     onClick={handleSubmitReview}
-                    disabled={isProcessing || !allRated || !comment.trim() || comment.trim().length < 10}
+                    disabled={isProcessing || !allRated}
                   >
                     {isProcessing ? (
                       <span>{t('submissions.submitting') || 'Submitting...'}</span>
@@ -2097,6 +2101,55 @@ function SubmissionsPage() {
                     </span>
                   </div>
 
+                  {/* Invoice strip — visible on the card once contractor submits an invoice */}
+                  {submission.contract?.invoice_submitted_at && (
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '8px 1rem',
+                        margin: '0 1rem 0.75rem 1rem',
+                        background: '#f0fbfb',
+                        border: '1px solid #cffafe',
+                        borderRadius: 6,
+                        fontSize: '0.75rem',
+                      }}
+                    >
+                      <Receipt size={12} style={{ color: '#00A5A9', flexShrink: 0 }} />
+                      <span style={{ color: '#0F223D', fontWeight: 600 }}>
+                        {t('invoice.cardTitle') || "Contractor's Invoice"}
+                      </span>
+                      <span style={{ color: '#00A5A9', fontWeight: 700, marginLeft: 'auto' }}>
+                        ${Number(submission.contract.invoice_total || 0).toFixed(2)}
+                      </span>
+                      {submission.contract.invoice_file_url && (
+                        <a
+                          href={submission.contract.invoice_file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          title={submission.contract.invoice_file_name || (t('invoice.download') || 'Download invoice')}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 3,
+                            padding: '3px 8px',
+                            background: '#fff',
+                            border: '1px solid #00A5A9',
+                            borderRadius: 4,
+                            color: '#00A5A9',
+                            fontWeight: 600,
+                            textDecoration: 'none',
+                          }}
+                        >
+                          <Download size={11} />
+                          <span>{t('invoice.download') || 'Download'}</span>
+                        </a>
+                      )}
+                    </div>
+                  )}
+
                   {/* Action Row — only Chat/Review, card click handles details */}
                   {((submission.job.status === "accepted" || submission.job.status === "ongoing") || submission.job.status === "completed") && (
                     <div className="subs-card-actions">
@@ -2344,19 +2397,61 @@ function SubmissionsPage() {
 
       {/* Confirm Job Completion Modal */}
       {showConfirmCompletionModal && (
-        <div className="release-confirm-overlay" onClick={() => setShowConfirmCompletionModal(false)}>
+        <div
+          className="release-confirm-overlay"
+          onClick={() => { setShowConfirmCompletionModal(false); setCompletionNote(''); }}
+        >
           <div className="release-confirm-modal" onClick={(e) => e.stopPropagation()}>
             <div className="release-confirm-icon">
               <CheckCircle size={32} />
             </div>
             <h3>{t('submissions.confirmCompletionTitle') || 'Confirm Job Completion'}</h3>
             <p>{t('submissions.confirmCompletionMessage') || 'By confirming, you acknowledge that this job has been completed satisfactorily. Both you and the contractor must confirm before reviews can be exchanged.'}</p>
+
+            <div style={{ textAlign: 'left', marginTop: '0.75rem' }}>
+              <label
+                htmlFor="completion-note"
+                style={{
+                  display: 'block',
+                  fontSize: '0.8125rem',
+                  fontWeight: 600,
+                  color: '#0F223D',
+                  marginBottom: 6,
+                }}
+              >
+                {t('submissions.completionNoteLabel') || 'Completion note'}
+                <span style={{ color: '#dc2626', marginLeft: 4 }}>*</span>
+              </label>
+              <textarea
+                id="completion-note"
+                value={completionNote}
+                onChange={(e) => setCompletionNote(e.target.value)}
+                placeholder={t('submissions.completionNotePlaceholder') || 'Briefly describe how the work was completed (required).'}
+                rows={4}
+                disabled={isProcessing}
+                style={{
+                  width: '100%',
+                  padding: '0.625rem 0.75rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: 8,
+                  fontSize: '0.875rem',
+                  color: '#0F223D',
+                  fontFamily: 'inherit',
+                  resize: 'vertical',
+                  minHeight: 80,
+                  boxSizing: 'border-box',
+                }}
+                required
+              />
+            </div>
+
             <div className="release-confirm-actions">
               <button
                 className="release-confirm-cancel"
                 onClick={() => {
                   setShowConfirmCompletionModal(false)
                   setConfirmCompletionJobId(null)
+                  setCompletionNote('')
                 }}
                 disabled={isProcessing}
               >
@@ -2366,10 +2461,10 @@ function SubmissionsPage() {
                 className="release-confirm-submit"
                 onClick={() => {
                   if (confirmCompletionJobId) {
-                    handleConfirmCompletion(confirmCompletionJobId)
+                    handleConfirmCompletion(confirmCompletionJobId, completionNote)
                   }
                 }}
-                disabled={isProcessing}
+                disabled={isProcessing || !completionNote.trim()}
               >
                 {isProcessing ? (
                   <>

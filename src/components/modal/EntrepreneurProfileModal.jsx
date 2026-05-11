@@ -18,10 +18,12 @@ import {
   Home,
 } from "lucide-react";
 import "../../styles/modal/entrepreneurprofilemodal.css";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState("account");
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
@@ -78,13 +80,20 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
   if (!isOpen || !profile) return null;
 
   const tabs = [
-    { id: "account", label: "Account", icon: User },
-    { id: "performance", label: "Performance", icon: Star },
-    { id: "reviews", label: "Reviews", icon: MessageSquare, badge: reviews.length > 0 ? reviews.length : undefined },
-    { id: "specializations", label: "Specializations", icon: Briefcase },
-    { id: "contact", label: "Contact", icon: Phone },
-    { id: "company", label: "Company", icon: Building2 },
+    { id: "account", label: t('profileModal.tab_account') || "Account", icon: User },
+    { id: "performance", label: t('profileModal.tab_performance') || "Performance", icon: Star },
+    { id: "reviews", label: t('profileModal.tab_reviews') || "Reviews", icon: MessageSquare, badge: reviews.length > 0 ? reviews.length : undefined },
+    { id: "specializations", label: t('profileModal.tab_specializations') || "Specializations", icon: Briefcase },
+    { id: "contact", label: t('profileModal.tab_contact') || "Contact", icon: Phone },
+    { id: "company", label: t('profileModal.tab_company') || "Company", icon: Building2 },
   ];
+
+  const reviewsLabel = (n) => {
+    const count = Number(n) || 0;
+    return count === 1
+      ? (t('profileModal.reviewsCountOne') || '{{count}} review').replace('{{count}}', count)
+      : (t('profileModal.reviewsCountMany') || '{{count}} reviews').replace('{{count}}', count);
+  };
 
   const renderStars = (rating) => {
     const stars = [];
@@ -119,12 +128,12 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
                 {profile.company_name?.charAt(0) || "E"}
               </div>
               <div className="epm-profile-info">
-                <h3>{profile.company_name || "Company Name"}</h3>
-                <p className="epm-profile-role">Entrepreneur</p>
+                <h3>{profile.company_name || (t('profileModal.companyName') || 'Company Name')}</h3>
+                <p className="epm-profile-role">{t('profileModal.entrepreneur') || 'Entrepreneur'}</p>
                 <div className="epm-rating-display">
                   {renderStars(profile.average_rating || 0)}
                   <span className="epm-rating-text">
-                    {Number(profile.average_rating || 0).toFixed(1)} ({profile.total_reviews || 0} reviews)
+                    {Number(profile.average_rating || 0).toFixed(1)} ({reviewsLabel(profile.total_reviews)})
                   </span>
                 </div>
               </div>
@@ -136,11 +145,11 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
                   <User size={18} />
                 </div>
                 <div className="epm-info-details">
-                  <span className="epm-info-label">Full Name</span>
+                  <span className="epm-info-label">{t('profileModal.fullName') || 'Full Name'}</span>
                   <span className="epm-info-value">
                     {profile.first_name && profile.last_name
                       ? `${profile.first_name} ${profile.last_name}`
-                      : "Not provided"}
+                      : (t('profileModal.notProvided') || 'Not provided')}
                   </span>
                 </div>
               </div>
@@ -150,11 +159,11 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
                   <Calendar size={18} />
                 </div>
                 <div className="epm-info-details">
-                  <span className="epm-info-label">Years in Business</span>
+                  <span className="epm-info-label">{t('profileModal.yearsInBusiness') || 'Years in Business'}</span>
                   <span className="epm-info-value">
                     {profile.years_in_business
-                      ? `${profile.years_in_business} years`
-                      : "Not specified"}
+                      ? `${profile.years_in_business} ${t('profileModal.years') || 'years'}`
+                      : (t('profileModal.notSpecified') || 'Not specified')}
                   </span>
                 </div>
               </div>
@@ -164,9 +173,9 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
                   <Shield size={18} />
                 </div>
                 <div className="epm-info-details">
-                  <span className="epm-info-label">License Number</span>
+                  <span className="epm-info-label">{t('profileModal.licenseNumber') || 'License Number'}</span>
                   <span className="epm-info-value">
-                    {profile.license_number || "Not provided"}
+                    {profile.license_number || (t('profileModal.notProvided') || 'Not provided')}
                   </span>
                 </div>
               </div>
@@ -176,8 +185,8 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
                   <CheckCircle size={18} />
                 </div>
                 <div className="epm-info-details">
-                  <span className="epm-info-label">Status</span>
-                  <span className="epm-info-value epm-status-active">Active</span>
+                  <span className="epm-info-label">{t('profile.statusLabel') || 'Status'}</span>
+                  <span className="epm-info-value epm-status-active">{t('profile.statusActive') || 'Active'}</span>
                 </div>
               </div>
             </div>
@@ -196,7 +205,7 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
                   {renderStars(profile.average_rating || 0)}
                 </div>
                 <span className="epm-rating-count">
-                  Based on {profile.total_reviews || 0} reviews
+                  {(t('profileModal.basedOnReviews') || 'Based on {{count}} reviews').replace('{{count}}', profile.total_reviews || 0)}
                 </span>
               </div>
             </div>
@@ -204,25 +213,24 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
             <div className="epm-stats-grid">
               <div className="epm-stat-card">
                 <div className="epm-stat-value">{profile.total_reviews || 0}</div>
-                <div className="epm-stat-label">Total Reviews</div>
+                <div className="epm-stat-label">{t('profileModal.totalReviews') || 'Total Reviews'}</div>
               </div>
               <div className="epm-stat-card">
                 <div className="epm-stat-value">
                   {profile.years_in_business || 0}
                 </div>
-                <div className="epm-stat-label">Years Experience</div>
+                <div className="epm-stat-label">{t('profileModal.yearsExperience') || 'Years Experience'}</div>
               </div>
               <div className="epm-stat-card">
                 <div className="epm-stat-value">{profile.num_employees || 0}</div>
-                <div className="epm-stat-label">Team Members</div>
+                <div className="epm-stat-label">{t('profileModal.teamMembers') || 'Team Members'}</div>
               </div>
             </div>
 
             <div className="epm-performance-note">
               <Award size={18} />
               <p>
-                This entrepreneur has been verified and maintains a professional
-                track record in the construction industry.
+                {t('profileModal.entTrackRecord') || 'This entrepreneur has been verified and maintains a professional track record in the construction industry.'}
               </p>
             </div>
           </div>
@@ -233,13 +241,13 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
           <div className="epm-tab-content">
             <div className="epm-section-header">
               <MessageSquare size={20} />
-              <h4>Reviews from Property Managers</h4>
+              <h4>{t('profileModal.reviewsFromManagers') || 'Reviews from Property Managers'}</h4>
             </div>
 
             {reviewsLoading ? (
               <div className="epm-reviews-loading">
                 <Loader2 size={24} className="epm-spinner" />
-                <span>Loading reviews...</span>
+                <span>{t('profileModal.loadingReviews') || 'Loading reviews...'}</span>
               </div>
             ) : reviews.length > 0 ? (
               <>
@@ -253,7 +261,7 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
                       {renderStars(reviewStats.averageRating)}
                     </div>
                     <span className="epm-reviews-count">
-                      {reviewStats.totalReviews} review{reviewStats.totalReviews !== 1 ? 's' : ''}
+                      {reviewsLabel(reviewStats.totalReviews)}
                     </span>
                   </div>
                   <div className="epm-rating-bars">
@@ -295,11 +303,11 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
                           )}
                         </div>
                         <div className="epm-review-meta">
-                          <h5>{review.reviewer?.company_name || 'Anonymous'}</h5>
+                          <h5>{review.reviewer?.company_name || (t('profileModal.anonymous') || 'Anonymous')}</h5>
                           <div className="epm-review-rating">
                             {renderStars(review.rating)}
                             <span className="epm-review-date">
-                              {new Date(review.created_at).toLocaleDateString('en-US', {
+                              {new Date(review.created_at).toLocaleDateString(language === 'fr' ? 'fr-CA' : 'en-US', {
                                 year: 'numeric',
                                 month: 'short',
                                 day: 'numeric'
@@ -324,8 +332,8 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
             ) : (
               <div className="epm-reviews-empty">
                 <MessageSquare size={40} />
-                <h4>No Reviews Yet</h4>
-                <p>This entrepreneur hasn't received any reviews from property managers yet.</p>
+                <h4>{t('profileModal.noReviewsYet') || 'No Reviews Yet'}</h4>
+                <p>{t('profileModal.entNoReviewsDesc') || "This entrepreneur hasn't received any reviews from property managers yet."}</p>
               </div>
             )}
           </div>
@@ -336,7 +344,7 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
           <div className="epm-tab-content">
             <div className="epm-section-header">
               <Briefcase size={20} />
-              <h4>Areas of Expertise</h4>
+              <h4>{t('profileModal.areasOfExpertise') || 'Areas of Expertise'}</h4>
             </div>
 
             {profile.specializations && profile.specializations.length > 0 ? (
@@ -351,7 +359,7 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
             ) : (
               <div className="epm-empty-state">
                 <Briefcase size={32} />
-                <p>No specializations listed</p>
+                <p>{t('profileModal.noSpecializations') || 'No specializations listed'}</p>
               </div>
             )}
           </div>
@@ -362,7 +370,7 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
           <div className="epm-tab-content">
             <div className="epm-section-header">
               <Phone size={20} />
-              <h4>Contact Information</h4>
+              <h4>{t('profileModal.contactInformation') || 'Contact Information'}</h4>
             </div>
 
             <div className="epm-contact-list">
@@ -371,9 +379,9 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
                   <Mail size={18} />
                 </div>
                 <div className="epm-contact-details">
-                  <span className="epm-contact-label">Email Address</span>
+                  <span className="epm-contact-label">{t('profileModal.emailAddress') || 'Email Address'}</span>
                   <span className="epm-contact-value">
-                    {profile.email || "Not provided"}
+                    {profile.email || (t('profileModal.notProvided') || 'Not provided')}
                   </span>
                 </div>
               </div>
@@ -383,9 +391,9 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
                   <MapPin size={18} />
                 </div>
                 <div className="epm-contact-details">
-                  <span className="epm-contact-label">Business Address</span>
+                  <span className="epm-contact-label">{t('profileModal.businessAddress') || 'Business Address'}</span>
                   <span className="epm-contact-value">
-                    {profile.address || "Not provided"}
+                    {profile.address || (t('profileModal.notProvided') || 'Not provided')}
                   </span>
                 </div>
               </div>
@@ -396,7 +404,7 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
                     <MapPin size={18} />
                   </div>
                   <div className="epm-contact-details">
-                    <span className="epm-contact-label">Service Area</span>
+                    <span className="epm-contact-label">{t('profileModal.serviceArea') || 'Service Area'}</span>
                     <span className="epm-contact-value">
                       {profile.delivery_coverage}
                     </span>
@@ -412,7 +420,7 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
           <div className="epm-tab-content">
             <div className="epm-section-header">
               <Building2 size={20} />
-              <h4>Company Information</h4>
+              <h4>{t('profileModal.companyInformation') || 'Company Information'}</h4>
             </div>
 
             <div className="epm-company-details">
@@ -422,8 +430,8 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
                     {profile.company_name?.charAt(0) || "C"}
                   </div>
                   <div className="epm-company-name-section">
-                    <h3>{profile.company_name || "Company Name"}</h3>
-                    <span className="epm-company-type">Construction Company</span>
+                    <h3>{profile.company_name || (t('profileModal.companyName') || 'Company Name')}</h3>
+                    <span className="epm-company-type">{t('profileModal.constructionCompany') || 'Construction Company'}</span>
                   </div>
                 </div>
 
@@ -431,42 +439,42 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
                   <div className="epm-company-info-row">
                     <span className="epm-company-info-label">
                       <Shield size={14} />
-                      License Number
+                      {t('profileModal.licenseNumber') || 'License Number'}
                     </span>
                     <span className="epm-company-info-value">
-                      {profile.license_number || "Not provided"}
+                      {profile.license_number || (t('profileModal.notProvided') || 'Not provided')}
                     </span>
                   </div>
 
                   <div className="epm-company-info-row">
                     <span className="epm-company-info-label">
                       <Users size={14} />
-                      Number of Employees
+                      {t('profileModal.numberOfEmployees') || 'Number of Employees'}
                     </span>
                     <span className="epm-company-info-value">
-                      {profile.num_employees || "Not specified"}
+                      {profile.num_employees || (t('profileModal.notSpecified') || 'Not specified')}
                     </span>
                   </div>
 
                   <div className="epm-company-info-row">
                     <span className="epm-company-info-label">
                       <Calendar size={14} />
-                      Years in Business
+                      {t('profileModal.yearsInBusiness') || 'Years in Business'}
                     </span>
                     <span className="epm-company-info-value">
                       {profile.years_in_business
-                        ? `${profile.years_in_business} years`
-                        : "Not specified"}
+                        ? `${profile.years_in_business} ${t('profileModal.years') || 'years'}`
+                        : (t('profileModal.notSpecified') || 'Not specified')}
                     </span>
                   </div>
 
                   <div className="epm-company-info-row">
                     <span className="epm-company-info-label">
                       <MapPin size={14} />
-                      Location
+                      {t('profileModal.location') || 'Location'}
                     </span>
                     <span className="epm-company-info-value">
-                      {profile.address || "Not provided"}
+                      {profile.address || (t('profileModal.notProvided') || 'Not provided')}
                     </span>
                   </div>
                 </div>
@@ -490,11 +498,11 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
               {profile.company_name?.charAt(0) || "E"}
             </div>
             <div className="epm-header-info">
-              <h2>{profile.company_name || "Entrepreneur Profile"}</h2>
+              <h2>{profile.company_name || (t('profileModal.entrepreneurProfileTitle') || 'Entrepreneur Profile')}</h2>
               <div className="epm-header-meta">
                 <Star size={12} fill="#facc15" stroke="#facc15" />
                 <span>
-                  {Number(profile.average_rating || 0).toFixed(1)} ({profile.total_reviews || 0} reviews)
+                  {Number(profile.average_rating || 0).toFixed(1)} ({reviewsLabel(profile.total_reviews)})
                 </span>
               </div>
             </div>

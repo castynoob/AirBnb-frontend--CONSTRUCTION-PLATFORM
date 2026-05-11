@@ -837,7 +837,7 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                   className="pm-urgent-message-editor"
                   value={urgentMessage}
                   onChange={(e) => setUrgentMessage(e.target.value)}
-                  rows={8}
+                  rows={5}
                   placeholder={t('urgentModal.messagePlaceholder')}
                 />
                 <button

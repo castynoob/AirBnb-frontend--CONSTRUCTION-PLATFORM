@@ -144,20 +144,23 @@ export async function approveWork(contractId) {
 }
 
 /**
- * Confirm job completion (for either party)
+ * Confirm job completion (for either party).
  * @param {string} contractId - The contract ID
+ * @param {string} [note]     - Required when called by the property manager;
+ *                              optional for the entrepreneur.
  */
-export async function confirmCompletion(contractId) {
+export async function confirmCompletion(contractId, note) {
   const response = await fetch(
     `${API_BASE_URL}/api/contracts/${contractId}/confirm-completion`,
     {
       method: 'POST',
-      headers: getAuthHeaders()
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ note: note || '' }),
     }
   );
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json().catch(() => ({}));
     throw new Error(error.message || error.error || 'Failed to confirm completion');
   }
 
@@ -223,6 +226,31 @@ export async function archiveJob(jobId, archive = true) {
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || error.error || 'Failed to archive job');
+  }
+
+  return response.json();
+}
+
+/**
+ * Update editable fields on a job (for managers)
+ * @param {string} jobId
+ * @param {Object} fields - Subset of allowed columns (title, description, category, urgency,
+ *   due_date, estimated_duration_days, budget_min, budget_max, is_budget_hidden, is_emergency,
+ *   location, severity, priority, deadline, bid_deadline)
+ */
+export async function updateJob(jobId, fields) {
+  const response = await fetch(
+    `${API_BASE_URL}/api/jobs/${jobId}`,
+    {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(fields),
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.message || error.error || 'Failed to update job');
   }
 
   return response.json();

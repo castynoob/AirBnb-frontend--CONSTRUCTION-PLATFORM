@@ -18,9 +18,12 @@ import {
   Edit3,
   AlertTriangle,
   X,
+  Plus,
+  MapPin,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import JobsPreviewModal from "../../components/modal/JobsPreviewModal";
+import PropertyLocationPicker from "../../components/PropertyLocationPicker";
 import { useLanguage } from "../../contexts/LanguageContext";
 import "../../styles/manager/addworkform.css";
 
@@ -33,6 +36,18 @@ function AddWorkForm() {
   const [parsedJobsData, setParsedJobsData] = useState(null);
   const [inspectionId, setInspectionId] = useState(null);
   const [inputMethod, setInputMethod] = useState("manual");
+  const [propertyMode, setPropertyMode] = useState(""); // "" | "existing" | "new"
+  const [newPropertyData, setNewPropertyData] = useState({
+    building_name: "",
+    address: "",
+    city: "",
+    province: "",
+    postal_code: "",
+    num_units: "",
+    building_type: "Apartment",
+    latitude: null,
+    longitude: null,
+  });
   const [formData, setFormData] = useState({
     property_id: "",
     title: "",
@@ -57,9 +72,38 @@ function AddWorkForm() {
   const [uploadProgress, setUploadProgress] = useState({ stage: "", message: "", percent: 0 });
 
   const categories = [
-    "Roofing", "Plumbing", "Electrical", "Carpentry", "Painting",
-    "Landscaping", "Masonry", "Flooring", "Windows/Doors",
-    "Heating/Ventilation/AC", "General Repair", "Other",
+    { value: "Roofing", key: "cat_roofing" },
+    { value: "Plumbing", key: "cat_plumbing" },
+    { value: "Electrical", key: "cat_electrical" },
+    { value: "Carpentry", key: "cat_carpentry" },
+    { value: "Painting", key: "cat_painting" },
+    { value: "Landscaping", key: "cat_landscaping" },
+    { value: "Masonry", key: "cat_masonry" },
+    { value: "Flooring", key: "cat_flooring" },
+    { value: "Windows/Doors", key: "cat_windowsDoors" },
+    { value: "Heating/Ventilation/AC", key: "cat_hvac" },
+    { value: "General Repair", key: "cat_generalRepair" },
+    { value: "Other", key: "cat_other" },
+  ];
+
+  const urgencies = [
+    { value: "Urgent", key: "urg_urgent" },
+    { value: "Planned", key: "urg_planned" },
+  ];
+
+  const buildingTypes = [
+    { value: "Apartment", key: "apartment" },
+    { value: "Condominium", key: "condominium" },
+    { value: "High-Rise", key: "highRise" },
+    { value: "Townhouse", key: "townhouse" },
+    { value: "Duplex", key: "duplex" },
+    { value: "Triplex", key: "triplex" },
+    { value: "Single Family", key: "singleFamily" },
+    { value: "Multi-Family", key: "multiFamily" },
+    { value: "Commercial Building", key: "commercialBuilding" },
+    { value: "Mixed-Use", key: "mixedUse" },
+    { value: "Student Housing", key: "studentHousing" },
+    { value: "Senior Living", key: "seniorLiving" },
   ];
 
   useEffect(() => {
@@ -76,7 +120,7 @@ function AddWorkForm() {
         setProperties(data.properties || data || []);
       } catch (err) {
         console.error("Error fetching properties:", err);
-        toast.error("Failed to load properties");
+        toast.error(t("toasts.failedLoadProperties"));
       } finally {
         setIsLoadingProperties(false);
       }
@@ -91,6 +135,52 @@ function AddWorkForm() {
       [name]: type === "checkbox" ? checked : value,
     }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  const handleNewPropertyChange = (e) => {
+    const { name, value } = e.target;
+    setNewPropertyData((prev) => ({ ...prev, [name]: value }));
+    const errKey = `new_${name}`;
+    if (errors[errKey]) setErrors((prev) => ({ ...prev, [errKey]: "" }));
+  };
+
+  const handleLocationChange = (updates) => {
+    setNewPropertyData((prev) => ({ ...prev, ...updates }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      if ("address" in updates && updates.address) next.new_address = "";
+      if ("city" in updates && updates.city) next.new_city = "";
+      return next;
+    });
+  };
+
+  const handlePropertyModeChange = (mode) => {
+    setPropertyMode(mode);
+    setErrors((prev) => ({ ...prev, propertyMode: "", property_id: "" }));
+    if (mode === "new") {
+      setFormData((prev) => ({ ...prev, property_id: "" }));
+    }
+  };
+
+  const createNewProperty = async (token) => {
+    const body = {
+      ...newPropertyData,
+      num_units: newPropertyData.num_units ? parseInt(newPropertyData.num_units) : 0,
+    };
+    const res = await fetch(`${API_BASE_URL}/api/properties`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message || "Failed to create property");
+    }
+    const data = await res.json();
+    return data.property?.id || data.id;
   };
 
   const handleImageUpload = (e) => {
@@ -114,9 +204,22 @@ function AddWorkForm() {
     setExcelPreview({ name: file.name, size: (file.size / 1024).toFixed(1) + " KB" });
   };
 
-  const validateForm = () => {
+  const validateProperty = () => {
     const newErrors = {};
-    if (!formData.property_id) newErrors.property_id = "Property is required";
+    if (!propertyMode) {
+      newErrors.propertyMode = "Please choose existing or new property";
+    } else if (propertyMode === "existing") {
+      if (!formData.property_id) newErrors.property_id = "Property is required";
+    } else if (propertyMode === "new") {
+      if (!newPropertyData.building_name.trim()) newErrors.new_building_name = "Building name is required";
+      if (!newPropertyData.address.trim()) newErrors.new_address = "Address is required";
+      if (!newPropertyData.city.trim()) newErrors.new_city = "City is required";
+    }
+    return newErrors;
+  };
+
+  const validateForm = () => {
+    const newErrors = validateProperty();
     if (!formData.title.trim()) newErrors.title = "Job title is required";
     if (!formData.description.trim()) newErrors.description = "Description is required";
     setErrors(newErrors);
@@ -127,12 +230,20 @@ function AddWorkForm() {
     e.preventDefault();
     if (!validateForm()) return;
     setIsSubmitting(true);
-    setUploadProgress({ stage: "creating", message: "Creating job...", percent: 30 });
 
     try {
       const userProfile = JSON.parse(localStorage.getItem("userProfile"));
+
+      let propertyId = formData.property_id;
+      if (propertyMode === "new") {
+        setUploadProgress({ stage: "creating-property", message: "Creating property...", percent: 15 });
+        propertyId = await createNewProperty(userProfile.token);
+      }
+
+      setUploadProgress({ stage: "creating", message: "Creating job...", percent: 30 });
       const body = {
         ...formData,
+        property_id: propertyId,
         status: "Open",
         budget_min: formData.budget_min ? parseFloat(formData.budget_min) : null,
         budget_max: formData.budget_max ? parseFloat(formData.budget_max) : null,
@@ -173,25 +284,40 @@ function AddWorkForm() {
       setTimeout(() => navigate(-1), 1000);
     } catch (err) {
       console.error("Error creating job:", err);
-      toast.error(t("addWorkModal.jobCreateError") || "Failed to create job");
+      toast.error(err.message || t("addWorkModal.jobCreateError") || "Failed to create job");
       setIsSubmitting(false);
       setUploadProgress({ stage: "", message: "", percent: 0 });
     }
   };
 
   const handleSubmitExcel = async () => {
-    if (!excelFile || !formData.property_id) {
-      toast.error("Please select a property and upload an Excel file");
+    if (!excelFile) {
+      toast.error(t("toasts.selectExcelFile"));
       return;
     }
+    const propErrors = validateProperty();
+    if (Object.keys(propErrors).length > 0) {
+      setErrors((prev) => ({ ...prev, ...propErrors }));
+      toast.error(propErrors.propertyMode || "Please complete the property section");
+      return;
+    }
+
     setIsSubmitting(true);
-    setUploadProgress({ stage: "uploading", message: "Uploading Excel file...", percent: 5 });
 
     try {
       const userProfile = JSON.parse(localStorage.getItem("userProfile"));
+
+      let propertyId = formData.property_id;
+      if (propertyMode === "new") {
+        setUploadProgress({ stage: "creating-property", message: "Creating property...", percent: 3 });
+        propertyId = await createNewProperty(userProfile.token);
+        setFormData((prev) => ({ ...prev, property_id: propertyId }));
+      }
+
+      setUploadProgress({ stage: "uploading", message: "Uploading Excel file...", percent: 5 });
       const fd = new FormData();
       fd.append("file", excelFile);
-      fd.append("property_id", formData.property_id);
+      fd.append("property_id", propertyId);
 
       const response = await fetch(`${API_BASE_URL}/api/inspections/upload`, {
         method: "POST",
@@ -238,13 +364,13 @@ function AddWorkForm() {
 
       if (!finalResult) throw new Error("No result received from server");
 
-      toast.success(`Successfully parsed ${finalResult.parsedData.successCount} jobs from Excel`);
+      toast.success(t("toasts.parsedJobsFromExcel").replace("{{count}}", finalResult.parsedData.successCount));
       setParsedJobsData(finalResult.parsedData);
       setInspectionId(finalResult.inspection.id);
       setTimeout(() => setShowPreviewModal(true), 500);
     } catch (err) {
       console.error("Error uploading excel:", err);
-      toast.error("Failed to process file");
+      toast.error(err.message || t("toasts.failedToProcessFile"));
       setUploadProgress({ stage: "", message: "", percent: 0 });
     } finally {
       setIsSubmitting(false);
@@ -290,26 +416,187 @@ function AddWorkForm() {
             </div>
           )}
 
-          {/* Shared Property Select */}
-          <div className="awp-form-section" style={{ marginBottom: '1.5rem' }}>
-            <label className="awp-label">
+          {/* Step 1: Property Mode Selection */}
+          <div className="awp-property-step" style={{ marginBottom: '1.5rem' }}>
+            <label className="awp-label" style={{ marginBottom: '0.75rem' }}>
               <Building2 size={14} />
-              {t("addWorkModal.selectProperty") || "Select Property"} *
+              {t("addWorkModal.propertyStepTitle") || "Is this for an existing or new property?"} *
             </label>
-            <select
-              name="property_id"
-              value={formData.property_id}
-              onChange={handleChange}
-              className={`awp-select ${errors.property_id ? "error" : ""}`}
-            >
-              <option value="">{t("addWorkModal.selectProperty") || "Choose a property..."}</option>
-              {properties.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.building_name || p.address}
-                </option>
-              ))}
-            </select>
-            {errors.property_id && <span className="awp-error">{errors.property_id}</span>}
+            <div className="awp-mode-cards">
+              <button
+                type="button"
+                className={`awp-mode-card ${propertyMode === "existing" ? "selected" : ""}`}
+                onClick={() => handlePropertyModeChange("existing")}
+                disabled={isSubmitting}
+              >
+                <Building2 size={22} />
+                <div className="awp-mode-card-text">
+                  <strong>{t("addWorkModal.existingProperty") || "Existing Property"}</strong>
+                  <span>{t("addWorkModal.existingPropertyHint") || "Pick from your registered properties"}</span>
+                </div>
+              </button>
+              <button
+                type="button"
+                className={`awp-mode-card ${propertyMode === "new" ? "selected" : ""}`}
+                onClick={() => handlePropertyModeChange("new")}
+                disabled={isSubmitting}
+              >
+                <Plus size={22} />
+                <div className="awp-mode-card-text">
+                  <strong>{t("addWorkModal.newProperty") || "New Property"}</strong>
+                  <span>{t("addWorkModal.newPropertyHint") || "Add a property as part of this job"}</span>
+                </div>
+              </button>
+            </div>
+            {errors.propertyMode && <span className="awp-error" style={{ marginTop: '0.5rem' }}>{errors.propertyMode}</span>}
+
+            {/* Existing property dropdown */}
+            {propertyMode === "existing" && (
+              <div className="awp-form-section" style={{ marginTop: '1rem' }}>
+                <label className="awp-label">
+                  <Building2 size={14} />
+                  {t("addWorkModal.selectProperty") || "Select Property"} *
+                </label>
+                <select
+                  name="property_id"
+                  value={formData.property_id}
+                  onChange={handleChange}
+                  className={`awp-select ${errors.property_id ? "error" : ""}`}
+                  disabled={isLoadingProperties}
+                >
+                  <option value="">
+                    {isLoadingProperties
+                      ? (t("common.loading") || "Loading...")
+                      : (t("addWorkModal.selectProperty") || "Choose a property...")}
+                  </option>
+                  {properties.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.building_name || p.address}
+                    </option>
+                  ))}
+                </select>
+                {errors.property_id && <span className="awp-error">{errors.property_id}</span>}
+              </div>
+            )}
+
+            {/* Inline new property form */}
+            {propertyMode === "new" && (
+              <div className="awp-new-property" style={{ marginTop: '1rem' }}>
+                <div className="awp-row">
+                  <div className="awp-form-section">
+                    <label className="awp-label">
+                      <Building2 size={14} />
+                      {t("addWorkModal.buildingName") || "Building Name"} *
+                    </label>
+                    <input
+                      type="text"
+                      name="building_name"
+                      value={newPropertyData.building_name}
+                      onChange={handleNewPropertyChange}
+                      placeholder="e.g., Sunset Apartments"
+                      className={`awp-input ${errors.new_building_name ? "error" : ""}`}
+                    />
+                    {errors.new_building_name && <span className="awp-error">{errors.new_building_name}</span>}
+                  </div>
+                  <div className="awp-form-section">
+                    <label className="awp-label">{t("addWorkModal.buildingType") || "Building Type"}</label>
+                    <select
+                      name="building_type"
+                      value={newPropertyData.building_type}
+                      onChange={handleNewPropertyChange}
+                      className="awp-select"
+                    >
+                      {buildingTypes.map((b) => (
+                        <option key={b.value} value={b.value}>
+                          {t(`addPropertyModal.${b.key}`) || b.value}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Location picker (map + address search) */}
+                <div className="awp-form-section">
+                  <label className="awp-label">
+                    <MapPin size={14} />
+                    {t("addWorkModal.locateOnMap") || "Locate on Map"}
+                  </label>
+                  <PropertyLocationPicker
+                    value={newPropertyData}
+                    onChange={handleLocationChange}
+                  />
+                </div>
+
+                <div className="awp-form-section">
+                  <label className="awp-label">
+                    <MapPin size={14} />
+                    {t("addWorkModal.address") || "Address"} *
+                  </label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={newPropertyData.address}
+                    onChange={handleNewPropertyChange}
+                    placeholder="123 Main Street"
+                    className={`awp-input ${errors.new_address ? "error" : ""}`}
+                  />
+                  {errors.new_address && <span className="awp-error">{errors.new_address}</span>}
+                </div>
+
+                <div className="awp-row">
+                  <div className="awp-form-section">
+                    <label className="awp-label">{t("addWorkModal.city") || "City"} *</label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={newPropertyData.city}
+                      onChange={handleNewPropertyChange}
+                      placeholder="Montreal"
+                      className={`awp-input ${errors.new_city ? "error" : ""}`}
+                    />
+                    {errors.new_city && <span className="awp-error">{errors.new_city}</span>}
+                  </div>
+                  <div className="awp-form-section">
+                    <label className="awp-label">{t("addWorkModal.province") || "Province"}</label>
+                    <input
+                      type="text"
+                      name="province"
+                      value={newPropertyData.province}
+                      onChange={handleNewPropertyChange}
+                      placeholder="QC"
+                      className="awp-input"
+                    />
+                  </div>
+                </div>
+
+                <div className="awp-row">
+                  <div className="awp-form-section">
+                    <label className="awp-label">{t("addWorkModal.postalCode") || "Postal Code"}</label>
+                    <input
+                      type="text"
+                      name="postal_code"
+                      value={newPropertyData.postal_code}
+                      onChange={handleNewPropertyChange}
+                      placeholder="H2X 1Y4"
+                      className="awp-input"
+                    />
+                  </div>
+                  <div className="awp-form-section">
+                    <label className="awp-label">{t("addWorkModal.numUnits") || "Number of Units"}</label>
+                    <input
+                      type="number"
+                      name="num_units"
+                      value={newPropertyData.num_units}
+                      onChange={handleNewPropertyChange}
+                      placeholder="0"
+                      min="0"
+                      inputMode="numeric"
+                      className="awp-input awp-no-spinner"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Two-column layout: Manual Form + Excel Upload */}
@@ -346,15 +633,20 @@ function AddWorkForm() {
                   <label className="awp-label">{t("addWorkModal.category") || "Category"}</label>
                   <select name="category" value={formData.category} onChange={handleChange} className="awp-select">
                     {categories.map((c) => (
-                      <option key={c} value={c}>{c}</option>
+                      <option key={c.value} value={c.value}>
+                        {t(`addWorkModal.${c.key}`) || c.value}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div className="awp-form-section">
                   <label className="awp-label">{t("addWorkModal.urgency") || "Urgency"}</label>
                   <select name="urgency" value={formData.urgency} onChange={handleChange} className="awp-select">
-                    <option value="Urgent">Urgent</option>
-                    <option value="Planned">Planned</option>
+                    {urgencies.map((u) => (
+                      <option key={u.value} value={u.value}>
+                        {t(`addWorkModal.${u.key}`) || u.value}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -508,7 +800,7 @@ function AddWorkForm() {
             <button
               className="awp-submit-btn"
               onClick={handleSubmitExcel}
-              disabled={!excelFile || !formData.property_id || isSubmitting}
+              disabled={!excelFile || !propertyMode || isSubmitting}
             >
               <Upload size={18} />
               {t("addWorkModal.previewJobs") || "Process File"}
@@ -527,7 +819,7 @@ function AddWorkForm() {
           inspectionId={inspectionId}
           onClose={() => { setShowPreviewModal(false); setParsedJobsData(null); }}
           onSuccess={(result) => {
-            toast.success(`${result?.jobs?.length || 0} jobs created!`);
+            toast.success(t("toasts.jobsCreatedCount").replace("{{count}}", result?.jobs?.length || 0));
             setShowPreviewModal(false);
             setParsedJobsData(null);
             navigate(-1);

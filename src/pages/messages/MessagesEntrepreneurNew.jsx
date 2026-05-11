@@ -587,6 +587,19 @@ function MessagesEntrepreneurNew() {
       : parts[0][0].toUpperCase();
   };
 
+  // Conversation primary identifier: "Property address · Counterparty name".
+  // Falls back to the user name alone for non-job-tied conversations.
+  const getConversationLabel = (conv) => {
+    const personOrCompany =
+      conv.company_name || conv.other_user_personal_name || conv.other_user_name || '';
+    const address = conv.job_property_address || '';
+    if (!address) return personOrCompany || conv.other_user_name || '';
+    return personOrCompany ? `${address} · ${personOrCompany}` : address;
+  };
+
+  const getConversationInitials = (conv) =>
+    getInitials(conv.company_name || conv.other_user_personal_name || conv.other_user_name);
+
   // Archive a conversation
   const handleArchiveConversation = async (convId, e) => {
     if (e) e.stopPropagation();
@@ -799,11 +812,11 @@ function MessagesEntrepreneurNew() {
                   }}
                 >
                   <div className="conversation-avatar">
-                    {getInitials(conv.other_user_name)}
+                    {getConversationInitials(conv)}
                   </div>
                   <div className="conversation-info">
                     <div className="conversation-header">
-                      <span className="conversation-name">{conv.other_user_name}</span>
+                      <span className="conversation-name">{getConversationLabel(conv)}</span>
                       <span className="conversation-time">
                         {formatTime(conv.last_message_at)}
                       </span>
@@ -857,10 +870,10 @@ function MessagesEntrepreneurNew() {
                   archivedConversations.map((conv) => (
                     <div key={conv.id} className="conversation-item archived">
                       <div className="conversation-avatar">
-                        {getInitials(conv.other_user_name)}
+                        {getConversationInitials(conv)}
                       </div>
                       <div className="conversation-info">
-                        <span className="conversation-name">{conv.other_user_name}</span>
+                        <span className="conversation-name">{getConversationLabel(conv)}</span>
                         {conv.job_title && (
                           <span className="conversation-job-tag">{conv.job_title}</span>
                         )}
@@ -921,7 +934,7 @@ function MessagesEntrepreneurNew() {
                   }}
                   title={['entrepreneur', 'property_manager'].includes(selectedChat.other_user_role) /* SUPPLIER TEMPORARILY DISABLED — was: includes 'supplier' */ ? t('messages.viewProfile') : ''}
                 >
-                  {getInitials(selectedChat.other_user_name)}
+                  {getConversationInitials(selectedChat)}
                 </div>
                 <div className="chat-header-info">
                   <h3
@@ -937,7 +950,7 @@ function MessagesEntrepreneurNew() {
                     }}
                     title={['entrepreneur', 'property_manager'].includes(selectedChat.other_user_role) /* SUPPLIER TEMPORARILY DISABLED — was: includes 'supplier' */ ? t('messages.viewProfile') : ''}
                   >
-                    {selectedChat.other_user_name}
+                    {getConversationLabel(selectedChat)}
                   </h3>
                   <p className="chat-header-role">
                     {formatUserRole(selectedChat.other_user_role)}
