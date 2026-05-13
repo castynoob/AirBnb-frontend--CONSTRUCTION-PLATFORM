@@ -1794,7 +1794,7 @@ const translations = {
       submittedOn: 'Submitted On',
       status: 'Status',
       // Modal Actions
-      messageManager: 'Message Manager',
+      messageManager: 'Message',
       close: 'Close',
       // Withdraw Bid
       withdraw: 'Withdraw',
@@ -6021,7 +6021,7 @@ const translations = {
       submittedOn: 'Soumis le',
       status: 'Statut',
       // Modal Actions
-      messageManager: 'Contacter le Gestionnaire',
+      messageManager: 'Message',
       close: 'Fermer',
       // Withdraw Bid
       withdraw: 'Retirer',

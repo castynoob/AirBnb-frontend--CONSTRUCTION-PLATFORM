@@ -1353,9 +1353,15 @@
 
 /* View Location Button in Mobile Modal - Icon Only */
 .eh-modal-location-btn {
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   margin-top: 0;
+  border-radius: 6px;
+}
+
+.eh-modal-location-btn svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* ============================================
@@ -2062,11 +2068,12 @@
 
 .eh-jobs-count-meta {
   padding: 0.25rem 0.625rem;
-  background-color: rgba(231, 76, 60, 0.1);
-  color: var(--color-status-urgent);
+  background-color: rgba(217, 119, 6, 0.1);
+  color: #d97706;
   border-radius: 6px;
   font-size: 0.75rem;
-  font-weight: var(--font-weight-lg);
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .eh-modal-section-title {

@@ -17,6 +17,7 @@ import {
   Lock,
   Loader2,
   FileText,
+  ChevronDown,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
@@ -280,7 +281,7 @@ export default function BidSubmissionPage() {
         ) : error ? (
           <ErrorState message={error} onBack={() => navigate(-1)} />
         ) : (
-          <div style={s.grid}>
+          <div style={s.grid} className="bsp-grid">
             {/* ═══ LEFT COLUMN ═══ */}
             <div style={s.left}>
               {/* Header */}
@@ -288,8 +289,8 @@ export default function BidSubmissionPage() {
                 <button style={s.backBtn} onClick={() => navigate(-1)}>
                   <ArrowLeft size={18} />
                 </button>
-                <div style={{ flex: 1 }}>
-                  <h1 style={s.jobTitle}>{job.title || "Untitled Job"}</h1>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h1 style={s.jobTitle} className="bsp-job-title" title={job.title || "Untitled Job"}>{job.title || "Untitled Job"}</h1>
                   <Badge label={status.replace(/_/g, " ")} color={sc.color} bg={sc.bg} />
                 </div>
               </div>
@@ -491,10 +492,10 @@ export default function BidSubmissionPage() {
                       zoom={14}
                       style={{ height: "100%", width: "100%", borderRadius: 10 }}
                       scrollWheelZoom={false}
+                      attributionControl={false}
                     >
                       <TileLayer
                         url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-                        attribution='&copy; <a href="https://carto.com/">CARTO</a>'
                       />
                       <Marker position={[lat, lng]} icon={createPropertyIcon()}>
                         <Popup>{property?.name || "Property location"}</Popup>
@@ -521,7 +522,7 @@ export default function BidSubmissionPage() {
               </div>
 
               {/* Bid Form */}
-              <form style={s.formCard} onSubmit={handleSubmit}>
+              <form id="bsp-bid-form" style={s.formCard} onSubmit={handleSubmit}>
                 <h3 style={s.formTitle}>
                   <Send size={16} style={s.cardIcon} />
                   {tx(t, "bid.submitBid", "Submit Your Bid")}
@@ -613,6 +614,21 @@ export default function BidSubmissionPage() {
           handleBudgetModal={(success) => handleBudgetUnlockComplete(success)}
         />
       )}
+
+      {/* Floating Quick Bid button — mobile only */}
+      {job && !error && (
+        <button
+          type="button"
+          className="bsp-fab"
+          onClick={() => {
+            const el = document.getElementById('bsp-bid-form');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}
+          aria-label={tx(t, "bid.submit", "Submit Bid")}
+        >
+          <ChevronDown size={22} />
+        </button>
+      )}
     </div>
   );
 }
@@ -702,7 +718,7 @@ const s = {
     color: "#0F223D",
     fontWeight: 500,
   },
-  jobTitle: { fontSize: 22, fontWeight: 700, color: "#0F223D", margin: "0 0 6px" },
+  jobTitle: { fontSize: "clamp(1.0625rem, 4.5vw, 1.375rem)", fontWeight: 700, color: "#0F223D", margin: "0 0 6px", lineHeight: 1.25, wordBreak: "break-word" },
 
   /* Card */
   card: {
@@ -909,9 +925,56 @@ if (typeof document !== "undefined" && !document.getElementById(responsiveId)) {
   style.id = responsiveId;
   style.textContent = `
     @media (max-width: 900px) {
-      /* Override grid to single column, form first */
-      div[style*="grid-template-columns"] {
+      /* Override only the top-level page grid to single column.
+         Inner grids (stats, photos) keep their own column counts. */
+      .bsp-grid {
         grid-template-columns: 1fr !important;
+      }
+      .bsp-grid > div[style*="position: sticky"],
+      .bsp-grid > div[style*="position:sticky"] {
+        position: static !important;
+      }
+    }
+    @media (max-width: 480px) {
+      /* Tighten the header & job title on small screens */
+      .bsp-job-title {
+        font-size: 1rem !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+
+    /* Floating Quick Bid button — only on small viewports */
+    .bsp-fab {
+      display: none;
+    }
+    @media (max-width: 900px) {
+      .bsp-fab {
+        position: fixed;
+        right: 16px;
+        bottom: 80px;
+        width: 48px;
+        height: 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        background: linear-gradient(135deg, #00A5A9, #008C8F);
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 8px 20px rgba(0, 165, 169, 0.35), 0 2px 6px rgba(15, 34, 61, 0.15);
+        z-index: 1000;
+        transition: box-shadow 0.15s ease, filter 0.15s ease;
+      }
+      .bsp-fab:hover {
+        filter: brightness(1.05);
+        box-shadow: 0 10px 24px rgba(0, 165, 169, 0.45), 0 2px 6px rgba(15, 34, 61, 0.18);
+      }
+      .bsp-fab:active {
+        filter: brightness(0.95);
       }
     }
   `;

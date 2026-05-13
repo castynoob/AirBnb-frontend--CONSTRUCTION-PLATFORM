@@ -3,8 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, FileText, Calendar, DollarSign, Clock, Star, Building2,
   PlayCircle, CheckCircle, MessageSquare, MapPin, User, AlertCircle,
-  ChevronRight, X, Image as ImageIcon, Briefcase, Award, Shield,
-  Receipt, Edit3,
+  ChevronRight, ChevronDown, X, Image as ImageIcon, Briefcase, Award, Shield,
+  Receipt, Edit3, Zap,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
@@ -512,7 +512,7 @@ function EntrepreneurJobDetailsPage() {
             )}
 
             {/* Actions */}
-            <div style={s.card}>
+            <div id="ejdp-actions" style={s.card}>
               <h2 style={s.cardTitle}>{tx(t, "entrepreneurJobs.actions", "Actions")}</h2>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {job.status === "accepted" && (
@@ -764,21 +764,70 @@ function EntrepreneurJobDetailsPage() {
           </div>
         </div>
       )}
+
+      {/* Floating Quick Actions button — mobile only */}
+      {job && (
+        <button
+          type="button"
+          className="ejdp-fab"
+          onClick={() => {
+            const el = document.getElementById('ejdp-actions');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}
+          aria-label={tx(t, "entrepreneurJobs.actions", "Actions")}
+        >
+          <Zap size={22} fill="currentColor" />
+        </button>
+      )}
     </div>
   );
+}
+
+/* Responsive media query — inject once */
+const ejdpResponsiveId = "ejdp-responsive";
+if (typeof document !== "undefined" && !document.getElementById(ejdpResponsiveId)) {
+  const style = document.createElement("style");
+  style.id = ejdpResponsiveId;
+  style.textContent = `
+    .ejdp-fab { display: none; }
+    @media (max-width: 900px) {
+      .ejdp-fab {
+        position: fixed;
+        right: 16px;
+        bottom: 80px;
+        width: 48px;
+        height: 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        background: linear-gradient(135deg, #00A5A9, #008C8F);
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 8px 20px rgba(0, 165, 169, 0.35), 0 2px 6px rgba(15, 34, 61, 0.15);
+        z-index: 1000;
+        transition: box-shadow 0.15s ease, filter 0.15s ease;
+      }
+      .ejdp-fab:hover { filter: brightness(1.05); }
+      .ejdp-fab:active { filter: brightness(0.95); }
+    }
+  `;
+  document.head.appendChild(style);
 }
 
 const s = {
   page: { flex: 1, padding: "24px 32px", overflowY: "auto", background: "#f8fafc" },
   loadingWrap: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 400, gap: 16 },
   spinner: { width: 36, height: 36, border: "3px solid #e5e7eb", borderTopColor: "#00A5A9", borderRadius: "50%", animation: "spin 0.8s linear infinite" },
-  header: { marginBottom: 24 },
-  backBtn: { display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "#00A5A9", cursor: "pointer", fontSize: "0.875rem", fontWeight: 500, padding: 0, marginBottom: 12 },
+  header: { marginBottom: 20 },
+  backBtn: { display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "#00A5A9", cursor: "pointer", fontSize: "0.875rem", fontWeight: 500, padding: 0, marginBottom: 8 },
   backBtnLink: { color: "#00A5A9", background: "none", border: "none", cursor: "pointer", fontSize: "0.9rem", fontWeight: 500 },
-  headerInfo: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 },
-  title: { margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "#0F223D" },
-  headerMeta: { display: "flex", alignItems: "center", gap: 12 },
-  statusBadge: { color: "#fff", padding: "6px 14px", borderRadius: 20, fontSize: "0.75rem", fontWeight: 600, letterSpacing: "0.5px" },
+  headerInfo: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10, minWidth: 0 },
+  title: { margin: "0 0 8px", fontSize: "clamp(1.0625rem, 4.5vw, 1.5rem)", fontWeight: 700, color: "#0F223D", lineHeight: 1.25, wordBreak: "break-word", flexBasis: "100%" },
+  headerMeta: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" },
+  statusBadge: { color: "#fff", padding: "5px 12px", borderRadius: 20, fontSize: "0.6875rem", fontWeight: 600, letterSpacing: "0.5px" },
   statusBadgeSm: { color: "#fff", padding: "3px 10px", borderRadius: 12, fontSize: "0.72rem", fontWeight: 600, display: "inline-block" },
   contractAmt: { fontSize: "1.25rem", fontWeight: 700, color: "#0F223D" },
   grid: { display: "grid", gridTemplateColumns: "1fr 400px", gap: 24, alignItems: "start" },

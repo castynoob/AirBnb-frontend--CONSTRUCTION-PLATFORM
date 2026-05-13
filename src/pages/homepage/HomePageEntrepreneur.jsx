@@ -2186,13 +2186,14 @@ function HomePageEntrepreneur() {
                 <div className="eh-property-modal-meta">
                   <span className="eh-meta-badge">{selectedProperty.propertyType}</span>
                   <span className="eh-jobs-count-meta">{getPropertyOpenJobsCount(selectedProperty.id)} {t('entrepreneurHome.openJobs')}</span>
+                  <button
+                    className="eh-view-location-btn eh-modal-location-btn"
+                    onClick={(e) => handleViewLocation(selectedProperty, e)}
+                    title={t('entrepreneurHome.viewLocation')}
+                  >
+                    <MapPin size={14} />
+                  </button>
                 </div>
-                <button
-                  className="eh-view-location-btn eh-modal-location-btn"
-                  onClick={(e) => handleViewLocation(selectedProperty, e)}
-                >
-                  <MapPin size={16} />
-                </button>
               </div>
 
               <div className="eh-section-divider"></div>

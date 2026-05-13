@@ -664,39 +664,24 @@ function EntrepreneurJobs() {
                     ) : null}
                   </div>
 
-                  {/* Card Body */}
+                  {/* Card Body — clean minimal layout */}
                   <div className="ej-card-body">
-                    {/* Title & Category */}
-                    <div className="ej-title-section">
-                      <h3 className="ej-project-title">{job.title}</h3>
-                      <span className="ej-category-tag">{getCategoryLabel(job.category)}</span>
-                    </div>
+                    <h3 className="ej-project-title">{job.title}</h3>
 
-                    {/* Meta Info — above contract */}
-                    <div className="ej-meta-row">
-                      <div className="ej-meta-item">
-                        <Calendar size={14} />
+                    {job.contract && (
+                      <div className="ej-amount">
+                        {formatCurrency(job.contract.contract_amount || job.bid_amount || 0)}
+                      </div>
+                    )}
+
+                    <div className="ej-meta-line">
+                      {job.category && <span>{getCategoryLabel(job.category)}</span>}
+                      {job.due_date && (
                         <span>{t('entrepreneurJobs.due')} {formatDate(job.due_date)}</span>
-                      </div>
-                      {job.budget_min && job.budget_max && (
-                        <div className="ej-meta-item">
-                          <DollarSign size={14} />
-                          <span>{formatCurrency(job.budget_min)} - {formatCurrency(job.budget_max)}</span>
-                        </div>
                       )}
-                    </div>
-
-                    {/* Contract Status */}
-                    <div className={`ej-contract-card ${contractInfo.class}`}>
-                      <div className="ej-contract-icon">
-                        <ContractIcon size={18} />
-                      </div>
-                      <div className="ej-contract-info">
-                        <span className="ej-contract-label">{contractInfo.label}</span>
-                        {job.contract && (
-                          <span className="ej-contract-value">{formatCurrency(job.contract.contract_amount || job.bid_amount || 0)}</span>
-                        )}
-                      </div>
+                      {job.budget_min && job.budget_max && (
+                        <span>{formatCurrency(job.budget_min)} – {formatCurrency(job.budget_max)}</span>
+                      )}
                     </div>
                   </div>
 

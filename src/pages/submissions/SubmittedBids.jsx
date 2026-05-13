@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Nav from '../../components/Nav';
 import '../../styles/manager/submissions.css'
 import { useLanguage } from '../../contexts/LanguageContext';
+import { translateUrgency } from '../../utils/translateEnums';
 import {
   Search,
   Calendar,
@@ -585,7 +586,7 @@ const SubmittedBids = () => {
                       <label>
                         <Clock size={14} /> {t('submittedBids.urgency')}
                       </label>
-                      <p>{selectedBid.urgency}</p>
+                      <p>{translateUrgency(t, selectedBid.urgency)}</p>
                     </div>
                     {selectedBid.due_date && (
                       <div className="bid-info-item">
