@@ -5,7 +5,7 @@ import { Toaster } from 'react-hot-toast';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000,     // Data stays fresh for 5 minutes
+      staleTime: 5 * 60 * 1000,     // Data stays fresh for 5 minutess
       gcTime: 10 * 60 * 1000,       // Cache kept for 10 minutes
       refetchOnWindowFocus: true,    // Refetch when user returns to tab
       retry: 1,                      // Retry failed requests once
