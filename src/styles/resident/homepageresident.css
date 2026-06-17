@@ -269,6 +269,113 @@
   font-family: inherit;
 }
 
+/* ============================================
+   No-Property Recovery Card
+   Shown when a resident's property assignment was removed.
+   Calm, helpful — not a red error block.
+   ============================================ */
+.no-property-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  max-width: 540px;
+  margin: 1.5rem auto;
+}
+
+.no-property-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: rgba(0, 165, 169, 0.1);
+  color: #00a5a9;
+  margin-bottom: 1rem;
+}
+
+.no-property-title {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: #0F223D;
+  margin: 0 0 0.5rem;
+  line-height: 1.3;
+}
+
+.no-property-desc {
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.5;
+  margin: 0 0 1.5rem;
+  max-width: 420px;
+}
+
+.no-property-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.625rem;
+  justify-content: center;
+}
+
+.no-property-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 40px;
+  padding: 0 1.25rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  border: 1px solid transparent;
+  font-family: inherit;
+}
+
+.no-property-btn-primary {
+  background: #00a5a9;
+  color: #ffffff;
+  border-color: #00a5a9;
+}
+
+.no-property-btn-primary:hover {
+  background: #008b8f;
+  border-color: #008b8f;
+  box-shadow: 0 4px 12px rgba(0, 165, 169, 0.28);
+}
+
+.no-property-btn-secondary {
+  background: #ffffff;
+  color: #374151;
+  border-color: #e5e7eb;
+}
+
+.no-property-btn-secondary:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+@media (max-width: 480px) {
+  .no-property-card {
+    padding: 2rem 1.25rem;
+    margin: 1rem auto;
+  }
+  .no-property-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  .no-property-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 .retry-btn:hover {
   background: #d63031;
   transform: translateY(-1px);

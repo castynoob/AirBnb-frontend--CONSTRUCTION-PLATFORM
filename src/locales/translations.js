@@ -2951,6 +2951,12 @@ const translations = {
       failedToFetchAnnouncements: 'Failed to fetch announcements',
       tryAgain: 'Try Again',
 
+      // No-property recovery card
+      noPropertyTitle: "You're not connected to a property",
+      noPropertyDesc: 'Your previous property assignment was removed. To get reconnected, contact your property manager or our support team.',
+      contactSupport: 'Contact support',
+      logout: 'Log out',
+
       // Empty state
       noAnnouncementsFound: 'No announcements found',
       adjustSearchOrFilter: 'Try adjusting your search or filter',
@@ -7176,6 +7182,12 @@ const translations = {
       noAnnouncementsAvailable: 'Aucune annonce disponible',
       failedToFetchAnnouncements: 'Échec de la récupération des annonces',
       tryAgain: 'Réessayer',
+
+      // No-property recovery card
+      noPropertyTitle: 'Vous n\'êtes plus associé à une propriété',
+      noPropertyDesc: 'Votre association à une propriété a été retirée. Pour la rétablir, contactez votre gestionnaire immobilier ou notre équipe de support.',
+      contactSupport: 'Contacter le support',
+      logout: 'Se déconnecter',
 
       // Empty state
       noAnnouncementsFound: 'Aucune annonce trouvée',

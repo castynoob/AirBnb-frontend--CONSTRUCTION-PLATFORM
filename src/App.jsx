@@ -56,6 +56,9 @@ import Users from "./admin/pages/Users";
 import Jobs from "./admin/pages/Jobs";
 import Bids from "./admin/pages/Bids";
 import Properties from "./admin/pages/Properties";
+import MyProperties from "./admin/pages/MyProperties";
+import MyJobs from "./admin/pages/MyJobs";
+import Admins from "./admin/pages/Admins";
 import Payments from "./admin/pages/Payments";
 import Subscriptions from "./admin/pages/Subscriptions";
 import PromoCodes from "./admin/pages/PromoCodes";
@@ -198,9 +201,12 @@ function AdminRoutes() {
       <Route element={<AdminLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/users" element={<Users />} />
+        <Route path="/admins" element={<Admins />} />
         <Route path="/jobs" element={<Jobs />} />
+        <Route path="/my-jobs" element={<MyJobs />} />
         <Route path="/bids" element={<Bids />} />
         <Route path="/properties" element={<Properties />} />
+        <Route path="/my-properties" element={<MyProperties />} />
         <Route path="/payments" element={<Payments />} />
         <Route path="/subscriptions" element={<Subscriptions />} />
         <Route path="/promo-codes" element={<PromoCodes />} />

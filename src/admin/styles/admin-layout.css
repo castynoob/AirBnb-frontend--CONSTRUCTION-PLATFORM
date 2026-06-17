@@ -209,6 +209,9 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1.5rem;
+  /* Right pad so the floating notification bell (top:32, right:24 of admin-main)
+     doesn't overlap the page's action buttons. ~48px = bell width + breathing room. */
+  padding-right: 48px;
 }
 
 .admin-page-title {

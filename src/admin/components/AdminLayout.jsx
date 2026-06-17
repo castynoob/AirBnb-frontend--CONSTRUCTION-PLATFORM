@@ -3,6 +3,7 @@ import { Outlet, Navigate } from "react-router-dom";
 import { Menu } from "lucide-react";
 import { useAdminAuth } from "../context/AdminAuthContext";
 import AdminSidebar from "./AdminSidebar";
+import AdminNotificationBell from "./AdminNotificationBell";
 import "../styles/admin-global.css";
 import "../styles/admin-layout.css";
 
@@ -44,13 +45,27 @@ function AdminLayout() {
 
         {/* Main Content */}
         <main className="admin-main">
-          {/* Mobile Menu Toggle */}
+          {/* Mobile menu toggle — position:fixed in its own CSS, lives independently. */}
           <button
             className="admin-mobile-toggle"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu size={20} />
           </button>
+
+          {/* Notification bell floated to the top-right of the content area so
+              it aligns visually with each page's action buttons (Refresh,
+              New job, etc.) rather than occupying its own row above them. */}
+          <div
+            style={{
+              position: "absolute",
+              top: 32,
+              right: 24,
+              zIndex: 200,
+            }}
+          >
+            <AdminNotificationBell />
+          </div>
 
           {/* Page Content */}
           <div className="admin-content">

@@ -12,11 +12,19 @@ import {
   Flag,
   Megaphone,
   LogOut,
+  ShieldCheck,
+  Home,
+  Wrench,
 } from "lucide-react";
 import { useAdminAuth } from "../context/AdminAuthContext";
 
 function AdminSidebar({ isOpen, onClose }) {
-  const { admin, canManageUsers, logout } = useAdminAuth();
+  const { admin, canManageUsers, isAdminOrHigher, logout } = useAdminAuth();
+  // Both "Admins" and the "My Portfolio" section gate on admin-or-higher.
+  // Super_admin-only actions inside those pages (create admin, delete admin)
+  // are gated inside the page component itself, not the sidebar.
+  const canSelfManage =
+    typeof isAdminOrHigher === "function" ? isAdminOrHigher() : false;
 
   const navSections = [
     {
@@ -39,9 +47,15 @@ function AdminSidebar({ isOpen, onClose }) {
           show: canManageUsers(),
         },
         {
+          to: "/admin/admins",
+          icon: ShieldCheck,
+          label: "Admins",
+          show: canSelfManage,
+        },
+        {
           to: "/admin/jobs",
           icon: Briefcase,
-          label: "Jobs",
+          label: "All Jobs",
         },
         {
           to: "/admin/bids",
@@ -51,7 +65,24 @@ function AdminSidebar({ isOpen, onClose }) {
         {
           to: "/admin/properties",
           icon: Building2,
-          label: "Properties",
+          label: "All Properties",
+        },
+      ],
+    },
+    {
+      title: "My Portfolio",
+      items: [
+        {
+          to: "/admin/my-properties",
+          icon: Home,
+          label: "My Properties",
+          show: canSelfManage,
+        },
+        {
+          to: "/admin/my-jobs",
+          icon: Wrench,
+          label: "My Jobs",
+          show: canSelfManage,
         },
       ],
     },

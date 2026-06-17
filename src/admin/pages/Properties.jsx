@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import toast from "react-hot-toast";
 import {
   Search,
   Filter,
@@ -26,8 +27,12 @@ import {
   DollarSign,
   Star,
   Hash,
+  Plus,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { useAdminAuth } from "../context/AdminAuthContext";
+import AdminPropertyFormModal from "../components/AdminPropertyFormModal";
 import "../styles/admin-properties.css";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -61,9 +66,18 @@ const formatStatus = (status) => {
 };
 
 function Properties() {
-  const { getToken, isModeratorOrHigher } = useAdminAuth();
+  const { getToken, isModeratorOrHigher, isAdminOrHigher } = useAdminAuth();
   const [loading, setLoading] = useState(true);
   const [properties, setProperties] = useState([]);
+
+  // Admin CRUD state — form modal (create + edit) and delete confirm.
+  const [showForm, setShowForm] = useState(false);
+  const [editingProperty, setEditingProperty] = useState(null);
+  const [deletingProperty, setDeletingProperty] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const canManage = typeof isAdminOrHigher === "function" ? isAdminOrHigher() : false;
+
   const [cities, setCities] = useState([]);
   const [buildingTypes, setBuildingTypes] = useState([]);
   const [stats, setStats] = useState(null);
@@ -401,6 +415,15 @@ function Properties() {
             <RefreshCw size={16} />
             Refresh
           </button>
+          {canManage && (
+            <button
+              className="admin-btn admin-btn-primary"
+              onClick={() => { setEditingProperty(null); setShowForm(true); }}
+            >
+              <Plus size={16} />
+              Create property
+            </button>
+          )}
         </div>
       </div>
 
@@ -656,6 +679,25 @@ function Properties() {
                           >
                             <Flag size={16} />
                           </button>
+                        )}
+                        {canManage && (
+                          <>
+                            <button
+                              className="admin-btn admin-btn-ghost admin-btn-sm"
+                              onClick={() => { setEditingProperty(property); setShowForm(true); }}
+                              title="Edit Property"
+                            >
+                              <Pencil size={16} />
+                            </button>
+                            <button
+                              className="admin-btn admin-btn-ghost admin-btn-sm"
+                              onClick={() => setDeletingProperty(property)}
+                              title="Delete Property"
+                              style={{ color: "#dc2626" }}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>
@@ -1220,6 +1262,79 @@ function Properties() {
                   <p>Failed to load manager details</p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create / Edit property form modal (admin acting on behalf of a manager) */}
+      <AdminPropertyFormModal
+        isOpen={showForm}
+        property={editingProperty}
+        onClose={() => { setShowForm(false); setEditingProperty(null); }}
+        onSuccess={() => { fetchProperties(); fetchStats(); }}
+      />
+
+      {/* Delete confirmation */}
+      {deletingProperty && (
+        <div
+          className="admin-modal-overlay"
+          onClick={() => !isDeleting && setDeletingProperty(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(15,34,61,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1200, padding: 16 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: "#fff", borderRadius: 12, padding: 24, maxWidth: 440, width: "100%", boxShadow: "0 20px 50px rgba(15,34,61,0.18)" }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Trash2 size={20} color="#dc2626" />
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#0F223D" }}>
+                Delete this property?
+              </div>
+            </div>
+            <p style={{ fontSize: 14, color: "#4b5563", lineHeight: 1.5, margin: "0 0 8px" }}>
+              This will permanently remove the property and cascade-delete its jobs,
+              announcements, and group chat. Resident profile rows linked to it will
+              have their property_id set to NULL (residents keep their accounts).
+            </p>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#0F223D", padding: "8px 12px", background: "#f8fafc", borderRadius: 6, border: "1px solid #e5e7eb", marginBottom: 16, wordBreak: "break-word" }}>
+              {deletingProperty.building_name || deletingProperty.address} — {deletingProperty.city}
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                style={{ flex: 1, padding: "10px 20px", background: "#fff", border: "1px solid #d1d5db", borderRadius: 8, fontWeight: 500, color: "#374151", cursor: "pointer", fontFamily: "inherit" }}
+                onClick={() => setDeletingProperty(null)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                style={{ flex: 1, background: isDeleting ? "#fca5a5" : "#dc2626", color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontWeight: 600, fontSize: 14, cursor: isDeleting ? "not-allowed" : "pointer", fontFamily: "inherit" }}
+                onClick={async () => {
+                  setIsDeleting(true);
+                  try {
+                    const res = await fetch(
+                      `${API_URL}/api/admin/properties/${deletingProperty.id}`,
+                      { method: "DELETE", headers: { Authorization: `Bearer ${getToken()}` } }
+                    );
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message || "Delete failed");
+                    toast.success("Property deleted");
+                    setDeletingProperty(null);
+                    fetchProperties();
+                    fetchStats();
+                  } catch (e) {
+                    toast.error(e.message);
+                  } finally {
+                    setIsDeleting(false);
+                  }
+                }}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting…" : "Delete"}
+              </button>
             </div>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import toast from "react-hot-toast";
 import {
   Search,
   Filter,
@@ -26,8 +27,14 @@ import {
   Phone,
   ExternalLink,
   Hash,
+  Plus,
+  Pencil,
+  Trash2,
+  FileSpreadsheet,
 } from "lucide-react";
 import { useAdminAuth } from "../context/AdminAuthContext";
+import AdminJobFormModal from "../components/AdminJobFormModal";
+import AdminInspectionUploadModal from "../components/AdminInspectionUploadModal";
 import "../styles/admin-jobs.css";
 
 const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -59,6 +66,16 @@ function Jobs() {
   const { getToken, isModeratorOrHigher, isAdminOrHigher } = useAdminAuth();
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState([]);
+
+  // Admin CRUD state — form modal (create + edit) and delete confirm.
+  const [showJobForm, setShowJobForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [editingJob, setEditingJob] = useState(null);
+  const [deletingJob, setDeletingJob] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const canManage = typeof isAdminOrHigher === "function" ? isAdminOrHigher() : false;
+
   const [categories, setCategories] = useState([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -398,6 +415,25 @@ function Jobs() {
             <RefreshCw size={16} />
             Refresh
           </button>
+          {canManage && (
+            <button
+              className="admin-btn admin-btn-secondary"
+              onClick={() => setShowImport(true)}
+              title="Bulk create jobs from an Excel inspection report"
+            >
+              <FileSpreadsheet size={16} />
+              Import from Excel
+            </button>
+          )}
+          {canManage && (
+            <button
+              className="admin-btn admin-btn-primary"
+              onClick={() => { setEditingJob(null); setShowJobForm(true); }}
+            >
+              <Plus size={16} />
+              Create job
+            </button>
+          )}
         </div>
       </div>
 
@@ -617,6 +653,25 @@ function Jobs() {
                           >
                             <Flag size={16} />
                           </button>
+                        )}
+                        {canManage && (
+                          <>
+                            <button
+                              className="admin-btn admin-btn-ghost admin-btn-sm"
+                              onClick={() => { setEditingJob(job); setShowJobForm(true); }}
+                              title="Edit Job"
+                            >
+                              <Pencil size={16} />
+                            </button>
+                            <button
+                              className="admin-btn admin-btn-ghost admin-btn-sm"
+                              onClick={() => setDeletingJob(job)}
+                              title="Delete Job"
+                              style={{ color: "#dc2626" }}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </>
                         )}
                       </div>
                     </td>
@@ -1240,6 +1295,83 @@ function Jobs() {
                   <p>Failed to load manager details</p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create / Edit job form modal (admin acting on behalf of a manager) */}
+      <AdminJobFormModal
+        isOpen={showJobForm}
+        job={editingJob}
+        onClose={() => { setShowJobForm(false); setEditingJob(null); }}
+        onSuccess={() => fetchJobs()}
+      />
+
+      {/* Bulk-import jobs from an Excel inspection report */}
+      <AdminInspectionUploadModal
+        isOpen={showImport}
+        onClose={() => setShowImport(false)}
+        onSuccess={() => fetchJobs()}
+      />
+
+      {/* Delete confirmation */}
+      {deletingJob && (
+        <div
+          onClick={() => !isDeleting && setDeletingJob(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(15,34,61,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1200, padding: 16 }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: "#fff", borderRadius: 12, padding: 24, maxWidth: 440, width: "100%", boxShadow: "0 20px 50px rgba(15,34,61,0.18)" }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#fee2e2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Trash2 size={20} color="#dc2626" />
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#0F223D" }}>
+                Delete this job?
+              </div>
+            </div>
+            <p style={{ fontSize: 14, color: "#4b5563", lineHeight: 1.5, margin: "0 0 8px" }}>
+              This will permanently remove the job and cascade-delete any bids
+              and contracts attached to it. This action cannot be undone.
+            </p>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#0F223D", padding: "8px 12px", background: "#f8fafc", borderRadius: 6, border: "1px solid #e5e7eb", marginBottom: 16, wordBreak: "break-word" }}>
+              {deletingJob.title}
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                style={{ flex: 1, padding: "10px 20px", background: "#fff", border: "1px solid #d1d5db", borderRadius: 8, fontWeight: 500, color: "#374151", cursor: "pointer", fontFamily: "inherit" }}
+                onClick={() => setDeletingJob(null)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                style={{ flex: 1, background: isDeleting ? "#fca5a5" : "#dc2626", color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontWeight: 600, fontSize: 14, cursor: isDeleting ? "not-allowed" : "pointer", fontFamily: "inherit" }}
+                onClick={async () => {
+                  setIsDeleting(true);
+                  try {
+                    const res = await fetch(
+                      `${API_URL}/api/admin/jobs/${deletingJob.id}`,
+                      { method: "DELETE", headers: { Authorization: `Bearer ${getToken()}` } }
+                    );
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message || "Delete failed");
+                    toast.success("Job deleted");
+                    setDeletingJob(null);
+                    fetchJobs();
+                  } catch (e) {
+                    toast.error(e.message);
+                  } finally {
+                    setIsDeleting(false);
+                  }
+                }}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Deleting…" : "Delete"}
+              </button>
             </div>
           </div>
         </div>

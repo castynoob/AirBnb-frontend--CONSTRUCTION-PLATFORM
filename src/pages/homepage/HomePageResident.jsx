@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
-import { Search, Bell, Calendar, Wrench, AlertTriangle, Megaphone } from 'lucide-react';
+import { Search, Bell, Calendar, Wrench, AlertTriangle, Megaphone, Building2, LogOut, LifeBuoy } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Nav from '../../components/Nav';
 import AnnouncementCard from '../../components/AnnouncementCard';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -11,6 +12,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000
 
 const HomePageResident = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
   const [announcements, setAnnouncements] = useState([]);
@@ -25,7 +27,19 @@ const HomePageResident = () => {
   const { invalidateAnnouncements } = useInvalidateResidentData();
 
   const loading = (profileLoading || announcementsLoading) && announcements.length === 0;
-  const error = profileError?.message || announcementsError?.message || (!profileLoading && profile && !propertyId ? t('homePageResident.noPropertyAssigned') : null);
+  // No-property is a distinct, recoverable state — NOT a generic error.
+  // It happens when a property manager deletes/unassigns a property the resident was on.
+  const noProperty = !profileLoading && profile && !propertyId;
+  const error = !noProperty ? (profileError?.message || announcementsError?.message || null) : null;
+
+  const handleLogout = () => {
+    try {
+      localStorage.clear();
+    } catch (e) {
+      console.warn('Logout: failed to clear localStorage', e);
+    }
+    navigate('/login');
+  };
 
   // Sync cached announcements → local state (for socket updates)
   useEffect(() => {
@@ -149,7 +163,7 @@ const HomePageResident = () => {
             </div>
           )}
 
-          {/* Error State */}
+          {/* Generic error state (network failures, etc.) — NOT the no-property case */}
           {error && !loading && (
             <div className="error-container">
               <p className="error-message">{error}</p>
@@ -162,8 +176,36 @@ const HomePageResident = () => {
             </div>
           )}
 
+          {/* No-property recovery card — actionable, not a dead-end */}
+          {noProperty && !loading && (
+            <div className="no-property-card">
+              <div className="no-property-icon">
+                <Building2 size={28} />
+              </div>
+              <h3 className="no-property-title">{t('homePageResident.noPropertyTitle')}</h3>
+              <p className="no-property-desc">{t('homePageResident.noPropertyDesc')}</p>
+              <div className="no-property-actions">
+                <a
+                  href="mailto:support@intervos.com"
+                  className="no-property-btn no-property-btn-primary"
+                >
+                  <LifeBuoy size={16} />
+                  <span>{t('homePageResident.contactSupport')}</span>
+                </a>
+                <button
+                  type="button"
+                  className="no-property-btn no-property-btn-secondary"
+                  onClick={handleLogout}
+                >
+                  <LogOut size={16} />
+                  <span>{t('homePageResident.logout')}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Announcements List */}
-          {!loading && !error && announcements.length > 0 && (
+          {!loading && !error && !noProperty && announcements.length > 0 && (
             <div className="announcements-list">
               {announcements.map((announcement) => (
                 <AnnouncementCard
@@ -174,8 +216,8 @@ const HomePageResident = () => {
             </div>
           )}
 
-          {/* Empty State */}
-          {!loading && !error && announcements.length === 0 && (
+          {/* Empty State (only when resident IS connected to a property and there's just no announcements) */}
+          {!loading && !error && !noProperty && announcements.length === 0 && (
             <div className="resident-no-results-home">
               <div className="empty-state-icon">📭</div>
               <h3>{t('homePageResident.noAnnouncementsFound')}</h3>
