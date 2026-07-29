@@ -108,7 +108,13 @@ function HomePage() {
   const totalProperties = dashboard?.totalProperties || 0
   const totalJobs = dashboard?.totalJobs || 0
   const totalBidsApproved = dashboard?.totalBidsApproved || 0
-  const isLoading = queryLoading && !dashboard
+  // `dashboard` is a memoized object that's ALWAYS truthy (see
+  // useManagerDashboard → derived useMemo), so `!dashboard` never fires
+  // and the previous guard would drop through to render the empty state
+  // during the first fetch. Use react-query's `queryLoading` (isLoading)
+  // directly — it's true only on the initial cache miss, exactly what
+  // "show the skeleton" needs.
+  const isLoading = queryLoading
 
   const error = queryError?.message || null
   const [imagesLoaded, setImagesLoaded] = useState({})
@@ -630,7 +636,12 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                       {t('repairList.allRepairWork')}
                       {selectedProperty === 'all' && <Check size={14} />}
                     </div>
-                    {[...new Set(filteredRepairs.map(r => r.property_name).filter(Boolean))].map(p => (
+                    {/* Options come from the full `properties` list, not the already-filtered
+                        one — otherwise picking a property collapses the dropdown to just that
+                        property and there's no way to switch to another without clearing.
+                        Also the enriched field is `property` (see useManagerData.js), not
+                        `property_name` — the old key was always undefined so the menu was empty. */}
+                    {[...new Set(properties.map(r => r.property).filter(Boolean))].sort().map(p => (
                       <div key={p} className={`pm-dd-option ${selectedProperty === p ? 'active' : ''}`} onClick={() => { setSelectedProperty(p); setOpenDropdown(null) }}>
                         {p}
                         {selectedProperty === p && <Check size={14} />}
@@ -655,7 +666,10 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                       {t('repairList.allUrgency')}
                       {selectedUrgency === 'all' && <Check size={14} />}
                     </div>
-                    {[...new Set(filteredRepairs.map(r => r.urgency).filter(Boolean))].map(u => (
+                    {/* Enriched objects store urgency in `category` (see useManagerData.js).
+                        RepairList's urgency match compares against `repair.category`, so the
+                        options list needs to read from the same field. */}
+                    {[...new Set(properties.map(r => r.category).filter(Boolean))].sort().map(u => (
                       <div key={u} className={`pm-dd-option ${selectedUrgency === u ? 'active' : ''}`} onClick={() => { setSelectedUrgency(u); setOpenDropdown(null) }}>
                         {u}
                         {selectedUrgency === u && <Check size={14} />}
@@ -680,7 +694,10 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
                       {t('repairList.allCategories')}
                       {selectedJobCategory === 'all' && <Check size={14} />}
                     </div>
-                    {[...new Set(filteredRepairs.map(r => r.category).filter(Boolean))].map(c => (
+                    {/* Enriched objects store the real category in `jobCategory` (see
+                        useManagerData.js). Reading from `.category` here previously showed
+                        urgency values by mistake — replaced with the correct field. */}
+                    {[...new Set(properties.map(r => r.jobCategory).filter(Boolean))].sort().map(c => (
                       <div key={c} className={`pm-dd-option ${selectedJobCategory === c ? 'active' : ''}`} onClick={() => { setSelectedJobCategory(c); setOpenDropdown(null) }}>
                         {c}
                         {selectedJobCategory === c && <Check size={14} />}
@@ -700,7 +717,10 @@ Visit: https://air-bnb-frontend-construction-platf.vercel.app/
           externalFilters={{ selectedProperty, selectedUrgency, selectedJobCategory }}
         />
 
-        {filteredRepairs.length === 0 && (
+        {/* Empty state — gated on !isLoading so it never renders while the
+            first fetch is still in flight (would flash between the skeleton
+            and the real list). */}
+        {!isLoading && filteredRepairs.length === 0 && (
           <div className="pm-empty-state">
             <div className="pm-empty-icon">
               <Wrench size={32} />

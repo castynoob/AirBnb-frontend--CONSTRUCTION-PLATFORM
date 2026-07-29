@@ -4,6 +4,8 @@ import { Search, Bell, Calendar, Wrench, AlertTriangle, Megaphone, Building2, Lo
 import { useNavigate } from 'react-router-dom';
 import Nav from '../../components/Nav';
 import AnnouncementCard from '../../components/AnnouncementCard';
+import ResidentPropertyInvites from '../../components/ResidentPropertyInvites';
+import UnionBroadcastsFeed from '../../components/UnionBroadcastsFeed';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useResidentProfile, useResidentAnnouncements, useInvalidateResidentData } from '../../hooks/useResidentData';
 import '../../styles/resident/homepageresident.css';
@@ -117,6 +119,13 @@ const HomePageResident = () => {
               <p>{t('homePageResident.subtitle')}</p>
             </div>
           </div>
+
+          {/* Pending property invites — renders nothing when the list is empty */}
+          <ResidentPropertyInvites onAccepted={() => window.location.reload()} />
+
+          {/* Union broadcasts — appears only if resident's property is
+              linked to a condo association / union. */}
+          {propertyId && <UnionBroadcastsFeed propertyId={propertyId} />}
 
           {/* Search and Filter Section */}
           <div className="resident-filter-section">

@@ -14,7 +14,10 @@ const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
     content: '',
     type: 'Notice',
     priority: 'normal',
-    is_pinned: false
+    is_pinned: false,
+    // Manager opts in per-announcement. Only relevant when the selected
+    // property has a Condo Control ingestion address configured.
+    broadcast_to_condo_control: false,
   });
   const [properties, setProperties] = useState([]);
   const [isLoadingProperties, setIsLoadingProperties] = useState(true);
@@ -112,13 +115,28 @@ const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
         content: '',
         type: 'Notice',
         priority: 'normal',
-        is_pinned: false
+        is_pinned: false,
+        broadcast_to_condo_control: false,
       });
 
       if (onSuccess) onSuccess(data.announcement);
-      // show a quick success toast then close
+      // Announcement toast + a second toast if the Condo Control bridge was
+      // requested. Explicit success/failure so the manager knows the state of
+      // both deliveries.
       try {
         toast.success(t('announcementModal.createdSuccess'));
+        const cc = data.condoControlBroadcast;
+        if (cc?.ok) {
+          toast.success(
+            t('announcementModal.condoControlBroadcastSent') ||
+              'Also sent to Condo Control.'
+          );
+        } else if (cc && cc.reason && cc.reason !== 'not-configured') {
+          toast.error(
+            (t('announcementModal.condoControlBroadcastFailed') ||
+              'Condo Control broadcast failed:') + ' ' + cc.reason
+          );
+        }
       } catch (e) {
         // ignore if toast fails
       }
@@ -284,6 +302,36 @@ const AddAnnouncementModal = ({ isOpen, onClose, onSuccess }) => {
               <span>{t('announcementModal.pinAnnouncement') || 'Pin this announcement to the top'}</span>
             </label>
           </div>
+
+          {/* Broadcast to Condo Control — only offered when the selected
+              property has an ingestion address configured. Hides itself
+              silently otherwise so managers who don't use Condo Control never
+              see it. */}
+          {(() => {
+            const selected = properties.find((p) => p.id === formData.property_id);
+            if (!selected?.condo_control_email) return null;
+            return (
+              <div className="form-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    name="broadcast_to_condo_control"
+                    checked={formData.broadcast_to_condo_control}
+                    onChange={handleChange}
+                    className="form-checkbox"
+                  />
+                  <span>
+                    {t('announcementModal.broadcastToCondoControl') ||
+                      `Also broadcast to Condo Control (${selected.condo_control_email})`}
+                  </span>
+                </label>
+                <p style={{ fontSize: 12, color: '#64748b', margin: '4px 0 0 26px' }}>
+                  {t('announcementModal.broadcastToCondoControlHelp') ||
+                    'A copy of this announcement will be emailed to your community\'s Condo Control ingestion address.'}
+                </p>
+              </div>
+            );
+          })()}
 
           {/* Modal Footer */}
           <div className="announcement-footer">

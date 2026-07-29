@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Check, CheckCheck, X, Briefcase, MessageSquare, Hammer, CheckCircle, XCircle } from 'lucide-react';
+import { Bell, Check, CheckCheck, X, Briefcase, MessageSquare, Hammer, CheckCircle, XCircle, Send } from 'lucide-react';
 import { useSocket } from '../contexts/SocketContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import '../styles/notificationbell.css';
@@ -41,6 +41,8 @@ function NotificationBell() {
         return <CheckCircle size={18} className="notif-icon notif-icon-completed" />;
       case 'review_invitation':
         return <CheckCircle size={18} className="notif-icon notif-icon-approved" />;
+      case 'job_invite':
+        return <Send size={18} className="notif-icon notif-icon-bid" />;
       default:
         return <Bell size={18} className="notif-icon" />;
     }
@@ -64,6 +66,8 @@ function NotificationBell() {
         return t('notifications.workMarkedCompleteTitle');
       case 'review_invitation':
         return t('notifications.reviewInvitationTitle');
+      case 'job_invite':
+        return t('notifications.jobInvite').replace('{{name}}', notif.senderName || t('notifications.defaultManager'));
       default:
         return t('notifications.notification');
     }
@@ -94,6 +98,8 @@ function NotificationBell() {
         return t('notifications.reviewInvitationBody')
           .replace('{{job}}', notif.jobTitle || notif.workTitle || '')
           .replace('{{name}}', notif.contractor || notif.senderName || t('notifications.defaultContractor'));
+      case 'job_invite':
+        return t('notifications.jobInviteBody').replace('{{job}}', notif.jobTitle || '');
       default:
         return notif.content || '';
     }
@@ -130,6 +136,15 @@ function NotificationBell() {
           navigate(`/jobs/${role}`);
         } else {
           navigate(`/submissions/${role}`);
+        }
+        break;
+      case 'job_invite':
+        // Land directly on the bid submission page — that's the page with
+        // the actual bid form and job info. /entrepreneur-job is the
+        // post-award page (Contract Status, Actions), the wrong destination
+        // for an invited contractor who hasn't bid yet.
+        if (notif.jobId) {
+          navigate(`/bid-submit/${notif.jobId}`);
         }
         break;
       default:

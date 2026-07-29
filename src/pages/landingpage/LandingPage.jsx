@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Check, X, Crown } from "lucide-react"
 import "../../styles/landinpage.css"
 import logo from '../../assets/logo.png'
 import logoLight from '../../assets/logo-light.png'
 import mockupImage from '../../assets/images/mockup.png'
 import phoneImage from '../../assets/images/phone.png'
+import HeroMapPreview from './HeroMapPreview'
+import DirectoryPromo from './DirectoryPromo'
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
@@ -24,6 +26,13 @@ import { useLanguage } from "../../contexts/LanguageContext";
 
 export default function LandingPage() {
   const { t, language, changeLanguage, languages } = useLanguage();
+  // Translation helper — `t('key') || 'fallback'` doesn't work because our
+  // i18n returns the key itself when the translation is missing (truthy), so
+  // `||` never fires. `tf` returns the fallback only when the key is unresolved.
+  const tf = (key, fallback) => {
+    const v = t(key);
+    return v === key ? fallback : v;
+  };
   // ===== STATE MANAGEMENT =====
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showRegisterModal, setShowRegisterModal] = useState(false)
@@ -87,14 +96,133 @@ export default function LandingPage() {
     delivery_areas: "",
     provider: 'local',
     num_properties: "",
-    termsAccepted: false
+    termsAccepted: false,
+    // Optional referral code — pre-filled from ?ref= query param if the user
+    // arrived via someone's share link. See useEffect below.
+    referral_code: "",
   })
 
+  // RBQ (Quebec contractor licence) live-validation state.
+  // status: 'idle' | 'checking' | 'valid' | 'restricted' | 'invalid' | 'unavailable' | 'bad-format'
+  const [rbqCheck, setRbqCheck] = useState({ status: "idle" })
+  const rbqDebounceRef = useRef(null)
+  const rbqLastRef = useRef(null)
+
+  // Referral code live-validation state. { valid, referred_by, message,
+  // referee_discount_percent }. Null = no preview shown yet.
+  const [referralPreview, setReferralPreview] = useState(null)
+  const referralDebounceRef = useRef(null)
+
+  // Pre-fill referral_code from ?ref=CODE on mount, so shared links land
+  // the code into the form without a copy-paste.
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const ref = params.get('ref')
+      if (ref) {
+        setRegisterFormData((prev) => ({
+          ...prev,
+          referral_code: ref.trim().toUpperCase().replace(/\s+/g, ''),
+        }))
+      }
+    } catch { /* ignore */ }
+    // Once — mount only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Debounced /validate call — surfaces "You'll save 20%" as they type,
+  // and warns EARLY if the anti-abuse guards would block the attribution at
+  // submit (same email / phone / IP as the referrer). Uses POST so we can
+  // send the email + phone the user has typed; server picks up the IP from
+  // headers automatically.
+  useEffect(() => {
+    const code = (registerFormData.referral_code || '').trim()
+    if (referralDebounceRef.current) clearTimeout(referralDebounceRef.current)
+    if (!code || code.length < 4) { setReferralPreview(null); return }
+    referralDebounceRef.current = setTimeout(async () => {
+      try {
+        const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
+        const res = await fetch(`${base}/api/referrals/validate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code,
+            email: registerFormData.email || undefined,
+            phone: registerFormData.phone || undefined,
+          }),
+        })
+        const body = await res.json().catch(() => ({}))
+        setReferralPreview(body || null)
+      } catch { setReferralPreview(null) }
+    }, 400)
+    return () => referralDebounceRef.current && clearTimeout(referralDebounceRef.current)
+  }, [registerFormData.referral_code, registerFormData.email, registerFormData.phone])
+
+  // Location-autofill state. Populated by the "Detect my location" button.
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false)
+
   // Country and State/Province options
+  // Countries ordered by likelihood for our audience — CA/US on top (RBQ, then
+  // adjacent), then the rest alphabetical. If Detect Location returns a code
+  // not in this list we add it dynamically so no user is ever locked out.
   const countryOptions = [
     { value: "", label: "Select Country" },
     { value: "CA", label: "Canada" },
-    { value: "US", label: "United States" }
+    { value: "US", label: "United States" },
+    { value: "AE", label: "United Arab Emirates" },
+    { value: "AR", label: "Argentina" },
+    { value: "AT", label: "Austria" },
+    { value: "AU", label: "Australia" },
+    { value: "BD", label: "Bangladesh" },
+    { value: "BE", label: "Belgium" },
+    { value: "BR", label: "Brazil" },
+    { value: "CH", label: "Switzerland" },
+    { value: "CL", label: "Chile" },
+    { value: "CN", label: "China" },
+    { value: "CO", label: "Colombia" },
+    { value: "CZ", label: "Czech Republic" },
+    { value: "DE", label: "Germany" },
+    { value: "DK", label: "Denmark" },
+    { value: "EG", label: "Egypt" },
+    { value: "ES", label: "Spain" },
+    { value: "FI", label: "Finland" },
+    { value: "FR", label: "France" },
+    { value: "GB", label: "United Kingdom" },
+    { value: "GR", label: "Greece" },
+    { value: "HK", label: "Hong Kong" },
+    { value: "HU", label: "Hungary" },
+    { value: "ID", label: "Indonesia" },
+    { value: "IE", label: "Ireland" },
+    { value: "IL", label: "Israel" },
+    { value: "IN", label: "India" },
+    { value: "IT", label: "Italy" },
+    { value: "JP", label: "Japan" },
+    { value: "KE", label: "Kenya" },
+    { value: "KR", label: "South Korea" },
+    { value: "MA", label: "Morocco" },
+    { value: "MX", label: "Mexico" },
+    { value: "MY", label: "Malaysia" },
+    { value: "NG", label: "Nigeria" },
+    { value: "NL", label: "Netherlands" },
+    { value: "NO", label: "Norway" },
+    { value: "NZ", label: "New Zealand" },
+    { value: "PE", label: "Peru" },
+    { value: "PH", label: "Philippines" },
+    { value: "PK", label: "Pakistan" },
+    { value: "PL", label: "Poland" },
+    { value: "PT", label: "Portugal" },
+    { value: "RO", label: "Romania" },
+    { value: "RU", label: "Russia" },
+    { value: "SA", label: "Saudi Arabia" },
+    { value: "SE", label: "Sweden" },
+    { value: "SG", label: "Singapore" },
+    { value: "TH", label: "Thailand" },
+    { value: "TR", label: "Turkey" },
+    { value: "TW", label: "Taiwan" },
+    { value: "UA", label: "Ukraine" },
+    { value: "VE", label: "Venezuela" },
+    { value: "VN", label: "Vietnam" },
+    { value: "ZA", label: "South Africa" },
   ];
 
   const stateProvinceOptions = {
@@ -527,6 +655,11 @@ export default function LandingPage() {
         [name]: value,
     })
 
+    // Kick off the live RBQ (Quebec licence) check when the licence field changes.
+    if (name === "license_number") {
+        triggerRBQCheck(value);
+    }
+
     // Live password strength validation
     if (name === "password") {
         setPasswordValidation({
@@ -575,12 +708,15 @@ export default function LandingPage() {
             }
             break;
         case "license_number":
-            // Validate SIRET (14 digits) or SIREN (9 digits) format
+            // Quebec RBQ format — 10 digits, canonical `NNNN-NNNN-NN`.
+            // Users often paste "1234567890" or "1234-5678-90"; both must pass
+            // shape validation. Live validity/restriction check runs separately
+            // in the debounced RBQ effect (see triggerRBQCheck below).
             if (value) {
-                const cleanedValue = value.replace(/[\s\-]/g, '');
-                if (!/^\d+$/.test(cleanedValue)) {
+                const digitsOnly = value.replace(/\D/g, '');
+                if (!/^\d+$/.test(digitsOnly)) {
                     error = t('landingPage.register.licenseInvalidChars');
-                } else if (cleanedValue.length !== 9 && cleanedValue.length !== 14) {
+                } else if (digitsOnly.length !== 10) {
                     error = t('landingPage.register.licenseInvalidFormat');
                 }
             }
@@ -673,6 +809,138 @@ export default function LandingPage() {
     setAddressSuggestions([]);
   };
 
+  // Debounced RBQ (Quebec construction licence) live check.
+  // Called from handleRegisterChange whenever `license_number` mutates. Waits
+  // 500ms after the last keystroke so we don't hammer the backend, and skips
+  // the network round-trip when the format is obviously wrong.
+  const triggerRBQCheck = (rawLicense) => {
+    if (rbqDebounceRef.current) clearTimeout(rbqDebounceRef.current);
+    // If a previous call revealed the backend flag is OFF, don't hammer the
+    // endpoint on every keystroke — keep the state "disabled" so the UI
+    // stays hidden.
+    if (rbqCheck.status === "disabled" || rbqCheck.enforcementEnabled === false) {
+      return;
+    }
+    const digits = String(rawLicense || "").replace(/\D/g, "");
+    if (!digits) {
+      setRbqCheck({ status: "idle" });
+      return;
+    }
+    if (digits.length !== 10) {
+      setRbqCheck({ status: "bad-format" });
+      return;
+    }
+    // Same license as last call and we already have a definitive answer?
+    // Skip the network round-trip.
+    const normalised = `${digits.slice(0, 4)}-${digits.slice(4, 8)}-${digits.slice(8, 10)}`;
+    if (rbqLastRef.current?.license === normalised && rbqLastRef.current?.settled) {
+      setRbqCheck(rbqLastRef.current.result);
+      return;
+    }
+    setRbqCheck({ status: "checking" });
+    rbqDebounceRef.current = setTimeout(async () => {
+      try {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+        const response = await fetch(`${API_BASE_URL}/api/register/validate-rbq`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ license_number: normalised }),
+        });
+        const data = await response.json();
+        // Map backend response into the state shape the UI renders.
+        let next;
+        if (!data.ok) {
+          next = { status: data.reason || "unavailable", enforcementEnabled: data.enforcementEnabled };
+        } else {
+          next = {
+            status: data.status,           // 'valid' | 'restricted' | 'invalid'
+            holderName: data.holderName,
+            restrictions: data.restrictions,
+            enforcementEnabled: data.enforcementEnabled,
+          };
+        }
+        rbqLastRef.current = { license: normalised, settled: true, result: next };
+        setRbqCheck(next);
+      } catch (err) {
+        console.error("RBQ check failed:", err);
+        setRbqCheck({ status: "unavailable" });
+      }
+    }, 500);
+  };
+
+  // -----------------------------------------------------------------
+  // Detect location → autofill address block.
+  // Uses the browser Geolocation API + OpenStreetMap Nominatim reverse-
+  // geocoding (free, no API key, ~1 req/sec is fine for occasional use).
+  // Fills street_address, city, state, country, zip_code in one shot.
+  // For CA/US we translate the returned state name back to our ISO code
+  // so the existing province/state <select> shows the right option.
+  // -----------------------------------------------------------------
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Geolocation isn't supported by your browser.");
+      return;
+    }
+    setIsDetectingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&addressdetails=1`,
+            { headers: { Accept: "application/json" } }
+          );
+          if (!res.ok) throw new Error(`Nominatim ${res.status}`);
+          const data = await res.json();
+          const addr = data.address || {};
+
+          const street = [addr.house_number, addr.road].filter(Boolean).join(" ");
+          const city =
+            addr.city || addr.town || addr.village || addr.hamlet ||
+            addr.municipality || addr.suburb || "";
+          const stateName = addr.state || addr.region || addr.province || "";
+          const countryCode = (addr.country_code || "").toUpperCase();
+          const postcode = addr.postcode || "";
+
+          // For CA/US, map the returned state name to our ISO code so the
+          // <select> lands on the right option. Everywhere else we treat
+          // state as free text.
+          let stateValue = stateName;
+          if (countryCode === "CA" || countryCode === "US") {
+            const list = stateProvinceOptions[countryCode] || [];
+            const match = list.find(
+              (opt) => opt.label && opt.label.toLowerCase() === stateName.toLowerCase()
+            );
+            stateValue = match ? match.value : "";
+          }
+
+          setRegisterFormData((prev) => ({
+            ...prev,
+            street_address: street || prev.street_address,
+            city: city || prev.city,
+            state: stateValue,
+            country: countryCode || prev.country,
+            zip_code: postcode || prev.zip_code,
+          }));
+        } catch (err) {
+          console.error("Reverse-geocode failed:", err);
+          alert("Couldn't detect your address. Please fill it in manually.");
+        } finally {
+          setIsDetectingLocation(false);
+        }
+      },
+      (err) => {
+        const msg =
+          err.code === 1
+            ? "Location permission denied. Please allow it or fill in manually."
+            : "Couldn't detect your location. Please fill in manually.";
+        alert(msg);
+        setIsDetectingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
+    );
+  };
+
   // Check for duplicate license number or phone number
   const checkDuplicates = async (licenseNumber, phone) => {
     try {
@@ -718,6 +986,32 @@ export default function LandingPage() {
             default: {
                 setIsRegistering(false);
                 throw new Error(`Invalid role selected: ${selectedRole}`);
+            }
+        }
+
+        // Client-side RBQ gate — only when the backend enforcement is on and
+        // the check result is definitively not-valid. Prevents a wasted
+        // round-trip. The backend re-verifies either way.
+        if (selectedRole === "entrepreneur" && rbqCheck.enforcementEnabled) {
+            const rbqBlocking =
+                rbqCheck.status === "invalid" ||
+                rbqCheck.status === "restricted" ||
+                rbqCheck.status === "bad-format" ||
+                rbqCheck.status === "unavailable";
+            if (rbqBlocking) {
+                setRegisterErrors({
+                    ...registerErrors,
+                    submit:
+                        rbqCheck.status === "restricted"
+                            ? tf('landingPage.register.rbqRestricted', 'This RBQ licence has active restrictions.')
+                            : rbqCheck.status === "invalid"
+                                ? tf('landingPage.register.rbqInvalid', 'No such licence in the RBQ registry.')
+                                : rbqCheck.status === "unavailable"
+                                    ? tf('landingPage.register.rbqUnavailable', 'RBQ registry unreachable. Please try again.')
+                                    : tf('landingPage.register.rbqBadFormat', 'RBQ licences are 10 digits (NNNN-NNNN-NN).'),
+                });
+                setIsRegistering(false);
+                return;
             }
         }
 
@@ -851,6 +1145,33 @@ export default function LandingPage() {
                 setRegisterErrors({ submit: data.message || t('landingPage.login.registrationFailed') });
             }
             return;
+        }
+
+        // If a referral code was submitted, tell the user whether it actually
+        // stuck. The backend's `referral` field is one of:
+        //   { pending: true, ... }     → discount will apply at checkout
+        //   { blocked: "reason" }      → attribution silently rejected
+        //   null                       → no code submitted / no outcome to report
+        if (data?.referral?.blocked) {
+            const reasonCopy = {
+                self_referral:            "you can't refer yourself",
+                referrer_not_contractor:  "the code owner isn't a contractor",
+                referee_not_contractor:   "referrals are contractor-only right now",
+                duplicate_email:          "the email matched the code owner's account",
+                duplicate_phone:          "the phone number matched the code owner's account",
+                ip_rate_limit:            "the code was recently used from your current network",
+                unknown_code:             "the code doesn't exist",
+            };
+            const reason = reasonCopy[data.referral.blocked] || "the code couldn't be attributed";
+            // Toast is a non-blocking notification — signup succeeded and the
+            // user will proceed to the next step, but they know the discount
+            // won't apply so there's no surprise at checkout.
+            toast(
+              `Signup complete, but the referral discount couldn't be applied — ${reason}.`,
+              { icon: "⚠️", duration: 6000 }
+            );
+        } else if (data?.referral?.pending) {
+            toast.success("Signup complete — your referral discount will apply at checkout.");
         }
 
         // ✅ Google users are already verified - redirect to dashboard
@@ -1290,31 +1611,25 @@ export default function LandingPage() {
     */
   ]
 
+  // Trimmed to 4 flagship features — the strongest differentiators. The
+  // other two (multi-property, built-in messaging) were more generic than
+  // this section can afford; visitors need concrete reasons to trust, not
+  // a checklist.
   const features = [
-    {
-      title: t('landingPage.features.smartBidding'),
-      description: t('landingPage.features.smartBiddingDesc'),
-      iconType: "zap",
-    },
     {
       title: t('landingPage.features.verifiedProfessionals'),
       description: t('landingPage.features.verifiedProfessionalsDesc'),
       iconType: "check-circle",
     },
     {
+      title: t('landingPage.features.smartBidding'),
+      description: t('landingPage.features.smartBiddingDesc'),
+      iconType: "zap",
+    },
+    {
       title: t('landingPage.features.liveDashboard'),
       description: t('landingPage.features.liveDashboardDesc'),
       iconType: "bar-chart",
-    },
-    {
-      title: t('landingPage.features.multiProperty'),
-      description: t('landingPage.features.multiPropertyDesc'),
-      iconType: "building",
-    },
-    {
-      title: t('landingPage.features.builtInMessaging'),
-      description: t('landingPage.features.builtInMessagingDesc'),
-      iconType: "message",
     },
     {
       title: t('landingPage.features.protectedPayments'),
@@ -1477,19 +1792,21 @@ export default function LandingPage() {
         </div>
       )}
 
-      {/* Hero Section */}
-      <section id="hero" className="lp-hero">
-        <div className="lp-hero-background">
-          <div className="lp-hero-gradient"></div>
+      {/* Hero Section — full-bleed map background with content overlaid on
+          the left. The map covers the entire hero and pins concentrate on
+          the right (via the map's shifted centerpoint) where the copy
+          doesn't cover them. A white gradient on the left keeps the text
+          legible without hiding the map. */}
+      <section id="hero" className="lp-hero lp-hero-mapbg">
+        {/* Full-bleed map background */}
+        <div className="lp-hero-map-bg">
+          <HeroMapPreview />
         </div>
+        {/* Legibility mask — fades the map on the left so the title reads
+            cleanly, keeps the right side fully visible for the pins. */}
+        <div className="lp-hero-mask" aria-hidden="true"></div>
+
         <div className="lp-hero-content">
-          {/* STATS TEMPORARILY REMOVED — not yet accurate. Uncomment when data is ready.
-          <div className="lp-hero-badge">
-            {platformStats
-              ? t('landingPage.hero.badgeDynamic', { count: platformStats.trustedBy.toLocaleString() })
-              : t('landingPage.hero.badge')}
-          </div>
-          */}
           <h1 className="lp-hero-title">
             {t('landingPage.hero.title')} <span className="lp-highlight-teal">{t('landingPage.hero.titleHighlight')}</span>
           </h1>
@@ -1504,51 +1821,53 @@ export default function LandingPage() {
               {t('landingPage.hero.seeHowItWorks')}
             </button>
           </div>
-
-          
         </div>
+      </section>
 
-        {/* Laptop Mockup with Dashboard */}
-        <div className="lp-hero-dashboard">
-          <div className="lp-devices-wrapper">
-            {/* Phone Mockup */}
-            <div className="lp-phone-mockup">
-              <div className="lp-phone-frame">
-                <div className="lp-phone-notch"></div>
-                <div className="lp-phone-screen">
-                  <div className="lp-phone-content">
-                    <img src={phoneImage} alt="INTERVOS Mobile App" className="lp-phone-image" />
-                  </div>
-                </div>
-              </div>
+      {/* Trust bar — quiet infrastructure signals right under the hero.
+          Establishes credibility before the visitor sees a single feature.
+          No logos we don't have rights to; just typographic proof-points. */}
+      <section className="lp-trustbar" aria-label="Platform infrastructure">
+        <div className="lp-trustbar-inner">
+          <div className="lp-trustbar-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <polyline points="9 12 11 14 15 10"/>
+            </svg>
+            <div>
+              <b>{t('landingPage.trustbar.rbq')}</b>
+              <span>{t('landingPage.trustbar.rbqDesc')}</span>
             </div>
-
-            {/* Laptop Mockup */}
-            <div className="lp-laptop-mockup">
-              {/* Laptop Screen */}
-              <div className="lp-laptop-screen">
-                <div className="lp-laptop-screen-inner">
-                  {/* Browser Chrome */}
-                  <div className="lp-browser-chrome">
-                    <div className="lp-browser-dots">
-                      <span className="lp-dot lp-dot-red"></span>
-                      <span className="lp-dot lp-dot-yellow"></span>
-                      <span className="lp-dot lp-dot-green"></span>
-                    </div>
-                    <div className="lp-browser-url">intervos.ca/dashboard</div>
-                  </div>
-
-                  {/* Dashboard Content */}
-                  <div className="lp-dashboard-content">
-                    <img src={mockupImage} alt="INTERVOS Dashboard" className="lp-dashboard-image" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Laptop Base */}
-              <div className="lp-laptop-base">
-                <div className="lp-laptop-notch"></div>
-              </div>
+          </div>
+          <div className="lp-trustbar-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="5" width="20" height="14" rx="2"/>
+              <line x1="2" y1="10" x2="22" y2="10"/>
+            </svg>
+            <div>
+              <b>{t('landingPage.trustbar.stripe')}</b>
+              <span>{t('landingPage.trustbar.stripeDesc')}</span>
+            </div>
+          </div>
+          <div className="lp-trustbar-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="2" y1="12" x2="22" y2="12"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+            </svg>
+            <div>
+              <b>{t('landingPage.trustbar.bilingual')}</b>
+              <span>{t('landingPage.trustbar.bilingualDesc')}</span>
+            </div>
+          </div>
+          <div className="lp-trustbar-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            <div>
+              <b>{t('landingPage.trustbar.quebec')}</b>
+              <span>{t('landingPage.trustbar.quebecDesc')}</span>
             </div>
           </div>
         </div>
@@ -1896,8 +2215,19 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Directory promo — showcases opt-in specialists directly on the
+          landing page. Live-fetches the top 4; falls back to a promotional
+          copy block when the directory is empty. */}
+      <DirectoryPromo />
+
       {/* CTA Section */}
       <section className="lp-cta-section">
+        {/* Low-opacity map behind the CTA — visually ties back to the hero
+            and reinforces the "live view of jobs" story without competing
+            with the copy. Fully non-interactive; aria-hidden. */}
+        <div className="lp-cta-map-bg" aria-hidden="true">
+          <HeroMapPreview />
+        </div>
         <div className="lp-cta-content">
           <h2>{t('landingPage.cta.title')}</h2>
           <p>
@@ -1973,12 +2303,10 @@ export default function LandingPage() {
             </button>
           </div>
 
-          {/* Premium Plan */}
+          {/* Premium Plan — the teal outline on this card already signals
+              "premium tier". No "MOST POPULAR" badge until we have data to
+              back the claim. */}
           <div className="lp-pricing-card lp-pricing-popular">
-            <div className="lp-popular-badge">
-              <Crown size={14} />
-              {t('landingPage.pricing.popular')}
-            </div>
             <div className="lp-pricing-card-header">
               <h3>{t('landingPage.pricing.premiumPlan')}</h3>
               <p className="lp-pricing-desc">{t('landingPage.pricing.premiumDesc')}</p>
@@ -2008,6 +2336,31 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* FAQ — reduces bounces from visitors who need one specific answer
+          before they'll sign up. Native <details>/<summary> so no state
+          plumbing needed and it's screen-reader-friendly out of the box. */}
+      <section id="faq" className="lp-faq" aria-label="Frequently asked questions">
+        <div className="lp-faq-inner">
+          <div className="lp-faq-header">
+            <h2>{t('landingPage.faq.title')}</h2>
+            <p>{t('landingPage.faq.subtitle')}</p>
+          </div>
+          <div className="lp-faq-list">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <details key={i} className="lp-faq-item">
+                <summary>
+                  <span>{t(`landingPage.faq.q${i}`)}</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lp-faq-chevron">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </summary>
+                <div className="lp-faq-answer">{t(`landingPage.faq.a${i}`)}</div>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="lp-footer">
         <div className="lp-footer-content">
@@ -2027,12 +2380,14 @@ export default function LandingPage() {
               <li><a href="#roles">{t('landingPage.nav.forYou')}</a></li>
               <li><a href="#how-it-works">{t('landingPage.nav.howItWorks')}</a></li>
               <li><a href="#pricing">{t('landingPage.footer.pricing')}</a></li>
+              <li><a href="/find-contractors" onClick={(e) => { e.preventDefault(); navigate('/find-contractors'); }}>Find Specialists</a></li>
             </ul>
           </div>
           <div className="lp-footer-section">
             <h4>{t('landingPage.footer.company')}</h4>
             <ul>
               <li><a href="#about">{t('landingPage.footer.aboutUs')}</a></li>
+              <li><a href="/investors" onClick={(e) => { e.preventDefault(); navigate('/investors'); }}>Investors</a></li>
             </ul>
           </div>
           <div className="lp-footer-section">
@@ -2046,18 +2401,15 @@ export default function LandingPage() {
           <div className="lp-footer-section">
             <h4>{t('landingPage.footer.contact')}</h4>
             <ul className="lp-footer-contact">
-              <li><a href="mailto:support@intervos.com">support@intervos.com</a></li>
-              <li><a href="tel:+15551234567">+1 (555) 123-4567</a></li>
+              <li><a href="mailto:info@intervos.ai">info@intervos.ai</a></li>
+              <li><a href="#faq">FAQ</a></li>
             </ul>
           </div>
         </div>
         <div className="lp-footer-bottom">
           <p>{t('landingPage.footer.copyright')}</p>
-          <div className="lp-footer-social">
-            <a href="#linkedin">LinkedIn</a>
-            <a href="#twitter">Twitter</a>
-            <a href="#facebook">Facebook</a>
-          </div>
+          {/* Social handles hidden until real accounts exist. Broken # anchors
+              hurt trust more than an absent social row. */}
         </div>
       </footer>
 
@@ -2687,6 +3039,32 @@ export default function LandingPage() {
                       </div>
                       {/* Address Section */}
                       <div className="lp-form-divider">{t('landingPage.register.addressDetails') || 'Business Address'}</div>
+                      {/* Detect Location — geolocation + OSM Nominatim reverse
+                          geocode fills every address field in one click. */}
+                      <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'flex-end' }}>
+                        <button
+                          type="button"
+                          onClick={handleDetectLocation}
+                          disabled={isDetectingLocation}
+                          style={{
+                            background: 'transparent',
+                            border: '1px solid var(--color-secondary, #14919B)',
+                            color: 'var(--color-secondary, #14919B)',
+                            padding: '6px 12px',
+                            borderRadius: 6,
+                            fontSize: 13,
+                            cursor: isDetectingLocation ? 'wait' : 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                          }}
+                        >
+                          {isDetectingLocation ? '⏳' : '📍'}{' '}
+                          {isDetectingLocation
+                            ? (tf('landingPage.register.detectingLocation', 'Detecting…'))
+                            : (tf('landingPage.register.detectLocation', 'Use my current location'))}
+                        </button>
+                      </div>
                       <div className="lp-form-group">
                         <label>{t('landingPage.register.streetAddress') || 'Street Address'}</label>
                         <div className="lp-input-wrapper">
@@ -2737,17 +3115,29 @@ export default function LandingPage() {
                               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                               <circle cx="12" cy="10" r="3"/>
                             </svg>
-                            <select
-                              name="state"
-                              value={registerFormData.state}
-                              onChange={handleRegisterChange}
-                              required
-                              disabled={!registerFormData.country}
-                            >
-                              {(stateProvinceOptions[registerFormData.country] || [{ value: "", label: "Select Country First" }]).map(opt => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                              ))}
-                            </select>
+                            {(registerFormData.country === 'CA' || registerFormData.country === 'US') ? (
+                              <select
+                                name="state"
+                                value={registerFormData.state}
+                                onChange={handleRegisterChange}
+                                required
+                                disabled={!registerFormData.country}
+                              >
+                                {(stateProvinceOptions[registerFormData.country] || [{ value: "", label: "Select Country First" }]).map(opt => (
+                                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <input
+                                type="text"
+                                name="state"
+                                placeholder={registerFormData.country ? (t('landingPage.register.stateRegionPlaceholder') || 'Enter state / region') : (t('landingPage.register.selectCountryFirst') || 'Select country first')}
+                                value={registerFormData.state}
+                                onChange={handleRegisterChange}
+                                required
+                                disabled={!registerFormData.country}
+                              />
+                            )}
                           </div>
                         </div>
                       </div>
@@ -2769,7 +3159,7 @@ export default function LandingPage() {
                           </div>
                         </div>
                         <div className="lp-form-group">
-                          <label>{registerFormData.country === 'CA' ? (t('landingPage.register.postalCode') || 'Postal Code') : (t('landingPage.register.zipCode') || 'ZIP Code')}</label>
+                          <label>{registerFormData.country === 'US' ? (t('landingPage.register.zipCode') || 'ZIP Code') : (t('landingPage.register.postalCode') || 'Postal Code')}</label>
                           <div className="lp-input-wrapper">
                             <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <rect x="2" y="4" width="20" height="16" rx="2"/>
@@ -2778,7 +3168,7 @@ export default function LandingPage() {
                             <input
                               type="text"
                               name="zip_code"
-                              placeholder={registerFormData.country === 'CA' ? 'A1A 1A1' : '12345'}
+                              placeholder={registerFormData.country === 'CA' ? 'A1A 1A1' : registerFormData.country === 'US' ? '12345' : t('landingPage.register.postalCodePlaceholder') || 'Postal / ZIP code'}
                               value={registerFormData.zip_code}
                               onChange={handleRegisterChange}
                               required
@@ -2848,6 +3238,32 @@ export default function LandingPage() {
                       </div>
                       {/* Address Section */}
                       <div className="lp-form-divider">{t('landingPage.register.addressDetails') || 'Business Address'}</div>
+                      {/* Detect Location — geolocation + OSM Nominatim reverse
+                          geocode fills every address field in one click. */}
+                      <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'flex-end' }}>
+                        <button
+                          type="button"
+                          onClick={handleDetectLocation}
+                          disabled={isDetectingLocation}
+                          style={{
+                            background: 'transparent',
+                            border: '1px solid var(--color-secondary, #14919B)',
+                            color: 'var(--color-secondary, #14919B)',
+                            padding: '6px 12px',
+                            borderRadius: 6,
+                            fontSize: 13,
+                            cursor: isDetectingLocation ? 'wait' : 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                          }}
+                        >
+                          {isDetectingLocation ? '⏳' : '📍'}{' '}
+                          {isDetectingLocation
+                            ? (tf('landingPage.register.detectingLocation', 'Detecting…'))
+                            : (tf('landingPage.register.detectLocation', 'Use my current location'))}
+                        </button>
+                      </div>
                       <div className="lp-form-group">
                         <label>{t('landingPage.register.streetAddress') || 'Street Address'}</label>
                         <div className="lp-input-wrapper">
@@ -2898,17 +3314,29 @@ export default function LandingPage() {
                               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                               <circle cx="12" cy="10" r="3"/>
                             </svg>
-                            <select
-                              name="state"
-                              value={registerFormData.state}
-                              onChange={handleRegisterChange}
-                              required
-                              disabled={!registerFormData.country}
-                            >
-                              {(stateProvinceOptions[registerFormData.country] || [{ value: "", label: "Select Country First" }]).map(opt => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                              ))}
-                            </select>
+                            {(registerFormData.country === 'CA' || registerFormData.country === 'US') ? (
+                              <select
+                                name="state"
+                                value={registerFormData.state}
+                                onChange={handleRegisterChange}
+                                required
+                                disabled={!registerFormData.country}
+                              >
+                                {(stateProvinceOptions[registerFormData.country] || [{ value: "", label: "Select Country First" }]).map(opt => (
+                                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <input
+                                type="text"
+                                name="state"
+                                placeholder={registerFormData.country ? (t('landingPage.register.stateRegionPlaceholder') || 'Enter state / region') : (t('landingPage.register.selectCountryFirst') || 'Select country first')}
+                                value={registerFormData.state}
+                                onChange={handleRegisterChange}
+                                required
+                                disabled={!registerFormData.country}
+                              />
+                            )}
                           </div>
                         </div>
                       </div>
@@ -2930,7 +3358,7 @@ export default function LandingPage() {
                           </div>
                         </div>
                         <div className="lp-form-group">
-                          <label>{registerFormData.country === 'CA' ? (t('landingPage.register.postalCode') || 'Postal Code') : (t('landingPage.register.zipCode') || 'ZIP Code')}</label>
+                          <label>{registerFormData.country === 'US' ? (t('landingPage.register.zipCode') || 'ZIP Code') : (t('landingPage.register.postalCode') || 'Postal Code')}</label>
                           <div className="lp-input-wrapper">
                             <svg className="lp-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                               <rect x="2" y="4" width="20" height="16" rx="2"/>
@@ -2939,7 +3367,7 @@ export default function LandingPage() {
                             <input
                               type="text"
                               name="zip_code"
-                              placeholder={registerFormData.country === 'CA' ? 'A1A 1A1' : '12345'}
+                              placeholder={registerFormData.country === 'CA' ? 'A1A 1A1' : registerFormData.country === 'US' ? '12345' : t('landingPage.register.postalCodePlaceholder') || 'Postal / ZIP code'}
                               value={registerFormData.zip_code}
                               onChange={handleRegisterChange}
                               required
@@ -2960,12 +3388,37 @@ export default function LandingPage() {
                           <input
                             type="text"
                             name="license_number"
-                            placeholder={t('landingPage.register.licenseNumberPlaceholder')}
+                            placeholder={t('landingPage.register.licenseNumberPlaceholder') || 'NNNN-NNNN-NN'}
                             value={registerFormData.license_number}
                             onChange={handleRegisterChange}
                             required
                           />
                         </div>
+                        {/* RBQ live-check status. Colours + copy driven by
+                            rbqCheck.status. Only shows when the user has typed
+                            something. */}
+                        {rbqCheck.status !== "idle" && rbqCheck.status !== "disabled" && (
+                          <div className={`lp-rbq-status lp-rbq-${rbqCheck.status}`}>
+                            {rbqCheck.status === "checking" && (
+                              <span>⏳ {tf('landingPage.register.rbqChecking', 'Checking RBQ registry…')}</span>
+                            )}
+                            {rbqCheck.status === "bad-format" && (
+                              <span>⚠ {tf('landingPage.register.rbqBadFormat', 'RBQ licences are 10 digits (NNNN-NNNN-NN).')}</span>
+                            )}
+                            {rbqCheck.status === "valid" && (
+                              <span>✓ {tf('landingPage.register.rbqValid', 'RBQ verified')}{rbqCheck.holderName ? ` — ${rbqCheck.holderName}` : ''}</span>
+                            )}
+                            {rbqCheck.status === "restricted" && (
+                              <span>⚠ {tf('landingPage.register.rbqRestricted', 'This RBQ licence has active restrictions.')}</span>
+                            )}
+                            {rbqCheck.status === "invalid" && (
+                              <span>✗ {tf('landingPage.register.rbqInvalid', 'No such licence in the RBQ registry.')}</span>
+                            )}
+                            {rbqCheck.status === "unavailable" && (
+                              <span>⚠ {tf('landingPage.register.rbqUnavailable', 'RBQ registry unreachable. Please try again.')}</span>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className="lp-form-row">
                         <div className="lp-form-group">
@@ -3326,6 +3779,55 @@ export default function LandingPage() {
                         </div>
                       </div>
                     </>
+                  )}
+
+                  {/* Optional referral code — pre-filled from ?ref=CODE if the
+                      user arrived via someone's share link. Live-validated
+                      against /api/referrals/validate so the UI can show who
+                      referred them + the % they'll save on first payment.
+                      Contractors-only for now (matches backend attribution
+                      role gate) since the reward is a subscription discount. */}
+                  {selectedRole === 'entrepreneur' && (
+                  <div className="lp-form-group">
+                    <label className="lp-form-label" htmlFor="referral_code">
+                      Referral code <span style={{ color: '#94a3b8', fontWeight: 400 }}>(optional)</span>
+                    </label>
+                    <input
+                      id="referral_code"
+                      name="referral_code"
+                      type="text"
+                      className="lp-form-input"
+                      placeholder="e.g. ABC12345"
+                      value={registerFormData.referral_code}
+                      onChange={(e) => setRegisterFormData({
+                        ...registerFormData,
+                        referral_code: e.target.value.toUpperCase().replace(/\s+/g, ''),
+                      })}
+                      maxLength={16}
+                      autoComplete="off"
+                      style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                    />
+                    {referralPreview && (() => {
+                      // Three visual states:
+                      //   valid + no warning → green success
+                      //   valid + warning   → amber (attribution will be blocked)
+                      //   invalid           → red
+                      const isWarn = referralPreview.valid && referralPreview.warning;
+                      const color = !referralPreview.valid ? '#dc2626'
+                                  : isWarn                 ? '#b45309'
+                                                            : '#059669';
+                      return (
+                        <div style={{ marginTop: 6, fontSize: 12, color, lineHeight: 1.5 }}>
+                          {!referralPreview.valid
+                            ? `⚠ ${referralPreview.message || 'Invalid code'}`
+                            : isWarn
+                              ? `⚠ ${referralPreview.warning} You can still sign up but the discount won't apply.`
+                              : `✓ Referred by ${referralPreview.referred_by} — you'll save ${referralPreview.referee_discount_percent}% on your first subscription.`
+                          }
+                        </div>
+                      );
+                    })()}
+                  </div>
                   )}
 
                   <div className="lp-form-group lp-form-checkbox">

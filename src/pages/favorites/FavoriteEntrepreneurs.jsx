@@ -31,6 +31,8 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import '../../styles/manager/favoriteentrepreneurs.css';
 import toast from 'react-hot-toast';
 import EntrepreneurProfileModal from '../../components/modal/EntrepreneurProfileModal';
+import InviteToBidModal from '../../components/modal/InviteToBidModal';
+import { Send } from 'lucide-react';
 
 // Helper: returns fallback if t() returns the key itself
 const tx = (t, key, fallback) => { const v = t(key); return v === key ? fallback : v; };
@@ -48,6 +50,13 @@ const FavoriteEntrepreneurs = () => {
   const [notesText, setNotesText] = useState('');
   const [confirmModal, setConfirmModal] = useState(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
+
+  // Invite-to-bid state — same shared modal used in the specialist directory.
+  // `inviteTarget` holds {user_id, display_name} while the modal is open.
+  // `invitedIds` toggles the button label from "Invite to Bid" to
+  // "Invited · Invite to another job" after a successful send this session.
+  const [inviteTarget, setInviteTarget] = useState(null);
+  const [invitedIds, setInvitedIds] = useState(() => new Set());
   const [selectedProfile, setSelectedProfile] = useState(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
@@ -616,12 +625,29 @@ const FavoriteEntrepreneurs = () => {
 
                 {/* Specializations + Category */}
                 <div className="fav-category-section">
-                  {/* Contractor's specializations */}
+                  {/* Contractor's specializations — capped at 5 so profiles
+                      like the "all-trades" ones don't balloon the card into a
+                      wall of chips. Remainder rolls up into a +N pill. */}
                   {favorite.specializations && favorite.specializations.length > 0 && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem', marginBottom: '0.5rem' }}>
-                      {favorite.specializations.map((spec, si) => (
+                      {favorite.specializations.slice(0, 5).map((spec, si) => (
                         <span key={si} style={{ fontSize: '0.6875rem', padding: '2px 8px', background: '#f3f4f6', color: '#6b7280', borderRadius: '4px', fontWeight: 500 }}>{spec}</span>
                       ))}
+                      {favorite.specializations.length > 5 && (
+                        <button
+                          type="button"
+                          onClick={() => handleViewProfile(favorite)}
+                          title={favorite.specializations.slice(5).join(', ')}
+                          style={{
+                            fontSize: '0.6875rem', padding: '2px 8px',
+                            background: '#eef4ff', color: '#1e40af',
+                            borderRadius: '4px', fontWeight: 600,
+                            border: 'none', cursor: 'pointer',
+                          }}
+                        >
+                          +{favorite.specializations.length - 5} more
+                        </button>
+                      )}
                     </div>
                   )}
                   {/* PM's category label */}
@@ -707,31 +733,47 @@ const FavoriteEntrepreneurs = () => {
                   )}
                 </div>
 
-                {/* Card Actions */}
+                {/* Card Actions — Invite to Bid is the primary action so it
+                    sits full-width on top. Secondary actions (Message,
+                    History, Details) share a row below with equal width so
+                    the labels don't wrap. */}
                 <div className="fav-card-actions">
                   <button
-                    className={`fav-action-btn ${favorite.bid_status === 'approved' ? 'primary' : 'disabled'}`}
-                    onClick={() => handleMessage(favorite)}
-                    disabled={favorite.bid_status !== 'approved'}
-                    title={favorite.bid_status === 'approved' ? t('favorites.sendMessage') : t('favorites.approveFirst')}
+                    className="fav-action-btn primary fav-action-primary-full"
+                    onClick={() => setInviteTarget({
+                      user_id: favorite.user_id,
+                      display_name: favorite.company_name || `${favorite.first_name || ''} ${favorite.last_name || ''}`.trim(),
+                    })}
+                    title="Invite this contractor to bid on one of your jobs"
                   >
-                    <MessageCircle size={14} />
-                    <span>{t('favorites.message')}</span>
+                    <Send size={14} />
+                    <span>{invitedIds.has(favorite.user_id) ? 'Invited · Invite again' : 'Invite to Bid'}</span>
                   </button>
-                  <button
-                    className="fav-action-btn secondary"
-                    onClick={() => handleViewHistory(favorite)}
-                  >
-                    <History size={14} />
-                    <span>{t('favorites.history')}</span>
-                  </button>
-                  <button
-                    className="fav-details-btn"
-                    onClick={() => handleViewProfile(favorite)}
-                  >
-                    {t('favorites.details')}
-                    <ChevronRight size={14} />
-                  </button>
+                  <div className="fav-action-secondary-row">
+                    <button
+                      className={`fav-action-btn ${favorite.bid_status === 'approved' ? 'secondary' : 'disabled'}`}
+                      onClick={() => handleMessage(favorite)}
+                      disabled={favorite.bid_status !== 'approved'}
+                      title={favorite.bid_status === 'approved' ? t('favorites.sendMessage') : t('favorites.approveFirst')}
+                    >
+                      <MessageCircle size={14} />
+                      <span>{t('favorites.message')}</span>
+                    </button>
+                    <button
+                      className="fav-action-btn secondary"
+                      onClick={() => handleViewHistory(favorite)}
+                    >
+                      <History size={14} />
+                      <span>{t('favorites.history')}</span>
+                    </button>
+                    <button
+                      className="fav-action-btn secondary"
+                      onClick={() => handleViewProfile(favorite)}
+                    >
+                      <span>{t('favorites.details')}</span>
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -833,6 +875,13 @@ const FavoriteEntrepreneurs = () => {
         isOpen={showProfileModal}
         onClose={() => setShowProfileModal(false)}
         profile={selectedProfile}
+      />
+
+      {/* Shared Invite-to-Bid picker — same modal used on /find-contractors. */}
+      <InviteToBidModal
+        contractor={inviteTarget}
+        onClose={() => setInviteTarget(null)}
+        onInvited={(userId) => setInvitedIds((prev) => new Set(prev).add(userId))}
       />
     </div>
   );

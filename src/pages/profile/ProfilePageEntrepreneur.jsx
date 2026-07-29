@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Star, CheckCircle, Award, Briefcase, MapPin, Calendar, Mail, Phone, LogOut,
   MessageSquare, User, Upload, Camera, X, Crown, Check, Zap, Shield, Activity,
   DollarSign, FileText, ArrowUpCircle, AlertCircle, Lock, Eye, EyeOff, Key,
-  BarChart3, Menu, Edit, ChevronDown, ChevronUp, Clock, Building, Receipt, Unlock, Settings, Globe, Bell
+  BarChart3, Menu, Edit, ChevronDown, ChevronUp, Clock, Building, Receipt, Unlock, Settings, Globe, Bell,
+  ExternalLink
 } from 'lucide-react';
+import ReferAndEarnCard from '../../components/ReferAndEarnCard';
 import Nav from "../../components/Nav";
 import '../../styles/entrepreneur/profilepageentrepreneur-modern.css';
 import '../../styles/entrepreneur/subscriptionpage.css';
@@ -99,7 +101,13 @@ function ProfilePageEntrepreneur() {
     address: '',
     phone: '',
     email: '',
-    specializations: []
+    specializations: [],
+    // Public specialist directory opt-in. Default false — nobody appears in
+    // /find-contractors until they explicitly toggle it on.
+    showcase_enabled: false,
+    // Narrative fields — optional; empty string = "no value" (backend stores NULL).
+    bio: '',
+    website: '',
   });
 
   // Tab labels for mobile header
@@ -346,6 +354,84 @@ function ProfilePageEntrepreneur() {
 
   const [otherSpecialization, setOtherSpecialization] = useState('');
 
+  // Portfolio uploader state — lives in the Edit modal, but backed by its
+  // own endpoints (POST/DELETE /api/users/entrepreneur-profile/portfolio),
+  // so uploads persist independently of the profile PUT.
+  const [portfolioPhotos, setPortfolioPhotos] = useState([]);
+  const [isUploadingPortfolio, setIsUploadingPortfolio] = useState(false);
+  const portfolioFileRef = useRef(null);
+
+  const handlePortfolioUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error(t('profileEntrepreneur.selectValidImage') || 'Please choose an image file.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(t('profileEntrepreneur.imageSizeExceed') || 'Image must be under 5MB.');
+      return;
+    }
+    setIsUploadingPortfolio(true);
+    try {
+      const stored = localStorage.getItem('userProfile');
+      const user = stored ? JSON.parse(stored) : null;
+      if (!user?.token) throw new Error('Not authenticated');
+      const fd = new FormData();
+      // Multer middleware is `.single('image')` — the field name MUST be
+      // 'image' or req.file will be undefined and the upload 400s.
+      fd.append('image', file);
+      const resp = await fetch(
+        `${API_BASE_URL}/api/users/entrepreneur-profile/portfolio`,
+        { method: 'POST', headers: { Authorization: `Bearer ${user.token}` }, body: fd }
+      );
+      if (!resp.ok) {
+        const body = await resp.json().catch(() => ({}));
+        throw new Error(body.message || `Upload failed (${resp.status})`);
+      }
+      const data = await resp.json();
+      if (Array.isArray(data.portfolio)) {
+        setPortfolioPhotos(data.portfolio);
+      } else {
+        setPortfolioPhotos((prev) => [...prev, data.photo || data]);
+      }
+      invalidate.invalidateProfile();
+      toast.success('Portfolio photo added.');
+    } catch (err) {
+      console.error('Portfolio upload error:', err);
+      toast.error(err.message || 'Failed to upload photo.');
+    } finally {
+      setIsUploadingPortfolio(false);
+      if (portfolioFileRef.current) portfolioFileRef.current.value = '';
+    }
+  };
+
+  const handlePortfolioDelete = async (index) => {
+    try {
+      const stored = localStorage.getItem('userProfile');
+      const user = stored ? JSON.parse(stored) : null;
+      if (!user?.token) throw new Error('Not authenticated');
+      const resp = await fetch(
+        `${API_BASE_URL}/api/users/entrepreneur-profile/portfolio/${index}`,
+        { method: 'DELETE', headers: { Authorization: `Bearer ${user.token}` } }
+      );
+      if (!resp.ok) {
+        const body = await resp.json().catch(() => ({}));
+        throw new Error(body.message || `Delete failed (${resp.status})`);
+      }
+      const data = await resp.json();
+      if (Array.isArray(data.portfolio)) {
+        setPortfolioPhotos(data.portfolio);
+      } else {
+        setPortfolioPhotos((prev) => prev.filter((_, i) => i !== index));
+      }
+      invalidate.invalidateProfile();
+    } catch (err) {
+      console.error('Portfolio delete error:', err);
+      toast.error(err.message || 'Failed to remove photo.');
+    }
+  };
+
   useEffect(() => {
     if (isEditModalOpen) {
       const knownSpecs = profile.specializations?.filter(s => specializationOptions.includes(s)) || [];
@@ -358,9 +444,13 @@ function ProfilePageEntrepreneur() {
         address: profile.address,
         phone: profile.phone,
         email: profile.email,
-        specializations: knownSpecs
+        specializations: knownSpecs,
+        showcase_enabled: profile.showcase_enabled ?? profile.showcaseEnabled ?? false,
+        bio: profile.bio ?? '',
+        website: profile.website ?? '',
       });
       setOtherSpecialization(customSpecs.join(', '));
+      setPortfolioPhotos(Array.isArray(profile.portfolio) ? profile.portfolio : []);
     }
   }, [isEditModalOpen, profile]);
 
@@ -464,7 +554,10 @@ function ProfilePageEntrepreneur() {
             specializations: [
               ...formData.specializations,
               ...otherSpecialization.split(',').map(s => s.trim()).filter(s => s.length > 0)
-            ]
+            ],
+            showcase_enabled: !!formData.showcase_enabled,
+            bio: formData.bio || '',
+            website: formData.website || '',
           })
         })
 
@@ -1080,6 +1173,44 @@ function ProfilePageEntrepreneur() {
                   </div>
                 </div>
 
+                {/* About & Website — visible only when the contractor has
+                    filled at least one. Read-only preview of what the public
+                    profile modal shows. */}
+                {(profile.bio || profile.website) && (
+                  <div className="ep-info-section">
+                    <h4 className="ep-info-section-title">About</h4>
+                    {profile.bio && (
+                      <p style={{
+                        margin: '0 0 12px', color: '#334155',
+                        fontSize: 14, lineHeight: 1.6,
+                        whiteSpace: 'pre-wrap',
+                        padding: '12px 14px',
+                        background: '#f8fafc', border: '1px solid #e5e7eb',
+                        borderRadius: 10,
+                      }}>
+                        {profile.bio}
+                      </p>
+                    )}
+                    {profile.website && (
+                      <a
+                        href={/^https?:\/\//i.test(profile.website) ? profile.website : `https://${profile.website}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6,
+                          padding: '8px 14px',
+                          background: '#fff', border: '1px solid #14919B',
+                          color: '#14919B', borderRadius: 8,
+                          fontWeight: 600, fontSize: 13, textDecoration: 'none',
+                        }}
+                      >
+                        <ExternalLink size={13} />
+                        {profile.website.replace(/^https?:\/\//i, '')}
+                      </a>
+                    )}
+                  </div>
+                )}
+
                 {/* Contact Information */}
                 <div className="ep-info-section">
                   <h4 className="ep-info-section-title">{t('profileEntrepreneur.contactInformation')}</h4>
@@ -1138,6 +1269,10 @@ function ProfilePageEntrepreneur() {
                     <p>{t('profileEntrepreneur.manageSubscriptionPlan')}</p>
                   </div>
                 </div>
+
+                {/* Refer & Earn — sits at the top of the subscription tab
+                    since the reward is a discount on their next renewal. */}
+                <ReferAndEarnCard />
 
                 {/* No Subscription State */}
                 {!userProfile?.entrepProfile?.subscription?.hasSubscription ? (
@@ -1242,7 +1377,15 @@ function ProfilePageEntrepreneur() {
                               <h3 className="banner-title">
                                 {subscription.cancel_at_period_end
                                   ? t('profileEntrepreneur.trialCancelled') || 'Trial Cancelled'
-                                  : t('profileEntrepreneur.premiumTrialActive')}
+                                  : (() => {
+                                      // Show the ACTUAL plan the user is on trial for — not always Premium.
+                                      const p = subscription.plan_type;
+                                      const planLabel =
+                                        p === "starter" ? (t('subscriptionModal.starterPlan') || 'Starter Plan')
+                                        : p === "basic" ? (t('subscriptionModal.basicPlan') || 'Basic Plan')
+                                        : (t('subscriptionModal.premiumPlan') || 'Premium Plan');
+                                      return `${planLabel} ${t('profileEntrepreneur.trialActive') || 'Trial Active'}`;
+                                    })()}
                               </h3>
                               <div className={`trial-badge ${subscription.cancel_at_period_end ? 'cancelled' : ''}`}>
                                 {subscription.cancel_at_period_end
@@ -2288,6 +2431,224 @@ function ProfilePageEntrepreneur() {
                     className="edit-form-input"
                     placeholder={t('profileEntrepreneur.otherSpecializationPlaceholder')}
                   />
+                </div>
+              </div>
+
+              {/* About / Website — free-form fields shown on the public
+                  profile modal. Optional. Placed above the portfolio + toggle
+                  so contractors see the full "make my listing better" set
+                  together. */}
+              <div
+                style={{
+                  background: '#fff',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: 10,
+                  padding: '14px 16px',
+                  marginBottom: 12,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontWeight: 600, fontSize: 14, color: '#0F223D' }}>
+                  <Edit size={16} />
+                  About & Website
+                </div>
+                <p style={{ margin: '0 0 12px', fontSize: 12, color: '#6b7280', lineHeight: 1.55 }}>
+                  Add a short bio and your website so property managers know who they're hiring.
+                </p>
+
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#0F223D', marginBottom: 4 }}>
+                  Bio
+                </label>
+                <textarea
+                  value={formData.bio || ''}
+                  onChange={(e) => setFormData((p) => ({ ...p, bio: e.target.value }))}
+                  placeholder="Tell property managers about your team, specialties, and what sets you apart…"
+                  rows={4}
+                  maxLength={1000}
+                  style={{
+                    width: '100%', boxSizing: 'border-box',
+                    padding: '10px 12px', border: '1px solid #cbd5e1',
+                    borderRadius: 8, fontSize: 13, fontFamily: 'inherit',
+                    resize: 'vertical', outline: 'none', color: '#0F223D',
+                  }}
+                />
+                <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'right', marginTop: 2, marginBottom: 12 }}>
+                  {(formData.bio || '').length}/1000
+                </div>
+
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#0F223D', marginBottom: 4 }}>
+                  Website
+                </label>
+                <input
+                  type="url"
+                  value={formData.website || ''}
+                  onChange={(e) => setFormData((p) => ({ ...p, website: e.target.value }))}
+                  placeholder="https://your-company.com"
+                  style={{
+                    width: '100%', boxSizing: 'border-box',
+                    padding: '10px 12px', border: '1px solid #cbd5e1',
+                    borderRadius: 8, fontSize: 13, fontFamily: 'inherit',
+                    outline: 'none', color: '#0F223D',
+                  }}
+                />
+              </div>
+
+              {/* Portfolio uploader — required for the specialist directory,
+                  so it lives right above the showcase toggle. Uploads hit
+                  their own endpoints and persist independently of Save. */}
+              <div
+                style={{
+                  background: '#fff',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: 10,
+                  padding: '14px 16px',
+                  marginBottom: 12,
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, fontSize: 14, color: '#0F223D' }}>
+                    <Camera size={16} />
+                    Photo Portfolio
+                  </div>
+                  <span style={{ fontSize: 12, color: '#6b7280' }}>
+                    {portfolioPhotos.length} {portfolioPhotos.length === 1 ? 'photo' : 'photos'}
+                  </span>
+                </div>
+                <p style={{ margin: '0 0 12px', fontSize: 12, color: '#6b7280', lineHeight: 1.55 }}>
+                  Show off your best work. At least one photo is required to appear in the public directory.
+                </p>
+
+                {portfolioPhotos.length > 0 && (
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))',
+                      gap: 8,
+                      marginBottom: 12,
+                    }}
+                  >
+                    {portfolioPhotos.map((p, i) => {
+                      const url = typeof p === 'string' ? p : (p?.url || p?.image_url);
+                      if (!url) return null;
+                      return (
+                        <div key={p?.id || i} style={{ position: 'relative', paddingTop: '100%', borderRadius: 8, overflow: 'hidden', background: '#f1f5f9' }}>
+                          <img
+                            src={url}
+                            alt={`Portfolio ${i + 1}`}
+                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handlePortfolioDelete(i)}
+                            title="Remove"
+                            style={{
+                              position: 'absolute', top: 4, right: 4,
+                              width: 22, height: 22, borderRadius: '50%',
+                              background: 'rgba(15,34,61,0.75)', color: '#fff',
+                              border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <input
+                  ref={portfolioFileRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={handlePortfolioUpload}
+                />
+                <button
+                  type="button"
+                  onClick={() => portfolioFileRef.current?.click()}
+                  disabled={isUploadingPortfolio}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    background: '#14919B', color: '#fff',
+                    border: 'none', borderRadius: 8,
+                    padding: '8px 14px', fontSize: 13, fontWeight: 600,
+                    cursor: isUploadingPortfolio ? 'wait' : 'pointer',
+                    opacity: isUploadingPortfolio ? 0.7 : 1,
+                  }}
+                >
+                  <Upload size={14} />
+                  {isUploadingPortfolio ? 'Uploading…' : (portfolioPhotos.length ? 'Add another photo' : 'Add first photo')}
+                </button>
+              </div>
+
+              {/* Specialist Directory opt-in — controls whether this
+                  contractor appears on the public /find-contractors page.
+                  Default false; toggle here is the ONLY way to appear. */}
+              <div
+                style={{
+                  background: formData.showcase_enabled ? '#ecfeff' : '#f8fafc',
+                  border: `1px solid ${formData.showcase_enabled ? '#67e8f9' : '#e5e7eb'}`,
+                  borderRadius: 10,
+                  padding: '14px 16px',
+                  marginBottom: 16,
+                  display: 'flex',
+                  gap: 14,
+                  alignItems: 'flex-start',
+                }}
+              >
+                <label
+                  htmlFor="showcase-toggle"
+                  style={{ position: 'relative', display: 'inline-block', width: 40, height: 22, flexShrink: 0, cursor: 'pointer' }}
+                >
+                  <input
+                    id="showcase-toggle"
+                    type="checkbox"
+                    checked={!!formData.showcase_enabled}
+                    onChange={(e) => setFormData((p) => ({ ...p, showcase_enabled: e.target.checked }))}
+                    style={{ opacity: 0, width: 0, height: 0 }}
+                  />
+                  <span
+                    style={{
+                      position: 'absolute', inset: 0,
+                      background: formData.showcase_enabled ? '#14919B' : '#cbd5e1',
+                      borderRadius: 22, transition: 'background 0.2s',
+                    }}
+                  />
+                  <span
+                    style={{
+                      position: 'absolute', top: 2,
+                      left: formData.showcase_enabled ? 20 : 2,
+                      width: 18, height: 18, background: '#fff',
+                      borderRadius: '50%', transition: 'left 0.2s',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                    }}
+                  />
+                </label>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <label htmlFor="showcase-toggle" style={{ display: 'block', fontWeight: 600, fontSize: 14, color: '#0F223D', cursor: 'pointer' }}>
+                    Showcase me in the public specialist directory
+                  </label>
+                  <p style={{ margin: '4px 0 0', fontSize: 12, color: '#6b7280', lineHeight: 1.55 }}>
+                    Property managers and residents can browse contractors in the public directory. Only entrepreneurs with at least one portfolio photo are listed.{' '}
+                    <b style={{ color: formData.showcase_enabled ? '#059669' : '#dc2626' }}>
+                      {formData.showcase_enabled ? "You're currently visible." : "You're currently hidden."}
+                    </b>
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => window.open('/find-contractors', '_blank')}
+                    style={{
+                      marginTop: 10,
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      background: '#fff', color: '#0F223D',
+                      border: '1px solid #cbd5e1', borderRadius: 8,
+                      padding: '6px 12px', fontSize: 12, fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <ExternalLink size={12} />
+                    Preview the directory
+                  </button>
                 </div>
               </div>
 

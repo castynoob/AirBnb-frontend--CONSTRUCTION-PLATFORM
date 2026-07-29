@@ -26,6 +26,7 @@ import {
   Plus,
   Minus,
   Maximize2,
+  Minimize2,
   Navigation,
   Target,
   ChevronLeft,
@@ -48,6 +49,8 @@ import toast from "react-hot-toast"
 import { useLanguage } from "../../contexts/LanguageContext"
 import Nav from "../../components/Nav"
 import "../../styles/entrepreneur/homepageentrepreneur.css"
+import { isDemoModeOn, subscribeDemoMode } from "../../utils/demoMode"
+import { demoProperties, demoJobs } from "../../data/demoTenders"
 import SubscriptionModal from "../../components/SubcriptionModal"
 import UnlockBudgetForm from '../../components/UnlockBudgetForm'
 import NotificationBell from '../../components/NotificationBell'
@@ -266,30 +269,104 @@ function HomePageEntrepreneur() {
   const [propertyModalOpen, setPropertyModalOpen] = useState(false)
   const [isMapFullscreen, setIsMapFullscreen] = useState(false)
 
+  // Desktop view mode — "split" (current default: map + right panel side by
+  // side) or "list" (map hidden, panel expanded to full width). Lets contractors
+  // browse open jobs like a marketplace feed instead of panning the map.
+  const [desktopView, setDesktopView] = useState("split")
+
   // Collapsible floating panel state (collapsed by default)
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(true)
+  // Expanded ("full view") panel state — widens the panel to roughly half the
+  // viewport so job details are more readable without leaving the map behind.
+  const [isPanelExpanded, setIsPanelExpanded] = useState(false)
+  // User-driven width from the left-edge drag handle. When non-null this
+  // overrides both the compact default AND the .eh-panel-expanded preset —
+  // hitting the expand toggle resets to null so the presets take over again.
+  const [panelWidth, setPanelWidth] = useState(null)
+  // Ref set to true while a drag is in progress — lets the CSS suppress the
+  // width transition (otherwise it fights the pointer position on every frame).
+  const isResizingRef = useRef(false)
+
+  // "All properties" panel supports two views: a flat list of property cards,
+  // or an accordion grouped by property-manager company. Companies view is
+  // primary — the stakeholder ask was to make company-posted jobs easier to
+  // browse than the current map+dropdown UX. Users can flip to the flat list.
+  const [panelListView, setPanelListView] = useState("companies")
+  // Which company accordions are open. Set of company display names.
+  const [expandedCompanies, setExpandedCompanies] = useState(() => new Set())
+  const toggleCompany = (name) => {
+    setExpandedCompanies((prev) => {
+      const next = new Set(prev)
+      if (next.has(name)) next.delete(name)
+      else next.add(name)
+      return next
+    })
+  }
+
+  // Drag-to-resize: capture starting X + width on mousedown, then track the
+  // pointer and translate horizontal delta into a new panel width. Panel is
+  // anchored to the right edge, so dragging left grows it.
+  const handleResizeStart = useCallback((e) => {
+    e.preventDefault()
+    const startX = e.clientX
+    const startWidth = floatingPanelRef.current?.getBoundingClientRect().width ?? 380
+    isResizingRef.current = true
+    document.body.style.cursor = "col-resize"
+    document.body.style.userSelect = "none"
+
+    const MIN = 320
+    const MAX = Math.min(window.innerWidth - 240, 1100) // leave room for sidebar
+
+    const onMove = (ev) => {
+      const next = Math.max(MIN, Math.min(MAX, startWidth + (startX - ev.clientX)))
+      setPanelWidth(next)
+    }
+    const onUp = () => {
+      isResizingRef.current = false
+      document.body.style.cursor = ""
+      document.body.style.userSelect = ""
+      document.removeEventListener("mousemove", onMove)
+      document.removeEventListener("mouseup", onUp)
+    }
+    document.addEventListener("mousemove", onMove)
+    document.addEventListener("mouseup", onUp)
+  }, [])
 
   // Skill match filter state
   const [skillMatchEnabled, setSkillMatchEnabled] = useState(false)
   const [entrepreneurSpecializations, setEntrepreneurSpecializations] = useState([])
 
-  // data variables — seeded from TanStack Query cache
+  // data variables — seeded from TanStack Query cache, OR from the demo
+  // dataset when demo mode is on. The `demoMode` state below is watched by
+  // subscribeDemoMode so toggling from the admin panel updates this tab live.
   const [properties, setProperties] = useState([])
   const [jobs, setJobs] = useState([])
   const [jobsLoading, setJobsLoading] = useState(true)
   const [submittedBids, setSubmittedBids] = useState([])
+  const [demoMode, setDemoMode] = useState(() => isDemoModeOn())
 
-  // Sync query cache → local state (enables instant data on revisit)
+  // Subscribe once — the flag can flip from the admin dashboard, another tab,
+  // or a keyboard shortcut we may add later. subscribeDemoMode handles both
+  // same-tab (custom event) and cross-tab (native storage event) signals.
   useEffect(() => {
+    const unsub = subscribeDemoMode(setDemoMode)
+    return unsub
+  }, [])
+
+  // Sync query cache → local state (enables instant data on revisit).
+  // When demo mode is on, we ignore the cache and use the simulated set.
+  useEffect(() => {
+    if (demoMode) { setProperties(demoProperties); return }
     if (cachedProperties.length > 0) setProperties(cachedProperties)
-  }, [cachedProperties])
+  }, [cachedProperties, demoMode])
 
   useEffect(() => {
+    if (demoMode) { setJobs(demoJobs); setJobsLoading(false); return }
     if (cachedJobs.length > 0) {
       setJobs(cachedJobs)
       setJobsLoading(false)
     }
-  }, [cachedJobs])
+  }, [cachedJobs, demoMode])
 
   useEffect(() => {
     if (cachedBids.length > 0) setSubmittedBids(cachedBids)
@@ -333,6 +410,8 @@ function HomePageEntrepreneur() {
     bidCount: "",
     propertyTypes: [],
     propertySizes: [],
+    budgetMin: "",
+    budgetMax: "",
   }
   const [filters, setFilters] = useState(initialFilters) // Pending filters (in modal)
   const [appliedFilters, setAppliedFilters] = useState(initialFilters) // Actually applied filters
@@ -530,6 +609,25 @@ function HomePageEntrepreneur() {
       const matchesBidCount =
         !appliedFilters.bidCount || propertyJobs.some((job) => job.bidCount <= Number.parseInt(appliedFilters.bidCount))
 
+      // Budget range filter — property matches if it has ANY open job whose
+      // budget range overlaps with the entrepreneur's target range.
+      // Job budget is treated as an interval [budget_min, budget_max]; overlap
+      // is: jobMax >= filterMin AND jobMin <= filterMax (either endpoint open).
+      const matchesBudget = (() => {
+        const fMin = appliedFilters.budgetMin === "" ? null : Number(appliedFilters.budgetMin)
+        const fMax = appliedFilters.budgetMax === "" ? null : Number(appliedFilters.budgetMax)
+        if (fMin == null && fMax == null) return true
+        return propertyJobs.some((job) => {
+          const jMin = job.budget_min == null ? null : Number(job.budget_min)
+          const jMax = job.budget_max == null ? null : Number(job.budget_max)
+          // Skip jobs with no budget info at all — they can't be matched.
+          if (jMin == null && jMax == null) return false
+          const passesMin = fMin == null || (jMax ?? jMin) >= fMin
+          const passesMax = fMax == null || (jMin ?? jMax) <= fMax
+          return passesMin && passesMax
+        })
+      })()
+
       // Skill match filter - only show properties with jobs matching entrepreneur's specializations
       const matchesSkills = !skillMatchEnabled || entrepreneurSpecializations.length === 0 ||
         propertyJobs.some((job) =>
@@ -549,6 +647,7 @@ function HomePageEntrepreneur() {
         matchesUrgency &&
         matchesDeadline &&
         matchesBidCount &&
+        matchesBudget &&
         matchesSkills
       )
     })
@@ -562,6 +661,40 @@ function HomePageEntrepreneur() {
 
     return sorted
   }, [properties, jobs, searchTerm, appliedFilters, radiusFilter, calculateDistance, skillMatchEnabled, entrepreneurSpecializations])
+
+  // Group filtered properties by manager company for the "Companies" view.
+  // Companies with zero open jobs are dropped — this is a bidding platform,
+  // empty companies are noise. Companies are sorted by total open-job count
+  // descending so the busiest posters float to the top.
+  //
+  // NOTE: using a plain object as the map, NOT `new Map()`. The `Map` name in
+  // this module is shadowed by the lucide-react Map icon import — calling
+  // `new Map()` throws "Map is not a constructor" at runtime.
+  const propertiesByCompany = useMemo(() => {
+    const groups = Object.create(null)
+    for (const property of filteredProperties) {
+      const key = property.managerCompanyName || "Independent"
+      let group = groups[key]
+      if (!group) {
+        group = {
+          companyName: key,
+          managerImage: property.managerImage || null,
+          managerUserId: property.managerUserId || null,
+          properties: [],
+          totalOpenJobs: 0,
+        }
+        groups[key] = group
+      }
+      const openJobs = jobs.filter(
+        (j) => j.property_id === property.id && j.status?.toLowerCase() === "open"
+      ).length
+      group.properties.push({ property, openJobs })
+      group.totalOpenJobs += openJobs
+    }
+    return Object.values(groups)
+      .filter((g) => g.totalOpenJobs > 0)
+      .sort((a, b) => b.totalOpenJobs - a.totalOpenJobs)
+  }, [filteredProperties, jobs])
 
   // Get search results for dropdown — properties and jobs
   const searchResults = useMemo(() => {
@@ -604,7 +737,9 @@ function HomePageEntrepreneur() {
       filters.deadlineDate !== "" ||
       filters.bidCount !== "" ||
       filters.propertyTypes.length > 0 ||
-      filters.propertySizes.length > 0
+      filters.propertySizes.length > 0 ||
+      filters.budgetMin !== "" ||
+      filters.budgetMax !== ""
     )
   }, [filters])
 
@@ -620,6 +755,7 @@ function HomePageEntrepreneur() {
     if (appliedFilters.bidCount !== "") count++
     if (appliedFilters.propertyTypes.length > 0) count++
     if (appliedFilters.propertySizes.length > 0) count++
+    if (appliedFilters.budgetMin !== "" || appliedFilters.budgetMax !== "") count++
     return count
   }, [appliedFilters])
 
@@ -830,16 +966,11 @@ function HomePageEntrepreneur() {
     queryClient.invalidateQueries({ queryKey: ['entrepreneur', 'bids'] })
   }
 
-  // Handle viewing a bid
+  // Handle viewing a bid — routes to the full bid page instead of the compact
+  // modal. Same page contractors use to submit; detects the existing bid and
+  // shows "Your Submitted Bid" with edit/delete actions in the right column.
   const handleViewBid = (jobId) => {
-    const bid = getBidForJob(jobId)
-    if (bid) {
-      setSelectedBidToView(bid)
-      setEditBidAmount(bid.amount.toString())
-      setEditBidMessage(bid.message || "")
-      setIsEditingBid(false)
-      setViewBidModalOpen(true)
-    }
+    navigate(`/bid-submit/${jobId}`)
   }
 
   // Handle updating a bid
@@ -958,6 +1089,27 @@ function HomePageEntrepreneur() {
       return "eh-urgency-urgent"
     }
     return "eh-urgency-planned"
+  }
+
+  // Shorten long urgency labels so the chip stays a compact square.
+  // Match on the raw DB value (English enum) — the badge doesn't run through
+  // i18n, so the same map applies whether the UI is English or French.
+  const URGENCY_SHORT = {
+    urgent: "URG",
+    medium: "MED",
+  }
+  const getUrgencyLabel = (urgency) => {
+    if (!urgency) return ""
+    const key = String(urgency).toLowerCase()
+    return URGENCY_SHORT[key] || urgency
+  }
+
+  // `t()` returns the key itself when the translation is missing, which
+  // defeats the usual `t('...') || 'fallback'` idiom. `tf` fixes that: if the
+  // returned value equals the key, we use the English fallback instead.
+  const tf = (key, fallback) => {
+    const v = t(key)
+    return v === key ? fallback : v
   }
 
   const toggleDescExpand = (jobId, e) => {
@@ -1332,8 +1484,11 @@ function HomePageEntrepreneur() {
     <div className="eh-homepage-container eh-fullscreen-map-layout">
       <Nav user={userProfile} />
 
-      {/* Full Screen Map Background */}
-      <div className="eh-fullscreen-map">
+      {/* Full Screen Map Background — hidden when desktop list mode is on. */}
+      <div
+        className="eh-fullscreen-map"
+        style={desktopView === "list" ? { display: "none" } : undefined}
+      >
         {userLocation ? (
           <MapContainer
             ref={mapRef}
@@ -1406,8 +1561,11 @@ function HomePageEntrepreneur() {
         )}
       </div>
 
-      {/* Map Zoom Controls */}
-      <div className={`eh-map-zoom-controls ${isPanelCollapsed ? "eh-panel-collapsed" : ""}`}>
+      {/* Map Zoom Controls — pointless when the map isn't visible. */}
+      <div
+        className={`eh-map-zoom-controls ${isPanelCollapsed ? "eh-panel-collapsed" : ""}`}
+        style={desktopView === "list" ? { display: "none" } : undefined}
+      >
         <button
           className="eh-map-zoom-btn"
           onClick={handleZoomIn}
@@ -1442,7 +1600,10 @@ function HomePageEntrepreneur() {
       )}
 
       {/* Floating Header */}
-      <div className="eh-floating-header">
+      <div
+        className="eh-floating-header"
+        style={desktopView === "list" ? { right: "1.5rem" } : undefined}
+      >
         <NotificationBell />
 
         <div className="eh-search-box-fullwidth" ref={searchContainerRef}>
@@ -1603,6 +1764,53 @@ function HomePageEntrepreneur() {
           <span className="eh-filter-btn-text">{t('entrepreneurHome.filters')}</span>
           {activeFiltersCount > 0 && <span className="eh-filter-count">{activeFiltersCount}</span>}
         </button>
+
+        {/* Desktop-only view toggle: split (map + right panel) vs list (full
+            width feed, map hidden). Hidden on mobile (there's already a
+            map/list toggle at the bottom for the mobile flow). */}
+        <div className="eh-desktop-view-toggle" style={{
+          display: "inline-flex",
+          border: "1px solid #e5e7eb",
+          borderRadius: 8,
+          overflow: "hidden",
+          background: "#fff",
+        }}>
+          <button
+            onClick={() => setDesktopView("split")}
+            title={t('entrepreneurHome.mapView') || 'Map view'}
+            aria-pressed={desktopView === "split"}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              padding: "8px 12px", border: "none", cursor: "pointer",
+              background: desktopView === "split" ? "#00A5A9" : "transparent",
+              color: desktopView === "split" ? "#fff" : "#374151",
+              fontSize: 13, fontWeight: 600,
+            }}
+          >
+            <Map size={16} />
+            <span className="eh-filter-btn-text">{t('entrepreneurHome.map') || 'Map'}</span>
+          </button>
+          <button
+            onClick={() => {
+              setDesktopView("list")
+              // Force the panel out of the "collapsed" default so the feed is
+              // visible the moment the user flips to list mode.
+              setIsPanelCollapsed(false)
+            }}
+            title={t('entrepreneurHome.listView') || 'List view'}
+            aria-pressed={desktopView === "list"}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              padding: "8px 12px", border: "none", cursor: "pointer",
+              background: desktopView === "list" ? "#00A5A9" : "transparent",
+              color: desktopView === "list" ? "#fff" : "#374151",
+              fontSize: 13, fontWeight: 600,
+            }}
+          >
+            <List size={16} />
+            <span className="eh-filter-btn-text">{t('entrepreneurHome.list') || 'List'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Mobile View Toggle */}
@@ -1623,29 +1831,73 @@ function HomePageEntrepreneur() {
         </button>
       </div>
 
-      {/* Floating Panel Toggle Button */}
-      <button
-        className={`eh-panel-toggle-btn ${isPanelCollapsed ? "eh-collapsed" : ""}`}
-        onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
-      >
-        {isPanelCollapsed ? (
-          <>
-            <ChevronLeft size={16} />
-            <span>{t('entrepreneurHome.showPanel')}</span>
-          </>
-        ) : (
-          <>
-            <ChevronRight size={16} />
-            <span>{t('entrepreneurHome.hidePanel')}</span>
-          </>
-        )}
-      </button>
+      {/* Floating Panel Toggle Button — icon-only to minimize UI chrome.
+          When the panel has a custom drag width, override the toggle's `right`
+          inline so it keeps hugging the panel's left edge. Hidden in list
+          mode: the panel IS the whole view there, so a "collapse the panel"
+          affordance is meaningless. */}
+      {desktopView !== "list" && (
+        <button
+          className={`eh-panel-toggle-btn ${isPanelCollapsed ? "eh-collapsed" : ""} ${isPanelExpanded && !isPanelCollapsed ? "eh-panel-expanded-toggle" : ""}`}
+          onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
+          title={isPanelCollapsed ? t('entrepreneurHome.showPanel') : t('entrepreneurHome.hidePanel')}
+          aria-label={isPanelCollapsed ? t('entrepreneurHome.showPanel') : t('entrepreneurHome.hidePanel')}
+          style={panelWidth != null && !isPanelCollapsed ? { right: `calc(${panelWidth}px + 2rem)` } : undefined}
+        >
+          {isPanelCollapsed ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+        </button>
+      )}
 
-      {/* Floating Panel for Jobs/Properties on the Right */}
+      {/* Floating Panel for Jobs/Properties on the Right. When desktop list
+          mode is active, stretch to fill the space between the sidebar (220px)
+          and the right edge. Also push it below the floating header (top
+          1.5rem + header ~4rem) so the two don't overlap. Width is set to
+          `auto` so the left/right offsets alone drive the size. */}
       <div
         ref={floatingPanelRef}
-        className={`eh-floating-panel ${mobileView === "map" ? "eh-mobile-hidden" : ""} ${isPanelCollapsed ? "eh-panel-collapsed" : ""}`}
+        className={`eh-floating-panel ${mobileView === "map" ? "eh-mobile-hidden" : ""} ${isPanelCollapsed ? "eh-panel-collapsed" : ""} ${isPanelExpanded ? "eh-panel-expanded" : ""}`}
+        style={
+          desktopView === "list"
+            ? {
+                top: "6rem",
+                left: "calc(220px + 1.5rem)",
+                right: "1.5rem",
+                bottom: "1.5rem",
+                width: "auto",
+                maxWidth: "none",
+              }
+            : panelWidth != null && !isPanelCollapsed
+              ? { width: `${panelWidth}px` }
+              : undefined
+        }
       >
+        {/* Left-edge drag handle. Only offered in expanded/full-view mode —
+            in compact mode the panel keeps its fixed 380px width. */}
+        {!isPanelCollapsed && isPanelExpanded && (
+          <div
+            className="eh-panel-resize-handle"
+            onMouseDown={handleResizeStart}
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize panel"
+            title="Drag to resize"
+          />
+        )}
+        {/* Expand / Restore panel size — top-right corner floating action.
+            Clicking it also clears any manual drag width so the preset kicks in. */}
+        {!isPanelCollapsed && (
+          <button
+            className="eh-panel-expand-btn"
+            onClick={() => {
+              setPanelWidth(null)
+              setIsPanelExpanded((v) => !v)
+            }}
+            title={isPanelExpanded ? t('entrepreneurHome.restorePanel') || 'Restore panel size' : t('entrepreneurHome.expandPanel') || 'Expand to full view'}
+            aria-label={isPanelExpanded ? 'Restore panel size' : 'Expand to full view'}
+          >
+            {isPanelExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+          </button>
+        )}
             {selectedProperty ? (
               <div className="eh-property-details">
                 {/* Back to All Properties Button */}
@@ -1665,17 +1917,14 @@ function HomePageEntrepreneur() {
                     <div className="eh-header-text">
                       <h2 className="eh-property-name">{selectedProperty.name}</h2>
                       <p className="eh-property-address">{selectedProperty.address}</p>
-                      <div className="eh-property-meta">
-                        <span className="eh-meta-badge">{selectedProperty.propertyType}</span>
-                      </div>
                     </div>
                   </div>
-                </div>
-
-                <div className="eh-stats-grid">
-                  <div className="eh-stat-card eh-highlight">
-                    <span className="eh-stat-label">{t('entrepreneurHome.openJobs')}</span>
-                    <span className="eh-stat-value">{getPropertyOpenJobsCount(selectedProperty.id)}</span>
+                  {/* Full-width chip row — grid so both cells are exactly 50/50. */}
+                  <div className="eh-property-meta">
+                    <span className="eh-meta-badge eh-meta-badge-jobs">
+                      {getPropertyOpenJobsCount(selectedProperty.id)} {t('entrepreneurHome.openJobs')}
+                    </span>
+                    <span className="eh-meta-badge">{selectedProperty.propertyType}</span>
                   </div>
                 </div>
 
@@ -1747,12 +1996,8 @@ function HomePageEntrepreneur() {
                           </div>
                           <span>{t('entrepreneurHome.submitBids')}</span>
                         </div>
-                        <div className="eh-subscribe-feature-card">
-                          <div className="eh-feature-icon">
-                            <DollarSign size={18} />
-                          </div>
-                          <span>{t('entrepreneurHome.viewBudgets')}</span>
-                        </div>
+                        {/* "View budgets" removed — budgets remain a per-job $19.99
+                            paywall for everyone, not a subscription perk. */}
                         <div className="eh-subscribe-feature-card">
                           <div className="eh-feature-icon">
                             <MessageSquare size={18} />
@@ -1782,12 +2027,9 @@ function HomePageEntrepreneur() {
                   </div>
                 ) : (
                   <div className="eh-section-tabs">
-                    <div className="eh-section-header">
-                      <h3>{t('entrepreneurHome.availableJobsForBidding')}</h3>
-                      {!jobsLoading && (
-                        <span className="eh-job-count-badge">{getPropertyOpenJobs(selectedProperty.id).length} {t('entrepreneurHome.jobs')}</span>
-                      )}
-                    </div>
+                    {/* Section header intentionally omitted — the mockup shows job cards
+                        appearing directly after the manager card + divider, and the job
+                        count is already surfaced by the OPEN JOBS chip in the header. */}
                     <div className="eh-jobs-list">
                       {jobsLoading ? (
                         <div className="eh-jobs-loading">
@@ -1803,7 +2045,7 @@ function HomePageEntrepreneur() {
                             <div key={job.id} className="eh-job-card">
                               <div className="eh-job-card-header">
                                 <span className={`eh-urgency-badge ${getUrgencyClass(job.urgency)}`}>
-                                  {job.urgency}
+                                  {getUrgencyLabel(job.urgency)}
                                 </span>
                                 <div className="eh-job-title-section">
                                   <h4 className="eh-job-title">{job.title}</h4>
@@ -1905,48 +2147,190 @@ function HomePageEntrepreneur() {
               <div className="eh-all-properties-list">
                 <div className="eh-list-header">
                   <h3>{t('entrepreneurHome.allProperties')}</h3>
-                  <span className="eh-property-count-badge">{filteredProperties.length} {t('entrepreneurHome.properties')}</span>
+                  <span className="eh-property-count-badge">
+                    {panelListView === "companies"
+                      ? `${propertiesByCompany.length} ${tf(
+                          propertiesByCompany.length === 1 ? 'entrepreneurHome.company' : 'entrepreneurHome.companies',
+                          propertiesByCompany.length === 1 ? 'company' : 'companies'
+                        )}`
+                      : `${filteredProperties.length} ${tf(
+                          filteredProperties.length === 1 ? 'entrepreneurHome.property' : 'entrepreneurHome.properties',
+                          filteredProperties.length === 1 ? 'property' : 'properties'
+                        )}`}
+                  </span>
                 </div>
 
-                <div className="eh-properties-grid">
-                  {filteredProperties.map((property) => {
-                    const jobCount = getPropertyOpenJobsCount(property.id)
-                    return (
-                      <div
-                        key={property.id}
-                        className={`eh-property-list-card ${jobCount === 0 ? 'eh-property-no-jobs' : ''}`}
-                        onClick={() => handlePropertyClick(property)}
-                      >
-                        <div className="eh-property-card-header">
-                          <div className="eh-property-icon">
-                            <Building2 size={24} />
-                          </div>
-                          <div className="eh-property-info">
-                            <h4 className="eh-property-card-name">{property.name}</h4>
-                            <p className="eh-property-card-address">{property.address}</p>
-                            <span className="eh-property-type-badge">{property.propertyType}</span>
-                          </div>
-                        </div>
-                        <div className="eh-property-card-footer">
-                          <div className="eh-job-count-indicator">
-                            <Hammer size={16} />
-                            <span>{jobCount} {t('entrepreneurHome.openJobs')}</span>
-                          </div>
-                          <div className="eh-property-card-actions">
-                            <button
-                              className="eh-view-location-btn"
-                              onClick={(e) => handleViewLocation(property, e)}
-                              title={t('entrepreneurHome.viewLocation')}
-                            >
-                              <MapPin size={16} />
-                            </button>
-                            <button className="eh-view-jobs-btn">{t('entrepreneurHome.viewJobs')}</button>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
+                {/* View-mode toggle: Companies (grouped) vs Properties (flat). */}
+                <div className="eh-panel-view-toggle" role="tablist">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={panelListView === "companies"}
+                    className={`eh-panel-view-tab ${panelListView === "companies" ? "eh-active" : ""}`}
+                    onClick={() => setPanelListView("companies")}
+                  >
+                    {tf('entrepreneurHome.viewCompanies', 'Companies')}
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={panelListView === "properties"}
+                    className={`eh-panel-view-tab ${panelListView === "properties" ? "eh-active" : ""}`}
+                    onClick={() => setPanelListView("properties")}
+                  >
+                    {tf('entrepreneurHome.viewProperties', 'Properties')}
+                  </button>
                 </div>
+
+                {panelListView === "companies" ? (
+                  <div className="eh-companies-list">
+                    {propertiesByCompany.length === 0 ? (
+                      <div className="eh-no-jobs">
+                        <Hammer size={36} color="var(--color-border-divider)" />
+                        <p className="eh-no-jobs-title">
+                          {tf('entrepreneurHome.noCompaniesFound', 'No companies with open jobs')}
+                        </p>
+                      </div>
+                    ) : (
+                      propertiesByCompany.map((group) => {
+                        const isOpen = expandedCompanies.has(group.companyName)
+                        return (
+                          <div key={group.companyName} className={`eh-company-group ${isOpen ? "eh-open" : ""}`}>
+                            {/* Header is a div (not button) so the inner "View profile"
+                                button is a valid, clickable child — nested <button> is
+                                invalid HTML and React's synthetic events for the inner
+                                button get eaten by the outer button. */}
+                            <div
+                              className="eh-company-header"
+                              role="button"
+                              tabIndex={0}
+                              aria-expanded={isOpen}
+                              onClick={() => toggleCompany(group.companyName)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault()
+                                  toggleCompany(group.companyName)
+                                }
+                              }}
+                            >
+                              <div className="eh-company-avatar">
+                                {group.managerImage ? (
+                                  <img src={group.managerImage} alt={group.companyName} />
+                                ) : (
+                                  group.companyName?.charAt(0) || "?"
+                                )}
+                              </div>
+                              <div className="eh-company-info">
+                                <span className="eh-company-name">{group.companyName}</span>
+                                <span className="eh-company-meta">
+                                  {group.properties.length} {tf(
+                                    group.properties.length === 1 ? 'entrepreneurHome.property' : 'entrepreneurHome.properties',
+                                    group.properties.length === 1 ? 'property' : 'properties'
+                                  )} ·{' '}
+                                  {group.totalOpenJobs} {tf(
+                                    group.totalOpenJobs === 1 ? 'entrepreneurHome.openJobsSingular' : 'entrepreneurHome.openJobs',
+                                    group.totalOpenJobs === 1 ? 'open job' : 'open jobs'
+                                  )}
+                                </span>
+                              </div>
+                              {group.managerUserId && (
+                                <button
+                                  type="button"
+                                  className="eh-company-profile-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleViewManagerProfile(group.properties[0].property)
+                                  }}
+                                  title={tf('entrepreneurHome.viewManagerProfile', 'View company profile')}
+                                  aria-label="View company profile"
+                                >
+                                  <Eye size={15} />
+                                </button>
+                              )}
+                              <ChevronRight
+                                size={16}
+                                className={`eh-company-chevron ${isOpen ? "eh-rotated" : ""}`}
+                              />
+                            </div>
+
+                            {isOpen && (
+                              <div className="eh-company-properties">
+                                {group.properties.map(({ property, openJobs }) => (
+                                  <div
+                                    key={property.id}
+                                    className="eh-company-property-row"
+                                    onClick={() => handlePropertyClick(property)}
+                                  >
+                                    <div className="eh-company-property-icon">
+                                      <Building2 size={16} />
+                                    </div>
+                                    <div className="eh-company-property-info">
+                                      <span className="eh-company-property-name">{property.name}</span>
+                                      <span className="eh-company-property-address">
+                                        {property.address}
+                                      </span>
+                                    </div>
+                                    <div className="eh-company-property-count">
+                                      <Hammer size={12} />
+                                      <span>{openJobs}</span>
+                                    </div>
+                                    <button
+                                      className="eh-view-location-btn"
+                                      onClick={(e) => handleViewLocation(property, e)}
+                                      title={t('entrepreneurHome.viewLocation')}
+                                    >
+                                      <MapPin size={14} />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                ) : (
+                  <div className="eh-properties-grid">
+                    {filteredProperties.map((property) => {
+                      const jobCount = getPropertyOpenJobsCount(property.id)
+                      return (
+                        <div
+                          key={property.id}
+                          className={`eh-property-list-card ${jobCount === 0 ? 'eh-property-no-jobs' : ''}`}
+                          onClick={() => handlePropertyClick(property)}
+                        >
+                          <div className="eh-property-card-header">
+                            <div className="eh-property-icon">
+                              <Building2 size={24} />
+                            </div>
+                            <div className="eh-property-info">
+                              <h4 className="eh-property-card-name">{property.name}</h4>
+                              <p className="eh-property-card-address">{property.address}</p>
+                              <span className="eh-property-type-badge">{property.propertyType}</span>
+                            </div>
+                          </div>
+                          <div className="eh-property-card-footer">
+                            <div className="eh-job-count-indicator">
+                              <Hammer size={16} />
+                              <span>{jobCount} {t('entrepreneurHome.openJobs')}</span>
+                            </div>
+                            <div className="eh-property-card-actions">
+                              <button
+                                className="eh-view-location-btn"
+                                onClick={(e) => handleViewLocation(property, e)}
+                                title={t('entrepreneurHome.viewLocation')}
+                              >
+                                <MapPin size={16} />
+                              </button>
+                              <button className="eh-view-jobs-btn">{t('entrepreneurHome.viewJobs')}</button>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
             )}
       </div>
@@ -2083,6 +2467,67 @@ function HomePageEntrepreneur() {
                         </span>
                       </label>
                     ))}
+                  </div>
+                </div>
+
+                {/* Budget Range Filter */}
+                <div className="eh-filter-group">
+                  <div className="eh-filter-group-header">
+                    <DollarSign size={18} />
+                    <h3>{tf('entrepreneurHome.budgetRange', 'Budget Range')}</h3>
+                  </div>
+                  <div className="eh-budget-inputs">
+                    <div className="eh-input-group">
+                      <label>{tf('entrepreneurHome.minBudget', 'Min ($)')}</label>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min="0"
+                        step="100"
+                        placeholder="0"
+                        value={filters.budgetMin}
+                        onChange={(e) => setFilters({ ...filters, budgetMin: e.target.value })}
+                      />
+                    </div>
+                    <div className="eh-input-group">
+                      <label>{tf('entrepreneurHome.maxBudget', 'Max ($)')}</label>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min="0"
+                        step="100"
+                        placeholder={tf('entrepreneurHome.anyMax', 'Any')}
+                        value={filters.budgetMax}
+                        onChange={(e) => setFilters({ ...filters, budgetMax: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="eh-preset-buttons">
+                    {[
+                      { labelKey: "entrepreneurHome.budgetUnder1k", value: { min: "", max: "1000" }, fallback: "Under $1k" },
+                      { labelKey: "entrepreneurHome.budget1kTo5k", value: { min: "1000", max: "5000" }, fallback: "$1k – $5k" },
+                      { labelKey: "entrepreneurHome.budget5kTo20k", value: { min: "5000", max: "20000" }, fallback: "$5k – $20k" },
+                      { labelKey: "entrepreneurHome.budget20kPlus", value: { min: "20000", max: "" }, fallback: "$20k+" },
+                    ].map((preset) => {
+                      const isActive =
+                        filters.budgetMin === preset.value.min &&
+                        filters.budgetMax === preset.value.max
+                      return (
+                        <button
+                          key={preset.fallback}
+                          className={`eh-preset-btn ${isActive ? 'active' : ''}`}
+                          onClick={() => {
+                            if (isActive) {
+                              setFilters({ ...filters, budgetMin: "", budgetMax: "" })
+                            } else {
+                              setFilters({ ...filters, budgetMin: preset.value.min, budgetMax: preset.value.max })
+                            }
+                          }}
+                        >
+                          {(() => { const v = t(preset.labelKey); return v === preset.labelKey ? preset.fallback : v })()}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
@@ -2241,12 +2686,7 @@ function HomePageEntrepreneur() {
                         </div>
                         <span>{t('entrepreneurHome.bids')}</span>
                       </div>
-                      <div className="eh-subscribe-feature-card">
-                        <div className="eh-feature-icon">
-                          <DollarSign size={16} />
-                        </div>
-                        <span>{t('entrepreneurHome.budget')}</span>
-                      </div>
+                      {/* "Budget" feature card removed — see note above. */}
                       <div className="eh-subscribe-feature-card">
                         <div className="eh-feature-icon">
                           <MessageSquare size={16} />
@@ -2285,7 +2725,7 @@ function HomePageEntrepreneur() {
                           <div key={job.id} className="eh-job-card">
                             <div className="eh-job-card-header">
                               <span className={`eh-urgency-badge ${getUrgencyClass(job.urgency)}`}>
-                                {job.urgency}
+                                {getUrgencyLabel(job.urgency)}
                               </span>
                               <div className="eh-job-title-section">
                                 <h4 className="eh-job-title">{job.title}</h4>

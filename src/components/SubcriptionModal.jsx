@@ -108,13 +108,8 @@ export default function SubscriptionModal({token, refresher, onClose, showCloseB
                     </svg>
                     <span>{t('subscriptionModal.submitUpTo15Bids')}</span>
                   </li>
-                  <li className="feature-item">
-                    <svg width="20" height="20" viewBox="0 0 20 20" className="feature-icon">
-                      <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
-                      <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    <span>{t('subscriptionModal.unlockBudgets')}</span>
-                  </li>
+                  {/* Budget unlock is NOT a plan feature — it's a separate per-job
+                      $19.99 purchase available to all subscribers regardless of tier. */}
                   <li className="feature-item">
                     <svg width="20" height="20" viewBox="0 0 20 20" className="feature-icon">
                       <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
@@ -157,13 +152,8 @@ export default function SubscriptionModal({token, refresher, onClose, showCloseB
                     </svg>
                     <span>{t('subscriptionModal.submitUpTo30Bids')}</span>
                   </li>
-                  <li className="feature-item">
-                    <svg width="20" height="20" viewBox="0 0 20 20" className="feature-icon">
-                      <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
-                      <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    <span>{t('subscriptionModal.unlockBudgets')}</span>
-                  </li>
+                  {/* Budget unlock is NOT a plan feature — it's a separate per-job
+                      $19.99 purchase available to all subscribers regardless of tier. */}
                   <li className="feature-item">
                     <svg width="20" height="20" viewBox="0 0 20 20" className="feature-icon">
                       <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
@@ -207,13 +197,8 @@ export default function SubscriptionModal({token, refresher, onClose, showCloseB
                     </svg>
                     <span>{t('subscriptionModal.submitUnlimitedBids')}</span>
                   </li>
-                  <li className="feature-item">
-                    <svg width="20" height="20" viewBox="0 0 20 20" className="feature-icon">
-                      <circle cx="10" cy="10" r="10" fill="#2ECC71"/>
-                      <path d="M6 10l3 3 5-6" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    <span>{t('subscriptionModal.unlockBudgets')}</span>
-                  </li>
+                  {/* Budget unlock is NOT a plan feature — it's a separate per-job
+                      $19.99 purchase available to all subscribers regardless of tier. */}
                   <li className="feature-item">
                     <svg width="20" height="20" viewBox="0 0 20 20" className="feature-icon">
                       <circle cx="10" cy="10" r="10" fill="#2ECC71"/>

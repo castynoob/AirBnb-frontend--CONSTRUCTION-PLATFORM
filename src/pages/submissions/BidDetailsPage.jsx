@@ -3,12 +3,14 @@ import { useParams, useNavigate } from "react-router-dom"
 import {
   ArrowLeft, Star, MapPin, Calendar, Clock, DollarSign, Briefcase,
   Building2, Mail, Heart, User, FileText, Trash2, Archive, CheckCircle,
-  XCircle, ExternalLink, Shield, Award, Tag, AlertCircle
+  XCircle, ExternalLink, Shield, Award, Tag, AlertCircle, ChevronRight,
+  ChevronDown, Receipt, Download
 } from "lucide-react"
 import Nav from "../../components/Nav"
 import { useLanguage } from "../../contexts/LanguageContext"
 import toast from "react-hot-toast"
 import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal"
+import BidAddendaSection from "../../components/BidAddendaSection"
 import { confirmCompletion as confirmCompletionApi } from "../../utils/contractApi"
 import { translateStatus as translateStatusEnum, translateUrgency as translateUrgencyEnum, translateCategory as translateCategoryEnum } from "../../utils/translateEnums"
 
@@ -417,12 +419,122 @@ export default function BidDetailsPage() {
       <Nav />
       <div className="main-container" style={s.page}>
         <div style={s.container}>
-          {/* Back button */}
-          <div style={s.backRow}>
+          {/* Top toolbar — Back on the left, state-based primary actions on
+              the right. Replaces the old bottom "Actions" card so the PM
+              can act without scrolling to the footer. */}
+          <div style={s.topBar}>
             <button style={s.backBtn} onClick={() => navigate(-1)}>
               <ArrowLeft size={18} />
               <span>{tx(t, "submissions.back", "Back")}</span>
             </button>
+
+            <div style={s.actionsCluster}>
+              {/* Pending state — Decline + Accept */}
+              {jobStatus === "open" && bidStatus === "pending" && (
+                <>
+                  {!hasContract && (
+                    <button
+                      style={s.btnGhostDanger}
+                      onClick={() => setConfirmAction({
+                        title: tx(t, "submissions.deleteJobTitle", "Delete Job?"),
+                        message: tx(t, "submissions.confirmDeleteJob", "Are you sure you want to delete this job? This action cannot be undone."),
+                        onConfirm: handleDeleteJob,
+                        color: "#dc2626",
+                      })}
+                      disabled={isProcessing}
+                      title={tx(t, "submissions.deleteJob", "Delete Job")}
+                    >
+                      <Trash2 size={16} />
+                      <span style={s.btnLabelOpt}>{tx(t, "submissions.deleteJob", "Delete Job")}</span>
+                    </button>
+                  )}
+                  <button style={s.btnOutlineDanger} onClick={handleDecline} disabled={isProcessing}>
+                    <XCircle size={16} />
+                    {tx(t, "submissions.decline", "Decline")}
+                  </button>
+                  <button style={s.btnPrimarySuccess} onClick={handleAccept} disabled={isProcessing}>
+                    <CheckCircle size={16} />
+                    {isProcessing
+                      ? tx(t, "submissions.processing", "Processing...")
+                      : tx(t, "submissions.acceptBid", "Accept Bid")}
+                  </button>
+                </>
+              )}
+
+              {/* Accepted state — Withdraw + Go to Chat */}
+              {jobStatus === "accepted" && bidStatus === "approved" && (
+                <>
+                  <button
+                    style={s.btnOutlineDanger}
+                    onClick={() => setConfirmAction({
+                      title: tx(t, "submissions.withdrawTitle", "Withdraw Acceptance?"),
+                      message: tx(t, "submissions.confirmWithdraw", "Are you sure you want to withdraw this accepted bid? The job will reopen for other contractors."),
+                      onConfirm: handleWithdrawAcceptance,
+                      color: "#dc2626",
+                    })}
+                    disabled={isProcessing}
+                  >
+                    <XCircle size={16} />
+                    {tx(t, "submissions.withdrawAcceptance", "Withdraw Acceptance")}
+                  </button>
+                  <button
+                    style={s.btnPrimaryDark}
+                    onClick={() => navigate('/messages/property_manager')}
+                  >
+                    <FileText size={16} />
+                    {tx(t, "submissions.goToChat", "Go to Chat")}
+                  </button>
+                </>
+              )}
+
+              {/* Completed state — Confirm Completion / Review / Archive */}
+              {jobStatus === "completed" && (
+                <>
+                  {!managerConfirmed && hasContract && (
+                    <button
+                      style={s.btnPrimarySuccess}
+                      onClick={() => { setCompletionNote(""); setShowCompletionNoteModal(true); }}
+                      disabled={isProcessing}
+                    >
+                      <CheckCircle size={16} />
+                      {tx(t, "submissions.confirmCompletion", "Confirm Completion")}
+                    </button>
+                  )}
+                  {managerConfirmed && (
+                    <button
+                      style={{ ...s.btnPrimaryDark, background: "#7c3aed" }}
+                      onClick={() => setShowReviewModal(true)}
+                    >
+                      <Star size={16} />
+                      {submission.review
+                        ? tx(t, "submissions.viewReview", "View Review")
+                        : tx(t, "submissions.leaveReview", "Leave a Review")}
+                    </button>
+                  )}
+                  <button style={s.btnGhostNeutral} onClick={handleArchive} disabled={isProcessing}>
+                    <Archive size={16} />
+                    {tx(t, "submissions.archive", "Archive")}
+                  </button>
+                </>
+              )}
+
+              {/* Declined state — Delete Job only */}
+              {jobStatus === "declined" && !hasContract && (
+                <button
+                  style={s.btnGhostDanger}
+                  onClick={() => setConfirmAction({
+                    title: tx(t, "submissions.deleteJobTitle", "Delete Job?"),
+                    message: tx(t, "submissions.confirmDeleteJob", "Are you sure you want to delete this job? This action cannot be undone."),
+                    onConfirm: handleDeleteJob,
+                    color: "#dc2626",
+                  })}
+                  disabled={isProcessing}
+                >
+                  <Trash2 size={16} />
+                  {tx(t, "submissions.deleteJob", "Delete Job")}
+                </button>
+              )}
+            </div>
           </div>
 
           <div style={isMobile ? s.gridMobile : s.grid}>
@@ -456,13 +568,14 @@ export default function BidDetailsPage() {
                 </div>
               </div>
 
-              {/* Job Progress Stepper — at top when exists */}
+              {/* Job Progress Stepper — collapsed on completed jobs (all
+                  stages are done, it's an audit trail). */}
               {jobProgress.length > 0 && (
-                <div style={s.card}>
-                  <h3 style={s.cardTitle}>
-                    <CheckCircle size={18} color="#00A5A9" />
-                    {tx(t, "progress.title", "Job Progress")}
-                  </h3>
+                <CollapsibleCard
+                  icon={<CheckCircle size={18} color="#00A5A9" />}
+                  title={tx(t, "progress.title", "Job Progress")}
+                  defaultOpen={jobStatus !== "completed"}
+                >
                   <div style={{ position: 'relative', paddingLeft: 28 }}>
                     <div style={{ position: 'absolute', left: 11, top: 4, bottom: 4, width: 2, background: '#e5e7eb', zIndex: 0 }} />
                     {jobProgress.map((stage, i) => {
@@ -508,15 +621,27 @@ export default function BidDetailsPage() {
                       );
                     })}
                   </div>
-                </div>
+                </CollapsibleCard>
               )}
 
-              {/* Job Information */}
-              <div style={s.card}>
-                <h3 style={s.cardTitle}>
-                  <Briefcase size={18} color="#00A5A9" />
-                  {tx(t, "submissions.jobInformation", "Job Information")}
-                </h3>
+              {/* Job Information — always expanded by default. Users still
+                  reach for it as the primary reference even after completion,
+                  and the "View actual job" header action leads to the full
+                  detail page anyway. */}
+              <CollapsibleCard
+                icon={<Briefcase size={18} color="#00A5A9" />}
+                title={tx(t, "submissions.jobInformation", "Job Information")}
+                defaultOpen={true}
+                headerAction={
+                  <button
+                    style={s.viewActualJobBtn}
+                    onClick={() => navigate(`/job/${job.id}`)}
+                  >
+                    <ExternalLink size={14} />
+                    {tx(t, "submissions.viewActualJob", "View actual job")}
+                  </button>
+                }
+              >
                 <div style={s.infoGrid}>
                   <InfoRow icon={<Tag size={15} />} label={tx(t, "submissions.category", "Category")} value={translateCategory(t, job.category)} />
                   <InfoRow icon={<AlertCircle size={15} />} label={tx(t, "submissions.urgency", "Urgency")} value={translateUrgency(t, job.urgency)} />
@@ -535,15 +660,15 @@ export default function BidDetailsPage() {
                     <p style={s.descText}>{job.description}</p>
                   </div>
                 )}
-              </div>
+              </CollapsibleCard>
 
-              {/* Map */}
+              {/* Map — reference only after completion. */}
               {coords && (
-                <div style={s.card}>
-                  <h3 style={s.cardTitle}>
-                    <MapPin size={18} color="#00A5A9" />
-                    {tx(t, "submissions.location", "Location")}
-                  </h3>
+                <CollapsibleCard
+                  icon={<MapPin size={18} color="#00A5A9" />}
+                  title={tx(t, "submissions.location", "Location")}
+                  defaultOpen={jobStatus !== "completed"}
+                >
                   <div style={s.mapWrapper}>
                     <MapContainer
                       center={coords}
@@ -556,145 +681,83 @@ export default function BidDetailsPage() {
                       <Marker position={coords} />
                     </MapContainer>
                   </div>
+                </CollapsibleCard>
+              )}
+
+              {/* Accepted-state confirmation banner — informational only.
+                  Actions themselves live in the top toolbar. */}
+              {jobStatus === "accepted" && bidStatus === "approved" && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: '#f0fdf4', borderRadius: 12, border: '1px solid #bbf7d0' }}>
+                  <CheckCircle size={18} color="#059669" />
+                  <span style={{ fontSize: 14, color: '#059669', fontWeight: 600 }}>
+                    {tx(t, "submissions.bidAcceptedInfo", "Bid accepted — contract active")}
+                  </span>
                 </div>
               )}
 
-              {/* Actions footer */}
-              <div style={s.card}>
-                <h3 style={s.cardTitle}>
-                  <FileText size={18} color="#00A5A9" />
-                  {tx(t, "submissions.actions", "Actions")}
-                </h3>
-                <div style={s.actionsRow}>
-                  {/* Accept — only if open and pending */}
-                  {jobStatus === "open" && bidStatus === "pending" && (
-                    <button
-                      style={{ ...s.actionBtn, ...s.acceptBtn }}
-                      onClick={handleAccept}
-                      disabled={isProcessing}
-                    >
-                      <CheckCircle size={16} />
-                      {isProcessing ? (tx(t, "submissions.processing", "Processing...")) : (tx(t, "submissions.acceptBid", "Accept Bid"))}
-                    </button>
-                  )}
-
-                  {/* Decline — only if open and pending */}
-                  {jobStatus === "open" && bidStatus === "pending" && (
-                    <button
-                      style={{ ...s.actionBtn, ...s.declineBtn }}
-                      onClick={handleDecline}
-                      disabled={isProcessing}
-                    >
-                      <XCircle size={16} />
-                      {tx(t, "submissions.decline", "Decline")}
-                    </button>
-                  )}
-
-                  {/* Delete Job — only if no contract */}
-                  {!hasContract && (
-                    <button
-                      style={{ ...s.actionBtn, ...s.deleteBtn }}
-                      onClick={() => setConfirmAction({
-                        title: tx(t, "submissions.deleteJobTitle", "Delete Job?"),
-                        message: tx(t, "submissions.confirmDeleteJob", "Are you sure you want to delete this job? This action cannot be undone."),
-                        onConfirm: handleDeleteJob,
-                        color: "#dc2626"
-                      })}
-                      disabled={isProcessing}
-                    >
-                      <Trash2 size={16} />
-                      {tx(t, "submissions.deleteJob", "Delete Job")}
-                    </button>
-                  )}
-
-                  {/* Status info for accepted jobs */}
-                  {jobStatus === "accepted" && bidStatus === "approved" && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0', flex: '1 1 100%' }}>
-                      <CheckCircle size={18} color="#059669" />
-                      <span style={{ fontSize: 14, color: '#059669', fontWeight: 600 }}>
-                        {tx(t, "submissions.bidAcceptedInfo", "Bid accepted — contract active")}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Withdraw — for accepted bids */}
-                  {jobStatus === "accepted" && bidStatus === "approved" && (
-                    <button
-                      style={{ ...s.actionBtn, ...s.deleteBtn }}
-                      onClick={() => setConfirmAction({
-                        title: tx(t, "submissions.withdrawTitle", "Withdraw Acceptance?"),
-                        message: tx(t, "submissions.confirmWithdraw", "Are you sure you want to withdraw this accepted bid? The job will reopen for other contractors."),
-                        onConfirm: handleWithdrawAcceptance,
-                        color: "#dc2626"
-                      })}
-                      disabled={isProcessing}
-                    >
-                      <XCircle size={16} />
-                      {tx(t, "submissions.withdrawAcceptance", "Withdraw Acceptance")}
-                    </button>
-                  )}
-
-                  {/* Chat — for accepted */}
-                  {jobStatus === "accepted" && (
-                    <button
-                      style={{ ...s.actionBtn, background: '#0F223D', color: '#fff' }}
-                      onClick={() => navigate(`/messages/property_manager`)}
-                    >
-                      <FileText size={16} />
-                      {tx(t, "submissions.goToChat", "Go to Chat")}
-                    </button>
-                  )}
-
-                  {/* Archive — only if completed */}
-                  {jobStatus === "completed" && (
-                    <button
-                      style={{ ...s.actionBtn, ...s.archiveBtn }}
-                      onClick={handleArchive}
-                      disabled={isProcessing}
-                    >
-                      <Archive size={16} />
-                      {tx(t, "submissions.archive", "Archive")}
-                    </button>
-                  )}
-
-                  {/* Confirm Completion — completed + manager NOT yet confirmed */}
-                  {jobStatus === "completed" && !managerConfirmed && hasContract && (
-                    <button
-                      style={{ ...s.actionBtn, ...s.confirmBtn }}
-                      onClick={() => { setCompletionNote(""); setShowCompletionNoteModal(true); }}
-                      disabled={isProcessing}
-                    >
-                      <CheckCircle size={16} />
-                      {tx(t, "submissions.confirmCompletion", "Confirm Job Completion")}
-                    </button>
-                  )}
-                  {/* Already confirmed */}
-                  {jobStatus === "completed" && managerConfirmed && (
-                    <>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 14px', background: '#f0fdf4', borderRadius: 8, border: '1px solid #bbf7d0' }}>
-                        <CheckCircle size={16} color="#059669" />
-                        <span style={{ fontSize: 13, color: '#059669', fontWeight: 600 }}>
-                          {tx(t, "submissions.completionConfirmed", "Job completion confirmed")}
-                        </span>
-                      </div>
-                      {/* Review button */}
-                      <button
-                        style={{ ...s.actionBtn, background: '#7c3aed', color: '#fff' }}
-                        onClick={() => setShowReviewModal(true)}
-                      >
-                        <Star size={16} />
-                        {submission.review
-                          ? tx(t, "submissions.viewReview", "View Review")
-                          : tx(t, "submissions.leaveReview", "Leave a Review")}
-                      </button>
-                    </>
-                  )}
+              {/* Completion-confirmed banner (also informational). */}
+              {jobStatus === "completed" && managerConfirmed && (
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#f0fdf4', borderRadius: 10, border: '1px solid #bbf7d0' }}>
+                  <CheckCircle size={16} color="#059669" />
+                  <span style={{ fontSize: 13, color: '#059669', fontWeight: 600 }}>
+                    {tx(t, "submissions.completionConfirmed", "Job completion confirmed")}
+                  </span>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* ═══════════ RIGHT COLUMN ═══════════ */}
             <div style={s.rightCol}>
+              {/* Contractor's Invoice — top of the column, paired with the
+                  Completion Notes that follows. Both are completion-time
+                  artifacts, so they belong side by side at the top. Invoice
+                  precedes because it's the primary artifact the PM needs to
+                  see (and can download from here). Highlighted with a teal
+                  accent when the job is completed so the eye lands here. */}
+              {contract?.invoice_submitted_at && (
+                <div style={jobStatus === "completed" ? { ...s.card, ...s.cardHighlight } : s.card}>
+                  <h3 style={s.cardTitle}>
+                    <Receipt size={18} color="#00A5A9" />
+                    {tx(t, "invoice.cardTitle", "Contractor's Invoice")}
+                  </h3>
+                  <div style={s.infoGrid}>
+                    <InfoRow
+                      icon={<DollarSign size={15} />}
+                      label={tx(t, "invoice.total", "Invoice total")}
+                      value={formatCurrency(contract.invoice_total)}
+                    />
+                    <InfoRow
+                      icon={<Calendar size={15} />}
+                      label={tx(t, "invoice.submittedOn", "Submitted")}
+                      value={fd(contract.invoice_submitted_at)}
+                    />
+                    {contract.invoice_file_name && (
+                      <InfoRow
+                        icon={<FileText size={15} />}
+                        label={tx(t, "invoice.file", "File")}
+                        value={contract.invoice_file_name}
+                      />
+                    )}
+                  </div>
+                  {contract.invoice_file_url ? (
+                    <a
+                      href={contract.invoice_file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      download={contract.invoice_file_name || undefined}
+                      style={s.invoiceDownloadBtn}
+                    >
+                      <Download size={16} />
+                      {tx(t, "invoice.viewDownload", "View / Download Invoice")}
+                    </a>
+                  ) : (
+                    <p style={{ margin: "12px 0 0", fontSize: 13, color: "#64748b" }}>
+                      {tx(t, "invoice.noFile", "No file attached — the contractor submitted a total but no document.")}
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Completion Notes — visible after either party records a note */}
               {submission.contract && (submission.contract.manager_completion_note || submission.contract.contractor_completion_note) && (
                 <div style={{ ...s.card, border: '1px solid #fde68a', background: '#fffbeb' }}>
@@ -782,70 +845,42 @@ export default function BidDetailsPage() {
                 </div>
               )}
 
-              {/* Contractor Information */}
-              <div style={s.card}>
-                <h3 style={s.cardTitle}>
-                  <Building2 size={18} color="#00A5A9" />
-                  {tx(t, "submissions.contractorInfo", "Contractor Information")}
-                </h3>
-                <div style={s.contractorHeader}>
-                  <div style={s.avatar}>
-                    {getInitial(displayName)}
-                  </div>
-                  <div>
-                    <div style={s.contractorName}>{displayName}</div>
-                    {ep.company_name && (
-                      <div style={s.contractorSub}>
-                        <User size={13} /> {user.first_name} {user.last_name}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Rating */}
-                <div style={s.ratingRow}>
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Star
-                      key={i}
-                      size={18}
-                      fill={i <= Math.round(ep.average_rating || 0) ? "#facc15" : "none"}
-                      color="#facc15"
-                    />
-                  ))}
-                  <span style={s.ratingText}>
-                    {ep.average_rating || "0"} ({ep.total_reviews || 0} {tx(t, "submissions.reviews", "reviews")})
-                  </span>
-                </div>
-
-                <div style={s.infoGrid}>
-                  <InfoRow icon={<Shield size={15} />} label={tx(t, "submissions.licenseNumber", "License")} value={ep.license_number || "N/A"} />
-                  <InfoRow icon={<Award size={15} />} label={tx(t, "submissions.yearsInBusiness", "Years in business")} value={`${ep.years_in_business || "N/A"} ${tx(t, "submissions.years", "years")}`} />
-                  <InfoRow icon={<Mail size={15} />} label={tx(t, "submissions.email", "Email")} value={user.email} />
-                  <InfoRow icon={<MapPin size={15} />} label={tx(t, "submissions.location", "Location")} value={property_address} />
-                </div>
-
-                {ep.specializations?.length > 0 && (
-                  <div style={s.specBlock}>
-                    <span style={s.descLabel}>{tx(t, "submissions.specializations", "Specializations")}</span>
-                    <div style={s.tagRow}>
-                      {ep.specializations.map((spec, i) => (
-                        <span key={i} style={s.tag}>{spec}</span>
-                      ))}
+              {/* Contractor Information — compact clickable pill. All the
+                  detail (rating, license, specializations, portfolio, etc.)
+                  now lives inside EntrepreneurProfileModal, which pops up on
+                  click. Keeps the right column short and lets the addenda
+                  thread breathe. */}
+              <button
+                type="button"
+                style={s.contractorPill}
+                onClick={() => setShowProfileModal(true)}
+                aria-label={tx(t, "submissions.viewProfile", "View contractor profile")}
+              >
+                <div style={s.avatar}>{getInitial(displayName)}</div>
+                <div style={{ flex: 1, textAlign: "left", minWidth: 0 }}>
+                  <div style={s.contractorName}>{displayName}</div>
+                  {(ep.company_name || user.first_name) && (
+                    <div style={s.contractorSub}>
+                      <User size={13} /> {user.first_name} {user.last_name}
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+                <ChevronRight size={20} color="#00A5A9" />
+              </button>
 
-              {/* Bid Details */}
-              <div style={s.card}>
-                <h3 style={s.cardTitle}>
-                  <FileText size={18} color="#00A5A9" />
-                  {tx(t, "submissions.bidDetails", "Bid Details")}
-                </h3>
+              {/* Bid Details — collapsed on completed jobs. The invoice at
+                  the top of the column supersedes this financial info. */}
+              <CollapsibleCard
+                icon={<FileText size={18} color="#00A5A9" />}
+                title={tx(t, "submissions.bidDetails", "Bid Details")}
+                defaultOpen={jobStatus !== "completed"}
+              >
                 <div style={s.infoGrid}>
                   <InfoRow icon={<DollarSign size={15} />} label={tx(t, "submissions.amount", "Amount")} value={formatCurrency(bid.amount)} />
                   <InfoRow icon={<Calendar size={15} />} label={tx(t, "submissions.submitted", "Submitted")} value={fd(bid.created_at)} />
-                  <InfoRow icon={<Clock size={15} />} label={tx(t, "submissions.timeline", "Timeline")} value={`${job.estimated_duration_days || "N/A"} ${tx(t, "submissions.days", "days")}`} />
+                  {/* Show the entrepreneur's proposed timeline (bid.timeline_days), not the job's own
+                      estimate. Falls back to the job estimate only when the bidder didn't specify one. */}
+                  <InfoRow icon={<Clock size={15} />} label={tx(t, "submissions.timeline", "Timeline")} value={`${bid.timeline_days ?? job.estimated_duration_days ?? "N/A"} ${tx(t, "submissions.days", "days")}`} />
                 </div>
                 {bid.message && (
                   <div style={s.descriptionBlock}>
@@ -853,33 +888,50 @@ export default function BidDetailsPage() {
                     <p style={s.descText}>{bid.message}</p>
                   </div>
                 )}
-              </div>
+              </CollapsibleCard>
 
-              {/* Favorite + View Profile */}
-              <div style={{ display: "flex", gap: 10 }}>
-                <button
-                  style={{
-                    ...s.actionBtn,
-                    flex: 1,
-                    background: isFavorite ? "#fee2e2" : "#f8fafc",
-                    color: isFavorite ? "#dc2626" : "#64748b",
-                    border: `1px solid ${isFavorite ? "#fca5a5" : "#e2e8f0"}`,
-                  }}
-                  onClick={handleToggleFavorite}
+              {/* Addenda thread — right-column placement per redesign, sits
+                  directly under Bid Details so the price-change conversation
+                  is anchored next to the price itself. Pending addenda block
+                  bid approval upstream on the backend. Collapsed on completed
+                  jobs (audit trail only). */}
+              {bid?.id && (
+                <CollapsibleCard
+                  icon={<DollarSign size={18} color="#00A5A9" />}
+                  title={tx(t, "submissions.priceAdjustments", "Price adjustments (addenda)")}
+                  defaultOpen={jobStatus !== "completed"}
                 >
-                  <Heart size={16} fill={isFavorite ? "#dc2626" : "none"} />
-                  {isFavorite
-                    ? (tx(t, "submissions.unfavorite", "Unfavorite"))
-                    : (tx(t, "submissions.favorite", "Favorite"))}
-                </button>
-                <button
-                  style={{ ...s.actionBtn, flex: 1, background: "#0F223D", color: "#fff" }}
-                  onClick={() => setShowProfileModal(true)}
-                >
-                  <ExternalLink size={16} />
-                  {tx(t, "submissions.viewProfile", "View Profile")}
-                </button>
-              </div>
+                  <BidAddendaSection
+                    bidId={bid.id}
+                    currentUserId={(() => {
+                      try {
+                        return JSON.parse(localStorage.getItem("userProfile"))?.id
+                      } catch {
+                        return null
+                      }
+                    })()}
+                    canAct={bidStatus === "pending" || bidStatus === "under_review"}
+                  />
+                </CollapsibleCard>
+              )}
+
+              {/* Favorite — the contractor pill above already opens the
+                  profile modal on click, so the separate "View Profile"
+                  button is gone. */}
+              <button
+                style={{
+                  ...s.actionBtn,
+                  background: isFavorite ? "#fee2e2" : "#f8fafc",
+                  color: isFavorite ? "#dc2626" : "#64748b",
+                  border: `1px solid ${isFavorite ? "#fca5a5" : "#e2e8f0"}`,
+                }}
+                onClick={handleToggleFavorite}
+              >
+                <Heart size={16} fill={isFavorite ? "#dc2626" : "none"} />
+                {isFavorite
+                  ? (tx(t, "submissions.unfavorite", "Unfavorite"))
+                  : (tx(t, "submissions.favorite", "Favorite"))}
+              </button>
             </div>
           </div>
         </div>
@@ -1192,6 +1244,57 @@ function InfoRow({ icon, label, value }) {
   )
 }
 
+// Card wrapper with a full-width, click-anywhere header that toggles the
+// body. Chevron is right-aligned (space-between) so the layout reads as a
+// tap target. Optional headerAction sits inline to the left of the chevron;
+// its click bubbles are stopped so pressing the action doesn't also collapse
+// the card.
+function CollapsibleCard({ icon, title, defaultOpen = true, headerAction, children }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div style={s.card}>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={open}
+        onClick={() => setOpen(o => !o)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            setOpen(o => !o)
+          }
+        }}
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          width: "100%",
+          gap: 12,
+          cursor: "pointer",
+          userSelect: "none",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#0F223D", fontWeight: 700, fontSize: 16, minWidth: 0 }}>
+          {icon}
+          <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</span>
+        </div>
+        <div
+          style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}
+          onClick={(e) => headerAction && e.stopPropagation()}
+        >
+          {headerAction}
+          <ChevronDown
+            size={18}
+            color="#9ca3af"
+            style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform .15s" }}
+          />
+        </div>
+      </div>
+      {open && <div style={{ marginTop: 16 }}>{children}</div>}
+    </div>
+  )
+}
+
 // ─── styles ─────────────────────────────────────────────────
 const s = {
   page: {
@@ -1218,6 +1321,158 @@ const s = {
     fontSize: 14,
     cursor: "pointer",
     transition: "all .2s",
+  },
+  // Top toolbar — Back on left, primary actions on right (redesign).
+  topBar: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+    flexWrap: "wrap",
+    marginBottom: 20,
+  },
+  actionsCluster: {
+    display: "flex",
+    gap: 10,
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
+  },
+  // Base button used by all top-toolbar buttons.
+  btnBase: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: "10px 20px",
+    borderRadius: 10,
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "all .15s",
+    whiteSpace: "nowrap",
+  },
+  btnPrimarySuccess: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: "10px 20px",
+    borderRadius: 10,
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: "pointer",
+    background: "#059669",
+    color: "#fff",
+    border: "1px solid #059669",
+    whiteSpace: "nowrap",
+  },
+  btnPrimaryDark: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: "10px 20px",
+    borderRadius: 10,
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: "pointer",
+    background: "#0F223D",
+    color: "#fff",
+    border: "1px solid #0F223D",
+    whiteSpace: "nowrap",
+  },
+  btnOutlineDanger: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: "10px 20px",
+    borderRadius: 10,
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: "pointer",
+    background: "#fef2f2",
+    color: "#dc2626",
+    border: "1px solid #fca5a5",
+    whiteSpace: "nowrap",
+  },
+  btnGhostDanger: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: "10px 14px",
+    borderRadius: 10,
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: "pointer",
+    background: "#fff",
+    color: "#dc2626",
+    border: "1px solid #fecaca",
+    whiteSpace: "nowrap",
+  },
+  btnGhostNeutral: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: "10px 18px",
+    borderRadius: 10,
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: "pointer",
+    background: "#fff",
+    color: "#475569",
+    border: "1px solid #e2e8f0",
+    whiteSpace: "nowrap",
+  },
+  btnLabelOpt: {
+    // Optional label — hidden on very narrow toolbars to keep Delete iconic.
+    display: "inline",
+  },
+  // Card header with a title on the left and an action on the right.
+  cardHeaderRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 18,
+    flexWrap: "wrap",
+  },
+  viewActualJobBtn: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "8px 14px",
+    borderRadius: 8,
+    background: "#00A5A9",
+    color: "#fff",
+    border: "none",
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "background .15s",
+  },
+  // Invoice CTA — opens the file in a new tab. Same accent colour as the
+  // rest of the page so it reads as a primary action.
+  invoiceDownloadBtn: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 14,
+    width: "100%",
+    padding: "10px 16px",
+    borderRadius: 10,
+    background: "#00A5A9",
+    color: "#fff",
+    border: "none",
+    fontSize: 14,
+    fontWeight: 600,
+    cursor: "pointer",
+    textDecoration: "none",
+    boxShadow: "0 1px 3px rgba(0, 165, 169, 0.25)",
+    transition: "filter .15s",
   },
   grid: {
     display: "grid",
@@ -1248,6 +1503,12 @@ const s = {
     padding: 24,
     boxShadow: "0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)",
     border: "1px solid #e8ecf1",
+  },
+  // Highlight variant — used for the priority cards (Invoice, Completion
+  // Notes) once the job is completed, so the PM's eye lands on them first.
+  cardHighlight: {
+    borderLeft: "4px solid #00A5A9",
+    boxShadow: "0 4px 14px rgba(0, 165, 169, 0.15), 0 1px 2px rgba(0,0,0,0.04)",
   },
   cardTitle: {
     display: "flex",
@@ -1377,6 +1638,22 @@ const s = {
     alignItems: "center",
     gap: 14,
     marginBottom: 16,
+  },
+  // Compact clickable pill that replaces the old fat contractor card.
+  // Full details live in the profile modal that opens on click.
+  contractorPill: {
+    display: "flex",
+    alignItems: "center",
+    gap: 14,
+    padding: "14px 18px",
+    borderRadius: 16,
+    background: "#fff",
+    border: "1px solid #d1e9ea",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+    cursor: "pointer",
+    width: "100%",
+    textAlign: "left",
+    transition: "border-color .15s, box-shadow .15s, transform .05s",
   },
   avatar: {
     width: 48,

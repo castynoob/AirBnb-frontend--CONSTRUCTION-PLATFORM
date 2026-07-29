@@ -15,6 +15,8 @@ import MaintenanceLogModal from '../../components/modal/MaintenanceLogModal'
 import DocumentManager from '../../components/DocumentManager'
 import FinancialDashboard from '../../components/FinancialDashboard'
 import ManagerProfileSkeleton from '../../components/loading/ManagerProfileSkeleton'
+import PropertyResidentsSection from '../../components/PropertyResidentsSection'
+import PropertyUnionSection from '../../components/PropertyUnionSection'
 import { logout } from '../../utils/api'
 import { useLanguage } from '../../contexts/LanguageContext'
 
@@ -1423,6 +1425,18 @@ function ProfilePageManager() {
                     </Suspense>
                   </div>
                 </div>
+              )}
+
+              {/* Residents section — list, invite, remove. Hidden while
+                  editing the property to keep the edit form focused. */}
+              {!isEditingProperty && (
+                <PropertyResidentsSection propertyId={selectedProperty.id} />
+              )}
+
+              {/* Union section — attach to a condo association + post
+                  cross-property broadcasts. Same hidden-while-editing rule. */}
+              {!isEditingProperty && (
+                <PropertyUnionSection propertyId={selectedProperty.id} />
               )}
             </div>
 

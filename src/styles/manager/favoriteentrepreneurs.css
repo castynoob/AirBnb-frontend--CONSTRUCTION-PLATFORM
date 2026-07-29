@@ -742,13 +742,28 @@
   gap: 0.5rem;
 }
 
-/* Card Actions */
+/* Card Actions — vertical stack: primary Invite on top, secondary row below.
+   Old layout crammed 4 different-sized buttons on one line which wrapped and
+   looked broken when the card was narrow. */
 .fav-card-actions {
   display: flex;
+  flex-direction: column;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
   border-top: 1px solid #e5e7eb;
   background: #ffffff;
+}
+
+/* Primary CTA — full-width teal so Invite reads as the main action. */
+.fav-action-primary-full {
+  width: 100%;
+}
+
+/* Secondary actions share a row with equal widths so labels never squeeze. */
+.fav-action-secondary-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
 }
 
 .fav-action-btn {
@@ -765,6 +780,12 @@
   transition: all 0.2s ease;
   background: #ffffff;
   color: #374151;
+  /* Labels stay on one line; if a card is truly narrow, ellipsis rather than
+     wrap so the button height stays predictable. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .fav-action-btn.primary {
@@ -794,24 +815,6 @@
   border-color: #e5e7eb;
 }
 
-.fav-details-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.5rem 0.75rem;
-  background: transparent;
-  border: none;
-  color: #00A5A9;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  cursor: pointer;
-  margin-left: auto;
-  transition: color 0.2s ease;
-}
-
-.fav-details-btn:hover {
-  color: #008b8f;
-}
 
 /* ==================== EMPTY STATE ==================== */
 .fav-empty-state {
@@ -1358,23 +1361,10 @@
     padding: 0.5rem 0.75rem;
   }
 
-  .fav-card-actions {
-    flex-wrap: wrap;
-  }
-
-  .fav-action-btn {
-    flex: 1;
-    min-width: calc(50% - 0.25rem);
-  }
-
-  .fav-details-btn {
-    width: 100%;
-    justify-content: center;
-    margin-left: 0;
-    margin-top: 0.5rem;
-    padding: 0.625rem;
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
+  /* On very narrow mobile the 3-column secondary grid gets too tight —
+     collapse to 2 columns and let History wrap under. */
+  .fav-action-secondary-row {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -1383,7 +1373,6 @@
 .fav-tab-btn:focus,
 .fav-edit-btn:focus,
 .fav-action-btn:focus,
-.fav-details-btn:focus,
 .fav-sidebar-close:focus {
   outline: 2px solid #00A5A9;
   outline-offset: 2px;

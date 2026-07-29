@@ -55,21 +55,24 @@ const SupplierProfileModal = ({ isOpen, onClose, profile, onRequestMaterials }) 
       });
       if (response.ok) {
         const data = await response.json();
-        setReviews(data);
+        // Backend returns `{ reviews: [...] }`. Fall back to `data` itself in
+        // case the endpoint ever changes to return a bare array again.
+        const list = Array.isArray(data) ? data : (data?.reviews ?? []);
+        setReviews(list);
 
         // Calculate stats
-        if (data.length > 0) {
-          const total = data.reduce((sum, r) => sum + r.rating, 0);
-          const avg = total / data.length;
+        if (list.length > 0) {
+          const total = list.reduce((sum, r) => sum + r.rating, 0);
+          const avg = total / list.length;
           const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-          data.forEach(r => {
+          list.forEach(r => {
             if (distribution[r.rating] !== undefined) {
               distribution[r.rating]++;
             }
           });
           setReviewStats({
             averageRating: avg,
-            totalReviews: data.length,
+            totalReviews: list.length,
             ratingDistribution: distribution
           });
         }

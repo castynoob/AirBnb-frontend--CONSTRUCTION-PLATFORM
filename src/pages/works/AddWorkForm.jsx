@@ -25,6 +25,7 @@ import toast from "react-hot-toast";
 import JobsPreviewModal from "../../components/modal/JobsPreviewModal";
 import PropertyLocationPicker from "../../components/PropertyLocationPicker";
 import { useLanguage } from "../../contexts/LanguageContext";
+import { useInvalidateManagerData, useOptimisticallyAddJob } from "../../hooks/useManagerData";
 import "../../styles/manager/addworkform.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -32,6 +33,12 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000
 function AddWorkForm() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  // Bust the react-query cache after successful job creation so the manager
+  // dashboard/jobs list refetches instead of showing stale results.
+  const invalidateManagerData = useInvalidateManagerData();
+  // Optimistic insertion — makes the new job appear on the dashboard the
+  // instant the POST returns, without waiting on the enrichment fan-out.
+  const optimisticallyAddJob = useOptimisticallyAddJob();
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [parsedJobsData, setParsedJobsData] = useState(null);
   const [inspectionId, setInspectionId] = useState(null);
@@ -264,7 +271,9 @@ function AddWorkForm() {
       if (!res.ok) throw new Error("Failed to create job");
       const jobData = await res.json();
 
-      // Upload images if any
+      // Upload images if any. Surface failures — the job creation succeeded,
+      // but silently dropping images leaves the user staring at a jobless
+      // details page with no idea what went wrong.
       const createdJobId = jobData.job?.id || jobData.id;
       if (images.length > 0 && createdJobId) {
         setUploadProgress({ stage: "uploading", message: "Uploading images...", percent: 60 });
@@ -272,15 +281,55 @@ function AddWorkForm() {
         for (let i = 0; i < images.length; i++) {
           fd.append("images", images[i].file);
         }
-        await fetch(`${API_BASE_URL}/api/jobs/${createdJobId}/images`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${userProfile.token}` },
-          body: fd,
-        });
+        try {
+          const imgRes = await fetch(`${API_BASE_URL}/api/jobs/${createdJobId}/images`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${userProfile.token}` },
+            body: fd,
+          });
+          if (!imgRes.ok) {
+            let detail = "";
+            try {
+              const body = await imgRes.json();
+              detail = body.message || body.error || "";
+            } catch { /* not JSON */ }
+            console.error("Job image upload failed:", imgRes.status, detail);
+            toast.error(
+              t("addWorkModal.imagesFailed") ||
+                `Job created, but images didn't upload${detail ? ` — ${detail}` : "."}`
+            );
+          } else {
+            const body = await imgRes.json().catch(() => ({}));
+            if (body.errors && body.errors.length > 0) {
+              // Per-file failures (e.g. one file too big) — surface a summary.
+              const bad = body.errors.length;
+              toast.error(
+                `${body.images?.length || 0} image(s) uploaded, ${bad} failed. First error: ${body.errors[0]?.error || "unknown"}`
+              );
+            }
+          }
+        } catch (err) {
+          console.error("Job image upload threw:", err);
+          toast.error(t("addWorkModal.imagesFailed") || "Job created, but images didn't upload.");
+        }
       }
 
       setUploadProgress({ stage: "complete", message: "Job created!", percent: 100 });
       toast.success(t("addWorkModal.jobCreated") || "Job created successfully!");
+
+      // Optimistically show the new job on the dashboard immediately.
+      // Look up the property from the form's own list so the card has real
+      // building_name / address / city instead of "Unknown Property".
+      const createdJob = jobData.job || jobData;
+      const linkedProperty =
+        propertyMode === "new"
+          ? { ...newPropertyData, id: propertyId, manager_id: userProfile.id }
+          : properties.find((p) => p.id === propertyId) || null;
+      optimisticallyAddJob({ job: createdJob, property: linkedProperty, imageFiles: images });
+
+      // Invalidate to trigger the real refetch in the background. The stub
+      // above stays visible until the enriched data replaces it.
+      invalidateManagerData();
       setTimeout(() => navigate(-1), 1000);
     } catch (err) {
       console.error("Error creating job:", err);
@@ -822,6 +871,7 @@ function AddWorkForm() {
             toast.success(t("toasts.jobsCreatedCount").replace("{{count}}", result?.jobs?.length || 0));
             setShowPreviewModal(false);
             setParsedJobsData(null);
+            invalidateManagerData();
             navigate(-1);
           }}
         />

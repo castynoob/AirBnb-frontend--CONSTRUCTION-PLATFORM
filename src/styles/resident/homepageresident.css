@@ -467,8 +467,10 @@
    RESPONSIVE DESIGN
    ============================================ */
 
-/* Tablet - Collapsed Sidebar */
-@media (max-width: 1024px) {
+/* Tablet - Collapsed Sidebar.
+   Breakpoint MUST match nav.css (.sidebar collapses at ≤968px). If these two
+   drift apart, content jumps under the still-full-width sidebar in the gap. */
+@media (max-width: 968px) {
   .resident-main-container {
     margin-left: 80px;
     padding: 1.25rem 1rem;

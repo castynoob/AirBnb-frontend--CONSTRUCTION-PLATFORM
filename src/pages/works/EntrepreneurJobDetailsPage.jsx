@@ -11,6 +11,9 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import Nav from "../../components/Nav";
 import SubmitInvoiceModal from "../../components/modal/SubmitInvoiceModal";
+import BidAddendaSection from "../../components/BidAddendaSection";
+import PropertyManagerProfileModal from "../../components/modal/PropertyManagerProfileModal";
+import DeadlineIndicator, { OverdueBanner } from "../../components/DeadlineIndicator";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { translateStatus, translateCategory, translateUrgency, translatePropertyType } from "../../utils/translateEnums";
 import toast from "react-hot-toast";
@@ -64,6 +67,32 @@ function EntrepreneurJobDetailsPage() {
   // Review modal
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
+
+  // Property manager profile modal — same component the bid page uses.
+  // Fetched lazily on click so we don't spend a request per job view.
+  const [showManagerModal, setShowManagerModal] = useState(false);
+  const [managerProfile, setManagerProfile] = useState(null);
+  const [managerProfileLoading, setManagerProfileLoading] = useState(false);
+
+  const handleViewManagerProfile = async () => {
+    const managerProfileId = job?.manager_id;
+    if (!managerProfileId || managerProfileLoading) return;
+    setManagerProfileLoading(true);
+    try {
+      const res = await fetch(
+        `${API}/api/users/manager/profile/id/${managerProfileId}`,
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+      if (!res.ok) throw new Error("Failed to load manager profile");
+      const data = await res.json();
+      setManagerProfile(data.profile);
+      setShowManagerModal(true);
+    } catch (err) {
+      toast.error(err.message || tx(t, "entrepreneurJobs.managerProfileFailed", "Couldn't load manager profile."));
+    } finally {
+      setManagerProfileLoading(false);
+    }
+  };
   const [categoryRatings, setCategoryRatings] = useState({ quality: 0, timeliness: 0, communication: 0, value: 0 });
   const [reviewComment, setReviewComment] = useState("");
   const [reviewImages, setReviewImages] = useState([]);
@@ -220,11 +249,71 @@ function EntrepreneurJobDetailsPage() {
   const lng = Number(job?.property_lng || job?.property_longitude);
 
   if (loading) {
+    // Skeleton mirrors the real page shape (banner slot, title row, main +
+    // side cards) so the layout doesn't jump when data lands. Keyframe is
+    // inlined because sk-pulse isn't defined in any global stylesheet.
     return (
       <div style={{ display: "flex", minHeight: "100vh" }}>
+        <style>{`
+          @keyframes ejd-shimmer {
+            0%   { background-position: -400px 0; }
+            100% { background-position: 400px 0; }
+          }
+          .ejd-sk {
+            background: linear-gradient(90deg, #eef2f7 25%, #e2e8f0 37%, #eef2f7 63%);
+            background-size: 800px 100%;
+            animation: ejd-shimmer 1.4s ease-in-out infinite;
+            border-radius: 8px;
+          }
+        `}</style>
         <Nav />
         <div className="main-container" style={s.page}>
-          <div style={s.loadingWrap}><div style={s.spinner} /><p style={{ color: "#6b7280" }}>Loading job details...</p></div>
+          {/* Invite banner slot — thin, only visible while loading in case an
+              invite banner is about to render. Prevents layout jump. */}
+          <div className="ejd-sk" style={{ height: 78, marginBottom: 20, borderRadius: 12 }} />
+
+          {/* Header — back link + title + status/amount row */}
+          <div style={{ marginBottom: 24 }}>
+            <div className="ejd-sk" style={{ height: 14, width: 72, marginBottom: 14 }} />
+            <div className="ejd-sk" style={{ height: 28, width: "60%", marginBottom: 14 }} />
+            <div style={{ display: "flex", gap: 12 }}>
+              <div className="ejd-sk" style={{ height: 24, width: 96, borderRadius: 999 }} />
+              <div className="ejd-sk" style={{ height: 24, width: 120 }} />
+            </div>
+          </div>
+
+          {/* Content grid — one wide card + one side column */}
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr)", gap: 20 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 20 }}>
+                <div className="ejd-sk" style={{ height: 14, width: 140, marginBottom: 16 }} />
+                <div className="ejd-sk" style={{ height: 12, width: "100%", marginBottom: 10 }} />
+                <div className="ejd-sk" style={{ height: 12, width: "94%", marginBottom: 10 }} />
+                <div className="ejd-sk" style={{ height: 12, width: "78%", marginBottom: 10 }} />
+                <div className="ejd-sk" style={{ height: 12, width: "88%" }} />
+              </div>
+              <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 20 }}>
+                <div className="ejd-sk" style={{ height: 14, width: 100, marginBottom: 16 }} />
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+                  <div className="ejd-sk" style={{ height: 96 }} />
+                  <div className="ejd-sk" style={{ height: 96 }} />
+                  <div className="ejd-sk" style={{ height: 96 }} />
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+              <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 20 }}>
+                <div className="ejd-sk" style={{ height: 14, width: 120, marginBottom: 16 }} />
+                <div className="ejd-sk" style={{ height: 12, width: "100%", marginBottom: 10 }} />
+                <div className="ejd-sk" style={{ height: 12, width: "84%", marginBottom: 10 }} />
+                <div className="ejd-sk" style={{ height: 12, width: "72%" }} />
+              </div>
+              <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 20 }}>
+                <div className="ejd-sk" style={{ height: 14, width: 100, marginBottom: 16 }} />
+                <div className="ejd-sk" style={{ height: 160, borderRadius: 10 }} />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -260,15 +349,29 @@ function EntrepreneurJobDetailsPage() {
     <div style={{ display: "flex", minHeight: "100vh" }}>
       <Nav />
       <div className="main-container" style={s.page}>
-        {/* Header */}
+        {/* Overdue banner — visual-only signal that the job passed its
+            deadline. Nothing else changes; the page still functions normally. */}
+        <OverdueBanner dueDate={job.due_date} />
+
+        {/* Header — mockup layout: teal "← Back" link, bold title, then a
+            single row with the status pill + amount inline. */}
         <div style={s.header}>
-          <button onClick={() => navigate("/jobs/entrepreneur")} style={s.backBtn}><ArrowLeft size={18} /> {tx(t, "common.back", "Back")}</button>
-          <div style={s.headerInfo}>
-            <h1 style={s.title}>{job.title}</h1>
-            <div style={s.headerMeta}>
-              <span style={{ ...s.statusBadge, background: statusColors[job.status] || "#6b7280" }}>{translateStatus(t, job.status, { uppercase: true })}</span>
-              <span style={s.contractAmt}>{formatCurrency(contractAmount)}</span>
-            </div>
+          <button onClick={() => navigate("/jobs/entrepreneur")} style={s.backBtn}>
+            <ArrowLeft size={16} /> {tx(t, "common.back", "Back")}
+          </button>
+          <h1 style={s.title}>{job.title}</h1>
+          <div style={s.headerRow}>
+            <span
+              style={{
+                ...s.statusPill,
+                background: (statusColors[job.status] || "#6b7280") + "18",
+                color: statusColors[job.status] || "#6b7280",
+                border: `1px solid ${(statusColors[job.status] || "#6b7280")}30`,
+              }}
+            >
+              {translateStatus(t, job.status, { uppercase: true })}
+            </span>
+            <span style={s.contractAmt}>{formatCurrency(contractAmount)}</span>
           </div>
         </div>
 
@@ -286,67 +389,115 @@ function EntrepreneurJobDetailsPage() {
               {job.description && <div style={{ marginTop: 12 }}><span style={s.infoLabel}>{tx(t, "entrepreneurJobs.description", "Description")}</span><p style={s.desc}>{job.description}</p></div>}
             </div>
 
-            {/* Timeline & Budget */}
-            <div style={s.card}>
-              <h2 style={s.cardTitle}><Calendar size={18} /> {tx(t, "entrepreneurJobs.timelineBudget", "Timeline & Budget")}</h2>
+            {/* Timeline & Budget — reference detail; collapse on completed jobs. */}
+            <CollapsibleCard
+              icon={<Calendar size={18} />}
+              title={tx(t, "entrepreneurJobs.timelineBudget", "Timeline & Budget")}
+              defaultOpen={job.status !== "completed"}
+            >
               <div style={s.infoGrid}>
-                <div style={s.infoItem}><span style={s.infoLabel}><Calendar size={13} /> {tx(t, "entrepreneurJobs.dueDate", "Due Date")}</span><span style={s.infoValue}>{formatDate(job.due_date)}</span></div>
+                <div style={s.infoItem}>
+                  <span style={s.infoLabel}><Calendar size={13} /> {tx(t, "entrepreneurJobs.dueDate", "Due Date")}</span>
+                  <span style={{ ...s.infoValue, display: "inline-flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    {formatDate(job.due_date)}
+                    <DeadlineIndicator dueDate={job.due_date} compact />
+                  </span>
+                </div>
                 {job.estimated_duration_days && <div style={s.infoItem}><span style={s.infoLabel}><Clock size={13} /> {tx(t, "entrepreneurJobs.estimatedDuration", "Est. Duration")}</span><span style={s.infoValue}>{job.estimated_duration_days} {tx(t, "maintenanceLog.days", "days")}</span></div>}
                 {job.budget_min && job.budget_max && <div style={s.infoItem}><span style={s.infoLabel}><DollarSign size={13} /> {tx(t, "entrepreneurJobs.budgetRange", "Budget Range")}</span><span style={s.infoValue}>{formatCurrency(job.budget_min)} - {formatCurrency(job.budget_max)}</span></div>}
                 {job.urgency && <div style={s.infoItem}><span style={s.infoLabel}>{tx(t, "entrepreneurJobs.urgencyLabel", "Urgency")}</span><span style={{ ...s.urgencyBadge, background: job.urgency === "Urgent" ? "#fef2f2" : "#f0fdf4", color: job.urgency === "Urgent" ? "#dc2626" : "#16a34a" }}>{translateUrgency(t, job.urgency)}</span></div>}
               </div>
-            </div>
+            </CollapsibleCard>
 
-            {/* Job Images */}
+            {/* Job Images — reference; collapse on completed jobs. */}
             {Array.isArray(jobImages) && jobImages.length > 0 && (
-              <div style={s.card}>
-                <h2 style={s.cardTitle}><ImageIcon size={18} /> {tx(t, "entrepreneurJobs.jobImages", "Job Images")} ({jobImages.length})</h2>
+              <CollapsibleCard
+                icon={<ImageIcon size={18} />}
+                title={`${tx(t, "entrepreneurJobs.jobImages", "Job Images")} (${jobImages.length})`}
+                defaultOpen={job.status !== "completed"}
+              >
                 <div style={s.imgGrid}>
                   {jobImages.map((img, i) => (
                     <img key={i} src={img.image_url || img.url || img} alt={`Job ${i + 1}`} style={s.imgThumb}
                       onClick={() => setViewingImage(img.image_url || img.url || img)} />
                   ))}
                 </div>
-              </div>
+              </CollapsibleCard>
             )}
 
-            {/* Property Information */}
-            {(job.property_name || job.property_address) && (
-              <div style={s.card}>
-                <h2 style={s.cardTitle}><Building2 size={18} /> {tx(t, "entrepreneurJobs.propertyInformation", "Property Information")}</h2>
+            {/* Property Information — includes a clickable Property Manager
+                pill at the bottom (opens the manager profile modal). Same
+                pattern used elsewhere in the app. Collapse on completed. */}
+            {(job.property_name || job.property_address || job.manager_name || job.manager_company) && (
+              <CollapsibleCard
+                icon={<Building2 size={18} />}
+                title={tx(t, "entrepreneurJobs.propertyInformation", "Property Information")}
+                defaultOpen={job.status !== "completed"}
+              >
                 <div style={s.infoGrid}>
                   {job.property_name && <div style={s.infoItem}><span style={s.infoLabel}>{tx(t, "properties.name", "Name")}</span><span style={s.infoValue}>{job.property_name}</span></div>}
                   {job.property_address && <div style={s.infoItem}><span style={s.infoLabel}>{tx(t, "properties.address", "Address")}</span><span style={s.infoValue}>{job.property_address}</span></div>}
                   {(job.property_city || job.property_province) && <div style={s.infoItem}><span style={s.infoLabel}>{tx(t, "properties.city", "City")}</span><span style={s.infoValue}>{[job.property_city, job.property_province].filter(Boolean).join(", ")}</span></div>}
                   {job.property_type && <div style={s.infoItem}><span style={s.infoLabel}>{tx(t, "properties.type", "Type")}</span><span style={s.infoValue}>{translatePropertyType(t, job.property_type)}</span></div>}
                 </div>
-              </div>
-            )}
 
-            {/* Property Manager */}
-            {(job.manager_name || job.manager_company) && (
-              <div style={s.card}>
-                <h2 style={s.cardTitle}><User size={18} /> {tx(t, "entrepreneurJobs.propertyManager", "Property Manager")}</h2>
-                <div style={s.managerCard}>
-                  <div style={s.managerAvatar}>{(job.manager_company || job.manager_name || "P").charAt(0).toUpperCase()}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={s.managerName}>{job.manager_company || job.manager_name}</div>
-                    {job.manager_name && job.manager_company && <div style={s.managerSub}>{job.manager_name}</div>}
-                    <div style={s.managerStats}>
-                      {job.manager_avg_rating && <span style={s.managerStat}><Star size={13} fill="#f59e0b" stroke="#f59e0b" /> {Number(job.manager_avg_rating).toFixed(1)} ({job.manager_review_count || 0})</span>}
-                      {job.manager_total_jobs && <span style={s.managerStat}><Briefcase size={13} /> {job.manager_completed_jobs || 0}/{job.manager_total_jobs} {tx(t, "entrepreneurJobs.jobs", "jobs")}</span>}
-                      {job.manager_experience && <span style={s.managerStat}><Award size={13} /> {job.manager_experience}</span>}
-                      {job.manager_joined && <span style={s.managerStat}><Shield size={13} /> {tx(t, "entrepreneurJobs.since", "Since")} {new Date(job.manager_joined).getFullYear()}</span>}
-                    </div>
+                {(job.manager_name || job.manager_company) && (
+                  <div style={{ marginTop: 16 }}>
+                    <span style={s.infoLabel}>
+                      <User size={13} /> {tx(t, "entrepreneurJobs.propertyManager", "Property Manager")}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleViewManagerProfile}
+                      disabled={!job.manager_id || managerProfileLoading}
+                      style={s.managerPill}
+                      aria-label={tx(t, "entrepreneurJobs.viewManagerProfile", "View manager profile")}
+                    >
+                      <div style={s.managerAvatar}>
+                        {(job.manager_company || job.manager_name || "P").charAt(0).toUpperCase()}
+                      </div>
+                      <div style={{ flex: 1, textAlign: "left", minWidth: 0 }}>
+                        <div style={s.managerName}>{job.manager_company || job.manager_name}</div>
+                        {job.manager_name && job.manager_company && (
+                          <div style={s.managerSub}>{job.manager_name}</div>
+                        )}
+                        <div style={s.managerStats}>
+                          {job.manager_avg_rating && (
+                            <span style={s.managerStat}>
+                              <Star size={13} fill="#f59e0b" stroke="#f59e0b" /> {Number(job.manager_avg_rating).toFixed(1)} ({job.manager_review_count || 0})
+                            </span>
+                          )}
+                          {job.manager_total_jobs && (
+                            <span style={s.managerStat}>
+                              <Briefcase size={13} /> {job.manager_completed_jobs || 0}/{job.manager_total_jobs} {tx(t, "entrepreneurJobs.jobs", "jobs")}
+                            </span>
+                          )}
+                          {job.manager_experience && (
+                            <span style={s.managerStat}>
+                              <Award size={13} /> {job.manager_experience}
+                            </span>
+                          )}
+                          {job.manager_joined && (
+                            <span style={s.managerStat}>
+                              <Shield size={13} /> {tx(t, "entrepreneurJobs.since", "Since")} {new Date(job.manager_joined).getFullYear()}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <ChevronRight size={20} color="#00A5A9" />
+                    </button>
                   </div>
-                </div>
-              </div>
+                )}
+              </CollapsibleCard>
             )}
 
-            {/* Map */}
+            {/* Property Location map — reference only after completion. */}
             {hasLat && hasLng && (
-              <div style={s.card}>
-                <h2 style={s.cardTitle}><MapPin size={18} /> {tx(t, "entrepreneurJobs.propertyLocation", "Property Location")}</h2>
+              <CollapsibleCard
+                icon={<MapPin size={18} />}
+                title={tx(t, "entrepreneurJobs.propertyLocation", "Property Location")}
+                defaultOpen={job.status !== "completed"}
+              >
                 <div style={{ borderRadius: 12, overflow: "hidden", height: 260 }}>
                   <MapContainer center={[lat, lng]} zoom={16} scrollWheelZoom={false} attributionControl={false} style={{ height: "100%", width: "100%" }}>
                     <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
@@ -355,19 +506,45 @@ function EntrepreneurJobDetailsPage() {
                     </Marker>
                   </MapContainer>
                 </div>
-              </div>
+              </CollapsibleCard>
             )}
           </div>
 
           {/* RIGHT COLUMN */}
           <div style={s.rightCol}>
-            {/* Contract Status */}
+            {/* Contract Status — mockup: label left, value/pill right. */}
             <div style={s.card}>
               <h2 style={s.cardTitle}><FileText size={18} /> {tx(t, "entrepreneurJobs.contractStatus", "Contract Status")}</h2>
               {contract ? (
                 <>
-                  <div style={s.contractRow}><span style={s.contractLabel}>{tx(t, "entrepreneurJobs.amount", "Amount")}</span><span style={s.contractValue}>{formatCurrency(contractAmount)}</span></div>
-                  <div style={s.contractRow}><span style={s.contractLabel}>{tx(t, "entrepreneurJobs.status", "Status")}</span><span style={{ ...s.statusBadgeSm, background: contract.status === "completed" ? "#7c3aed" : contract.status === "active" ? "#059669" : "#2563eb" }}>{translateStatus(t, contract.status)}</span></div>
+                  <div style={s.contractRow}>
+                    <span style={s.contractLabel}>{tx(t, "entrepreneurJobs.amount", "Amount")}</span>
+                    <span style={s.contractValue}>{formatCurrency(contractAmount)}</span>
+                  </div>
+                  <div style={s.contractRow}>
+                    <span style={s.contractLabel}>{tx(t, "entrepreneurJobs.status", "Status")}</span>
+                    {(() => {
+                      const st = contract.status;
+                      const tint =
+                        st === "completed"
+                          ? { bg: "#f3e8ff", fg: "#7c3aed", bd: "#e9d5ff" }
+                          : st === "active"
+                            ? { bg: "#dcfce7", fg: "#059669", bd: "#bbf7d0" }
+                            : { bg: "#dbeafe", fg: "#2563eb", bd: "#bfdbfe" };
+                      return (
+                        <span
+                          style={{
+                            ...s.statusPillSm,
+                            background: tint.bg,
+                            color: tint.fg,
+                            border: `1px solid ${tint.bd}`,
+                          }}
+                        >
+                          {translateStatus(t, st)}
+                        </span>
+                      );
+                    })()}
+                  </div>
                   {contract.approved_at && <div style={s.contractRow}><span style={s.contractLabel}>{tx(t, "entrepreneurJobs.workStarted", "Work Started")}</span><span style={s.contractVal2}>{formatDate(contract.approved_at)}</span></div>}
                   {contract.completed_at && <div style={s.contractRow}><span style={s.contractLabel}>{tx(t, "entrepreneurJobs.workCompleted", "Work Completed")}</span><span style={s.contractVal2}>{formatDate(contract.completed_at)}</span></div>}
                 </>
@@ -376,10 +553,32 @@ function EntrepreneurJobDetailsPage() {
               )}
             </div>
 
-            {/* Job Progress — Stepper UI */}
+            {/* Bid addenda — post-submission Q&A / price adjustments. On this
+                accepted-or-later screen the thread is usually read-only (bid
+                is already approved) but the historical record + final effective
+                total stay visible for the audit trail. Collapse on completed. */}
+            {contract?.bid_id && (
+              <CollapsibleCard
+                icon={<DollarSign size={18} />}
+                title={tx(t, "entrepreneurJobs.priceAdjustments", "Price adjustments (addenda)")}
+                defaultOpen={job.status !== "completed"}
+              >
+                <BidAddendaSection
+                  bidId={contract.bid_id}
+                  currentUserId={userProfile?.id || null}
+                  canAct={false}
+                />
+              </CollapsibleCard>
+            )}
+
+            {/* Job Progress — Stepper UI. Collapse on completed jobs (all
+                stages are done — historical audit trail). */}
             {Array.isArray(progress) && progress.length > 0 && (
-              <div style={s.card}>
-                <h2 style={s.cardTitle}><CheckCircle size={18} /> {tx(t, "progress.trackProgress", "Job Progress")}</h2>
+              <CollapsibleCard
+                icon={<CheckCircle size={18} />}
+                title={tx(t, "progress.trackProgress", "Job Progress")}
+                defaultOpen={job.status !== "completed"}
+              >
                 <div style={{ position: 'relative', paddingLeft: 28 }}>
                   {/* Vertical line */}
                   <div style={{ position: 'absolute', left: 11, top: 4, bottom: 4, width: 2, background: '#e5e7eb', zIndex: 0 }} />
@@ -488,7 +687,7 @@ function EntrepreneurJobDetailsPage() {
                     );
                   })}
                 </div>
-              </div>
+              </CollapsibleCard>
             )}
 
             {/* Initialize Progress — for ongoing jobs without progress */}
@@ -693,6 +892,13 @@ function EntrepreneurJobDetailsPage() {
         </div>
       )}
 
+      {/* Property Manager Profile Modal */}
+      <PropertyManagerProfileModal
+        isOpen={showManagerModal}
+        onClose={() => setShowManagerModal(false)}
+        profile={managerProfile}
+      />
+
       {/* Submit / Edit Invoice Modal */}
       <SubmitInvoiceModal
         isOpen={showInvoiceModal}
@@ -817,19 +1023,76 @@ if (typeof document !== "undefined" && !document.getElementById(ejdpResponsiveId
   document.head.appendChild(style);
 }
 
+// Card wrapper with a full-width, click-anywhere header that toggles the
+// body. Chevron space-between on the right. Same pattern used on the PM's
+// bid detail page — reference cards on a completed job can be collapsed by
+// default so the eye lands on the completion artifacts first.
+function CollapsibleCard({ icon, title, defaultOpen = true, headerAction, children }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div style={s.card}>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setOpen((o) => !o);
+          }
+        }}
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          width: "100%",
+          gap: 12,
+          cursor: "pointer",
+          userSelect: "none",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8, color: "#0F223D", fontWeight: 600, fontSize: "0.95rem", minWidth: 0 }}>
+          {icon}
+          <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</span>
+        </div>
+        <div
+          style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}
+          onClick={(e) => headerAction && e.stopPropagation()}
+        >
+          {headerAction}
+          <ChevronDown
+            size={18}
+            color="#9ca3af"
+            style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform .15s" }}
+          />
+        </div>
+      </div>
+      {open && <div style={{ marginTop: 16 }}>{children}</div>}
+    </div>
+  );
+}
+
 const s = {
   page: { flex: 1, padding: "24px 32px", overflowY: "auto", background: "#f8fafc" },
+
   loadingWrap: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 400, gap: 16 },
   spinner: { width: 36, height: 36, border: "3px solid #e5e7eb", borderTopColor: "#00A5A9", borderRadius: "50%", animation: "spin 0.8s linear infinite" },
-  header: { marginBottom: 20 },
-  backBtn: { display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "#00A5A9", cursor: "pointer", fontSize: "0.875rem", fontWeight: 500, padding: 0, marginBottom: 8 },
+  header: { marginBottom: 24 },
+  backBtn: { display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "#00A5A9", cursor: "pointer", fontSize: "0.875rem", fontWeight: 500, padding: 0, marginBottom: 12 },
   backBtnLink: { color: "#00A5A9", background: "none", border: "none", cursor: "pointer", fontSize: "0.9rem", fontWeight: 500 },
   headerInfo: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 10, minWidth: 0 },
-  title: { margin: "0 0 8px", fontSize: "clamp(1.0625rem, 4.5vw, 1.5rem)", fontWeight: 700, color: "#0F223D", lineHeight: 1.25, wordBreak: "break-word", flexBasis: "100%" },
+  title: { margin: "0 0 10px", fontSize: "clamp(1.25rem, 3.6vw, 1.75rem)", fontWeight: 800, color: "#0F223D", lineHeight: 1.2, wordBreak: "break-word" },
+  // Row under the title: status pill + bid amount inline. Matches redesign.
+  headerRow: { display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" },
   headerMeta: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" },
+  // Legacy solid-color pill (kept for compatibility if used elsewhere).
   statusBadge: { color: "#fff", padding: "5px 12px", borderRadius: 20, fontSize: "0.6875rem", fontWeight: 600, letterSpacing: "0.5px" },
   statusBadgeSm: { color: "#fff", padding: "3px 10px", borderRadius: 12, fontSize: "0.72rem", fontWeight: 600, display: "inline-block" },
-  contractAmt: { fontSize: "1.25rem", fontWeight: 700, color: "#0F223D" },
+  // Redesign pills — tinted background + matching foreground colour.
+  statusPill: { padding: "5px 14px", borderRadius: 20, fontSize: "0.75rem", fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase", display: "inline-flex", alignItems: "center" },
+  statusPillSm: { padding: "3px 12px", borderRadius: 14, fontSize: "0.72rem", fontWeight: 700, display: "inline-flex", alignItems: "center", textTransform: "capitalize" },
+  contractAmt: { fontSize: "1.375rem", fontWeight: 800, color: "#0F223D" },
   grid: { display: "grid", gridTemplateColumns: "1fr 400px", gap: 24, alignItems: "start" },
   leftCol: { display: "flex", flexDirection: "column", gap: 20 },
   rightCol: { display: "flex", flexDirection: "column", gap: 20, position: "sticky", top: 24 },
@@ -844,6 +1107,23 @@ const s = {
   imgGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: 10 },
   imgThumb: { width: "100%", height: 90, objectFit: "cover", borderRadius: 10, cursor: "pointer", border: "1px solid #e5e7eb" },
   managerCard: { display: "flex", gap: 14, alignItems: "flex-start", padding: 14, background: "#f9fafb", borderRadius: 12 },
+  // Clickable version — same shape as managerCard, but styled as a button
+  // that opens the PropertyManagerProfileModal.
+  managerPill: {
+    display: "flex",
+    gap: 14,
+    alignItems: "center",
+    padding: "14px 16px",
+    background: "#fff",
+    border: "1px solid #d1e9ea",
+    borderRadius: 14,
+    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+    width: "100%",
+    marginTop: 8,
+    cursor: "pointer",
+    textAlign: "left",
+    transition: "border-color .15s, box-shadow .15s",
+  },
   managerAvatar: { width: 48, height: 48, borderRadius: "50%", background: "#0F223D", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", fontWeight: 700, flexShrink: 0 },
   managerName: { fontWeight: 600, fontSize: "0.95rem", color: "#1f2937" },
   managerSub: { fontSize: "0.8rem", color: "#6b7280", marginTop: 2 },

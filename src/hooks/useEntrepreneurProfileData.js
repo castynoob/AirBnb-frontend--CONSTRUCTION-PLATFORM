@@ -57,6 +57,25 @@ export const useEntrepreneurProfile = () => {
         averageRating: entrepData.profile.average_rating,
         totalReviews: entrepData.profile.total_reviews || 0,
         image: entrepData.profile.image,
+        // Public specialist directory opt-in. Without this, the Edit modal
+        // reads `undefined` on reopen and the toggle silently flips back
+        // to off — even though the DB has it stored correctly.
+        showcaseEnabled: entrepData.profile.showcase_enabled ?? false,
+        // About / website — free-form fields shown on the profile modal
+        // Company tab and edited inline. Nullable on DB, defaulted here so
+        // controlled inputs don't warn.
+        bio: entrepData.profile.bio ?? '',
+        website: entrepData.profile.website ?? '',
+        // Portfolio for the inline uploader. Backend stores as jsonb but may
+        // return as a string on some rows — normalise to an array.
+        portfolio: (() => {
+          const raw = entrepData.profile.portfolio
+          if (Array.isArray(raw)) return raw
+          if (typeof raw === 'string') {
+            try { const p = JSON.parse(raw); return Array.isArray(p) ? p : [] } catch { return [] }
+          }
+          return []
+        })(),
       }
     },
     enabled: !!getUser(),

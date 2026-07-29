@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Elements,
   useStripe,
@@ -170,6 +170,82 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
   const [promoData, setPromoData] = useState(null);
   const [showPromoInput, setShowPromoInput] = useState(false);
 
+  // Pending referral discount preview — if the user signed up with someone's
+  // referral code and hasn't yet subscribed, we show a line item so they can
+  // see the discount that's about to auto-apply. Backend also applies it for
+  // real at createSubscription time (see applyReferralDiscountAtCheckout).
+  //
+  // Auth quirk: the `token` prop is captured when the parent renders. If
+  // that token expires between then and the modal opening, we get 401 and
+  // no discount shows. Two defenses:
+  //   1. Read the freshest token from localStorage at fetch time (the auth
+  //      refresh flow updates that value silently).
+  //   2. Retry once on 401 after a short delay — long enough for an in-flight
+  //      refresh-token roundtrip to complete.
+  const [pendingReferral, setPendingReferral] = useState(null); // { pending, discount_percent, referred_by }
+  useEffect(() => {
+    let cancelled = false;
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+    const getFreshToken = () => {
+      try {
+        const raw = localStorage.getItem("userProfile");
+        return (raw && JSON.parse(raw)?.token) || token || null;
+      } catch { return token || null; }
+    };
+
+    // Tight retry loop — polls localStorage every 200ms up to 5 tries so
+    // a mid-flight token refresh doesn't leave the discount hidden. Total
+    // worst-case wait is 1 second before we give up.
+    const fetchOnce = async (attempt) => {
+      if (cancelled) return;
+      const freshToken = getFreshToken();
+      if (!freshToken) return;
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/referrals/my-pending-discount`, {
+          headers: { Authorization: `Bearer ${freshToken}` },
+        });
+        if (cancelled) return;
+        if (res.status === 401 && attempt < 4) {
+          setTimeout(() => fetchOnce(attempt + 1), 200);
+          return;
+        }
+        if (!res.ok) return;
+        const body = await res.json();
+        if (body?.pending) setPendingReferral(body);
+      } catch { /* silent — a missing preview is fine */ }
+    };
+
+    fetchOnce(0);
+    return () => { cancelled = true; };
+  }, [token]);
+
+  // Detect an existing active/trialing subscription so we call the correct
+  // endpoint (change-plan vs create-subscription). Without this, users on any
+  // plan hit the 400 "Active subscription exists" wall when trying to switch.
+  // Fallback helper — `t('key') || 'fallback'` doesn't work because our i18n
+  // returns the key itself when a translation is missing (truthy). This
+  // returns the fallback only when the key is unresolved.
+  const tf = (key, fallback) => {
+    const v = t(key);
+    return v === key ? fallback : v;
+  };
+
+  const existingSub = (() => {
+    try {
+      const raw = localStorage.getItem("userProfile");
+      if (!raw) return null;
+      const u = JSON.parse(raw);
+      const s = u?.entrepProfile?.subscription?.subscription;
+      if (!s) return null;
+      const modifiable = ["active", "trialing"].includes(s.status);
+      return modifiable ? s : null;
+    } catch {
+      return null;
+    }
+  })();
+  const isPlanChange = !!existingSub && existingSub.plan_type !== planType;
+
   // Handle closing after successful payment
   const handleSuccessClose = () => {
     setIsClosing(true);
@@ -285,6 +361,46 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
 
     setLoading(true);
     setMessage("");
+
+    // Plan change — user is already on Starter/Basic/Premium and wants to
+    // switch. Uses the payment method Stripe already has on file, so no card
+    // entry is required. Trials keep their remaining days.
+    if (isPlanChange) {
+      try {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+        const res = await fetch(`${API_BASE_URL}/api/payments/change-plan`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ plan_type: planType }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          const userProfile = JSON.parse(localStorage.getItem("userProfile") || "{}");
+          if (userProfile.entrepProfile && data.subscription) {
+            userProfile.entrepProfile.subscription = {
+              ...userProfile.entrepProfile.subscription,
+              subscription: {
+                ...data.subscription,
+                current_period_start: data.subscription.current_period_start,
+                current_period_end: data.subscription.current_period_end,
+              },
+            };
+            localStorage.setItem("userProfile", JSON.stringify(userProfile));
+          }
+          setIsSuccess(true);
+          setShowThankYou(true);
+        } else {
+          setMessage(data.message || data.error || "Plan change failed. Please try again.");
+        }
+      } catch (err) {
+        setMessage("Plan change failed. Please try again later.");
+      }
+      setLoading(false);
+      return;
+    }
 
     // If activation code (promoter), skip payment
     if (promoData?.type === "activation") {
@@ -474,8 +590,16 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
 
           {/* Right Column - Checkout */}
           <div className="sp-right-column">
-            <h3 className="sp-right-title">{t('subscriptionPayment.completePayment') || 'Complete Payment'}</h3>
-            <p className="sp-right-subtitle">{t('subscriptionPayment.startTrialToday') || 'Start your 14-day free trial today'}</p>
+            <h3 className="sp-right-title">
+              {isPlanChange
+                ? tf('subscriptionPayment.changePlanTitle', 'Change Plan')
+                : tf('subscriptionPayment.completePayment', 'Complete Payment')}
+            </h3>
+            <p className="sp-right-subtitle">
+              {isPlanChange
+                ? `Switching from ${existingSub?.plan_type || ''} to ${planType}. Uses your saved card${existingSub?.status === 'trialing' ? ' — your remaining trial days carry over.' : '.'}`
+                : tf('subscriptionPayment.startTrialToday', 'Start your 14-day free trial today')}
+            </p>
 
             {/* Payment Summary */}
             <div className="sp-summary">
@@ -498,13 +622,40 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
                 <span>{t('subscriptionPayment.trial14Day') || '14-Day Trial'}</span>
                 <strong className="sp-free">{t('subscriptionPayment.free') || 'FREE'}</strong>
               </div>
+
+              {/* Referral discount preview — visible only when the user has a
+                  pending referral. The actual discount is attached to the
+                  Stripe subscription in the backend at create time. */}
+              {pendingReferral?.pending && (
+                <div className="sp-summary-row" style={{ color: '#059669' }}>
+                  <span>
+                    🎁 Referral discount ({pendingReferral.discount_percent}%)
+                    <div style={{ fontSize: 11, opacity: 0.8, marginTop: 2 }}>
+                      Referred by {pendingReferral.referred_by}
+                    </div>
+                  </span>
+                  <strong>
+                    −${(currentPlan.totalWithTax * (pendingReferral.discount_percent / 100)).toFixed(2)}
+                  </strong>
+                </div>
+              )}
+
               <div className="sp-summary-total">
                 <span>{t('subscriptionPayment.dueToday') || 'Due Today'}</span>
                 <strong>$0.00</strong>
               </div>
               <div className="sp-summary-after-trial">
                 <span>{t('subscriptionPayment.afterTrial') || 'After trial'}</span>
-                <strong>${currentPlan.totalWithTax.toFixed(2)}/{currentPlan.period}</strong>
+                {pendingReferral?.pending ? (
+                  <strong>
+                    <span style={{ textDecoration: 'line-through', opacity: 0.55, marginRight: 6, fontWeight: 500 }}>
+                      ${currentPlan.totalWithTax.toFixed(2)}
+                    </span>
+                    ${(currentPlan.totalWithTax * (1 - pendingReferral.discount_percent / 100)).toFixed(2)}/{currentPlan.period}
+                  </strong>
+                ) : (
+                  <strong>${currentPlan.totalWithTax.toFixed(2)}/{currentPlan.period}</strong>
+                )}
               </div>
             </div>
 
@@ -595,8 +746,9 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
                 )}
               </div>
 
-              {/* Hide card details for activation codes */}
-              {promoData?.type !== "activation" && (
+              {/* Card entry is hidden for activation codes AND for plan changes
+                  (existing subs reuse the payment method Stripe already holds). */}
+              {promoData?.type !== "activation" && !isPlanChange && (
                 <>
                   <label className="sp-label">{t('subscriptionPayment.cardDetails') || 'Card Details'}</label>
                   <div className="sp-card-element-wrapper">
@@ -636,14 +788,30 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
               <button
                 type="submit"
                 className="sp-submit-btn"
-                disabled={promoData?.type === "activation" ? loading : (!stripe || loading)}
+                disabled={
+                  isPlanChange
+                    ? loading
+                    : promoData?.type === "activation"
+                      ? loading
+                      : (!stripe || loading)
+                }
               >
                 {loading ? (
                   <>
                     <span className="sp-spinner"></span>
-                    {promoData?.type === "activation"
-                      ? (t('subscriptionPayment.activating') || 'Activating...')
-                      : (t('subscriptionPayment.processing') || 'Processing...')}
+                    {isPlanChange
+                      ? tf('subscriptionPayment.changingPlan', 'Changing plan...')
+                      : promoData?.type === "activation"
+                        ? tf('subscriptionPayment.activating', 'Activating...')
+                        : tf('subscriptionPayment.processing', 'Processing...')}
+                  </>
+                ) : isPlanChange ? (
+                  <>
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="2"/>
+                      <path d="M8 12L11 15L16 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    {tf('subscriptionPayment.confirmPlanChange', `Switch to ${planType}`)}
                   </>
                 ) : promoData?.type === "activation" ? (
                   <>
@@ -666,7 +834,12 @@ const SubscriptionPaymentForm = ({ token, planType, handleCloseModal }) => {
               {promoData?.type !== "activation" && (
                 <p className="sp-card-note">
                   {(t('subscriptionPayment.cardChargeNote') || 'Your card will be charged ${{amount}} (incl. tax) after the trial ends. Cancel anytime.')
-                    .replace('{{amount}}', currentPlan.totalWithTax.toFixed(2))}
+                    .replace(
+                      '{{amount}}',
+                      pendingReferral?.pending
+                        ? (currentPlan.totalWithTax * (1 - pendingReferral.discount_percent / 100)).toFixed(2)
+                        : currentPlan.totalWithTax.toFixed(2)
+                    )}
                 </p>
               )}
             </form>

@@ -28,6 +28,11 @@ import MessagesEntrepreneur from "./pages/messages/MessagesEntrepreneurNew";
 import SubmittedBids from "./pages/submissions/SubmittedBids";
 import ProfilePageEntrepreneur from "./pages/profile/ProfilePageEntrepreneur";
 import EntrepreneurJobs from "./pages/works/EntrepreneurJobs";
+import ResidentRepairs from "./pages/repairs/ResidentRepairs";
+import PMRepairsQueue from "./pages/repairs/PMRepairsQueue";
+import SpecialistDirectory from "./pages/directory/SpecialistDirectory";
+import InvestorsPage from "./pages/investors/InvestorsPage";
+import DemoModeBanner from "./components/DemoModeBanner";
 import EntrepreneurJobDetailsPage from "./pages/works/EntrepreneurJobDetailsPage";
 import JobDetailsPage from "./pages/works/JobDetailsPage";
 import BidSubmissionPage from "./pages/works/BidSubmissionPage";
@@ -62,8 +67,10 @@ import Admins from "./admin/pages/Admins";
 import Payments from "./admin/pages/Payments";
 import Subscriptions from "./admin/pages/Subscriptions";
 import PromoCodes from "./admin/pages/PromoCodes";
+import Referrals from "./admin/pages/Referrals";
 import Reports from "./admin/pages/Reports";
 import Disputes from "./admin/pages/Disputes";
+import Addenda from "./admin/pages/Addenda";
 
 // Components
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -72,6 +79,8 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
     <Router>
+      {/* Fixed-top red banner while demo mode is on. Renders nothing when off. */}
+      <DemoModeBanner />
       <Toaster
         position="top-right"
         gutter={10}
@@ -166,6 +175,11 @@ function App() {
           {/* ===== PUBLIC ROUTES ===== */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/legal" element={<LegalPage />} />
+          {/* Public specialist directory — no auth wrapper by design so
+              Google can index it and unauthenticated visitors can browse. */}
+          <Route path="/find-contractors" element={<SpecialistDirectory />} />
+          {/* Public thank-you page for backers. See src/data/investors.js. */}
+          <Route path="/investors" element={<InvestorsPage />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
@@ -210,8 +224,10 @@ function AdminRoutes() {
         <Route path="/payments" element={<Payments />} />
         <Route path="/subscriptions" element={<Subscriptions />} />
         <Route path="/promo-codes" element={<PromoCodes />} />
+        <Route path="/referrals" element={<Referrals />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/disputes" element={<Disputes />} />
+        <Route path="/addenda" element={<Addenda />} />
         {/* <Route path="/audit-logs" element={<AuditLogs />} /> */}
       </Route>
 
@@ -245,7 +261,11 @@ function ProtectedRoutes() {
       />
       <Route
         path="/submissions/property_manager"
-        element={<ProtectedRoute element={<Submissions />} />}
+        element={<ProtectedRoute element={<Submissions initialScope="biddings" />} />}
+      />
+      <Route
+        path="/jobs/property_manager"
+        element={<ProtectedRoute element={<Submissions initialScope="jobs" />} />}
       />
       <Route
         path="/favorites/property_manager"
@@ -292,6 +312,14 @@ function ProtectedRoutes() {
       <Route
         path="/jobs/entrepreneur"
         element={<ProtectedRoute element={<EntrepreneurJobs />} />}
+      />
+      <Route
+        path="/repairs/resident"
+        element={<ProtectedRoute element={<ResidentRepairs />} />}
+      />
+      <Route
+        path="/repairs/pending"
+        element={<ProtectedRoute element={<PMRepairsQueue />} />}
       />
       <Route
         path="/entrepreneur-job/:jobId"

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import UnlockBudgetForm from "../../components/UnlockBudgetForm";
+import PropertyManagerProfileModal from "../../components/modal/PropertyManagerProfileModal";
+import BidAddendaSection from "../../components/BidAddendaSection";
 import {
   ArrowLeft,
   DollarSign,
@@ -18,6 +20,9 @@ import {
   Loader2,
   FileText,
   ChevronDown,
+  ChevronRight,
+  Edit3,
+  Trash2,
 } from "lucide-react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
@@ -26,6 +31,7 @@ import toast from "react-hot-toast";
 import Nav from "../../components/Nav";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { translateCategory } from "../../utils/translateEnums";
+import DeadlineIndicator, { OverdueBanner } from "../../components/DeadlineIndicator";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
@@ -113,10 +119,50 @@ export default function BidSubmissionPage() {
   const [bidMessage, setBidMessage] = useState("");
   const [timelineDays, setTimelineDays] = useState("");
 
+  // Personal-invite context — if this job is one the contractor was invited to
+  // (via /find-contractors → Invite to Bid), we render a banner above the
+  // header explaining WHY they're here and who invited them.
+  const [inviteContext, setInviteContext] = useState(null);
+
+  // Existing bid (when the contractor has already submitted for this job).
+  // Presence flips the right column into a "Your Submitted Bid" view instead
+  // of the empty submit form. Edit mode reuses the same form.
+  const [existingBid, setExistingBid] = useState(null);
+  const [isEditingBid, setIsEditingBid] = useState(false);
+  const [deletingBid, setDeletingBid] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   const [budgetUnlocked, setBudgetUnlocked] = useState(false);
   const [budgetUnlockLoading, setBudgetUnlockLoading] = useState(false);
   const [showUnlockModal, setShowUnlockModal] = useState(false);
   const [unlockPrice, setUnlockPrice] = useState(null);
+
+  // Property manager profile modal — same component the entrepreneur homepage uses.
+  const [showManagerModal, setShowManagerModal] = useState(false);
+  const [managerProfile, setManagerProfile] = useState(null);
+  const [managerProfileLoading, setManagerProfileLoading] = useState(false);
+
+  // Fetch full PM profile and pop the modal. `managerProfileId` is
+  // manager_profiles.id (not user_id) — that's what the endpoint expects.
+  const handleViewManagerProfile = async () => {
+    const managerProfileId = job?.manager_id;
+    if (!managerProfileId || managerProfileLoading) return;
+    setManagerProfileLoading(true);
+    try {
+      const res = await fetch(
+        `${API_BASE}/api/users/manager/profile/id/${managerProfileId}`,
+        { headers: authHeaders() }
+      );
+      if (!res.ok) throw new Error("Failed to load manager profile");
+      const data = await res.json();
+      setManagerProfile(data.profile);
+      setShowManagerModal(true);
+    } catch (err) {
+      toast.error(err.message || tx(t, "bid.managerProfileFailed", "Couldn't load manager profile."));
+    } finally {
+      setManagerProfileLoading(false);
+    }
+  };
 
   /* ─── fetch job + property + budget check ─── */
   useEffect(() => {
@@ -168,6 +214,44 @@ export default function BidSubmissionPage() {
           }
         } catch {}
 
+        // Check if this contractor was personally invited to bid on THIS job.
+        // Silent on error — no invite context is better than a broken page.
+        try {
+          const inviteRes = await fetch(`${API_BASE}/api/invites/mine`, { headers: authHeaders() });
+          if (inviteRes.ok) {
+            const inviteJson = await inviteRes.json();
+            const match = (inviteJson.invites || []).find((i) => i.job_id === jobId);
+            if (match) setInviteContext(match);
+          }
+        } catch {}
+
+        // Look for an existing bid by the current user on this job. If found
+        // we pre-fill the form fields (so edit mode is instant) and flip the
+        // right column into the "Your Submitted Bid" view instead of the
+        // empty submit form.
+        try {
+          const myBidsRes = await fetch(`${API_BASE}/api/bids/mine`, { headers: authHeaders() });
+          if (myBidsRes.ok) {
+            const myBidsData = await myBidsRes.json();
+            // /api/bids/mine returns `{ bids: { all, pending, approved, declined }, ... }`
+            const allMine = myBidsData?.bids?.all
+              || myBidsData?.bids
+              || myBidsData?.all
+              || [];
+            const mine = Array.isArray(allMine)
+              ? allMine.find((b) => String(b.job_id) === String(jobId))
+              : null;
+            if (mine) {
+              setExistingBid(mine);
+              setBidAmount(mine.amount != null ? String(mine.amount) : "");
+              setBidMessage(mine.message || "");
+              setTimelineDays(mine.timeline_days != null ? String(mine.timeline_days) : "");
+            }
+          }
+        } catch (bidLookupErr) {
+          console.warn("Existing bid lookup skipped:", bidLookupErr.message);
+        }
+
         // Budget unlock check
         try {
           const budgetRes = await fetch(`${API_BASE}/api/payments/budget-status/${jobId}`, {
@@ -211,7 +295,7 @@ export default function BidSubmissionPage() {
     }
   };
 
-  /* ─── submit bid ─── */
+  /* ─── submit bid — new OR edit (branches on existingBid + isEditingBid) ─── */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!bidAmount) {
@@ -223,32 +307,83 @@ export default function BidSubmissionPage() {
       return;
     }
 
+    const isEditingExisting = !!existingBid && isEditingBid;
     setSubmitting(true);
     try {
       const body = {
-        job_id: jobId,
         amount: parseFloat(bidAmount),
         message: bidMessage.trim(),
       };
       if (timelineDays) body.timeline_days = parseInt(timelineDays, 10);
+      if (!isEditingExisting) body.job_id = jobId;
 
-      const res = await fetch(`${API_BASE}/api/bids`, {
-        method: "POST",
+      const url = isEditingExisting
+        ? `${API_BASE}/api/bids/${existingBid.id}`
+        : `${API_BASE}/api/bids`;
+      const method = isEditingExisting ? "PATCH" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: authHeaders(),
         body: JSON.stringify(body),
       });
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || "Failed to submit bid");
+        throw new Error(errData.message || (isEditingExisting ? "Failed to update bid" : "Failed to submit bid"));
       }
 
-      toast.success(tx(t, "bid.submitSuccess", "Bid submitted successfully!"));
-      navigate(-1);
+      const data = await res.json().catch(() => ({}));
+      toast.success(
+        isEditingExisting
+          ? tx(t, "bid.updateSuccess", "Bid updated.")
+          : tx(t, "bid.submitSuccess", "Bid submitted successfully!")
+      );
+
+      if (isEditingExisting) {
+        // Stay on page, refresh the local existing-bid snapshot with what the
+        // server returned (falls back to local values if the endpoint doesn't
+        // echo the row).
+        const updated = data.bid || data;
+        setExistingBid((prev) => ({
+          ...(prev || {}),
+          ...updated,
+          amount: Number(body.amount),
+          message: body.message,
+          timeline_days: body.timeline_days ?? prev?.timeline_days ?? null,
+        }));
+        setIsEditingBid(false);
+      } else {
+        navigate(-1);
+      }
     } catch (err) {
       toast.error(err.message || tx(t, "bid.submitFailed", "Failed to submit bid."));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  /* ─── delete existing bid ─── */
+  const handleDeleteBid = async () => {
+    if (!existingBid) return;
+    setDeletingBid(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/bids/${existingBid.id}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Failed to delete bid");
+      }
+      toast.success(tx(t, "bid.deleteSuccess", "Bid withdrawn."));
+      // Navigate back so the contractor lands on their previous view.
+      navigate(-1);
+    } catch (err) {
+      toast.error(err.message || tx(t, "bid.deleteFailed", "Failed to withdraw bid."));
+    } finally {
+      setDeletingBid(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -281,209 +416,230 @@ export default function BidSubmissionPage() {
         ) : error ? (
           <ErrorState message={error} onBack={() => navigate(-1)} />
         ) : (
-          <div style={s.grid} className="bsp-grid">
-            {/* ═══ LEFT COLUMN ═══ */}
-            <div style={s.left}>
-              {/* Header */}
-              <div style={s.headerRow}>
-                <button style={s.backBtn} onClick={() => navigate(-1)}>
+          <>
+            {/* Personal-invite banner — only renders if THIS contractor was
+                explicitly invited to bid on THIS job. Explains why they're
+                here and names the PM. */}
+            {inviteContext && (
+              <div style={s.inviteBanner}>
+                <div style={s.inviteBannerIcon}>
+                  <Send size={18} />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={s.inviteBannerTitle}>
+                    You were personally invited to bid
+                  </div>
+                  <div style={s.inviteBannerBody}>
+                    <b>
+                      {[inviteContext.pm_first_name, inviteContext.pm_last_name]
+                        .filter(Boolean).join(" ") || "The property manager"}
+                    </b>
+                    {" invited you to bid on this job"}
+                    {inviteContext.property_name ? ` at ${inviteContext.property_name}` : ""}.
+                  </div>
+                  {inviteContext.message && (
+                    <div style={s.inviteBannerNote}>
+                      <span style={{ opacity: 0.75, fontStyle: "italic" }}>
+                        "{inviteContext.message}"
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Overdue banner — sits above the header when the job has passed
+                its due_date. Visual only (bidding stays allowed backend-side). */}
+            <OverdueBanner dueDate={job.due_date} />
+
+            {/* ═══ TOP HEADER PILL — back + title + status on the left,
+                Unlock/Budget action on the right. ═══ */}
+            <div style={s.headerPill}>
+              <div style={s.headerLeft}>
+                <button style={s.backBtn} onClick={() => navigate(-1)} aria-label="Back">
                   <ArrowLeft size={18} />
                 </button>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <h1 style={s.jobTitle} className="bsp-job-title" title={job.title || "Untitled Job"}>{job.title || "Untitled Job"}</h1>
+                <div style={{ minWidth: 0 }}>
+                  <h1 style={s.jobTitle} className="bsp-job-title" title={job.title || "Untitled Job"}>
+                    {job.title || "Untitled Job"}
+                  </h1>
                   <Badge label={status.replace(/_/g, " ")} color={sc.color} bg={sc.bg} />
                 </div>
               </div>
-
-              {/* Job Information */}
-              <div style={s.card}>
-                <h3 style={s.cardTitle}>
-                  <Briefcase size={16} style={s.cardIcon} />
-                  {tx(t, "bid.jobInfo", "Job Information")}
-                </h3>
-                <div style={s.infoGrid}>
-                  {job.category && (
-                    <InfoRow icon={<Tag size={14} />} label={tx(t, "bid.category", "Category")} value={translateCategory(t, job.category)} />
-                  )}
-                  <InfoRow
-                    icon={<AlertCircle size={14} />}
-                    label={tx(t, "bid.urgency", "Urgency")}
-                    value={<Badge label={urgency} color={uc.color} bg={uc.bg} />}
-                  />
-                  {job.due_date && (
-                    <InfoRow icon={<Calendar size={14} />} label={tx(t, "bid.dueDate", "Due Date")} value={new Date(job.due_date).toLocaleDateString()} />
-                  )}
-                  {job.duration && (
-                    <InfoRow icon={<Clock size={14} />} label={tx(t, "bid.duration", "Duration")} value={job.duration} />
-                  )}
-                </div>
-                {job.description && (
-                  <div style={s.descBox}>
-                    <FileText size={14} style={{ marginRight: 6, flexShrink: 0, color: "#868e96" }} />
-                    <p style={s.descText}>{job.description}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Budget Range */}
-              <div style={s.card}>
-                <h3 style={s.cardTitle}>
-                  <DollarSign size={16} style={s.cardIcon} />
-                  {tx(t, "bid.budgetRange", "Budget Range")}
-                </h3>
+              <div style={s.headerRight}>
                 {budgetHidden && !budgetUnlocked ? (
-                  <div style={s.budgetLocked}>
-                    <Lock size={18} color="#868e96" />
-                    <span style={s.budgetLockedText}>
-                      {tx(t, "bid.budgetHidden", "Budget is hidden by the property manager.")}
-                    </span>
-                    <button
-                      style={s.unlockBtn}
-                      onClick={handleUnlockBudget}
-                      disabled={budgetUnlockLoading}
-                    >
-                      {budgetUnlockLoading ? (
-                        <Loader2 size={14} style={s.spinner} />
-                      ) : (
-                        <Lock size={14} />
-                      )}
-                      {budgetUnlockLoading
-                        ? tx(t, "bid.unlocking", "Unlocking...")
-                        : tx(t, "bid.unlockBudget", "Unlock Budget")}
-                      {unlockPrice != null && !budgetUnlockLoading && ` — $${unlockPrice}`}
-                    </button>
+                  <button
+                    style={s.headerUnlockBtn}
+                    onClick={handleUnlockBudget}
+                    disabled={budgetUnlockLoading}
+                  >
+                    {budgetUnlockLoading ? (
+                      <Loader2 size={14} style={s.spinner} />
+                    ) : (
+                      <Lock size={14} />
+                    )}
+                    {budgetUnlockLoading
+                      ? tx(t, "bid.unlocking", "Unlocking...")
+                      : tx(t, "bid.unlockBudget", "Unlock Budget")}
+                    {unlockPrice != null && !budgetUnlockLoading && ` — $${unlockPrice}`}
+                  </button>
+                ) : (budgetMin != null || budgetMax != null) ? (
+                  <div style={s.headerBudgetPill}>
+                    {tx(t, "bid.budget", "Budget")}
+                    {": $"}
+                    {budgetMin != null ? Number(budgetMin).toLocaleString() : "0"}
+                    {"-"}
+                    {budgetMax != null ? Number(budgetMax).toLocaleString() : "?"}
                   </div>
-                ) : (
-                  <div style={s.budgetDisplay}>
-                    {budgetMin != null && (
-                      <div style={s.budgetItem}>
-                        <span style={s.budgetLabel}>{tx(t, "bid.min", "Min")}</span>
-                        <span style={s.budgetValue}>${Number(budgetMin).toLocaleString()}</span>
-                      </div>
-                    )}
-                    {budgetMax != null && (
-                      <div style={s.budgetItem}>
-                        <span style={s.budgetLabel}>{tx(t, "bid.max", "Max")}</span>
-                        <span style={s.budgetValue}>${Number(budgetMax).toLocaleString()}</span>
-                      </div>
-                    )}
-                    {budgetMin == null && budgetMax == null && (
-                      <span style={{ color: "#868e96" }}>{tx(t, "bid.noBudget", "No budget specified")}</span>
-                    )}
-                  </div>
-                )}
+                ) : null}
               </div>
+            </div>
 
-              {/* Job Images */}
+          <div style={s.grid} className="bsp-grid">
+            {/* ═══ LEFT COLUMN ═══ */}
+            <div style={s.left}>
+              {/* Photos — hero-style gallery when present. */}
               {jobImages.length > 0 && (
-                <div style={s.card}>
-                  <h3 style={s.cardTitle}>
-                    <FileText size={16} style={s.cardIcon} />
-                    {tx(t, "bid.photos", "Photos")}
-                  </h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
+                <div style={s.imagesBlock}>
+                  <div style={{ display: 'grid', gridTemplateColumns: jobImages.length === 1 ? '1fr' : 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
                     {jobImages.map((img, i) => (
-                      <img key={i} src={img.image_url || img.url || img} alt="" onClick={() => setViewingImage(img.image_url || img.url || img)} style={{ width: '100%', height: 140, objectFit: 'cover', borderRadius: 10, border: '1px solid #e5e7eb', cursor: 'pointer', transition: 'transform 0.15s' }} onMouseEnter={e => e.target.style.transform = 'scale(1.03)'} onMouseLeave={e => e.target.style.transform = 'scale(1)'} />
+                      <img
+                        key={i}
+                        src={img.image_url || img.url || img}
+                        alt=""
+                        onClick={() => setViewingImage(img.image_url || img.url || img)}
+                        style={{
+                          width: '100%',
+                          height: jobImages.length === 1 ? 260 : 160,
+                          objectFit: 'cover',
+                          borderRadius: 12,
+                          border: '1px solid #e5e7eb',
+                          cursor: 'pointer',
+                          transition: 'transform 0.15s'
+                        }}
+                        onMouseEnter={e => e.target.style.transform = 'scale(1.02)'}
+                        onMouseLeave={e => e.target.style.transform = 'scale(1)'}
+                      />
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Property Information (from job JOIN) */}
-              {(job.property_name || job.property_address || job.location) && (
+              {/* Job Information — title + Urgent chip inline (top-right of card),
+                  then category + due date, then description block. */}
+              <div style={s.card}>
+                <div style={s.cardHeadRow}>
+                  <h3 style={s.cardTitle}>{tx(t, "bid.jobInfo", "Job Information")}</h3>
+                  {job.urgency && (
+                    <span style={s.urgencyChip}>{String(job.urgency).toLowerCase() === "medium" ? "MED" : String(job.urgency).toUpperCase()}</span>
+                  )}
+                </div>
+                <div style={s.infoGrid}>
+                  {job.category && (
+                    <InfoRow icon={<Tag size={14} />} label={tx(t, "bid.category", "Category")} value={
+                      <span style={s.categoryChip}>
+                        <Tag size={12} />{translateCategory(t, job.category)}
+                      </span>
+                    } />
+                  )}
+                  {job.due_date && (
+                    <InfoRow
+                      icon={<Calendar size={14} />}
+                      label={tx(t, "bid.dueDate", "Due Date")}
+                      value={
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                          {new Date(job.due_date).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
+                          <DeadlineIndicator dueDate={job.due_date} />
+                        </span>
+                      }
+                    />
+                  )}
+                </div>
+                {job.description && (
+                  <div style={s.descBox}>
+                    <p style={s.descText}>{job.description}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Property Information — details on the left, embedded
+                  "Managed By" card on the right (clickable → PM profile). */}
+              {(job.property_name || job.property_address || job.location || property) && (
                 <div style={s.card}>
-                  <h3 style={s.cardTitle}>
-                    <Building2 size={16} style={s.cardIcon} />
+                  <h3 style={s.cardTitleTeal}>
+                    <Building2 size={16} style={s.cardIconTeal} />
                     {tx(t, "bid.propertyInfo", "Property Information")}
                   </h3>
-                  <div style={s.infoGrid}>
-                    {job.property_name && (
-                      <InfoRow icon={<Building2 size={14} />} label={tx(t, "bid.propertyName", "Property")} value={job.property_name} />
-                    )}
-                    {(job.property_address || job.location) && (
-                      <InfoRow icon={<MapPin size={14} />} label={tx(t, "bid.address", "Address")} value={job.property_address || job.location} />
-                    )}
-                    {job.property_type && (
-                      <InfoRow icon={<Tag size={14} />} label={tx(t, "bid.type", "Type")} value={job.property_type} />
-                    )}
-                    {(job.property_city || job.property_province) && (
-                      <InfoRow icon={<MapPin size={14} />} label={tx(t, "bid.cityProvince", "City")} value={[job.property_city, job.property_province].filter(Boolean).join(", ")} />
-                    )}
-                    {job.property_units > 0 && (
-                      <InfoRow icon={<Building2 size={14} />} label={tx(t, "bid.units", "Units")} value={job.property_units} />
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Property Manager (from job JOIN data) */}
-              {(job.manager_name || job.manager_company) && (
-                <div style={s.card}>
-                  <h3 style={s.cardTitle}>
-                    <User size={16} style={s.cardIcon} />
-                    {tx(t, "bid.propertyManager", "Property Manager")}
-                  </h3>
-                  {/* Manager header */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                    <div style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg, #0F223D, #1a3a5c)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 18, flexShrink: 0 }}>
-                      {(job.manager_company || job.manager_name || '?')[0].toUpperCase()}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, color: '#0F223D', fontSize: 15 }}>{job.manager_company || job.manager_name}</div>
-                      {job.manager_company && job.manager_name && (
-                        <div style={{ fontSize: 12, color: '#6b7280', marginTop: 1 }}>{job.manager_name}</div>
+                  <div style={s.propertyLayout}>
+                    <div style={s.infoGrid}>
+                      {(job.property_name || property?.building_name) && (
+                        <InfoRow icon={<Building2 size={14} />} label={tx(t, "bid.propertyName", "Property")} value={job.property_name || property?.building_name} />
                       )}
-                      {/* Rating */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                        {[1,2,3,4,5].map(i => (
-                          <Star key={i} size={13} fill={i <= Math.round(Number(job.manager_avg_rating) || 0) ? '#facc15' : 'none'} stroke={i <= Math.round(Number(job.manager_avg_rating) || 0) ? '#facc15' : '#d1d5db'} />
-                        ))}
-                        <span style={{ fontSize: 12, color: '#6b7280', marginLeft: 4 }}>
-                          {Number(job.manager_avg_rating || 0).toFixed(1)} ({job.manager_review_count || 0} {tx(t, "bid.reviews", "reviews")})
-                        </span>
-                      </div>
+                      {(job.property_type || property?.building_type) && (
+                        <InfoRow icon={<Tag size={14} />} label={tx(t, "bid.type", "Type")} value={job.property_type || property?.building_type} />
+                      )}
+                      {(job.property_units || property?.num_units) && (
+                        <InfoRow icon={<Building2 size={14} />} label={tx(t, "bid.units", "Units")} value={job.property_units || property?.num_units} />
+                      )}
+                      {(job.property_address || job.location || property?.address) && (
+                        <InfoRow icon={<MapPin size={14} />} label={tx(t, "bid.address", "Address")} value={job.property_address || job.location || property?.address} />
+                      )}
+                      {(job.property_city || property?.city) && (
+                        <InfoRow icon={<MapPin size={14} />} label={tx(t, "bid.city", "City")} value={job.property_city || property?.city} />
+                      )}
                     </div>
-                  </div>
 
-                  {/* Stats row */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 }}>
-                    <div style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: '#0F223D' }}>{job.manager_total_jobs || 0}</div>
-                      <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 500 }}>{tx(t, "bid.totalJobs", "Total Jobs")}</div>
-                    </div>
-                    <div style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: '#059669' }}>{job.manager_completed_jobs || 0}</div>
-                      <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 500 }}>{tx(t, "bid.completed", "Completed")}</div>
-                    </div>
-                    <div style={{ background: '#f8fafc', borderRadius: 8, padding: '10px 12px', textAlign: 'center' }}>
-                      <div style={{ fontSize: 18, fontWeight: 700, color: '#0F223D' }}>{job.manager_total_properties || 0}</div>
-                      <div style={{ fontSize: 11, color: '#6b7280', fontWeight: 500 }}>{tx(t, "bid.properties", "Properties")}</div>
-                    </div>
-                  </div>
-
-                  {/* Detail rows */}
-                  <div style={s.infoGrid}>
-                    {job.manager_address && (
-                      <InfoRow icon={<MapPin size={14} />} label={tx(t, "bid.location", "Location")} value={job.manager_address} />
-                    )}
-                    {job.manager_experience > 0 && (
-                      <InfoRow icon={<Clock size={14} />} label={tx(t, "bid.experience", "Experience")} value={`${job.manager_experience} years`} />
-                    )}
-                    {job.manager_expertise && (
-                      <InfoRow icon={<Tag size={14} />} label={tx(t, "bid.expertise", "Expertise")} value={job.manager_expertise} />
-                    )}
-                    {job.manager_joined && (
-                      <InfoRow icon={<Calendar size={14} />} label={tx(t, "bid.memberSince", "Member Since")} value={new Date(job.manager_joined).toLocaleDateString(undefined, { year: 'numeric', month: 'short' })} />
-                    )}
+                    {/* Property manager card — identity of the PM who owns this
+                        property. Backend's getJobById JOINs manager_profiles +
+                        users, so we prefer the joined fields on `job` and fall
+                        back to the separately-fetched `manager` object if the
+                        JOIN missed anything. */}
+                    {(() => {
+                      const managerUserId = job.manager_user_id || manager?.user_id;
+                      const companyName = job.manager_company || manager?.company_name;
+                      const personName = job.manager_name || [manager?.first_name, manager?.last_name].filter(Boolean).join(" ").trim();
+                      const image = job.manager_image || manager?.image;
+                      const primary = companyName || personName;
+                      if (!primary) return null;
+                      return (
+                        <button
+                          type="button"
+                          style={s.managedByCard}
+                          onClick={handleViewManagerProfile}
+                          disabled={!job.manager_id || managerProfileLoading}
+                          title={job.manager_id ? tx(t, "bid.viewManagerProfile", "View property manager profile") : undefined}
+                        >
+                          <div style={s.managedByAvatar}>
+                            {image ? (
+                              <img src={image} alt={primary} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                            ) : (
+                              (primary[0] || "M").toUpperCase()
+                            )}
+                          </div>
+                          <div style={{ flex: 1, textAlign: "left", minWidth: 0 }}>
+                            <div style={s.managedByLabel}>{tx(t, "bid.managedBy", "Managed By")}</div>
+                            <div style={s.managedByName}>{primary}</div>
+                            {companyName && personName && companyName !== personName && (
+                              <div style={s.managedBySub}>{personName}</div>
+                            )}
+                          </div>
+                          {job.manager_id && (
+                            managerProfileLoading
+                              ? <Loader2 size={16} style={s.spinner} color="#00A5A9" />
+                              : <ChevronRight size={16} color="#00A5A9" />
+                          )}
+                        </button>
+                      );
+                    })()}
                   </div>
                 </div>
               )}
 
-              {/* Map */}
+              {/* Location — map only. */}
               {hasCoords && (
                 <div style={s.card}>
-                  <h3 style={s.cardTitle}>
-                    <MapPin size={16} style={s.cardIcon} />
+                  <h3 style={s.cardTitleTeal}>
+                    <MapPin size={16} style={s.cardIconTeal} />
                     {tx(t, "bid.location", "Location")}
                   </h3>
                   <div style={s.mapWrap}>
@@ -506,95 +662,265 @@ export default function BidSubmissionPage() {
               )}
             </div>
 
-            {/* ═══ RIGHT COLUMN ═══ */}
+            {/* ═══ RIGHT COLUMN — sticky. Three renders:
+                  1. Existing bid + not editing → "Your Submitted Bid" summary
+                  2. Existing bid + editing     → same form, pre-filled
+                  3. No existing bid             → submit-new-bid form
+                ═══ */}
             <div style={s.right}>
-              {/* Job summary mini card */}
-              <div style={s.miniCard}>
-                <h4 style={s.miniTitle}>{job.title || "Untitled Job"}</h4>
-                <div style={s.miniRow}>
-                  {job.category && (
-                    <span style={s.miniChip}>
-                      <Tag size={12} /> {translateCategory(t, job.category)}
-                    </span>
+              {existingBid && !isEditingBid ? (
+                <div style={s.formCard}>
+                  <h3 style={s.formTitle}>
+                    <FileText size={16} style={s.cardIcon} />
+                    {tx(t, "bid.yourSubmittedBid", "Your Submitted Bid")}
+                  </h3>
+
+                  {/* Status pill — colour by status. */}
+                  <div style={{
+                    display: "inline-flex",
+                    padding: "4px 12px",
+                    borderRadius: 999,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    textTransform: "capitalize",
+                    marginBottom: 16,
+                    ...(existingBid.status === "approved" || existingBid.status === "accepted"
+                        ? { background: "#dcfce7", color: "#166534" }
+                        : existingBid.status === "declined"
+                          ? { background: "#fee2e2", color: "#991b1b" }
+                          : { background: "#fef3c7", color: "#92400e" }),
+                  }}>
+                    {tx(t, "bid.status", "Status")}: {existingBid.status || "pending"}
+                  </div>
+
+                  <div style={s.existingRow}>
+                    <div style={s.existingRowIcon}><DollarSign size={14} /></div>
+                    <div>
+                      <div style={s.existingRowLabel}>{tx(t, "bid.bidAmount", "Bid Amount")}</div>
+                      <div style={s.existingRowValue}>
+                        ${Number(existingBid.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={s.existingRow}>
+                    <div style={s.existingRowIcon}><Calendar size={14} /></div>
+                    <div>
+                      <div style={s.existingRowLabel}>{tx(t, "bid.submittedOn", "Submitted On")}</div>
+                      <div style={s.existingRowValue}>
+                        {existingBid.created_at
+                          ? new Date(existingBid.created_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
+                          : "—"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {existingBid.timeline_days != null && (
+                    <div style={s.existingRow}>
+                      <div style={s.existingRowIcon}><Clock size={14} /></div>
+                      <div>
+                        <div style={s.existingRowLabel}>{tx(t, "bid.timeline", "Timeline")}</div>
+                        <div style={s.existingRowValue}>
+                          {existingBid.timeline_days} {tx(t, "bid.days", "days")}
+                        </div>
+                      </div>
+                    </div>
                   )}
-                  <Badge label={urgency} color={uc.color} bg={uc.bg} />
+
+                  {existingBid.message && (
+                    <div style={{ marginTop: 10, marginBottom: 6 }}>
+                      <div style={s.existingRowLabel}>{tx(t, "bid.yourProposal", "Your Proposal")}</div>
+                      <p style={{
+                        margin: "6px 0 0",
+                        padding: "10px 12px",
+                        background: "#f8fafc",
+                        borderRadius: 8,
+                        fontSize: 13,
+                        color: "#334155",
+                        lineHeight: 1.5,
+                      }}>
+                        {existingBid.message}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Actions — editable/deletable only while pending. */}
+                  {(existingBid.status === "pending" || !existingBid.status) && (
+                    <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
+                      <button
+                        type="button"
+                        style={{ ...s.submitBtn, marginTop: 0, flex: 1 }}
+                        onClick={() => setIsEditingBid(true)}
+                      >
+                        <Edit3 size={16} />
+                        {tx(t, "bid.editBid", "Edit Bid")}
+                      </button>
+                      <button
+                        type="button"
+                        style={{
+                          marginTop: 0,
+                          padding: "12px 16px",
+                          background: "#fff",
+                          color: "#dc2626",
+                          border: "1.5px solid #dc2626",
+                          borderRadius: 10,
+                          fontSize: 14,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                        }}
+                        onClick={() => setShowDeleteConfirm(true)}
+                      >
+                        <Trash2 size={16} />
+                        {tx(t, "bid.deleteBid", "Delete Bid")}
+                      </button>
+                    </div>
+                  )}
+                  {(existingBid.status === "approved" || existingBid.status === "accepted") && (
+                    <p style={{ marginTop: 14, fontSize: 12, color: "#166534" }}>
+                      ✓ {tx(t, "bid.approvedNote", "Your bid was accepted. The manager will contact you to move forward.")}
+                    </p>
+                  )}
+                  {existingBid.status === "declined" && (
+                    <p style={{ marginTop: 14, fontSize: 12, color: "#991b1b" }}>
+                      {tx(t, "bid.declinedNote", "This bid was declined. You cannot re-submit for this job.")}
+                    </p>
+                  )}
+
+                  {/* Addenda thread — post-submission Q&A + price adjustments
+                      between contractor and PM. Only actionable while the bid
+                      is still negotiable; history stays visible after. */}
+                  <div style={{ marginTop: 18 }}>
+                    <BidAddendaSection
+                      bidId={existingBid.id}
+                      currentUserId={(() => {
+                        try {
+                          return JSON.parse(localStorage.getItem("userProfile"))?.id;
+                        } catch {
+                          return null;
+                        }
+                      })()}
+                      canAct={
+                        existingBid.status === "pending" ||
+                        existingBid.status === "under_review" ||
+                        !existingBid.status
+                      }
+                    />
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <form id="bsp-bid-form" style={s.formCard} onSubmit={handleSubmit}>
+                  <h3 style={s.formTitle}>
+                    <Send size={16} style={s.cardIcon} />
+                    {isEditingBid
+                      ? tx(t, "bid.editingBid", "Edit Your Bid")
+                      : tx(t, "bid.submitBid", "Submit Your Bid")}
+                  </h3>
 
-              {/* Bid Form */}
-              <form id="bsp-bid-form" style={s.formCard} onSubmit={handleSubmit}>
-                <h3 style={s.formTitle}>
-                  <Send size={16} style={s.cardIcon} />
-                  {tx(t, "bid.submitBid", "Submit Your Bid")}
-                </h3>
+                  {/* Amount */}
+                  <label style={s.label}>{tx(t, "bid.bidAmount", "Bid Amount ($)")} *</label>
+                  <div style={s.inputWrap}>
+                    <DollarSign size={16} style={s.inputIcon} />
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={bidAmount}
+                      onChange={(e) => setBidAmount(e.target.value)}
+                      style={s.input}
+                      required
+                    />
+                  </div>
 
-                {/* Amount */}
-                <label style={s.label}>{tx(t, "bid.bidAmount", "Bid Amount ($)")} *</label>
-                <div style={s.inputWrap}>
-                  <DollarSign size={16} style={s.inputIcon} />
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={bidAmount}
-                    onChange={(e) => setBidAmount(e.target.value)}
-                    style={s.input}
+                  {/* Proposal */}
+                  <label style={s.label}>{tx(t, "bid.proposal", "Proposal Message")} *</label>
+                  <textarea
+                    placeholder={tx(t, "bid.proposalPlaceholder", "Describe your approach, experience, and why you're the best fit...")}
+                    value={bidMessage}
+                    onChange={(e) => setBidMessage(e.target.value)}
+                    style={s.textarea}
+                    minLength={10}
                     required
                   />
-                </div>
+                  <span style={s.charCount}>{bidMessage.length} / 10 min</span>
 
-                {/* Proposal */}
-                <label style={s.label}>{tx(t, "bid.proposal", "Proposal Message")} *</label>
-                <textarea
-                  placeholder={tx(t, "bid.proposalPlaceholder", "Describe your approach, experience, and why you're the best fit...")}
-                  value={bidMessage}
-                  onChange={(e) => setBidMessage(e.target.value)}
-                  style={s.textarea}
-                  minLength={10}
-                  required
-                />
-                <span style={s.charCount}>{bidMessage.length} / 10 min</span>
+                  {/* Timeline */}
+                  <label style={s.label}>{tx(t, "bid.timeline", "Timeline (days)")} <span style={{ color: "#adb5bd", fontWeight: 400 }}>— optional</span></label>
+                  <div style={s.inputWrap}>
+                    <Clock size={16} style={s.inputIcon} />
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder={tx(t, "bid.timelinePlaceholder", "Estimated days to complete")}
+                      value={timelineDays}
+                      onChange={(e) => setTimelineDays(e.target.value)}
+                      style={s.input}
+                    />
+                  </div>
 
-                {/* Timeline */}
-                <label style={s.label}>{tx(t, "bid.timeline", "Timeline (days)")} <span style={{ color: "#adb5bd", fontWeight: 400 }}>— optional</span></label>
-                <div style={s.inputWrap}>
-                  <Clock size={16} style={s.inputIcon} />
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder={tx(t, "bid.timelinePlaceholder", "Estimated days to complete")}
-                    value={timelineDays}
-                    onChange={(e) => setTimelineDays(e.target.value)}
-                    style={s.input}
-                  />
-                </div>
+                  {/* Submit + optional Cancel-edit */}
+                  <div style={{ display: "flex", gap: 8, marginTop: 20 }}>
+                    <button type="submit" style={{ ...s.submitBtn, marginTop: 0, flex: 1 }} disabled={submitting}>
+                      {submitting ? (
+                        <>
+                          <Loader2 size={16} style={s.spinner} />
+                          {isEditingBid
+                            ? tx(t, "bid.saving", "Saving...")
+                            : tx(t, "bid.submitting", "Submitting...")}
+                        </>
+                      ) : (
+                        <>
+                          <Send size={16} />
+                          {isEditingBid
+                            ? tx(t, "bid.saveChanges", "Save Changes")
+                            : tx(t, "bid.submit", "Submit Bid")}
+                        </>
+                      )}
+                    </button>
+                    {isEditingBid && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // Restore previous values so a cancelled edit doesn't leak into the form.
+                          if (existingBid) {
+                            setBidAmount(existingBid.amount != null ? String(existingBid.amount) : "");
+                            setBidMessage(existingBid.message || "");
+                            setTimelineDays(existingBid.timeline_days != null ? String(existingBid.timeline_days) : "");
+                          }
+                          setIsEditingBid(false);
+                        }}
+                        style={{
+                          marginTop: 0,
+                          padding: "12px 16px",
+                          background: "#fff",
+                          color: "#475569",
+                          border: "1px solid #cbd5e1",
+                          borderRadius: 10,
+                          fontSize: 14,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {tx(t, "common.cancel", "Cancel")}
+                      </button>
+                    )}
+                  </div>
 
-                {/* Submit */}
-                <button type="submit" style={s.submitBtn} disabled={submitting}>
-                  {submitting ? (
-                    <>
-                      <Loader2 size={16} style={s.spinner} />
-                      {tx(t, "bid.submitting", "Submitting...")}
-                    </>
-                  ) : (
-                    <>
-                      <Send size={16} />
-                      {tx(t, "bid.submit", "Submit Bid")}
-                    </>
+                  {/* Budget hint (only for the new-bid flow — editing means budget was already unlocked) */}
+                  {!isEditingBid && budgetHidden && !budgetUnlocked && unlockPrice != null && (
+                    <p style={s.budgetHint}>
+                      <Lock size={13} style={{ marginRight: 4 }} />
+                      {tx(t, "bid.unlockHint", `Budget unlocking costs $${unlockPrice}`)}
+                    </p>
                   )}
-                </button>
-
-                {/* Budget hint */}
-                {budgetHidden && !budgetUnlocked && unlockPrice != null && (
-                  <p style={s.budgetHint}>
-                    <Lock size={13} style={{ marginRight: 4 }} />
-                    {tx(t, "bid.unlockHint", `Budget unlocking costs $${unlockPrice}`)}
-                  </p>
-                )}
-              </form>
+                </form>
+              )}
             </div>
           </div>
+          </>
         )}
       </div>
 
@@ -605,6 +931,93 @@ export default function BidSubmissionPage() {
           <button onClick={() => setViewingImage(null)} style={{ position: 'absolute', top: 20, right: 20, background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', width: 40, height: 40, borderRadius: '50%', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
         </div>
       )}
+
+      {/* Delete Bid confirmation. Lightweight inline modal — no shared confirm
+          component in this page's dependencies. */}
+      {showDeleteConfirm && existingBid && (
+        <div
+          onClick={() => !deletingBid && setShowDeleteConfirm(false)}
+          style={{
+            position: "fixed", inset: 0,
+            background: "rgba(15, 23, 42, 0.55)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            zIndex: 10002, padding: 20,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#fff",
+              borderRadius: 14,
+              padding: 24,
+              maxWidth: 420,
+              width: "100%",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+            }}
+          >
+            <h3 style={{ margin: "0 0 8px", fontSize: 18, color: "#0F223D" }}>
+              {tx(t, "bid.deleteConfirmTitle", "Withdraw this bid?")}
+            </h3>
+            <p style={{ margin: "0 0 20px", color: "#64748b", fontSize: 14, lineHeight: 1.5 }}>
+              {tx(t, "bid.deleteConfirmBody", "This removes your bid from the job. You can submit a new one later while the job is still open.")}
+            </p>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={deletingBid}
+                style={{
+                  padding: "10px 18px",
+                  background: "#fff",
+                  color: "#475569",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                {tx(t, "common.cancel", "Cancel")}
+              </button>
+              <button
+                onClick={handleDeleteBid}
+                disabled={deletingBid}
+                style={{
+                  padding: "10px 18px",
+                  background: "#dc2626",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 8,
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                {deletingBid ? (
+                  <>
+                    <Loader2 size={14} style={s.spinner} />
+                    {tx(t, "bid.deleting", "Withdrawing...")}
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={14} />
+                    {tx(t, "bid.deleteConfirmBtn", "Yes, withdraw")}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Property Manager profile — reuses the modal from the entrepreneur homepage. */}
+      <PropertyManagerProfileModal
+        isOpen={showManagerModal}
+        onClose={() => setShowManagerModal(false)}
+        profile={managerProfile}
+      />
 
       {/* Unlock Budget Modal */}
       {showUnlockModal && (
@@ -686,6 +1099,33 @@ const s = {
     fontFamily: "'Inter','Segoe UI',system-ui,sans-serif",
   },
 
+  // Personal-invite banner (top of page when contractor arrived via invite)
+  inviteBanner: {
+    display: "flex", alignItems: "flex-start", gap: 14,
+    padding: "14px 18px",
+    background: "linear-gradient(135deg, #ecfeff 0%, #dbeafe 100%)",
+    border: "1px solid #67e8f9",
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  inviteBannerIcon: {
+    width: 36, height: 36, borderRadius: 10,
+    background: "#14919B", color: "#fff",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    flexShrink: 0,
+  },
+  inviteBannerTitle: {
+    fontSize: 14, fontWeight: 700, color: "#0F223D", letterSpacing: "-0.01em",
+  },
+  inviteBannerBody: {
+    fontSize: 13, color: "#0F223D", opacity: 0.85, marginTop: 4, lineHeight: 1.5,
+  },
+  inviteBannerNote: {
+    marginTop: 8, padding: "8px 12px",
+    background: "rgba(255,255,255,0.6)", borderRadius: 8,
+    fontSize: 12, color: "#334155",
+  },
+
   /* Grid */
   grid: {
     display: "grid",
@@ -703,22 +1143,182 @@ const s = {
     gap: 16,
   },
 
-  /* Header */
-  headerRow: { display: "flex", alignItems: "center", gap: 12, marginBottom: 4 },
+  /* Top header pill — full-width bar with back+title on the left and the
+     Unlock/Budget action on the right. Matches the mockup exactly. */
+  headerPill: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 16,
+    padding: "14px 20px",
+    background: "#f1f5f9",
+    borderRadius: 14,
+    marginBottom: 20,
+  },
+  headerLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    minWidth: 0,
+    flex: 1,
+  },
+  headerRight: {
+    display: "flex",
+    alignItems: "center",
+    flexShrink: 0,
+  },
+  headerUnlockBtn: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "10px 18px",
+    background: "#0F223D",
+    color: "#fff",
+    border: "none",
+    borderRadius: 999,
+    fontSize: 14,
+    fontWeight: 700,
+    cursor: "pointer",
+  },
+  headerBudgetPill: {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "10px 18px",
+    background: "#0F223D",
+    color: "#fff",
+    borderRadius: 999,
+    fontSize: 14,
+    fontWeight: 700,
+  },
   backBtn: {
     display: "inline-flex",
     alignItems: "center",
-    gap: 6,
-    background: "#f1f3f5",
-    border: "none",
-    borderRadius: 8,
-    padding: "8px 14px",
+    justifyContent: "center",
+    background: "#fff",
+    border: "1px solid #e5e7eb",
+    borderRadius: 10,
+    width: 36,
+    height: 36,
     cursor: "pointer",
-    fontSize: 14,
     color: "#0F223D",
-    fontWeight: 500,
+    flexShrink: 0,
   },
   jobTitle: { fontSize: "clamp(1.0625rem, 4.5vw, 1.375rem)", fontWeight: 700, color: "#0F223D", margin: "0 0 6px", lineHeight: 1.25, wordBreak: "break-word" },
+
+  /* Card head row — used by cards where a chip sits on the right of the title
+     (e.g. Job Information's URG chip). */
+  cardHeadRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 14,
+  },
+
+  /* Small block wrapping the photo gallery (no card chrome — photos are the
+     hero of the page and don't need a card frame). */
+  imagesBlock: {},
+
+  /* Urgency chip inline with the card title (top-right). Solid red pill. */
+  urgencyChip: {
+    display: "inline-flex",
+    alignItems: "center",
+    padding: "4px 10px",
+    background: "#b91c1c",
+    color: "#fff",
+    borderRadius: 6,
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: 0.4,
+    flexShrink: 0,
+  },
+
+  /* Category chip inside an InfoRow value (light teal outline). */
+  categoryChip: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 4,
+    padding: "3px 10px",
+    borderRadius: 999,
+    border: "1px solid #cbd5e1",
+    background: "#f8fafc",
+    fontSize: 12,
+    color: "#334155",
+    fontWeight: 500,
+  },
+
+  /* Property Information layout — details on the left, embedded "Managed By"
+     card on the right. Grid drops to one column below 720px. */
+  propertyLayout: {
+    display: "grid",
+    gridTemplateColumns: "1fr minmax(220px, 300px)",
+    gap: 24,
+    alignItems: "start",
+  },
+  managedByCard: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    padding: "12px 14px",
+    background: "linear-gradient(135deg, #ecfdf5 0%, #eff6ff 100%)",
+    border: "1.5px solid #99f6e4",
+    borderRadius: 12,
+    cursor: "pointer",
+    width: "100%",
+    minWidth: 0,
+    transition: "border-color .15s, box-shadow .15s",
+  },
+  managedByAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    background: "linear-gradient(135deg, #00A5A9, #008C8F)",
+    color: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: 700,
+    fontSize: 15,
+    flexShrink: 0,
+    overflow: "hidden", // so an <img> child gets clipped by the rounded corners
+  },
+  managedByLabel: {
+    fontSize: 11,
+    color: "#64748b",
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+    marginBottom: 2,
+  },
+  managedByName: {
+    fontSize: 14,
+    fontWeight: 700,
+    color: "#0F223D",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+  managedBySub: {
+    fontSize: 12,
+    color: "#64748b",
+    fontWeight: 500,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    marginTop: 1,
+  },
+
+  /* Teal-flavoured card title (used by Property Info + Location to match the mockup). */
+  cardTitleTeal: {
+    fontSize: 15,
+    fontWeight: 700,
+    color: "#0F223D",
+    margin: "0 0 14px",
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  },
+  cardIconTeal: { color: "#00A5A9" },
 
   /* Card */
   card: {
@@ -897,6 +1497,37 @@ const s = {
   },
   spinner: { animation: "spin .8s linear infinite" },
 
+  /* "Your Submitted Bid" info rows — light background, icon+label+value. */
+  existingRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    padding: "10px 12px",
+    background: "#f8fafc",
+    border: "1px solid #e5e7eb",
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  existingRowIcon: {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    background: "rgba(0, 165, 169, 0.1)",
+    color: "#00A5A9",
+    flexShrink: 0,
+  },
+  existingRowLabel: {
+    fontSize: 11,
+    color: "#64748b",
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
+  },
+  existingRowValue: { fontSize: 14, fontWeight: 700, color: "#0F223D" },
+
   budgetHint: {
     marginTop: 12,
     fontSize: 12,
@@ -933,6 +1564,11 @@ if (typeof document !== "undefined" && !document.getElementById(responsiveId)) {
       .bsp-grid > div[style*="position: sticky"],
       .bsp-grid > div[style*="position:sticky"] {
         position: static !important;
+      }
+      /* Property Info layout collapses so the "Managed By" card stacks under
+         the details instead of wrapping into a too-narrow column. */
+      .bsp-grid [style*="grid-template-columns: 1fr minmax(220px, 300px)"] {
+        grid-template-columns: 1fr !important;
       }
     }
     @media (max-width: 480px) {

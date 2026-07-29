@@ -133,6 +133,39 @@
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Left-edge drag handle — thin invisible strip with a wider hit target and a
+   subtle teal accent on hover. Position it just inside the border-radius. */
+.eh-panel-resize-handle {
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  left: 0;
+  width: 8px;
+  cursor: col-resize;
+  border-radius: 4px 0 0 4px;
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+  z-index: 5;
+}
+
+.eh-panel-resize-handle:hover,
+.eh-panel-resize-handle:active {
+  background-color: rgba(0, 165, 169, 0.35);
+}
+
+/* Subtle vertical grip indicator inside the handle. */
+.eh-panel-resize-handle::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 32px;
+  border-radius: 2px;
+  background-color: rgba(0, 0, 0, 0.15);
+}
+
 /* Custom Scrollbar for Floating Panel */
 .eh-floating-panel::-webkit-scrollbar {
   width: 6px;
@@ -152,7 +185,7 @@
   background: #008C8F;
 }
 
-/* Panel Toggle Button - matches header height for visual consistency */
+/* Panel Toggle Button — icon-only, circular, sized to match a nav-icon chip. */
 .eh-panel-toggle-btn {
   position: fixed;
   top: 1.5rem;
@@ -161,20 +194,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.375rem;
-  /* Match header height: header has 0.5rem padding + inner content (~0.375rem padding + line) */
-  /* Total vertical padding = 0.5rem (header) + 0.375rem (inner button) = 0.875rem each side */
-  padding: 0.875rem 1rem;
+  width: 40px;
+  height: 40px;
+  padding: 0;
   background: linear-gradient(135deg, var(--color-secondary), #008C8F);
   color: var(--color-white);
-  border: 1px solid rgba(255, 255, 255, 0.6); /* Match header border */
-  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.15s ease,
+              box-shadow 0.15s ease;
   box-shadow: 0 2px 12px rgba(0, 165, 169, 0.25);
-  font-size: 0.8125rem;
-  font-weight: 500;
-  white-space: nowrap;
 }
 
 .eh-panel-toggle-btn:hover {
@@ -190,11 +221,87 @@
   right: 1.5rem;
 }
 
+/* When the panel is expanded to "full view", nudge the toggle further left
+   so it sits flush with the wider panel's left edge. */
+.eh-panel-toggle-btn.eh-panel-expanded-toggle {
+  right: calc(min(720px, 50vw) + 2rem);
+}
+
 /* Collapsed Panel State */
 .eh-floating-panel.eh-panel-collapsed {
   transform: translateX(calc(100% + 2rem));
   opacity: 0;
   pointer-events: none;
+}
+
+/* Full-view expanded panel — roughly half the screen (capped at 720px). */
+.eh-floating-panel.eh-panel-expanded {
+  width: min(720px, 50vw);
+}
+
+/* When the panel is expanded, lay jobs out as a responsive grid and hide the
+   long description so more cards fit on screen at once. */
+.eh-floating-panel.eh-panel-expanded .eh-jobs-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.eh-floating-panel.eh-panel-expanded .eh-job-description {
+  display: none;
+}
+
+/* Grid cards should all be the same height — clamp the title to a single
+   line with ellipsis so wrapping doesn't push some cards taller than others. */
+.eh-floating-panel.eh-panel-expanded .eh-job-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Floating expand/restore button in the panel's top-right corner. */
+.eh-panel-expand-btn {
+  position: sticky;
+  top: 0;
+  float: right;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin-left: 0.5rem;
+  padding: 0;
+  background-color: var(--color-background-light);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border-divider);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.eh-panel-expand-btn:hover {
+  background-color: rgba(0, 165, 169, 0.08);
+  color: var(--color-secondary);
+  border-color: rgba(0, 165, 169, 0.3);
+}
+
+.eh-panel-expand-btn:active {
+  transform: scale(0.94);
+}
+
+/* On mobile, hide the expand button and the resize handle — full-view /
+   drag-to-resize are desktop-only affordances. Panel behavior on small
+   screens is driven by the map/list mobile toggle instead. */
+@media (max-width: 768px) {
+  .eh-panel-expand-btn,
+  .eh-panel-resize-handle {
+    display: none !important;
+  }
 }
 
 /* Mobile View Toggle for Fullscreen Layout */
@@ -717,12 +824,12 @@
 }
 
 .eh-details-header {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .eh-details-header-content {
   display: flex;
-  gap: 1rem;
+  gap: 0.875rem;
   align-items: flex-start;
 }
 
@@ -747,29 +854,49 @@
   font-size: 1.375rem;
   font-weight: var(--font-weight-lg);
   color: var(--color-text-dark);
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 0.25rem 0;
+  line-height: 1.2;
 }
 
 .eh-property-address {
   font-size: 0.9375rem;
   color: var(--color-text-muted);
-  margin: 0 0 0.75rem 0;
+  margin: 0;
+  line-height: 1.4;
 }
 
+/* Full-width chip row: two equal 50/50 columns spanning the header container. */
 .eh-property-meta {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.625rem;
+  margin-top: 0.875rem;
+  width: 100%;
 }
 
+/* Meta chips — teal-tinted pill buttons matching the mockup:
+   soft green-tinted fill, thin teal border, uppercase teal text. */
 .eh-meta-badge {
-  display: inline-block;
-  padding: 0.375rem 0.875rem;
-  background-color: rgba(0, 165, 169, 0.1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 0.75rem 0.75rem;
+  background-color: rgba(0, 165, 169, 0.08);
   color: var(--color-secondary);
-  border-radius: 8px;
+  border: 1.5px solid rgba(0, 165, 169, 0.3);
+  border-radius: 10px;
   font-size: 0.8125rem;
-  font-weight: var(--font-weight-md);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+.eh-meta-badge-jobs {
+  /* Same visual weight as the type badge — mockup shows both identical. */
 }
 
 /* Stats Grid */
@@ -818,9 +945,10 @@
 }
 
 .eh-section-divider {
-  height: 2px;
+  height: 1px;
   background-color: var(--color-border-divider);
-  margin: 1.5rem 0;
+  margin: 1.25rem 0;
+  opacity: 0.7;
 }
 
 /* Section Tabs */
@@ -860,32 +988,35 @@
   animation: fadeIn 0.25s ease-out;
 }
 
-/* Job Card */
+/* Job Card — cleaner corners + soft resting shadow to match the mockup. */
 .eh-job-card {
-  padding: 1rem;
+  padding: 1.1rem 1.1rem 1rem;
   background-color: var(--color-white);
   border: 1px solid var(--color-border-divider);
-  border-radius: 12px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  border-radius: 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .eh-job-card:hover {
-  border-color: var(--color-secondary);
-  box-shadow: 0 4px 14px rgba(0, 165, 169, 0.12);
+  border-color: rgba(0, 165, 169, 0.5);
+  box-shadow: 0 6px 18px rgba(0, 165, 169, 0.12);
+  transform: translateY(-1px);
 }
 
+/* Card header: HIGH badge to the left, title + category stacked to the right.
+   Badge sits at the top of the row and stays a fixed compact square. */
 .eh-job-card-header {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: flex-start;
-  gap: 0.5rem;
+  gap: 0.75rem;
   margin-bottom: 0.625rem;
 }
 
 .eh-job-title-section {
   flex: 1;
   min-width: 0;
-  width: 100%;
 }
 
 .eh-job-title {
@@ -917,24 +1048,32 @@
   border-radius: 8px;
 }
 
+/* Compact chip. Short labels (URG, HIGH) render as a 44×44 square; longer
+   ones (PLANNED, MEDIUM) grow horizontally so the text never overflows into
+   the title. `min-width: 44px` preserves the square look for the common case;
+   `padding: 0 8px` gives longer labels room to breathe. */
 .eh-urgency-badge {
-  padding: 0.35rem 0.75rem;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 8px;
   color: #ffffff;
   border-radius: 6px;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.4px;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  white-space: nowrap;
 }
 
 .eh-urgency-badge.eh-urgency-urgent {
+  /* Flat solid red chip — matches the mockup (no glow, no pulse). */
   background: #b91c1c;
-  border: 2px solid #f87171;
-  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2), 0 2px 10px rgba(220, 38, 38, 0.45);
-  animation: ehUrgentPulse 2s ease-in-out infinite;
+  border: none;
 }
 
 @keyframes ehUrgentPulse {
@@ -1172,6 +1311,226 @@
   flex-direction: column;
   gap: 1rem;
   animation: fadeIn 0.25s ease-out;
+}
+
+/* ============================================================================
+   Panel view toggle (Companies vs Properties)
+   ============================================================================ */
+.eh-panel-view-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 1rem;
+  background-color: var(--color-background-light);
+  border-radius: 10px;
+}
+
+.eh-panel-view-tab {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.eh-panel-view-tab:hover {
+  color: var(--color-text-dark);
+}
+
+.eh-panel-view-tab.eh-active {
+  background-color: var(--color-white);
+  color: var(--color-secondary);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+/* ============================================================================
+   Companies view — accordion list
+   ============================================================================ */
+.eh-companies-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.eh-company-group {
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border-divider);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.eh-company-group.eh-open {
+  border-color: rgba(0, 165, 169, 0.35);
+  box-shadow: 0 4px 14px rgba(0, 165, 169, 0.08);
+}
+
+.eh-company-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease;
+}
+
+.eh-company-header:hover {
+  background-color: rgba(0, 165, 169, 0.04);
+}
+
+.eh-company-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--color-secondary), #008C8F);
+  color: var(--color-white);
+  font-weight: 700;
+  font-size: 0.9375rem;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.eh-company-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.eh-company-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.eh-company-name {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--color-text-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eh-company-meta {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.eh-company-profile-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-border-divider);
+  border-radius: 8px;
+  background: var(--color-white);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.eh-company-profile-btn:hover {
+  color: var(--color-secondary);
+  border-color: rgba(0, 165, 169, 0.4);
+}
+
+.eh-company-chevron {
+  color: var(--color-text-muted);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.eh-company-chevron.eh-rotated {
+  transform: rotate(90deg);
+}
+
+.eh-company-properties {
+  padding: 0 0.5rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--color-border-divider);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.eh-company-property-row {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.eh-company-property-row:hover {
+  background-color: rgba(0, 165, 169, 0.06);
+}
+
+.eh-company-property-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background-color: rgba(0, 165, 169, 0.1);
+  color: var(--color-secondary);
+  flex-shrink: 0;
+}
+
+.eh-company-property-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.eh-company-property-name {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eh-company-property-address {
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eh-company-property-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background-color: rgba(231, 76, 60, 0.1);
+  color: var(--color-status-urgent, #e74c3c);
+  font-size: 0.7rem;
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
 .eh-property-list-card {
@@ -1550,7 +1909,8 @@
 
 /* Filters Modal - Desktop Design */
 .eh-modal-content.eh-filters-modal {
-  max-width: 900px;
+  max-width: 1080px;
+  background-color: #fafbfc;
 }
 
 .eh-modal-header {
@@ -1639,9 +1999,10 @@
   flex: 1;
 }
 
-/* Filters Modal Body - Compact */
+/* Filters Modal Body — slightly airier for the cleaner card layout. */
 .eh-modal-content.eh-filters-modal .eh-modal-body {
-  padding: 1.25rem 1.5rem;
+  padding: 1.5rem 2rem;
+  background-color: #fafbfc;
 }
 
 .eh-modal-body::-webkit-scrollbar {
@@ -1660,17 +2021,19 @@
 
 .eh-filters-grid {
   columns: 2;
-  column-gap: 1.5rem;
+  column-gap: 1.25rem;
 }
 
+/* Cleaner filter cards — white surface, subtle border, more air inside. */
 .eh-filter-group {
   display: flex;
   flex-direction: column;
-  gap: 0.625rem;
-  padding: 0.875rem;
-  background-color: var(--color-background-light);
-  border-radius: 10px;
+  gap: 0.875rem;
+  padding: 1.25rem;
+  background-color: var(--color-white);
+  border-radius: 14px;
   border: 1px solid var(--color-border-divider);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
   break-inside: avoid;
   margin-bottom: 1.25rem;
 }
@@ -1680,18 +2043,18 @@
   align-items: center;
   gap: 0.5rem;
   color: var(--color-secondary);
-  margin-bottom: 0.25rem;
-  padding-bottom: 0.5rem;
+  margin-bottom: 0;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--color-border-divider);
 }
 
 .eh-filter-group-header svg {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
 }
 
 .eh-filter-group-header h3 {
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: var(--font-weight-lg);
   color: var(--color-text-dark);
   margin: 0;
@@ -2019,19 +2382,27 @@
    PROPERTY MODAL (MOBILE)
    ============================================ */
 
+/* Full-view on mobile: no side padding, panel goes edge-to-edge and reaches
+   right up to the bottom nav strip. `!important` because the shared mobile
+   `.eh-modal-content` override further down centers modals with
+   `top: 45%; transform: translateY(-50%)` — we need to defeat that here. */
 .eh-modal-overlay.eh-property-modal {
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  padding-bottom: 5rem; /* Account for bottom navigation bar */
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+  padding-bottom: 4rem; /* Preserve bottom navigation bar */
 }
 
-.eh-property-modal-content {
-  max-width: 100%;
-  max-height: calc(100vh - 8rem); /* Account for padding + navbar */
-  border-radius: 16px; /* Rounded all corners like floating panel */
-  margin: 0;
-  width: calc(100% - 2rem);
+.eh-modal-content.eh-property-modal-content {
+  max-width: 100% !important;
+  max-height: none !important;
+  height: 100%;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  top: 0 !important;
+  transform: none !important;
+  position: relative;
 }
 
 .eh-modal-header.eh-property {
@@ -2529,16 +2900,18 @@
     font-size: 0.875rem;
   }
 
+  /* Full-view panel on mobile — edge-to-edge below the top search/filter row
+     and above the bottom navigation bar. No side margins, no rounded corners. */
   .eh-floating-panel {
     position: fixed;
-    top: 8rem;
-    right: 1rem;
-    left: 1rem;
-    bottom: 5rem; /* Account for bottom navigation bar */
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 4rem; /* Keep bottom nav visible */
     width: auto;
     max-height: none;
-    border-radius: 16px;
-    padding: 1rem; /* Compact padding on mobile */
+    border-radius: 0;
+    padding: 1rem;
   }
 
   /* Compact list header on mobile */
@@ -2621,10 +2994,9 @@
     height: 18px;
   }
 
-  /* Adjust floating panel top position to account for taller toggle */
-  .eh-floating-panel {
-    top: 9.5rem;
-  }
+  /* Full-view panel keeps top: 0 (see rule above). Bottom nav is preserved
+     via the bottom: 4rem clearance; the mobile view toggle floats on top of
+     the map layer, not the panel, so no offset needed here. */
 
   /* Hide panel toggle on mobile - use mobile view toggle instead */
   .eh-panel-toggle-btn {

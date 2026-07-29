@@ -142,7 +142,6 @@ function SubscriptionPage() {
         { text: t('subscriptionPage.feat_browseJobs') || 'Browse construction jobs', included: true },
         { text: t('subscriptionPage.feat_viewJobDetails') || 'View job details & specs', included: true },
         { text: t('subscriptionPage.feat_submitBids') || 'Submit bids', included: true, limit: t('subscriptionPage.limit_15perMonth') || '15 per month' },
-        { text: t('subscriptionPage.feat_unlockBudgets') || 'Unlock project budgets', included: true },
         { text: t('subscriptionPage.feat_messageProjects') || 'Message on approved projects', included: true },
         { text: t('subscriptionPage.feat_prioritySupport') || 'Priority support', included: false },
         { text: t('subscriptionPage.feat_advancedAnalytics') || 'Advanced analytics', included: false },
@@ -159,7 +158,6 @@ function SubscriptionPage() {
         { text: t('subscriptionPage.feat_browseJobs') || 'Browse construction jobs', included: true },
         { text: t('subscriptionPage.feat_viewJobDetails') || 'View job details & specs', included: true },
         { text: t('subscriptionPage.feat_submitBids') || 'Submit bids', included: true, limit: t('subscriptionPage.limit_30perMonth') || '30 per month' },
-        { text: t('subscriptionPage.feat_unlockBudgets') || 'Unlock project budgets', included: true },
         { text: t('subscriptionPage.feat_messageProjects') || 'Message on approved projects', included: true },
         { text: t('subscriptionPage.feat_prioritySupport') || 'Priority support', included: false },
         { text: t('subscriptionPage.feat_advancedAnalytics') || 'Advanced analytics', included: false },
@@ -176,7 +174,6 @@ function SubscriptionPage() {
         { text: t('subscriptionPage.feat_browseJobs') || 'Browse construction jobs', included: true },
         { text: t('subscriptionPage.feat_viewJobDetails') || 'View job details & specs', included: true },
         { text: t('subscriptionPage.feat_submitBids') || 'Submit bids', included: true, limit: t('subscriptionPage.unlimited') || 'Unlimited' },
-        { text: t('subscriptionPage.feat_unlockBudgets') || 'Unlock project budgets', included: true },
         { text: t('subscriptionPage.feat_messageProjects') || 'Message on approved projects', included: true },
         { text: t('subscriptionPage.feat_prioritySupport') || 'Priority support', included: true },
         { text: t('subscriptionPage.feat_advancedAnalytics') || 'Advanced analytics', included: true },
@@ -295,13 +292,6 @@ function SubscriptionPage() {
                       <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                     </tr>
                     <tr>
-                      <td className="feature-name">{t('subscriptionPage.feat_unlockBudgets') || 'Unlock project budgets'}</td>
-                      <td className="tier-cell"><X className="icon-no" size={20} /></td>
-                      <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
-                      <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
-                      <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
-                    </tr>
-                    <tr>
                       <td className="feature-name">{t('subscriptionPage.feat_messageProjects') || 'Message on approved projects'}</td>
                       <td className="tier-cell"><X className="icon-no" size={20} /></td>
                       <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
@@ -391,7 +381,21 @@ function SubscriptionPage() {
               </div>
               <div className="banner-info">
                 <div className="banner-header">
-                  <h3 className="banner-title">{t('subscriptionPage.premiumTrialActive') || 'Premium Trial Active'}</h3>
+                  {/* Show the ACTUAL plan the user is on trial for. Previously
+                      this hardcoded "Premium Trial Active" for every trial —
+                      including Starter and Basic users — which contradicted the
+                      backend's plan enforcement (e.g. Starter users seeing
+                      "Premium Trial Active" then getting blocked at $2,500). */}
+                  <h3 className="banner-title">
+                    {(() => {
+                      const p = subscription.plan_type;
+                      const planLabel =
+                        p === "starter" ? (t('subscriptionModal.starterPlan') || 'Starter Plan')
+                        : p === "basic" ? (t('subscriptionModal.basicPlan') || 'Basic Plan')
+                        : (t('subscriptionModal.premiumPlan') || 'Premium Plan');
+                      return `${planLabel} ${t('subscriptionPage.trialActive') || 'Trial Active'}`;
+                    })()}
+                  </h3>
                   <div className="trial-badge">{t('subscriptionPage.trialPeriod') || 'Trial Period'}</div>
                 </div>
                 <p className="banner-text">
@@ -553,15 +557,9 @@ function SubscriptionPage() {
               </div>
             </div>
 
-            <div className="stat-card subs">
-              <div className="stat-header subs">
-                <div className="stat-icon budget">
-                  <DollarSign size={22} />
-                </div>
-                <span className="stat-label">{t('subscriptionPage.budgetUnlocks') || 'Budget Unlocks'}</span>
-              </div>
-              <div className="stat-value subsval">{t('subscriptionPage.unlimited') || 'Unlimited'}</div>
-            </div>
+            {/* Budget Unlocks card intentionally removed — budgets aren't a
+                plan perk, they're a separate per-job $19.99 purchase. Showing
+                "Unlimited" here contradicted the paywall users still hit. */}
 
             <div className="stat-card subs">
               <div className="stat-header subs">
@@ -663,16 +661,6 @@ function SubscriptionPage() {
                     <Check className="icon-yes" size={20} />
                     <span className="feature-note">{t('subscriptionPage.note_under2500') || '(under $2,500)'}</span>
                   </td>
-                  <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
-                  <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
-                </tr>
-                <tr>
-                  <td className="feature-name">{t('subscriptionPage.feat_unlockBudgets') || 'Unlock project budgets'}</td>
-                  <td className="tier-cell"><X className="icon-no" size={20} /></td>
-                  <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
-                  <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
-                  <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
-                  <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell"><Check className="icon-yes" size={20} /></td>
                   <td className="tier-cell premium-cell"><Check className="icon-yes" size={20} /></td>
                 </tr>

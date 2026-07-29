@@ -39,10 +39,24 @@ import { useNavigate } from "react-router-dom"
 import { useLanguage } from "../../contexts/LanguageContext"
 import toast from "react-hot-toast"
 import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal"
+import BidAddendaSection from "../../components/BidAddendaSection"
 import { createContract, getContractByJob, approveWork, confirmCompletion, cancelBidApproval, deleteJob, archiveJob, getArchivedJobs } from "../../utils/contractApi"
 import { useSubmissions, useFavorites, useInvalidateSubmissions } from "../../hooks/useSubmissionsData"
 
-function SubmissionsPage() {
+// SCOPE map — property managers now see two entry points:
+//   biddings → decision phase (jobs still accepting bids)
+//   jobs     → execution phase (bid approved, work in progress or done)
+// A null scope means show everything (legacy / contractor path).
+const SCOPE_STATUSES = {
+  biddings: ["open"],
+  jobs: ["accepted", "ongoing", "completed"],
+}
+const SCOPE_TABS = {
+  biddings: ["all", "open"],
+  jobs: ["all", "accepted", "ongoing", "completed", "archived"],
+}
+
+function SubmissionsPage({ initialScope = null }) {
   const { t } = useLanguage()
 
   // TanStack Query: submissions + favorites (optimized single-endpoint fetch)
@@ -61,6 +75,14 @@ function SubmissionsPage() {
   const [submissions, setSubmissions] = useState([])
   const [filteredSubmissions, setFilteredSubmissions] = useState([])
   const [activeTab, setActiveTab] = useState("all")
+
+  // Guard: if the current tab isn't part of the active scope's allow-list,
+  // snap back to "all" (which is scope-aware in the filter effect).
+  useEffect(() => {
+    if (initialScope && SCOPE_TABS[initialScope] && !SCOPE_TABS[initialScope].includes(activeTab)) {
+      setActiveTab("all")
+    }
+  }, [initialScope, activeTab])
   const [showDetailsModal, setShowDetailsModal] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
 
@@ -397,6 +419,13 @@ function SubmissionsPage() {
         "Bid approved! Please arrange payment with the contractor directly.",
         "success"
       )
+
+      // Refresh the query so tab counts + list re-derive from the server.
+      // Local setSubmissions above updates the visible list, but the counts
+      // read from React Query's cached response — without invalidation they
+      // stay stale until the 2-min staleTime expires. Every other mutation
+      // in this file already invalidates; Accept was the odd one out.
+      invalidateSubmissions()
 
     } catch (error) {
       console.error("Error processing bid approval:", error)
@@ -1056,8 +1085,9 @@ function SubmissionsPage() {
       return acc
     }, [])
 
-  // Updated tabs to match job status values
-  const tabs = [
+  // Updated tabs to match job status values. When a scope is active
+  // (biddings vs jobs), only the relevant subset is shown.
+  const allTabs = [
     { id: "all", label: t('submissions.allSubmissions') },
     { id: "open", label: t('submissions.open') },
     { id: "accepted", label: t('submissions.approved') },
@@ -1065,6 +1095,9 @@ function SubmissionsPage() {
     { id: "completed", label: t('submissions.completed') },
     { id: "archived", label: t('submissions.archived') || 'Archived' },
   ]
+  const tabs = initialScope && SCOPE_TABS[initialScope]
+    ? allTabs.filter((tab) => SCOPE_TABS[initialScope].includes(tab.id))
+    : allTabs
 
   useEffect(() => {
     let filtered = [...submissions]
@@ -1079,9 +1112,14 @@ function SubmissionsPage() {
       filtered = filtered.filter((sub) => String(sub.job.id) === selectedJob)
     }
 
-    // Updated to filter by job status (using normalized status)
+    // Updated to filter by job status (using normalized status). When a
+    // scope is active, "all" still respects the scope's status set — e.g.
+    // "all" on the Jobs page excludes bids on still-open jobs.
     if (activeTab !== "all") {
       filtered = filtered.filter((sub) => normalizeStatus(sub.job.status) === activeTab)
+    } else if (initialScope && SCOPE_STATUSES[initialScope]) {
+      const scopeSet = new Set(SCOPE_STATUSES[initialScope])
+      filtered = filtered.filter((sub) => scopeSet.has(normalizeStatus(sub.job.status)))
     }
 
     if (searchTerm) {
@@ -1846,6 +1884,27 @@ function SubmissionsPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Price-adjustment negotiation (bid addenda). PM can propose
+                    a change, accept/reject the contractor's proposal, or
+                    withdraw their own. Approval flow is blocked upstream on
+                    the backend if any addendum is still pending. */}
+                <div style={{ marginTop: 12 }}>
+                  <BidAddendaSection
+                    bidId={selectedSubmission.bid.id}
+                    currentUserId={(() => {
+                      try {
+                        return JSON.parse(localStorage.getItem('userProfile'))?.id;
+                      } catch {
+                        return null;
+                      }
+                    })()}
+                    canAct={
+                      selectedSubmission.bid.status === 'pending' ||
+                      selectedSubmission.bid.status === 'under_review'
+                    }
+                  />
+                </div>
               </div>
 
               {/* Footer with Actions */}

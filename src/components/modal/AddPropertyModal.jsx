@@ -26,6 +26,11 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
     building_type: 'Apartment',
     latitude: 45.5017,
     longitude: -73.5673,
+    // Optional per-property inbound-email address for Condo Control (or any
+    // similar condo-mgmt platform). When set, the manager can broadcast an
+    // INTERVOS announcement into the community's existing feed by ticking a
+    // box on the announcement form.
+    condo_control_email: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -293,6 +298,7 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
       // Reset form
       setFormData({
         building_name: '',
+        condo_control_email: '',
         address: '',
         city: '',
         province: '',
@@ -580,6 +586,30 @@ const AddPropertyModal = ({ isOpen, onClose, onSuccess }) => {
                   min="1"
                   required
                 />
+              </div>
+            </div>
+
+            {/* Condo Control ingestion address — optional. When set, the
+                announcement modal offers a "Broadcast to Condo Control"
+                checkbox that pipes the announcement to this address. */}
+            <div className="form-row">
+              <div className="form-group" style={{ width: '100%' }}>
+                <label htmlFor="condo_control_email" className="form-label">
+                  {t('addPropertyModal.condoControlEmail') || 'Condo Control announcement email (optional)'}
+                </label>
+                <input
+                  type="email"
+                  id="condo_control_email"
+                  name="condo_control_email"
+                  value={formData.condo_control_email}
+                  onChange={handleChange}
+                  className="form-input"
+                  placeholder={t('addPropertyModal.condoControlEmailPlaceholder') || 'announcements@your-condo.example'}
+                />
+                <p style={{ fontSize: 12, color: '#64748b', margin: '4px 0 0' }}>
+                  {t('addPropertyModal.condoControlEmailHelp') ||
+                    'If your community uses Condo Control (or a similar platform) and accepts announcements by email, paste the ingestion address here to enable cross-posting.'}
+                </p>
               </div>
             </div>
           </div>

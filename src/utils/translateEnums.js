@@ -26,6 +26,7 @@ const URGENCY_KEY = {
   normal: 'urgencyMedium',
   high: 'urgencyHigh',
   urgent: 'urgencyUrgent',
+  planned: 'urgencyPlanned',
 };
 
 const CATEGORY_KEY = {

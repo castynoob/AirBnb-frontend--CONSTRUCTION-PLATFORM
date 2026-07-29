@@ -34,6 +34,7 @@ import toast from "react-hot-toast";
 import Nav from "../../components/Nav";
 import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal";
 import EditJobModal from "../../components/modal/EditJobModal";
+import DeadlineIndicator, { OverdueBanner } from "../../components/DeadlineIndicator";
 import {
   createContract,
   getContractByJob,
@@ -638,6 +639,9 @@ function JobDetailsPage() {
       <Nav />
       <div className="main-container">
         <div className="jdp-wrapper">
+          {/* Overdue banner — visual signal that the job passed its due_date.
+              Sits above the page header so PMs can't miss it. */}
+          <OverdueBanner dueDate={job.due_date || job.dueDate} />
 
           {/* ===== PAGE HEADER ===== */}
           <div className="jdp-page-header">
@@ -660,6 +664,70 @@ function JobDetailsPage() {
                 <span>{job.category || t("repairDetails.general") || "General"}</span>
               </div>
             </div>
+            {/* All actions consolidated into the header pill. Each button
+                still self-gates on job.status/contract like it did before —
+                only relevant ones render. Icon labels stay for clarity. */}
+            <div className="jdp-header-actions">
+              {contract?.invoice_file_url && (
+                <a
+                  className="jdp-header-invoice-btn"
+                  href={contract.invoice_file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={contract.invoice_file_name || (t("invoice.download") || "Download invoice")}
+                >
+                  <Download size={14} />
+                  <span>{t("invoice.download") || "Download invoice"}</span>
+                </a>
+              )}
+
+              {(job.status === "Open" || job.status === "open") && (
+                <button
+                  className="jdp-header-action-btn jdp-header-action-edit"
+                  onClick={() => setShowEditModal(true)}
+                  disabled={isProcessing}
+                >
+                  <Edit3 size={14} />
+                  <span>{t("editJobModal.editJobBtn") || "Edit Job"}</span>
+                </button>
+              )}
+
+              {(job.status === "Open" || job.status === "open") && (
+                <button
+                  className="jdp-header-action-btn jdp-header-action-delete"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={isProcessing}
+                >
+                  <Trash2 size={14} />
+                  <span>{t("submissions.deleteJobBtn") || "Delete Job"}</span>
+                </button>
+              )}
+
+              {job.status === "completed" && contract && !contract.manager_completion_confirmed && (
+                <button
+                  className="jdp-header-action-btn jdp-header-action-confirm"
+                  onClick={() => { setCompletionNote(""); setShowConfirmCompletionModal(true); }}
+                  disabled={isConfirmingCompletion}
+                >
+                  <CheckCircle2 size={14} />
+                  <span>{isConfirmingCompletion
+                    ? (t("submissions.confirming") || "Confirming...")
+                    : (t("submissions.confirmCompletion") || "Confirm Completion")}</span>
+                </button>
+              )}
+
+              {job.status === "completed" && contract?.mutual_confirmation_completed_at && (
+                <button
+                  className="jdp-header-action-btn jdp-header-action-archive"
+                  onClick={() => setShowArchiveConfirm(true)}
+                  disabled={isProcessing}
+                >
+                  <FolderOpen size={14} />
+                  <span>{t("submissions.archiveJobBtn") || "Archive Job"}</span>
+                </button>
+              )}
+            </div>
+
             <span className={`jdp-status-badge ${getStatusClass(job.status)}`}>
               {job.status || t("repairDetails.open") || "Open"}
             </span>
@@ -701,9 +769,19 @@ function JobDetailsPage() {
           <div className="jdp-left-panel">
           <div className="jdp-content-grid">
             <div className="jdp-card jdp-info-card">
-              <div className="jdp-card-header">
-                <FileText size={16} />
-                <h3>{t("repairDetails.description") || "Job Details"}</h3>
+              <div className="jdp-card-header jdp-card-head-row">
+                <div className="jdp-card-head-title">
+                  <FileText size={16} />
+                  <h3>{t("repairDetails.description") || "Job Details"}</h3>
+                </div>
+                {/* Urgency now shows as a compact chip inline with the card
+                    title (matches the contractor's page). Removed from the
+                    info-row list below to avoid duplication. */}
+                {job.urgency && (
+                  <span className={`jdp-urgency-chip jdp-urgency-${(job.urgency || "").toLowerCase().includes("urgent") || (job.urgency || "").toLowerCase() === "high" ? "urgent" : "planned"}`}>
+                    {(job.urgency || "").toLowerCase() === "medium" ? "MED" : String(job.urgency).toUpperCase()}
+                  </span>
+                )}
               </div>
               <div className="jdp-card-body">
                 <p className="jdp-description">
@@ -717,17 +795,12 @@ function JobDetailsPage() {
                       <span className="jdp-info-label">
                         {t("repairDetails.category") || "Category"}
                       </span>
-                      <span className="jdp-info-value">{translateCategory(t, job.category)}</span>
-                    </div>
-                  )}
-
-                  {job.urgency && (
-                    <div className="jdp-info-row">
-                      <AlertCircle size={14} />
-                      <span className="jdp-info-label">
-                        {t("repairDetails.urgency") || "Urgency"}
+                      <span className="jdp-info-value">
+                        <span className="jdp-category-chip">
+                          <Tag size={12} />
+                          {translateCategory(t, job.category)}
+                        </span>
                       </span>
-                      <span className="jdp-info-value">{translateUrgency(t, job.urgency)}</span>
                     </div>
                   )}
 
@@ -737,11 +810,12 @@ function JobDetailsPage() {
                       <span className="jdp-info-label">
                         {t("repairDetails.dueDate") || "Due Date"}
                       </span>
-                      <span className="jdp-info-value">
+                      <span className="jdp-info-value" style={{ display: "inline-flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                         {new Date(job.due_date || job.dueDate).toLocaleDateString(
                           "en-US",
                           { month: "short", day: "numeric", year: "numeric" }
                         )}
+                        <DeadlineIndicator dueDate={job.due_date || job.dueDate} compact />
                       </span>
                     </div>
                   )}
@@ -991,59 +1065,8 @@ function JobDetailsPage() {
             </div>
           )}
 
-          {/* Footer Actions — inside left panel */}
-          {/* Footer Actions based on job status */}
-          <div className="jdp-footer-actions">
-            {/* Edit — only for open jobs (before any contractor is hired) */}
-            {(job.status === "Open" || job.status === "open") && (
-              <button
-                className="jdp-action-btn jdp-edit-btn"
-                onClick={() => setShowEditModal(true)}
-                disabled={isProcessing}
-              >
-                <Edit3 size={16} />
-                {t("editJobModal.editJobBtn") || "Edit Job"}
-              </button>
-            )}
-
-            {/* Delete — only for open jobs (no accepted/ongoing/completed) */}
-            {(job.status === "Open" || job.status === "open") && (
-              <button
-                className="jdp-action-btn jdp-delete-btn"
-                onClick={() => setShowDeleteConfirm(true)}
-                disabled={isProcessing}
-              >
-                <Trash2 size={16} />
-                {t("submissions.deleteJobBtn") || "Delete Job"}
-              </button>
-            )}
-
-            {/* Confirm Completion — only when entrepreneur marked it completed but PM hasn't confirmed */}
-            {job.status === "completed" && contract && !contract.manager_completion_confirmed && (
-              <button
-                className="jdp-action-btn jdp-confirm-btn"
-                onClick={() => { setCompletionNote(""); setShowConfirmCompletionModal(true); }}
-                disabled={isConfirmingCompletion}
-              >
-                <CheckCircle2 size={16} />
-                {isConfirmingCompletion
-                  ? (t("submissions.confirming") || "Confirming...")
-                  : t("submissions.confirmCompletion") || "Confirm Completion"}
-              </button>
-            )}
-
-            {/* Archive — only when both parties confirmed (mutual_confirmation_completed_at exists) */}
-            {job.status === "completed" && contract?.mutual_confirmation_completed_at && (
-              <button
-                className="jdp-action-btn jdp-archive-btn"
-                onClick={() => setShowArchiveConfirm(true)}
-                disabled={isProcessing}
-              >
-                <FolderOpen size={16} />
-                {t("submissions.archiveJobBtn") || "Archive Job"}
-              </button>
-            )}
-          </div>
+          {/* Actions moved to the header pill. Kept this closing div to
+              preserve the left-panel container structure. */}
           </div>
 
           {/* Right Panel: Progress + Bids */}

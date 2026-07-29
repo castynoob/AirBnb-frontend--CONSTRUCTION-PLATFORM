@@ -13,7 +13,9 @@ import {
   RefreshCw,
   Filter,
   LogOut,
+  Sparkles,
 } from "lucide-react";
+import { isDemoModeOn, setDemoMode, subscribeDemoMode } from "../../utils/demoMode";
 import {
   LineChart,
   Line,
@@ -47,6 +49,12 @@ function Dashboard() {
   const [stats, setStats] = useState(null);
   const [activity, setActivity] = useState([]);
   const [error, setError] = useState(null);
+
+  // Demo mode toggle — swaps the entrepreneur map's data feed for a static
+  // simulated set. Used for investor pitches / sales demos. See utils/demoMode
+  // and the fixed-top DemoModeBanner for the safety UX.
+  const [demoOn, setDemoOn] = useState(() => isDemoModeOn());
+  useEffect(() => subscribeDemoMode(setDemoOn), []);
 
   // Filter states for each chart
   const [revenueFilter, setRevenueFilter] = useState({ period: "month", dateRange: { start: "", end: "" } });
@@ -372,6 +380,59 @@ function Dashboard() {
             Logout
           </button>
         </div>
+      </div>
+
+      {/* Demo mode toggle — compact strip. When on, the entrepreneur map
+          shows simulated tenders instead of the real feed. */}
+      <div
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "14px 18px", marginBottom: 20,
+          background: demoOn
+            ? "linear-gradient(90deg, #fef2f2 0%, #fee2e2 100%)"
+            : "linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%)",
+          border: `1px solid ${demoOn ? "#fecaca" : "#e5e7eb"}`,
+          borderRadius: 12,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: demoOn ? "#dc2626" : "#0F223D",
+            color: "#fff", display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0,
+          }}>
+            <Sparkles size={18} />
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontWeight: 700, color: "#0F223D", fontSize: 14 }}>
+              Demo mode {demoOn && <span style={{ color: "#dc2626", marginLeft: 6 }}>· ON</span>}
+            </div>
+            <div style={{ fontSize: 12, color: "#64748b", marginTop: 2, lineHeight: 1.5 }}>
+              Swaps the entrepreneur map with ~150 simulated tenders across Quebec for pitches and demos.
+              A red banner sits on top of every page while it's on.
+            </div>
+          </div>
+        </div>
+        <label style={{ position: "relative", display: "inline-block", width: 44, height: 24, cursor: "pointer", flexShrink: 0 }}>
+          <input
+            type="checkbox"
+            checked={demoOn}
+            onChange={(e) => setDemoMode(e.target.checked)}
+            style={{ opacity: 0, width: 0, height: 0 }}
+          />
+          <span style={{
+            position: "absolute", inset: 0,
+            background: demoOn ? "#dc2626" : "#cbd5e1",
+            borderRadius: 24, transition: "background 0.2s",
+          }} />
+          <span style={{
+            position: "absolute", top: 2, left: demoOn ? 22 : 2,
+            width: 20, height: 20, background: "#fff",
+            borderRadius: "50%", transition: "left 0.2s",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+          }} />
+        </label>
       </div>
 
       {/* Stats Cards */}

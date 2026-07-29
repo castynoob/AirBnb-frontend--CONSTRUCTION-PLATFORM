@@ -435,6 +435,42 @@
   font-size: 0.8125rem;
 }
 
+/* Portfolio tile hover — subtle lift + shadow so it reads as clickable. */
+.epm-portfolio-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(15, 34, 61, 0.15);
+}
+.epm-portfolio-tile:focus-visible {
+  outline: 2px solid #00A5A9;
+  outline-offset: 2px;
+}
+
+/* About/Bio card in the Company tab */
+.epm-bio-card {
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  color: #334155;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  margin-bottom: 0.75rem;
+}
+.epm-website-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px;
+  background: #fff;
+  border: 1px solid #14919B;
+  color: #14919B;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.epm-website-link:hover { background: #ecfeff; }
+
 /* Contact */
 .epm-contact-list {
   display: flex;

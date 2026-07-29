@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Nav from '../../components/Nav';
 import '../../styles/manager/submissions.css'
 import { useLanguage } from '../../contexts/LanguageContext';
 import { translateUrgency } from '../../utils/translateEnums';
+import BidAddendaSection from '../../components/BidAddendaSection';
 import {
   Search,
   Calendar,
@@ -51,67 +52,78 @@ const SubmittedBids = () => {
 
   const navigate = useNavigate()
 
-  useEffect(() => {
-    const fetchBids = async () => {
-      try {
-        setLoading(true);
-        const userProfile = localStorage.getItem('userProfile');
+  // Extracted so it can be called from the initial mount effect AND from the
+  // visibility/focus listeners (auto-refresh when the tab regains focus).
+  //
+  // `showSpinner` is opt-in — background refreshes shouldn't blank the UI.
+  const fetchBids = useCallback(async ({ showSpinner = false } = {}) => {
+    const userProfile = localStorage.getItem('userProfile');
+    if (!userProfile) {
+      setError('User not authenticated');
+      setLoading(false);
+      return;
+    }
+    try {
+      if (showSpinner) setLoading(true);
+      const user = JSON.parse(userProfile);
+      const bidsResponse = await fetch(`${API_BASE_URL}/api/bids/mine`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${user.token}` },
+      });
+      if (!bidsResponse.ok) throw new Error('Error in getting bids');
 
-        if (!userProfile) {
-          setError('User not authenticated');
-          setLoading(false);
-          return;
-        }
+      const data = await bidsResponse.json();
+      const allBids = data.bids?.all || [];
+      const pendingBids = data.bids?.pending || [];
+      const approvedBids = data.bids?.approved || [];
+      const declinedBids = data.bids?.declined || [];
 
-        const user = JSON.parse(userProfile);
-        const bidsResponse = await fetch(`${API_BASE_URL}/api/bids/mine`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${user.token}`
-          }
-        });
+      setBids({
+        all: allBids,
+        pending: pendingBids,
+        accepted: approvedBids, // Map 'approved' → 'accepted' for the UI
+        declined: declinedBids,
+      });
 
-        if (!bidsResponse.ok) {
-          throw new Error('Error in getting bids');
-        }
-
-        const data = await bidsResponse.json();
-
-        // Backend returns: { bids: { all, pending, approved, declined }, summary: { total, pending, approved, declined } }
-        const allBids = data.bids?.all || [];
-        const pendingBids = data.bids?.pending || [];
-        const approvedBids = data.bids?.approved || [];
-        const declinedBids = data.bids?.declined || [];
-
-        // Use backend summary if available, otherwise calculate from arrays
-        const mappedBids = {
-          all: allBids,
-          pending: pendingBids,
-          accepted: approvedBids, // Map 'approved' from backend to 'accepted' for UI
-          declined: declinedBids
-        };
-
-        const mappedSummary = {
-          total: data.summary?.total || allBids.length,
-          pending: data.summary?.pending || pendingBids.length,
-          accepted: data.summary?.approved || approvedBids.length,
-          declined: data.summary?.declined || declinedBids.length
-        };
-
-        console.log(mappedBids)
-        setBids(mappedBids);
-        console.log("Mapped bids: ", mappedBids)
-        setSummary(mappedSummary);
-        setLoading(false);
-      } catch (err) {
-        console.error('Fetch error:', err);
-        setError(err.message);
-        setLoading(false);
-      }
-    };
-
-    fetchBids();
+      // Derive counts DIRECTLY from the arrays we're about to render, not from
+      // the backend `data.summary`. If the two ever disagree (e.g. an accepted
+      // bid moves on to a contract and drops out of the approved list, but
+      // summary.approved is still 1), the badge would show a count with no
+      // matching cards — the exact bug the user reported.
+      setSummary({
+        total: allBids.length,
+        pending: pendingBids.length,
+        accepted: approvedBids.length,
+        declined: declinedBids.length,
+      });
+    } catch (err) {
+      console.error('Fetch error:', err);
+      setError(err.message);
+    } finally {
+      if (showSpinner) setLoading(false);
+    }
   }, [API_BASE_URL]);
+
+  // Initial load with the loading spinner.
+  useEffect(() => {
+    fetchBids({ showSpinner: true });
+  }, [fetchBids]);
+
+  // Auto-refresh when the tab regains focus or the browser fires visibility
+  // change (returning from another tab, closing a modal, etc). Silent refresh
+  // so the list doesn't flicker back to a spinner.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') fetchBids();
+    };
+    const onFocus = () => fetchBids();
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onFocus);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [fetchBids]);
 
   const getStatusLabel = (status) => {
     const normalizedStatus = status?.toLowerCase();
@@ -183,6 +195,13 @@ const SubmittedBids = () => {
   });
 
   const handleViewDetails = (bid) => {
+    // Route to the full bid-submit page instead of the small modal — same
+    // treatment applied on the entrepreneur homepage. That page hosts the
+    // addenda thread, richer job/property info, and the edit/delete flow.
+    if (bid?.job_id) {
+      navigate(`/bid-submit/${bid.job_id}`);
+      return;
+    }
     setSelectedBid(bid);
     setShowDetailsModal(true);
   };
@@ -680,6 +699,23 @@ const SubmittedBids = () => {
                       </div>
                     </div>
                   </div>
+                </section>
+
+                {/* Price-adjustment negotiation (bid addenda). Editable only
+                    while the bid is still pending — once the PM approves or
+                    declines, the section becomes read-only for the audit trail. */}
+                <section className="bid-details-section" style={{ marginTop: 12 }}>
+                  <BidAddendaSection
+                    bidId={selectedBid.id}
+                    currentUserId={(() => {
+                      try {
+                        return JSON.parse(localStorage.getItem('userProfile'))?.id;
+                      } catch {
+                        return null;
+                      }
+                    })()}
+                    canAct={selectedBid.status === 'pending' || selectedBid.status === 'under_review'}
+                  />
                 </section>
               </div>
 

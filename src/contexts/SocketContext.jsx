@@ -474,6 +474,44 @@ export const SocketProvider = ({ children }) => {
       }
     });
 
+    // Listen for job invite notifications — a PM directly invited this
+    // contractor to bid on one of their jobs (fired from jobInviteController).
+    newSocket.on("job_invite", (data) => {
+      const senderName = data.senderName || 'A property manager';
+      const jobTitle = data.jobTitle || 'a job';
+
+      setNotifications(prev => [{
+        id: Date.now(),
+        read: false,
+        timestamp: new Date().toISOString(),
+        type: 'job_invite',
+        senderName,
+        senderId: data.senderId,
+        jobId: data.jobId,
+        jobTitle,
+        content: data.content || `${senderName} invited you to bid on "${jobTitle}".`,
+      }, ...prev]);
+
+      if (checkIsPublicPage()) return;
+
+      playNotificationSound();
+      showDismissibleToast(
+        getT('notifications.jobInvite').replace('{{name}}', senderName),
+        { icon: '📩' }
+      );
+
+      if (showNotificationRef.current) {
+        showNotificationRef.current(
+          getT('notifications.jobInvite').replace('{{name}}', senderName),
+          {
+            body: `${senderName} invited you to bid on "${jobTitle}"`,
+            tag: 'job-invite',
+            requireInteraction: false,
+          }
+        );
+      }
+    });
+
     // Listen for job started notifications (entrepreneur started work)
     newSocket.on("job_started", (data) => {
       console.log("🔨 Job started notification:", data);

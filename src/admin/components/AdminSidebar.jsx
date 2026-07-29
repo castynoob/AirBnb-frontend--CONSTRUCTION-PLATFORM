@@ -15,6 +15,8 @@ import {
   ShieldCheck,
   Home,
   Wrench,
+  GitPullRequest,
+  Gift,
 } from "lucide-react";
 import { useAdminAuth } from "../context/AdminAuthContext";
 
@@ -63,6 +65,11 @@ function AdminSidebar({ isOpen, onClose }) {
           label: "Bids",
         },
         {
+          to: "/admin/addenda",
+          icon: GitPullRequest,
+          label: "Addenda",
+        },
+        {
           to: "/admin/properties",
           icon: Building2,
           label: "All Properties",
@@ -103,6 +110,11 @@ function AdminSidebar({ isOpen, onClose }) {
           to: "/admin/promo-codes",
           icon: Megaphone,
           label: "Promo Codes",
+        },
+        {
+          to: "/admin/referrals",
+          icon: Gift,
+          label: "Referrals",
         },
       ],
     },

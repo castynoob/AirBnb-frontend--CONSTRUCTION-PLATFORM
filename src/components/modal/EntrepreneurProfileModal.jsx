@@ -16,6 +16,8 @@ import {
   MessageSquare,
   Loader2,
   Home,
+  Image as ImageIcon,
+  ExternalLink,
 } from "lucide-react";
 import "../../styles/modal/entrepreneurprofilemodal.css";
 import { useLanguage } from "../../contexts/LanguageContext";
@@ -27,6 +29,11 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
   const [activeTab, setActiveTab] = useState("account");
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
+
+  // Lightbox — full-screen preview of a portfolio photo. Null = closed.
+  // Kept as a state value (url) rather than a boolean+index so navigating
+  // between photos later (arrow keys, next/prev) is a plain state swap.
+  const [lightboxUrl, setLightboxUrl] = useState(null);
   const [reviewStats, setReviewStats] = useState({
     averageRating: 0,
     totalReviews: 0,
@@ -51,21 +58,24 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
       });
       if (response.ok) {
         const data = await response.json();
-        setReviews(data);
+        // Backend returns `{ reviews: [...] }`. Fall back to `data` itself in
+        // case the endpoint ever changes to return a bare array again.
+        const list = Array.isArray(data) ? data : (data?.reviews ?? []);
+        setReviews(list);
 
         // Calculate stats
-        if (data.length > 0) {
-          const total = data.reduce((sum, r) => sum + r.rating, 0);
-          const avg = total / data.length;
+        if (list.length > 0) {
+          const total = list.reduce((sum, r) => sum + r.rating, 0);
+          const avg = total / list.length;
           const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
-          data.forEach(r => {
+          list.forEach(r => {
             if (distribution[r.rating] !== undefined) {
               distribution[r.rating]++;
             }
           });
           setReviewStats({
             averageRating: avg,
-            totalReviews: data.length,
+            totalReviews: list.length,
             ratingDistribution: distribution
           });
         }
@@ -83,6 +93,9 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
     { id: "account", label: t('profileModal.tab_account') || "Account", icon: User },
     { id: "performance", label: t('profileModal.tab_performance') || "Performance", icon: Star },
     { id: "reviews", label: t('profileModal.tab_reviews') || "Reviews", icon: MessageSquare, badge: reviews.length > 0 ? reviews.length : undefined },
+    // Portfolio tab — shows the specialist's work with captions, per-photo
+    // trade tags, and before/after pairs. Badge count = number of entries.
+    { id: "portfolio", label: t('profileModal.tab_portfolio') || "Portfolio", icon: ImageIcon, badge: (profile?.portfolio?.length || 0) > 0 ? profile.portfolio.length : undefined },
     { id: "specializations", label: t('profileModal.tab_specializations') || "Specializations", icon: Briefcase },
     { id: "contact", label: t('profileModal.tab_contact') || "Contact", icon: Phone },
     { id: "company", label: t('profileModal.tab_company') || "Company", icon: Building2 },
@@ -339,6 +352,119 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
           </div>
         );
 
+      case "portfolio": {
+        // Read-only PM view of the specialist's portfolio. Groups before/after
+        // pairs (same layout language as the specialist's edit view) and
+        // renders per-photo captions + trade tags. Photos without metadata
+        // fall back to a plain thumbnail.
+        const items = Array.isArray(profile.portfolio) ? profile.portfolio : [];
+        if (items.length === 0) {
+          return (
+            <div className="epm-tab-content">
+              <div className="epm-section-header">
+                <ImageIcon size={20} />
+                <h4>{t('profileModal.portfolio') || 'Portfolio'}</h4>
+              </div>
+              <div className="epm-empty-state">
+                <ImageIcon size={32} />
+                <p>{t('profileModal.noPortfolio') || "This entrepreneur hasn't uploaded any work yet."}</p>
+              </div>
+            </div>
+          );
+        }
+
+        // Bucket items: pairs (grouped by pair_id / anchoring "before"), then singles.
+        const pairs = new Map();
+        const singles = [];
+        items.forEach((raw, i) => {
+          const p = typeof raw === "object" ? { ...raw, __idx: i } : { url: raw, __idx: i };
+          const pairKey = p.pair_id || (p.is_before && p.id ? p.id : null);
+          if (pairKey) {
+            if (!pairs.has(pairKey)) pairs.set(pairKey, []);
+            pairs.get(pairKey).push(p);
+          } else {
+            singles.push(p);
+          }
+        });
+
+        const chip = (label, bg, color) => (
+          <span style={{
+            background: bg, color, fontSize: 10, fontWeight: 700,
+            padding: "2px 8px", borderRadius: 999,
+            textTransform: "uppercase", letterSpacing: 0.4,
+          }}>{label}</span>
+        );
+
+        const renderTile = (item, corner) => (
+          <button
+            key={`t-${item.__idx}`}
+            type="button"
+            onClick={() => setLightboxUrl(item.url)}
+            className="epm-portfolio-tile"
+            style={{
+              position: "relative", borderRadius: 10, overflow: "hidden",
+              background: "#f1f5f9", border: "none", padding: 0,
+              cursor: "zoom-in", fontFamily: "inherit",
+              transition: "transform 0.2s, box-shadow 0.2s",
+            }}
+          >
+            <img
+              src={item.url}
+              alt={item.caption || `Portfolio ${item.__idx + 1}`}
+              style={{ width: "100%", height: 200, objectFit: "cover", display: "block" }}
+            />
+            <div style={{ position: "absolute", top: 8, left: 8, display: "flex", gap: 4 }}>
+              {corner && chip(corner, "rgba(15, 34, 61, 0.85)", "#fff")}
+              {item.trade_tag && chip(item.trade_tag, "rgba(0, 165, 169, 0.9)", "#fff")}
+            </div>
+            {item.caption && (
+              <div style={{
+                position: "absolute", bottom: 0, left: 0, right: 0,
+                padding: "10px 12px",
+                background: "linear-gradient(to top, rgba(15, 34, 61, 0.85), transparent)",
+                color: "#fff", fontSize: 12, lineHeight: 1.35,
+                textAlign: "left",
+              }}>{item.caption}</div>
+            )}
+          </button>
+        );
+
+        return (
+          <div className="epm-tab-content">
+            <div className="epm-section-header">
+              <ImageIcon size={20} />
+              <h4>{t('profileModal.portfolio') || 'Portfolio'}</h4>
+              <span style={{ marginLeft: 8, fontSize: 12, color: "#64748b" }}>
+                {items.length} {items.length === 1 ? (t('profileModal.photo') || 'photo') : (t('profileModal.photos') || 'photos')}
+              </span>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
+              {Array.from(pairs.entries()).map(([pairKey, group]) => {
+                const before = group.find((g) => g.is_before) || group[0];
+                const after = group.find((g) => g.id !== before?.id) || group[1];
+                if (!before || !after) return group.map((g) => renderTile(g));
+                return (
+                  <div key={`pair-${pairKey}`} style={{
+                    gridColumn: "span 2",
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 6,
+                    padding: 6,
+                    background: "linear-gradient(90deg, #fef3c7 0%, #dcfce7 100%)",
+                    borderRadius: 12,
+                  }}>
+                    {renderTile(before, "BEFORE")}
+                    {renderTile(after, "AFTER")}
+                  </div>
+                );
+              })}
+              {singles.map((p) => renderTile(p))}
+            </div>
+          </div>
+        );
+      }
+
       case "specializations":
         return (
           <div className="epm-tab-content">
@@ -422,6 +548,30 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
               <Building2 size={20} />
               <h4>{t('profileModal.companyInformation') || 'Company Information'}</h4>
             </div>
+
+            {/* About/bio + website — top-of-tab so the story leads before
+                the structured details below. Both are optional; if neither
+                exists we skip the section entirely to avoid an empty box. */}
+            {(profile.bio || profile.website) && (
+              <div style={{ marginBottom: "1rem" }}>
+                <div className="epm-section-header" style={{ marginBottom: 8 }}>
+                  <Award size={16} />
+                  <h4 style={{ fontSize: "0.875rem" }}>{t('profileModal.about') || 'About'}</h4>
+                </div>
+                {profile.bio && <div className="epm-bio-card">{profile.bio}</div>}
+                {profile.website && (
+                  <a
+                    href={/^https?:\/\//i.test(profile.website) ? profile.website : `https://${profile.website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="epm-website-link"
+                  >
+                    <ExternalLink size={13} />
+                    {t('profileModal.visitWebsite') || 'Visit website'}
+                  </a>
+                )}
+              </div>
+            )}
 
             <div className="epm-company-details">
               <div className="epm-company-card">
@@ -534,6 +684,53 @@ const EntrepreneurProfileModal = ({ isOpen, onClose, profile }) => {
           <div className="epm-body">{renderTabContent()}</div>
         </div>
       </div>
+
+      {/* Fullscreen lightbox — click any portfolio tile to open. Backdrop
+          click or ✕ closes. Sits OUTSIDE the modal panel so the image can
+          expand across the entire viewport. */}
+      {lightboxUrl && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            setLightboxUrl(null);
+          }}
+          style={{
+            position: "fixed", inset: 0, zIndex: 2000,
+            background: "rgba(0,0,0,0.9)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 24,
+            cursor: "zoom-out",
+          }}
+        >
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setLightboxUrl(null); }}
+            aria-label="Close preview"
+            style={{
+              position: "absolute", top: 20, right: 24,
+              width: 40, height: 40, borderRadius: "50%",
+              background: "rgba(255,255,255,0.15)", color: "#fff",
+              border: "none", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              backdropFilter: "blur(6px)",
+            }}
+          >
+            <X size={20} />
+          </button>
+          <img
+            src={lightboxUrl}
+            alt="Portfolio preview"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: "100%", maxHeight: "100%",
+              objectFit: "contain",
+              borderRadius: 8,
+              cursor: "default",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 };
