@@ -7,6 +7,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import ReferAndEarnCard from '../../components/ReferAndEarnCard';
+import CustomSelect from '../../components/CustomSelect';
 import Nav from "../../components/Nav";
 import '../../styles/entrepreneur/profilepageentrepreneur-modern.css';
 import '../../styles/entrepreneur/subscriptionpage.css';
@@ -1694,15 +1695,15 @@ function ProfilePageEntrepreneur() {
                       {billingLoading ? t('common.loading') : t('profileEntrepreneur.refreshBilling')}
                     </button>
                     <div className="ep-invoice-group">
-                      <select
-                        className="ep-invoice-year-select"
+                      <CustomSelect
+                        size="compact"
                         value={invoiceYear}
-                        onChange={(e) => setInvoiceYear(parseInt(e.target.value))}
-                      >
-                        {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(y => (
-                          <option key={y} value={y}>{y}</option>
-                        ))}
-                      </select>
+                        onChange={(v) => setInvoiceYear(parseInt(v))}
+                        options={Array.from({ length: 5 }, (_, i) => {
+                          const y = new Date().getFullYear() - i;
+                          return { value: y, label: String(y) };
+                        })}
+                      />
                       <button
                         className="ep-btn ep-btn-invoice"
                         onClick={() => generateAnnualInvoice(invoiceYear)}

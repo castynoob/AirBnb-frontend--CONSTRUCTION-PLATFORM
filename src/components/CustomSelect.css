@@ -1,0 +1,184 @@
+/* =============================================================================
+   CustomSelect — scoped styles.
+   Mirrors the pm-custom-dropdown pattern from the homepage but self-contained.
+   Two size variants:
+     - .cs-form    default, form-sized (~40px), full width
+     - .cs-compact filter-chip-sized (~34px), inline width
+   ============================================================================= */
+
+.cs-root {
+  position: relative;
+  display: inline-block;
+  font-family: inherit;
+}
+.cs-form { display: block; width: 100%; }
+
+/* Trigger — the button that looks like a select ---------------------------- */
+.cs-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  color: #0F223D;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 500;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+  width: 100%;
+}
+.cs-form .cs-trigger {
+  padding: 0.625rem 0.75rem;
+  height: 40px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+.cs-compact .cs-trigger {
+  padding: 0 0.625rem;
+  height: 34px;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+}
+.cs-trigger:hover:not(:disabled) { border-color: #14919B; }
+.cs-open .cs-trigger {
+  border-color: #14919B;
+  box-shadow: 0 0 0 2px rgba(20,145,155,0.12);
+}
+.cs-disabled .cs-trigger,
+.cs-trigger:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* Error state — applied via the `className` prop from consumers (e.g. form
+   fields with validation errors). Matches the red used by other awp-error
+   surfaces so form validation reads consistently across native and custom
+   inputs. */
+.cs-error .cs-trigger {
+  border-color: #ef4444;
+}
+.cs-error.cs-open .cs-trigger,
+.cs-error .cs-trigger:hover {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.12);
+}
+
+.cs-trigger-icon {
+  display: inline-flex;
+  align-items: center;
+  color: #64748b;
+  flex-shrink: 0;
+}
+.cs-trigger-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+.cs-placeholder { color: #9ca3af; font-weight: 400; }
+
+.cs-chevron {
+  color: #64748b;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+.cs-open .cs-chevron { transform: rotate(180deg); }
+
+/* Menu ---------------------------------------------------------------------- */
+.cs-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 998;
+  background: transparent;
+}
+.cs-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 999;
+  min-width: 100%;
+  max-height: 260px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 34, 61, 0.12);
+  padding: 4px;
+  animation: cs-menu-in 0.12s ease-out;
+}
+.cs-menu-flip {
+  top: auto;
+  bottom: calc(100% + 4px);
+  animation: cs-menu-in-up 0.12s ease-out;
+}
+@keyframes cs-menu-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes cs-menu-in-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.cs-empty {
+  padding: 10px 12px;
+  color: #94a3b8;
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
+/* Options ------------------------------------------------------------------- */
+.cs-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: #0F223D;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.1s;
+}
+.cs-option:hover:not(:disabled) { background: #f1f5f9; }
+.cs-option:focus-visible {
+  outline: none;
+  background: #f1f5f9;
+}
+.cs-option-icon {
+  display: inline-flex;
+  align-items: center;
+  color: #64748b;
+  flex-shrink: 0;
+}
+.cs-option-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.cs-active {
+  background: rgba(20, 145, 155, 0.08);
+  color: #14919B;
+  font-weight: 600;
+}
+.cs-active .cs-option-icon { color: #14919B; }
+.cs-check { color: #14919B; flex-shrink: 0; }
+
+.cs-option-disabled,
+.cs-option:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+  background: transparent;
+}
+
+/* Scrollbar polish (webkit only, cosmetic) */
+.cs-menu::-webkit-scrollbar { width: 6px; }
+.cs-menu::-webkit-scrollbar-track { background: transparent; }
+.cs-menu::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+.cs-menu::-webkit-scrollbar-thumb:hover { background: #94a3b8; }

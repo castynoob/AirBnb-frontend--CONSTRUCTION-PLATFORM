@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import {
   FileText, Upload, Search, X, Pencil, Trash2, Download,
   Image, File, Filter, Clock, AlertTriangle, Plus, FolderOpen,
-  ChevronDown, GripVertical, Calendar
+  ChevronDown, GripVertical, Calendar, ArrowUpDown, Building2, Briefcase
 } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import CustomSelect from './CustomSelect';
 import toast from 'react-hot-toast';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -419,11 +420,15 @@ export default function DocumentManager({ ownerId, jobId, propertyId, userRole, 
           <input style={s.input} value={form.title || ''} onChange={(e) => update('title', e.target.value)} placeholder="Document title" />
 
           <label style={s.label}>{tx(t, 'documents.category', 'Category')}</label>
-          <select style={{ ...s.input, cursor: 'pointer' }} value={form.category || 'other'} onChange={(e) => update('category', e.target.value)}>
-            {CATEGORIES.filter((c) => c.key !== 'all').map((c) => (
-              <option key={c.key} value={c.key}>{c.label}</option>
-            ))}
-          </select>
+          <CustomSelect
+            value={form.category || 'other'}
+            onChange={(v) => update('category', v)}
+            options={CATEGORIES.filter((c) => c.key !== 'all').map((c) => ({
+              value: c.key,
+              label: c.label,
+            }))}
+            placeholder={tx(t, 'documents.category', 'Category')}
+          />
 
           <label style={s.label}>{tx(t, 'documents.notes', 'Notes')}</label>
           <textarea style={s.textarea} value={form.notes || ''} onChange={(e) => update('notes', e.target.value)} placeholder="Optional notes..." />
@@ -431,23 +436,37 @@ export default function DocumentManager({ ownerId, jobId, propertyId, userRole, 
           {!jobId && userJobs.length > 0 && (
             <>
               <label style={s.label}>{tx(t, 'documents.linkToJob', 'Link to Job')}</label>
-              <select style={s.input} value={form.job_id || ''} onChange={(e) => update('job_id', e.target.value)}>
-                <option value="">{tx(t, 'documents.selectJob', 'Select job (optional)')}</option>
-                {userJobs.map(j => (
-                  <option key={j.id} value={j.id}>{j.title || j.apartment || `Job ${j.id.slice(0,8)}`}</option>
-                ))}
-              </select>
+              <CustomSelect
+                value={form.job_id || ''}
+                onChange={(v) => update('job_id', v)}
+                icon={<Briefcase size={14} />}
+                options={[
+                  { value: '', label: tx(t, 'documents.selectJob', 'Select job (optional)') },
+                  ...userJobs.map((j) => ({
+                    value: j.id,
+                    label: j.title || j.apartment || `Job ${j.id.slice(0, 8)}`,
+                  })),
+                ]}
+                placeholder={tx(t, 'documents.selectJob', 'Select job (optional)')}
+              />
             </>
           )}
           {!propertyId && userProperties.length > 0 && (
             <>
               <label style={s.label}>{tx(t, 'documents.linkToProperty', 'Link to Property')}</label>
-              <select style={s.input} value={form.property_id || ''} onChange={(e) => update('property_id', e.target.value)}>
-                <option value="">{tx(t, 'documents.selectProperty', 'Select property (optional)')}</option>
-                {userProperties.map(p => (
-                  <option key={p.id} value={p.id}>{p.building_name || p.address || `Property ${p.id.slice(0,8)}`}</option>
-                ))}
-              </select>
+              <CustomSelect
+                value={form.property_id || ''}
+                onChange={(v) => update('property_id', v)}
+                icon={<Building2 size={14} />}
+                options={[
+                  { value: '', label: tx(t, 'documents.selectProperty', 'Select property (optional)') },
+                  ...userProperties.map((p) => ({
+                    value: p.id,
+                    label: p.building_name || p.address || `Property ${p.id.slice(0, 8)}`,
+                  })),
+                ]}
+                placeholder={tx(t, 'documents.selectProperty', 'Select property (optional)')}
+              />
             </>
           )}
 
@@ -508,11 +527,20 @@ export default function DocumentManager({ ownerId, jobId, propertyId, userRole, 
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <select style={s.select} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-            {SORT_OPTIONS.map((o) => (
-              <option key={o.key} value={o.key}>{tx(t, `documents.sort${({newest:'Newest',oldest:'Oldest',name_asc:'Name',expiring:'Expiring'})[o.key] || o.key}`, o.label)}</option>
-            ))}
-          </select>
+          <CustomSelect
+            size="compact"
+            value={sortBy}
+            onChange={setSortBy}
+            icon={<ArrowUpDown size={13} />}
+            options={SORT_OPTIONS.map((o) => ({
+              value: o.key,
+              label: tx(
+                t,
+                `documents.sort${({ newest: 'Newest', oldest: 'Oldest', name_asc: 'Name', expiring: 'Expiring' })[o.key] || o.key}`,
+                o.label
+              ),
+            }))}
+          />
         </div>
 
         {/* Content */}

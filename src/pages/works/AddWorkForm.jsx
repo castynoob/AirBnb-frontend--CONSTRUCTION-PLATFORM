@@ -24,6 +24,7 @@ import {
 import toast from "react-hot-toast";
 import JobsPreviewModal from "../../components/modal/JobsPreviewModal";
 import PropertyLocationPicker from "../../components/PropertyLocationPicker";
+import CustomSelect from "../../components/CustomSelect";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { useInvalidateManagerData, useOptimisticallyAddJob } from "../../hooks/useManagerData";
 import "../../styles/manager/addworkform.css";
@@ -506,24 +507,20 @@ function AddWorkForm() {
                   <Building2 size={14} />
                   {t("addWorkModal.selectProperty") || "Select Property"} *
                 </label>
-                <select
-                  name="property_id"
+                <CustomSelect
                   value={formData.property_id}
-                  onChange={handleChange}
-                  className={`awp-select ${errors.property_id ? "error" : ""}`}
+                  onChange={(v) => setFormData((p) => ({ ...p, property_id: v }))}
+                  options={properties.map((p) => ({
+                    value: p.id,
+                    label: p.building_name || p.address,
+                  }))}
+                  placeholder={isLoadingProperties
+                    ? (t("common.loading") || "Loading...")
+                    : (t("addWorkModal.selectProperty") || "Choose a property...")}
                   disabled={isLoadingProperties}
-                >
-                  <option value="">
-                    {isLoadingProperties
-                      ? (t("common.loading") || "Loading...")
-                      : (t("addWorkModal.selectProperty") || "Choose a property...")}
-                  </option>
-                  {properties.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.building_name || p.address}
-                    </option>
-                  ))}
-                </select>
+                  icon={<Building2 size={14} />}
+                  className={errors.property_id ? "cs-error" : ""}
+                />
                 {errors.property_id && <span className="awp-error">{errors.property_id}</span>}
               </div>
             )}
@@ -549,18 +546,15 @@ function AddWorkForm() {
                   </div>
                   <div className="awp-form-section">
                     <label className="awp-label">{t("addWorkModal.buildingType") || "Building Type"}</label>
-                    <select
-                      name="building_type"
+                    <CustomSelect
                       value={newPropertyData.building_type}
-                      onChange={handleNewPropertyChange}
-                      className="awp-select"
-                    >
-                      {buildingTypes.map((b) => (
-                        <option key={b.value} value={b.value}>
-                          {t(`addPropertyModal.${b.key}`) || b.value}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(v) => setNewPropertyData((p) => ({ ...p, building_type: v }))}
+                      options={buildingTypes.map((b) => ({
+                        value: b.value,
+                        label: t(`addPropertyModal.${b.key}`) || b.value,
+                      }))}
+                      placeholder={t("addWorkModal.buildingType") || "Building Type"}
+                    />
                   </div>
                 </div>
 
@@ -680,31 +674,47 @@ function AddWorkForm() {
               <div className="awp-row">
                 <div className="awp-form-section">
                   <label className="awp-label">{t("addWorkModal.category") || "Category"}</label>
-                  <select name="category" value={formData.category} onChange={handleChange} className="awp-select">
-                    {categories.map((c) => (
-                      <option key={c.value} value={c.value}>
-                        {t(`addWorkModal.${c.key}`) || c.value}
-                      </option>
-                    ))}
-                  </select>
+                  <CustomSelect
+                    value={formData.category}
+                    onChange={(v) => setFormData((p) => ({ ...p, category: v }))}
+                    options={categories.map((c) => ({
+                      value: c.value,
+                      label: t(`addWorkModal.${c.key}`) || c.value,
+                    }))}
+                    placeholder={t("addWorkModal.category") || "Category"}
+                  />
                 </div>
                 <div className="awp-form-section">
                   <label className="awp-label">{t("addWorkModal.urgency") || "Urgency"}</label>
-                  <select name="urgency" value={formData.urgency} onChange={handleChange} className="awp-select">
-                    {urgencies.map((u) => (
-                      <option key={u.value} value={u.value}>
-                        {t(`addWorkModal.${u.key}`) || u.value}
-                      </option>
-                    ))}
-                  </select>
+                  <CustomSelect
+                    value={formData.urgency}
+                    onChange={(v) => setFormData((p) => ({ ...p, urgency: v }))}
+                    options={urgencies.map((u) => ({
+                      value: u.value,
+                      label: t(`addWorkModal.${u.key}`) || u.value,
+                    }))}
+                    placeholder={t("addWorkModal.urgency") || "Urgency"}
+                  />
                 </div>
               </div>
 
-              {/* Emergency checkbox */}
-              <label className="awp-checkbox-label">
-                <input type="checkbox" name="is_emergency" checked={formData.is_emergency} onChange={handleChange} />
-                <AlertTriangle size={14} color="#ef4444" />
-                {t("addWorkModal.markAsEmergency") || "Mark as Emergency"}
+              {/* Emergency checkbox — explicit inline flex layout so the icon
+                  and text stay spaced correctly regardless of parent CSS. */}
+              <label
+                className="awp-checkbox-label"
+                style={{ display: "flex", alignItems: "center", gap: 10 }}
+              >
+                <input
+                  type="checkbox"
+                  name="is_emergency"
+                  checked={formData.is_emergency}
+                  onChange={handleChange}
+                  style={{ margin: 0, flexShrink: 0 }}
+                />
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <AlertTriangle size={14} color="#ef4444" style={{ flexShrink: 0 }} />
+                  <span>{t("addWorkModal.markAsEmergency") || "Mark as Emergency"}</span>
+                </span>
               </label>
 
               {/* Due Date + Duration */}
@@ -829,9 +839,47 @@ function AddWorkForm() {
                 <p>{t("addWorkModal.dragDropExcel") || "Drag & drop your Excel file here"}</p>
                 <span>{t("addWorkModal.supportedFormats") || "Supported: .XLSX, .XLS, .CSV"}</span>
                 <label className="awp-upload-btn">
-                  {t("addWorkModal.clickToUpload") || "Select File"}
+                  {t("addWorkModal.selectExcelFile") || "Select file"}
                   <input type="file" accept=".xlsx,.xls,.csv" onChange={handleExcelUpload} hidden />
                 </label>
+              </div>
+
+              {/* Download template — for PMs who don't have an inspection report
+                  and want to fill in a structured spreadsheet themselves. Uses
+                  the existing /api/inspections/template endpoint; language
+                  follows the current UI locale. */}
+              <div className="awp-excel-template-row">
+                <button
+                  type="button"
+                  className="awp-excel-template-link"
+                  onClick={async () => {
+                    try {
+                      const userProfile = JSON.parse(localStorage.getItem("userProfile") || "{}");
+                      const lang = (localStorage.getItem("language") || "fr").toLowerCase().startsWith("en") ? "en" : "fr";
+                      const res = await fetch(`${API_BASE_URL}/api/inspections/template?lang=${lang}`, {
+                        headers: { Authorization: `Bearer ${userProfile.token}` },
+                      });
+                      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                      const blob = await res.blob();
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = lang === "fr" ? "plan-de-maintien-template.xlsx" : "inspection-template.xlsx";
+                      document.body.appendChild(a);
+                      a.click();
+                      a.remove();
+                      URL.revokeObjectURL(url);
+                    } catch {
+                      toast.error(t("addWorkModal.templateDlFailed") || "Couldn't download the template.");
+                    }
+                  }}
+                >
+                  <Download size={13} />
+                  {t("addWorkModal.downloadTemplate") || "Download template"}
+                </button>
+                <span className="awp-excel-template-hint">
+                  {t("addWorkModal.downloadTemplateHint") || "New here? Fill this template in Excel, then upload it above."}
+                </span>
               </div>
 
               {excelPreview && (

@@ -54,6 +54,35 @@
   margin-bottom: 1rem;
 }
 
+/* Download-template link row — sits under the drop zone, subtle but findable */
+.awp-excel-template-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.awp-excel-template-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: #14919B;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+  font-family: inherit;
+}
+.awp-excel-template-link:hover { color: #0e6c74; }
+.awp-excel-template-hint {
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
 .awp-excel-dropzone {
   display: flex;
   flex-direction: column;

@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { DollarSign, FileText, TrendingUp, Briefcase, ChevronDown, Building2, Star, AlertCircle } from 'lucide-react';
+import { DollarSign, FileText, TrendingUp, Briefcase, ChevronDown, Building2, Star, AlertCircle, Calendar } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translateStatus, translateCategory } from '../utils/translateEnums';
+import CustomSelect from './CustomSelect';
 import toast from 'react-hot-toast';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -140,15 +141,26 @@ function FinancialDashboard() {
 
       {/* Controls */}
       <div style={s.controls}>
-        <select value={year} onChange={e => setYear(Number(e.target.value))} style={s.select}>
-          {years.map(y => <option key={y} value={y}>{y}</option>)}
-        </select>
-        <select value={propertyFilter} onChange={e => setPropertyFilter(e.target.value)} style={s.select}>
-          <option value="">{tx(t, 'financial.allProperties', 'All Properties')}</option>
-          {(data.by_property || []).map(p => (
-            <option key={p.property_id} value={p.property_id}>{p.building_name}</option>
-          ))}
-        </select>
+        <CustomSelect
+          size="compact"
+          value={year}
+          onChange={(v) => setYear(Number(v))}
+          icon={<Calendar size={13} />}
+          options={years.map((y) => ({ value: y, label: String(y) }))}
+        />
+        <CustomSelect
+          size="compact"
+          value={propertyFilter}
+          onChange={setPropertyFilter}
+          icon={<Building2 size={13} />}
+          options={[
+            { value: '', label: tx(t, 'financial.allProperties', 'All Properties') },
+            ...((data.by_property || []).map((p) => ({
+              value: p.property_id,
+              label: p.building_name,
+            }))),
+          ]}
+        />
       </div>
 
       {/* Overview Cards */}

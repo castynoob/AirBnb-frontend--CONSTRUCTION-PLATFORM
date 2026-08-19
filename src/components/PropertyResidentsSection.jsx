@@ -18,9 +18,10 @@
 // =============================================================================
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { UserPlus, Users, X, Trash2, Mail, Send, Search } from "lucide-react";
+import { UserPlus, Users, X, Trash2, Mail, Send, Search, Upload } from "lucide-react";
 import toast from "react-hot-toast";
 import { useLanguage } from "../contexts/LanguageContext";
+import BulkImportModal from "./BulkImportModal";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
@@ -49,6 +50,7 @@ export default function PropertyResidentsSection({ propertyId }) {
   const [inviteMessage, setInviteMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState(null); // {userId, name}
+  const [bulkOpen, setBulkOpen] = useState(false);
   const searchDebounceRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -174,10 +176,16 @@ export default function PropertyResidentsSection({ propertyId }) {
           {tf(t, 'residents.sectionTitle', 'Residents')}
           <span style={s.count}>{residents.length}</span>
         </h3>
-        <button type="button" onClick={() => setInviteOpen(true)} style={s.inviteBtn}>
-          <UserPlus size={14} />
-          {tf(t, 'residents.inviteBtn', 'Invite resident')}
-        </button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button type="button" onClick={() => setBulkOpen(true)} style={s.bulkBtn}>
+            <Upload size={14} />
+            {tf(t, 'residents.bulkImportBtn', 'Bulk import')}
+          </button>
+          <button type="button" onClick={() => setInviteOpen(true)} style={s.inviteBtn}>
+            <UserPlus size={14} />
+            {tf(t, 'residents.inviteBtn', 'Invite resident')}
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -415,6 +423,19 @@ export default function PropertyResidentsSection({ propertyId }) {
         </div>
       )}
 
+      {/* Bulk import modal — download template, fill, upload, see per-row report */}
+      <BulkImportModal
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        onSuccess={() => load()}
+        templateUrl={`/api/properties/${propertyId}/residents/import-template`}
+        uploadUrl={`/api/properties/${propertyId}/residents/bulk-import`}
+        templateFilename={`intervos_residents_template.xlsx`}
+        title={tf(t, 'residents.bulkModalTitle', 'Bulk import residents')}
+        subtitle={tf(t, 'residents.bulkModalSubtitle', 'Upload a spreadsheet of residents to invite them all at once.')}
+        entityLabel={tf(t, 'residents.entityLabel', 'residents')}
+      />
+
       {/* Remove-confirm modal */}
       {confirmRemove && (
         <div style={s.backdrop} onClick={() => setConfirmRemove(null)}>
@@ -472,6 +493,12 @@ const s = {
     display: "inline-flex", alignItems: "center", gap: 6,
     padding: "8px 14px", background: "#14919B", color: "#fff",
     border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700,
+    cursor: "pointer", fontFamily: "inherit",
+  },
+  bulkBtn: {
+    display: "inline-flex", alignItems: "center", gap: 6,
+    padding: "8px 14px", background: "#fff", color: "#0F223D",
+    border: "1px solid #cbd5e1", borderRadius: 8, fontSize: 13, fontWeight: 600,
     cursor: "pointer", fontFamily: "inherit",
   },
   empty: {

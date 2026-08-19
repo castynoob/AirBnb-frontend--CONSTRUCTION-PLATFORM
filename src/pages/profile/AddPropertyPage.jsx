@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, Building2, ArrowLeft, Save, X } from "lucide-react";
 import Nav from "../../components/Nav";
+import CustomSelect from "../../components/CustomSelect";
 import { useLanguage } from "../../contexts/LanguageContext";
 import "../../styles/manager/addpropertypagemanager.css";
 
@@ -388,16 +389,15 @@ function AddPropertyPage() {
 
                     <div className="form-group">
                       <label className="form-label">{t('addPropertyPage.buildingType')}</label>
-                      <select
-                        name="building_type"
-                        className="form-select"
+                      <CustomSelect
                         value={formData.building_type}
-                        onChange={handleInputChange}
-                      >
-                        {buildingTypes.map(type => (
-                          <option key={type.value} value={type.value}>{t(`addPropertyPage.${type.key}`)}</option>
-                        ))}
-                      </select>
+                        onChange={(v) => setFormData((p) => ({ ...p, building_type: v }))}
+                        options={buildingTypes.map((type) => ({
+                          value: type.value,
+                          label: t(`addPropertyPage.${type.key}`) || type.value,
+                        }))}
+                        placeholder={t('addPropertyPage.buildingType')}
+                      />
                     </div>
                   </div>
 

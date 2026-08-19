@@ -19,6 +19,7 @@ import {
   Eye,
 } from "lucide-react";
 import Nav from "../../components/Nav";
+import CustomSelect from "../../components/CustomSelect";
 import { useLanguage } from "../../contexts/LanguageContext";
 import "./customerservice.css";
 
@@ -523,38 +524,32 @@ function CustomerService() {
               <div className="cs-modal-body">
                 <div className="cs-form-group">
                   <label>{t('customerService.disputeType')} *</label>
-                  <select
+                  <CustomSelect
                     value={disputeForm.type}
-                    onChange={(e) =>
-                      setDisputeForm({ ...disputeForm, type: e.target.value })
-                    }
-                    required
-                  >
-                    <option value="">{t('customerService.selectType')}</option>
-                    <option value="job_quality">{t('customerService.typeJobQuality')}</option>
-                    <option value="payment">{t('customerService.typePayment')}</option>
-                    <option value="non_delivery">{t('customerService.typeNonDelivery')}</option>
-                    <option value="review_dispute">{t('customerService.typeReviewDispute')}</option>
-                    <option value="contract_violation">{t('customerService.typeContractViolation')}</option>
-                    <option value="other">{t('customerService.typeOther')}</option>
-                  </select>
+                    onChange={(v) => setDisputeForm({ ...disputeForm, type: v })}
+                    options={[
+                      { value: 'job_quality',        label: t('customerService.typeJobQuality') },
+                      { value: 'payment',            label: t('customerService.typePayment') },
+                      { value: 'non_delivery',       label: t('customerService.typeNonDelivery') },
+                      { value: 'review_dispute',     label: t('customerService.typeReviewDispute') },
+                      { value: 'contract_violation', label: t('customerService.typeContractViolation') },
+                      { value: 'other',              label: t('customerService.typeOther') },
+                    ]}
+                    placeholder={t('customerService.selectType')}
+                  />
                 </div>
 
                 <div className="cs-form-group">
                   <label>{t('customerService.relatedJob')}</label>
-                  <select
+                  <CustomSelect
                     value={disputeForm.job_id}
-                    onChange={(e) =>
-                      setDisputeForm({ ...disputeForm, job_id: e.target.value })
-                    }
-                  >
-                    <option value="">{t('customerService.selectJob')}</option>
-                    {userJobs.map((job) => (
-                      <option key={job.id} value={job.id}>
-                        {job.title}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(v) => setDisputeForm({ ...disputeForm, job_id: v })}
+                    options={[
+                      { value: '', label: t('customerService.selectJob') },
+                      ...userJobs.map((job) => ({ value: job.id, label: job.title })),
+                    ]}
+                    placeholder={t('customerService.selectJob')}
+                  />
                 </div>
 
                 <div className="cs-form-group">
@@ -581,7 +576,18 @@ function CustomerService() {
                 <button
                   type="submit"
                   className="cs-btn cs-btn-primary"
-                  disabled={submittingDispute}
+                  disabled={
+                    submittingDispute ||
+                    !disputeForm.type ||
+                    !disputeForm.reason?.trim()
+                  }
+                  title={
+                    !disputeForm.type
+                      ? t('customerService.selectType')
+                      : !disputeForm.reason?.trim()
+                        ? t('customerService.describeIssue')
+                        : undefined
+                  }
                 >
                   {submittingDispute ? (
                     <>
@@ -673,31 +679,29 @@ function CustomerService() {
                     <div className="cs-form-row">
                       <div className="cs-form-group">
                         <label>{t('customerService.category')}</label>
-                        <select
+                        <CustomSelect
                           value={ticketForm.category}
-                          onChange={(e) =>
-                            setTicketForm({ ...ticketForm, category: e.target.value })
-                          }
-                        >
-                          <option value="technical">{t('customerService.categoryTechnical')}</option>
-                          <option value="account">{t('customerService.categoryAccount')}</option>
-                          <option value="payment">{t('customerService.categoryPayment')}</option>
-                          <option value="job_issue">{t('customerService.categoryJobIssue')}</option>
-                          <option value="other">{t('customerService.categoryOther')}</option>
-                        </select>
+                          onChange={(v) => setTicketForm({ ...ticketForm, category: v })}
+                          options={[
+                            { value: 'technical', label: t('customerService.categoryTechnical') },
+                            { value: 'account',   label: t('customerService.categoryAccount') },
+                            { value: 'payment',   label: t('customerService.categoryPayment') },
+                            { value: 'job_issue', label: t('customerService.categoryJobIssue') },
+                            { value: 'other',     label: t('customerService.categoryOther') },
+                          ]}
+                        />
                       </div>
                       <div className="cs-form-group">
                         <label>{t('customerService.priority')}</label>
-                        <select
+                        <CustomSelect
                           value={ticketForm.priority}
-                          onChange={(e) =>
-                            setTicketForm({ ...ticketForm, priority: e.target.value })
-                          }
-                        >
-                          <option value="low">{t('customerService.priorityLow')}</option>
-                          <option value="medium">{t('customerService.priorityMedium')}</option>
-                          <option value="high">{t('customerService.priorityHigh')}</option>
-                        </select>
+                          onChange={(v) => setTicketForm({ ...ticketForm, priority: v })}
+                          options={[
+                            { value: 'low',    label: t('customerService.priorityLow') },
+                            { value: 'medium', label: t('customerService.priorityMedium') },
+                            { value: 'high',   label: t('customerService.priorityHigh') },
+                          ]}
+                        />
                       </div>
                     </div>
 
@@ -725,7 +729,11 @@ function CustomerService() {
                     <button
                       type="submit"
                       className="cs-btn cs-btn-primary"
-                      disabled={submittingTicket}
+                      disabled={
+                        submittingTicket ||
+                        !ticketForm.subject?.trim() ||
+                        !ticketForm.description?.trim()
+                      }
                     >
                       {submittingTicket ? (
                         <>

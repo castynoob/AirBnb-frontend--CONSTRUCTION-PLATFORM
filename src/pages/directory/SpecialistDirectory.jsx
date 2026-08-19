@@ -11,10 +11,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, X, MapPin, Star, Briefcase, ShieldCheck, ChevronLeft, ChevronRight, Send, Check, Inbox, Heart } from "lucide-react";
+import { Search, X, MapPin, Star, Briefcase, ShieldCheck, ChevronLeft, ChevronRight, Send, Check, Inbox, Heart, ArrowUpDown } from "lucide-react";
 import toast from "react-hot-toast";
 import EntrepreneurProfileModal from "../../components/modal/EntrepreneurProfileModal";
 import InviteToBidModal from "../../components/modal/InviteToBidModal";
+import CustomSelect from "../../components/CustomSelect";
 import Nav from "../../components/Nav";
 import { useSocket } from "../../contexts/SocketContext";
 import { useLanguage } from "../../contexts/LanguageContext";
@@ -299,13 +300,26 @@ export default function SpecialistDirectory() {
               <button onClick={() => setSearch("")} style={s.searchClear}><X size={14} /></button>
             )}
           </div>
-          <select value={city} onChange={(e) => setCity(e.target.value)} style={s.select}>
-            <option value={ALL_CITIES}>{tf(t, 'specialistDirectory.allCities', 'All cities')}</option>
-            {CITY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <select value={sort} onChange={(e) => setSort(e.target.value)} style={s.select}>
-            {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{tf(t, o.key, o.fb)}</option>)}
-          </select>
+          <CustomSelect
+            size="compact"
+            value={city}
+            onChange={setCity}
+            icon={<MapPin size={13} />}
+            options={[
+              { value: ALL_CITIES, label: tf(t, 'specialistDirectory.allCities', 'All cities') },
+              ...CITY_OPTIONS.map((c) => ({ value: c, label: c })),
+            ]}
+          />
+          <CustomSelect
+            size="compact"
+            value={sort}
+            onChange={setSort}
+            icon={<ArrowUpDown size={13} />}
+            options={SORT_OPTIONS.map((o) => ({
+              value: o.value,
+              label: tf(t, o.key, o.fb),
+            }))}
+          />
           {activeFilterCount > 0 && (
             <button onClick={clearFilters} style={s.clearAll}>
               {tf(t,

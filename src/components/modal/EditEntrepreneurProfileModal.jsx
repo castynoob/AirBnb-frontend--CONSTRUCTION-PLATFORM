@@ -22,6 +22,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useLanguage } from "../../contexts/LanguageContext";
+import CustomSelect from "../CustomSelect";
 import "../../styles/modal/editentrepreneurprofilemodal.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -1202,16 +1203,15 @@ function EditEntrepreneurProfileModal({ isOpen, profile, onClose, onSave, invali
                     <label className="edit-form-label">
                       {t("profileEntrepreneur.photoTrade") || "Trade (optional)"}
                     </label>
-                    <select
+                    <CustomSelect
                       value={newPhotoTag}
-                      onChange={(e) => setNewPhotoTag(e.target.value)}
-                      className="edit-form-input"
-                    >
-                      <option value="">{t("profileEntrepreneur.noTag") || "— No tag —"}</option>
-                      {(formData.specializations || []).map((spec) => (
-                        <option key={spec} value={spec}>{spec}</option>
-                      ))}
-                    </select>
+                      onChange={setNewPhotoTag}
+                      options={[
+                        { value: "", label: t("profileEntrepreneur.noTag") || "— No tag —" },
+                        ...(formData.specializations || []).map((spec) => ({ value: spec, label: spec })),
+                      ]}
+                      placeholder={t("profileEntrepreneur.noTag") || "— No tag —"}
+                    />
                   </div>
 
                   <div className="edit-form-group" style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -1228,21 +1228,20 @@ function EditEntrepreneurProfileModal({ isOpen, profile, onClose, onSave, invali
                     </label>
 
                     {!newPhotoIsBefore && availableBefores.length > 0 && (
-                      <select
-                        value={newPhotoPairId}
-                        onChange={(e) => setNewPhotoPairId(e.target.value)}
-                        className="edit-form-input"
-                        style={{ flex: 1 }}
-                      >
-                        <option value="">
-                          {t("profileEntrepreneur.pairWith") || "Pair with existing \"before\" photo…"}
-                        </option>
-                        {availableBefores.map((b) => (
-                          <option key={b.id} value={b.id}>
-                            {b.caption || `Before #${b.__idx + 1}`}
-                          </option>
-                        ))}
-                      </select>
+                      <div style={{ flex: 1 }}>
+                        <CustomSelect
+                          value={newPhotoPairId}
+                          onChange={setNewPhotoPairId}
+                          options={[
+                            { value: "", label: t("profileEntrepreneur.pairWith") || "Pair with existing \"before\" photo…" },
+                            ...availableBefores.map((b) => ({
+                              value: b.id,
+                              label: b.caption || `Before #${b.__idx + 1}`,
+                            })),
+                          ]}
+                          placeholder={t("profileEntrepreneur.pairWith") || "Pair with existing \"before\" photo…"}
+                        />
+                      </div>
                     )}
                   </div>
 

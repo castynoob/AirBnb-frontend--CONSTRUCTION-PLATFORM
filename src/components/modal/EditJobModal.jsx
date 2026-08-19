@@ -1,10 +1,28 @@
-import { useState, useEffect } from "react";
-import { X, Edit3, Save, AlertTriangle } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { X, Edit3, Save, AlertTriangle, ImagePlus, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { updateJob } from "../../utils/contractApi";
+import CustomSelect from "../CustomSelect";
 import "../../styles/manager/addannouncementmodal.css";
 import "../../styles/manager/submitinvoicemodal.css";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+
+// Helper — grab a Bearer token from the localStorage profile blob. Same
+// pattern the other modals in this codebase use.
+const getToken = () => {
+  try { return JSON.parse(localStorage.getItem("userProfile") || "{}")?.token || null; }
+  catch { return null; }
+};
+
+// Normalize a raw image row from the backend to { id, url }. Different code
+// paths in the API return slightly different shapes (image_url vs url,
+// image_id vs id), so we accept both.
+const normalizeImage = (raw) => ({
+  id:  raw.id || raw.image_id || raw.imageId || null,
+  url: raw.url || raw.image_url || raw.imageUrl || raw.publicUrl || null,
+});
 
 const CATEGORIES = [
   { value: "Roofing", key: "cat_roofing" },
@@ -54,6 +72,15 @@ function EditJobModal({ isOpen, onClose, job, onSaved }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
+  // Image roster for the job — mutations (add / remove) hit the backend
+  // IMMEDIATELY rather than being queued for Save. That keeps the mental
+  // model simple ("what you see is what's saved") and avoids the awkward
+  // half-state where the user closes the modal and loses their new photos.
+  const [images, setImages] = useState([]);
+  const [imagesLoading, setImagesLoading] = useState(false);
+  const [imageBusy, setImageBusy] = useState(false); // true during any upload/delete
+  const fileInputRef = useRef(null);
+
   useEffect(() => {
     if (job && isOpen) {
       setFormData({
@@ -72,6 +99,111 @@ function EditJobModal({ isOpen, onClose, job, onSaved }) {
       setError(null);
     }
   }, [job, isOpen]);
+
+  // Fetch the current image roster whenever the modal opens on a job. Kept
+  // in its own effect so re-fetches are cheap when a filename changes but
+  // the job id stays the same.
+  useEffect(() => {
+    if (!isOpen || !job?.id) return;
+    let cancelled = false;
+    const load = async () => {
+      const token = getToken();
+      if (!token) return;
+      setImagesLoading(true);
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/jobs/${job.id}/images`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const body = await res.json();
+        // Backend returns either an array or { images: [...] } depending on
+        // the code path. Normalize both.
+        const raw = Array.isArray(body) ? body : (body.images || []);
+        if (!cancelled) setImages(raw.map(normalizeImage).filter((i) => i.url));
+      } catch {
+        if (!cancelled) setImages([]);
+      } finally {
+        if (!cancelled) setImagesLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [isOpen, job?.id]);
+
+  const handleImagePick = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    // Very light client-side gate — server enforces the real limits (5MB / 10 files).
+    const tooBig = files.find((f) => f.size > 5 * 1024 * 1024);
+    if (tooBig) {
+      toast.error(t("editJobModal.imageTooBig") || "Each image must be 5MB or smaller.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+    const token = getToken();
+    if (!token) return;
+    setImageBusy(true);
+    try {
+      const fd = new FormData();
+      files.forEach((f) => fd.append("images", f));
+      const res = await fetch(`${API_BASE_URL}/api/jobs/${job.id}/images`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || body.error || `HTTP ${res.status}`);
+      }
+      const body = await res.json().catch(() => ({}));
+      // The upload response shape varies — fall back to a re-fetch when the
+      // server doesn't hand back the updated roster directly.
+      const returned = Array.isArray(body) ? body : (body.images || body.uploaded || null);
+      if (Array.isArray(returned) && returned.length > 0) {
+        const fresh = returned.map(normalizeImage).filter((i) => i.url);
+        setImages((prev) => [...prev, ...fresh]);
+      } else {
+        const listRes = await fetch(`${API_BASE_URL}/api/jobs/${job.id}/images`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (listRes.ok) {
+          const list = await listRes.json();
+          const raw = Array.isArray(list) ? list : (list.images || []);
+          setImages(raw.map(normalizeImage).filter((i) => i.url));
+        }
+      }
+      toast.success(
+        (t("editJobModal.imageUploaded") || "{{count}} image(s) added.")
+          .replace("{{count}}", files.length)
+      );
+    } catch (err) {
+      toast.error(err.message || t("editJobModal.imageUploadFailed") || "Couldn't upload images.");
+    } finally {
+      setImageBusy(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleImageDelete = async (image) => {
+    if (!image?.id) return;
+    if (!window.confirm(t("editJobModal.imageDeleteConfirm") || "Remove this image?")) return;
+    const token = getToken();
+    if (!token) return;
+    setImageBusy(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/jobs/${job.id}/images/${image.id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setImages((prev) => prev.filter((i) => i.id !== image.id));
+      toast.success(t("editJobModal.imageDeleted") || "Image removed.");
+    } catch (err) {
+      toast.error(t("editJobModal.imageDeleteFailed") || "Couldn't remove image.");
+    } finally {
+      setImageBusy(false);
+    }
+  };
 
   if (!isOpen || !job) return null;
 
@@ -170,58 +302,60 @@ function EditJobModal({ isOpen, onClose, job, onSaved }) {
             />
           </div>
 
-          {/* Category + Urgency */}
+          {/* Category + Urgency — custom dropdowns for a consistent look with
+              the homepage filter chips. Options are localized on the fly. */}
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="ej-category" className="form-label">
                 {t("addWorkModal.category") || "Category"}
               </label>
-              <select
+              <CustomSelect
                 id="ej-category"
-                name="category"
                 value={formData.category}
-                onChange={handleChange}
-                className="form-select"
-              >
-                {CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {t(`addWorkModal.${c.key}`) || c.value}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => setFormData((p) => ({ ...p, category: v }))}
+                options={CATEGORIES.map((c) => ({
+                  value: c.value,
+                  label: t(`addWorkModal.${c.key}`) || c.value,
+                }))}
+                placeholder={t("addWorkModal.category") || "Category"}
+              />
             </div>
             <div className="form-group">
               <label htmlFor="ej-urgency" className="form-label">
                 {t("addWorkModal.urgency") || "Urgency"}
               </label>
-              <select
+              <CustomSelect
                 id="ej-urgency"
-                name="urgency"
                 value={formData.urgency}
-                onChange={handleChange}
-                className="form-select"
-              >
-                {URGENCIES.map((u) => (
-                  <option key={u.value} value={u.value}>
-                    {t(`addWorkModal.${u.key}`) || u.value}
-                  </option>
-                ))}
-              </select>
+                onChange={(v) => setFormData((p) => ({ ...p, urgency: v }))}
+                options={URGENCIES.map((u) => ({
+                  value: u.value,
+                  label: t(`addWorkModal.${u.key}`) || u.value,
+                }))}
+                placeholder={t("addWorkModal.urgency") || "Urgency"}
+              />
             </div>
           </div>
 
-          {/* Emergency */}
+          {/* Emergency — explicit inline styles so the icon and text don't
+              collapse into the checkbox regardless of any parent CSS conflicts. */}
           <div className="form-group">
-            <label className="checkbox-label">
+            <label
+              className="checkbox-label"
+              style={{ display: "flex", alignItems: "center", gap: 10 }}
+            >
               <input
                 type="checkbox"
                 name="is_emergency"
                 checked={formData.is_emergency}
                 onChange={handleChange}
                 className="form-checkbox"
+                style={{ margin: 0, flexShrink: 0 }}
               />
-              <AlertTriangle size={14} color="#ef4444" />
-              <span>{t("addWorkModal.markAsEmergency") || "Mark as Emergency"}</span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <AlertTriangle size={14} color="#ef4444" style={{ flexShrink: 0 }} />
+                <span>{t("addWorkModal.markAsEmergency") || "Mark as Emergency"}</span>
+              </span>
             </label>
           </div>
 
@@ -307,16 +441,128 @@ function EditJobModal({ isOpen, onClose, job, onSaved }) {
           </div>
 
           <div className="form-group">
-            <label className="checkbox-label">
+            <label
+              className="checkbox-label"
+              style={{ display: "flex", alignItems: "center", gap: 10 }}
+            >
               <input
                 type="checkbox"
                 name="is_budget_hidden"
                 checked={formData.is_budget_hidden}
                 onChange={handleChange}
                 className="form-checkbox"
+                style={{ margin: 0, flexShrink: 0 }}
               />
               <span>{t("addWorkModal.budgetVisibilityNote") || "Hide budget from contractors"}</span>
             </label>
+          </div>
+
+          {/* Images — thumbnails with X to remove, + button to add more. All
+              mutations hit the backend immediately so what you see is what's
+              saved (no pending queue). */}
+          <div className="form-group">
+            <label className="form-label" style={{ marginBottom: 8 }}>
+              {t("editJobModal.imagesLabel") || "Photos"}
+              <span style={{ fontWeight: 400, color: "#94a3b8", marginLeft: 6, fontSize: 12 }}>
+                {t("editJobModal.imagesHint") || "(add, remove — max 5MB each)"}
+              </span>
+            </label>
+
+            {imagesLoading ? (
+              <div style={{ padding: 12, color: "#94a3b8", fontSize: 13 }}>
+                {t("editJobModal.imagesLoading") || "Loading photos…"}
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(96px, 1fr))",
+                  gap: 8,
+                }}
+              >
+                {images.map((img) => (
+                  <div
+                    key={img.id || img.url}
+                    style={{
+                      position: "relative",
+                      width: "100%",
+                      paddingTop: "100%",
+                      borderRadius: 8,
+                      overflow: "hidden",
+                      border: "1px solid #e5e7eb",
+                      background: "#f8fafc",
+                    }}
+                  >
+                    <img
+                      src={img.url}
+                      alt=""
+                      style={{
+                        position: "absolute", inset: 0,
+                        width: "100%", height: "100%",
+                        objectFit: "cover",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleImageDelete(img)}
+                      disabled={imageBusy || !img.id}
+                      title={t("editJobModal.removeImage") || "Remove"}
+                      style={{
+                        position: "absolute", top: 4, right: 4,
+                        background: "rgba(15,34,61,0.85)", color: "#fff",
+                        border: "none", borderRadius: "50%",
+                        width: 22, height: 22, cursor: imageBusy ? "not-allowed" : "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        padding: 0,
+                      }}
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+
+                {/* Add-more tile — matches the aspect of the thumbnails so
+                    the grid stays even. Clicks the hidden file input. */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={imageBusy}
+                  style={{
+                    position: "relative",
+                    width: "100%",
+                    paddingTop: "100%",
+                    borderRadius: 8,
+                    border: "2px dashed #cbd5e1",
+                    background: "#f8fafc",
+                    cursor: imageBusy ? "not-allowed" : "pointer",
+                    color: "#14919B",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  <div style={{
+                    position: "absolute", inset: 0,
+                    display: "flex", flexDirection: "column",
+                    alignItems: "center", justifyContent: "center", gap: 4,
+                    fontSize: 11, fontWeight: 600,
+                  }}>
+                    {imageBusy
+                      ? <Loader2 size={18} className="preview-spinner" />
+                      : <ImagePlus size={20} />}
+                    <span>{imageBusy
+                      ? (t("editJobModal.imageWorking") || "Working…")
+                      : (t("editJobModal.addImage") || "Add photo")}</span>
+                  </div>
+                </button>
+              </div>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              multiple
+              onChange={handleImagePick}
+              style={{ display: "none" }}
+            />
           </div>
 
           {/* Footer */}
